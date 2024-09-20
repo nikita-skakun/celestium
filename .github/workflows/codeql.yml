@@ -2,16 +2,16 @@ name: "CodeQL Advanced"
 
 on:
   push:
-    branches: [ "master" ]
+    branches: ["master"]
   pull_request:
-    branches: [ "master" ]
+    branches: ["master"]
   schedule:
-    - cron: '41 8 * * 0'
+    - cron: "41 8 * * 0"
 
 jobs:
   analyze:
     name: Analyze (${{ matrix.language }})
-    runs-on: 'ubuntu-latest'
+    runs-on: "ubuntu-latest"
     permissions:
       security-events: write
       packages: read
@@ -26,35 +26,35 @@ jobs:
             build-mode: autobuild
 
     steps:
-    - name: Checkout repository
-      uses: actions/checkout@v4
+      - name: Checkout repository
+        uses: actions/checkout@v4
 
-    - name: Set up Nix
-      run: |
-        sudo apt-get install -y curl
-        sh <(curl -L https://nixos.org/nix/install) --no-daemon
-        . /home/runner/.nix-profile/etc/profile.d/nix.sh
+      - name: Set up Nix
+        run: |
+          sudo apt-get install -y curl
+          sh <(curl -L https://nixos.org/nix/install) --no-daemon
+          . /home/runner/.nix-profile/etc/profile.d/nix.sh
 
-    - name: Enter Nix shell and install dependencies
-      run: |
-        . /home/runner/.nix-profile/etc/profile.d/nix.sh
-        nix-shell --run "echo 'Nix environment loaded.'"
+      - name: Enter Nix shell and install dependencies
+        run: |
+          . /home/runner/.nix-profile/etc/profile.d/nix.sh
+          nix-shell --run "echo 'Nix environment loaded.'"
 
-    - name: Build project
-      run: |
-        mkdir -p build
-        cd build
-        cmake .. -DCMAKE_PREFIX_PATH=/home/runner/.nix-profile
-        make -j$(nproc)
-        echo 'Build completed successfully!'
+      - name: Build project
+        run: |
+          mkdir -p build
+          cd build
+          cmake .. -DCMAKE_PREFIX_PATH=/nix/store
+          make -j$(nproc)
+          echo 'Build completed successfully!'
 
-    - name: Initialize CodeQL
-      uses: github/codeql-action/init@v3
-      with:
-        languages: ${{ matrix.language }}
-        build-mode: ${{ matrix.build-mode }}
+      - name: Initialize CodeQL
+        uses: github/codeql-action/init@v3
+        with:
+          languages: ${{ matrix.language }}
+          build-mode: ${{ matrix.build-mode }}
 
-    - name: Perform CodeQL Analysis
-      uses: github/codeql-action/analyze@v3
-      with:
-        category: "/language:${{matrix.language}}"
+      - name: Perform CodeQL Analysis
+        uses: github/codeql-action/analyze@v3
+        with:
+          category: "/language:${{matrix.language}}"
