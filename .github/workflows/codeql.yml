@@ -44,7 +44,7 @@ jobs:
       run: |
         mkdir -p build
         cd build
-        cmake ..
+        cmake .. -DCMAKE_PREFIX_PATH=/home/runner/.nix-profile
         make -j$(nproc)
         echo 'Build completed successfully!'
 
