@@ -9,6 +9,10 @@ set(CMAKE_CXX_STANDARD_REQUIRED True)
 set(CMAKE_C_COMPILER $ENV{CC})
 set(CMAKE_CXX_COMPILER $ENV{CXX})
 
+# Find required packages
+find_package(OpenGL REQUIRED)
+find_package(glfw3 REQUIRED)
+
 # Specify the build type
 set(CMAKE_BUILD_TYPE "Release" CACHE STRING "" FORCE)
 
@@ -37,6 +41,9 @@ add_executable(celestium ${SOURCES})
 if(CMAKE_CXX_COMPILER_ID STREQUAL "Clang")
     target_compile_options(celestium PRIVATE -Wall -Wextra -Wpedantic -O2)
 endif()
+
+# Link GLFW to the main target
+target_link_libraries(celestium PRIVATE glfw)
 
 # Helper function to fetch, make available, and link dependencies
 function(fetch_and_link_dependency name repo tag)
