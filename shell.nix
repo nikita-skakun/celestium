@@ -12,6 +12,7 @@ pkgs.mkShell {
     pkg-config # pkg-config to manage library paths
     wayland # Wayland development libraries
     wayland-protocols # Wayland protocols for Wayland support
+    mesa # Add Mesa for OpenGL support
   ];
 
   # Set Clang as the default compiler
