@@ -6,7 +6,7 @@ pkgs.mkShell {
     clang # Clang compiler
     git # Git for version control
     glew # GLEW for handling OpenGL extensions
-    glfw3 # GLFW3 for creating windows and OpenGL contexts
+    glfw # GLFW3 for creating windows and OpenGL contexts
     gnumake # Make for building the project
     libxkbcommon # Keymap handling library (shared between X11 and Wayland)
     pkg-config # pkg-config to manage library paths
