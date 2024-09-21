@@ -50,3 +50,4 @@ endfunction()
 # Fetch and link dependencies
 fetch_and_link_dependency(raylib https://github.com/raysan5/raylib.git master)
 fetch_and_link_dependency(termcolor https://github.com/ikalnytskyi/termcolor.git master)
+fetch_and_link_dependency(fmt https://github.com/fmtlib/fmt.git master)

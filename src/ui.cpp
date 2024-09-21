@@ -37,7 +37,7 @@ void DrawTileGrid(const PlayerCam &camera)
  */
 void DrawFpsCounter(int textSize, int padding, float deltaTime)
 {
-    std::string fpsText = "FPS: " + std::to_string(GetFPS()) + " (" + std::format("{:.2f}", deltaTime * 1000.f) + "ms)";
+    std::string fpsText = "FPS: " + std::to_string(GetFPS()) + " (" + fmt::format("{:.2f}", deltaTime * 1000.f) + "ms)";
     const char *text = fpsText.c_str();
     DrawText(text, GetScreenWidth() - MeasureText(text, textSize) - padding, padding, textSize, BLACK);
 }
