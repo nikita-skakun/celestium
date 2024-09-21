@@ -9,7 +9,6 @@ pkgs.mkShell {
     glfw # GLFW3 for creating windows and OpenGL contexts
     gnumake # Make for building the project
     libxkbcommon # Keymap handling library (shared between X11 and Wayland)
-    mesa # Add Mesa for OpenGL support
     pkg-config # pkg-config to manage library paths
     wayland # Wayland development libraries
     wayland-protocols # Wayland protocols for Wayland support

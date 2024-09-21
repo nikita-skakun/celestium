@@ -29,9 +29,9 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Set up Nix
+      - name: Set up Nix and GLFW
         run: |
-          sudo apt-get install -y curl
+          sudo apt-get install -y curl libglfw3-dev
           sh <(curl -L https://nixos.org/nix/install) --no-daemon
           . /home/runner/.nix-profile/etc/profile.d/nix.sh
 
