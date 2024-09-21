@@ -23,7 +23,7 @@ jobs:
       matrix:
         include:
           - language: c-cpp
-            build-mode: autobuild
+            build-mode: manual
 
     steps:
       - name: Checkout repository
@@ -62,19 +62,20 @@ jobs:
           . /home/runner/.nix-profile/etc/profile.d/nix.sh
           nix-shell --run "echo 'Nix environment loaded.'"
 
-      - name: Build project
-        run: |
-          mkdir -p build
-          cd build
-          cmake .. -DCMAKE_CXX_COMPILER=clang++-18 -DCMAKE_PREFIX_PATH=$HOME/local/glfw
-          make -j$(nproc)
-          echo 'Build completed successfully!'
-
       - name: Initialize CodeQL
         uses: github/codeql-action/init@v3
         with:
           languages: ${{ matrix.language }}
           build-mode: ${{ matrix.build-mode }}
+
+      - name: Build with CodeQL and generate database
+        run: |
+          mkdir -p build
+          cd build
+          cmake .. -DCMAKE_CXX_COMPILER=clang++-18 -DCMAKE_PREFIX_PATH=$HOME/local/glfw
+          # Wrap the build in CodeQL's autobuilder to generate database
+          codeql database create /tmp/codeql-db --language=cpp --command="make -j$(nproc)"
+        shell: bash
 
       - name: Perform CodeQL Analysis
         uses: github/codeql-action/analyze@v3
