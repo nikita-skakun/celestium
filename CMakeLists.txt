@@ -31,7 +31,7 @@ add_executable(celestium ${SOURCES})
 
 # Add extra warnings and optimizations for the main target
 if(CMAKE_CXX_COMPILER_ID STREQUAL "Clang")
-    target_compile_options(celestium PRIVATE -Wall -Wextra -Wpedantic -O2)
+    target_compile_options(celestium PRIVATE -Wall -Wextra -Wpedantic -O2 -std=c++20)
 endif()
 
 # Helper function to fetch, make available, and link dependencies
