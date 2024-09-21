@@ -38,7 +38,7 @@ jobs:
           clang-18 --version
 
       - name: Install build dependencies for GLFW
-        run: sudo apt-get install -y build-essential cmake xorg-dev libgl1-mesa-dev libglu1-mesa-dev libwayland-dev wayland-protocols libxkbcommon-dev
+        run: sudo apt-get install -y build-essential cmake xorg-dev libgl1-mesa-dev libglu1-mesa-dev libwayland-dev wayland-protocols libxkbcommon-dev jq
 
       - name: Build and install GLFW from source
         run: |
@@ -62,6 +62,12 @@ jobs:
           . /home/runner/.nix-profile/etc/profile.d/nix.sh
           nix-shell --run "echo 'Nix environment loaded.'"
 
+      - name: Get Latest CodeQL Version
+        id: codeql_version
+        run: |
+          latest_version=$(curl -s https://api.github.com/repos/github/codeql-action/releases/latest | jq -r .tag_name)
+          echo "latest_version=${latest_version}" >> $GITHUB_ENV
+
       - name: Initialize CodeQL
         uses: github/codeql-action/init@v3
         with:
@@ -73,8 +79,7 @@ jobs:
           mkdir -p build
           cd build
           cmake .. -DCMAKE_CXX_COMPILER=clang++-18 -DCMAKE_PREFIX_PATH=$HOME/local/glfw
-          # Wrap the build in CodeQL's autobuilder to generate database
-          codeql database create /tmp/codeql-db --language=cpp --command="make -j$(nproc)"
+          /opt/hostedtoolcache/CodeQL/${{ env.latest_version }}/x64/codeql/codeql database create /tmp/codeql-db --language=cpp --command="make -j$(nproc)"
         shell: bash
 
       - name: Perform CodeQL Analysis
