@@ -29,9 +29,23 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Set up Nix and GLFW
+      - name: Install build dependencies for GLFW
+        run: sudo apt-get install -y build-essential cmake xorg-dev libgl1-mesa-dev libglu1-mesa-dev
+
+      - name: Build and install GLFW from source
         run: |
-          sudo apt-get install -y curl libglfw3-dev
+          git clone https://github.com/glfw/glfw.git
+          cd glfw
+          mkdir -p build
+          cd build
+          cmake .. -DCMAKE_INSTALL_PREFIX=$HOME/local/glfw -DGLFW_BUILD_DOCS=OFF -DGLFW_BUILD_TESTS=OFF -DGLFW_BUILD_EXAMPLES=OFF
+          make -j$(nproc)
+          make install
+        shell: bash
+
+      - name: Set up Nix
+        run: |
+          sudo apt-get install -y curl
           sh <(curl -L https://nixos.org/nix/install) --no-daemon
           . /home/runner/.nix-profile/etc/profile.d/nix.sh
 
@@ -44,7 +58,7 @@ jobs:
         run: |
           mkdir -p build
           cd build
-          cmake .. -DCMAKE_PREFIX_PATH=/nix/store
+          cmake .. -DCMAKE_PREFIX_PATH=$HOME/local/glfw
           make -j$(nproc)
           echo 'Build completed successfully!'
 
