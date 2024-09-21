@@ -105,12 +105,12 @@ int Vector2ToRandomInt(const Vector2 &a, int min, int max)
 
 std::string ToString(const Vector2 &a)
 {
-    return std::format("({:.2f}, {:.2f})", a.x, a.y);
+    return fmt::format("({:.2f}, {:.2f})", a.x, a.y);
 }
 
 std::string ToString(const Vector2Int &a)
 {
-    return std::format("({:}, {:})", a.x, a.y);
+    return fmt::format("({:}, {:})", a.x, a.y);
 }
 
 Rectangle operator*(const Rectangle &a, float b)

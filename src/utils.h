@@ -2,7 +2,7 @@
 #include "const.h"
 #include <algorithm>
 #include <cmath>
-#include <format>
+#include <fmt/core.h>
 #include <iostream>
 #include <random>
 #include <string>

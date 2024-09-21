@@ -114,11 +114,11 @@ int main()
             hoverText += "Name: " + crew.name;
             if (crew.isAlive)
             {
-                hoverText += std::format("\nOxygen: {:.2f}", crew.oxygen);
+                hoverText += fmt::format("\nOxygen: {:.2f}", crew.oxygen);
                 if (crew.currentTile && crew.currentTile->GetType() == Tile::Type::FLOOR)
                 {
                     const FloorTile *floorTile = dynamic_cast<const FloorTile *>(crew.currentTile.get());
-                    hoverText += std::format("\nTile Ox: {:.2f}", floorTile->oxygen);
+                    hoverText += fmt::format("\nTile Ox: {:.2f}", floorTile->oxygen);
                 }
             }
             else
