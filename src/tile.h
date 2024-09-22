@@ -24,6 +24,13 @@ struct Tile
         WALL,
     };
 
+    enum class Height : u_int8_t
+    {
+        FLOOR = 1 << 0,
+        WAIST = 1 << 1,
+        CEILING = 1 << 2,
+    };
+
     Vector2 position;
     ID id;
     Vector2Int spriteOffset;
@@ -37,11 +44,8 @@ struct Tile
         : position(p), id(i), component(c), room(r), station(s) {}
 
     std::string GetName() const;
-
-    virtual bool IsWalkable() const
-    {
-        return false;
-    }
+    virtual bool IsWalkable() const = 0;
+    virtual Height GetHeight() const = 0;
 
     virtual Type GetType() const
     {
@@ -64,6 +68,11 @@ struct FloorTile : Tile
         return true;
     }
 
+    Height GetHeight() const
+    {
+        return Height::FLOOR;
+    }
+
     Type GetType() const
     {
         return Type::FLOOR;
@@ -79,6 +88,12 @@ struct WallTile : Tile
     bool IsWalkable() const
     {
         return false;
+    }
+
+    Height GetHeight() const
+    {
+        using namespace magic_enum::bitwise_operators;
+        return Height::FLOOR | Height::WAIST | Height::CEILING;
     }
 
     Type GetType() const
