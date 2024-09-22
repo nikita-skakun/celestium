@@ -29,16 +29,8 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Install Clang 18 and build dependencies
-        run: |
-          sudo apt-get install -y wget
-          wget https://apt.llvm.org/llvm.sh
-          chmod u+x llvm.sh
-          sudo ./llvm.sh 18
-          clang-18 --version
-
       - name: Install build dependencies for GLFW
-        run: sudo apt-get install -y build-essential cmake xorg-dev libgl1-mesa-dev libglu1-mesa-dev libwayland-dev wayland-protocols libxkbcommon-dev jq
+        run: sudo apt-get install -y build-essential cmake xorg-dev libgl1-mesa-dev libglu1-mesa-dev libwayland-dev wayland-protocols libxkbcommon-dev
 
       - name: Build and install GLFW from source
         run: |
@@ -62,27 +54,22 @@ jobs:
           . /home/runner/.nix-profile/etc/profile.d/nix.sh
           nix-shell --run "echo 'Nix environment loaded.'"
 
-      - name: Get Latest CodeQL Version
-        id: codeql_version
+      - name: Download CodeQL CLI
         run: |
           latest_version=$(curl -s https://api.github.com/repos/github/codeql-action/releases/latest | jq -r .tag_name)
-          echo "latest_version=${latest_version}" >> $GITHUB_ENV
-
-      - name: Initialize CodeQL
-        uses: github/codeql-action/init@v3
-        with:
-          languages: ${{ matrix.language }}
-          build-mode: ${{ matrix.build-mode }}
+          curl -L -o codeql-bundle.zip https://github.com/github/codeql-action/releases/download/${latest_version}/codeql-bundle-linux64.tar.gz
+          tar -xzf codeql-bundle.zip
+          sudo mv codeql /usr/local/bin
+          chmod +x /usr/local/bin/codeql
+          codeql --version
 
       - name: Build with CodeQL and generate database
         run: |
           mkdir -p build
           cd build
-          cmake .. -DCMAKE_CXX_COMPILER=clang++-18 -DCMAKE_PREFIX_PATH=$HOME/local/glfw
-          /opt/hostedtoolcache/CodeQL/${{ env.latest_version }}/x64/codeql/codeql database create /tmp/codeql-db --language=cpp --command="make -j$(nproc)"
-        shell: bash
+          cmake .. -DCMAKE_PREFIX_PATH=$HOME/local/glfw
+          codeql database create /tmp/codeql-db --language=cpp --command="make -j$(nproc)"
 
       - name: Perform CodeQL Analysis
-        uses: github/codeql-action/analyze@v3
-        with:
-          category: "/language:${{matrix.language}}"
+        run: |
+          codeql analyze /tmp/codeql-db --format=sarif-latest --output=/tmp/codeql-results.sarif
