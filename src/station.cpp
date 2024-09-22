@@ -1,21 +1,16 @@
 #include "station.h"
 
-const std::string Tile::names[int(ID::ID_LENGTH)] = {
-    "Blue Floor",
-    "Wall",
-};
-
-std::shared_ptr<Tile> CreateTile(Tile::Type type, const Vector2 &position, Tile::ID id, const std::shared_ptr<Station> &station, const std::shared_ptr<Room> &room = nullptr, const std::shared_ptr<Component> &component = nullptr)
+std::shared_ptr<Tile> CreateTile(Tile::Type type, const Vector2 &position, Tile::ID id, std::shared_ptr<Station> station, std::shared_ptr<Room> room = nullptr, std::shared_ptr<Component> component = nullptr)
 {
     std::shared_ptr<Tile> tile;
     switch (type)
     {
-    case Tile::Type::DEFAULT:
-        tile = std::make_shared<Tile>(position, id, station, room, component);
-        break;
-
     case Tile::Type::FLOOR:
         tile = std::make_shared<FloorTile>(position, id, station, room, component);
+        break;
+
+    case Tile::Type::WALL:
+        tile = std::make_shared<WallTile>(position, id, station, room, component);
         break;
 
     default:
@@ -62,7 +57,7 @@ void DeleteTile(std::shared_ptr<Tile> tile)
     }
 }
 
-std::shared_ptr<Room> CreateEmptyRoom(const std::shared_ptr<Station> &station)
+std::shared_ptr<Room> CreateEmptyRoom(std::shared_ptr<Station> station)
 {
     std::shared_ptr<Room> room = std::make_shared<Room>(station);
 
@@ -72,7 +67,7 @@ std::shared_ptr<Room> CreateEmptyRoom(const std::shared_ptr<Station> &station)
     return room;
 }
 
-std::shared_ptr<Room> CreateRectRoom(const Vector2 &pos, const Vector2Int &size, const std::shared_ptr<Station> &station)
+std::shared_ptr<Room> CreateRectRoom(const Vector2 &pos, const Vector2Int &size, std::shared_ptr<Station> station)
 {
     std::shared_ptr<Room> room = CreateEmptyRoom(station);
 
@@ -82,7 +77,7 @@ std::shared_ptr<Room> CreateRectRoom(const Vector2 &pos, const Vector2Int &size,
         {
             if (x == 0 || y == 0 || x == size.x - 1 || y == size.y - 1)
             {
-                CreateTile(Tile::Type::DEFAULT, pos + Vector2(x, y), Tile::ID::WALL, station, room);
+                CreateTile(Tile::Type::WALL, pos + Vector2(x, y), Tile::ID::WALL, station, room);
             }
             else
             {
@@ -94,7 +89,7 @@ std::shared_ptr<Room> CreateRectRoom(const Vector2 &pos, const Vector2Int &size,
     return room;
 }
 
-std::shared_ptr<Room> CreateHorizontalCorridor(const Vector2 &startPos, int length, const std::shared_ptr<Station> &station)
+std::shared_ptr<Room> CreateHorizontalCorridor(const Vector2 &startPos, int length, std::shared_ptr<Station> station)
 {
     std::shared_ptr<Room> room = CreateEmptyRoom(station);
 
@@ -120,7 +115,7 @@ std::shared_ptr<Room> CreateHorizontalCorridor(const Vector2 &startPos, int leng
                 }
                 else
                 {
-                    CreateTile(Tile::Type::DEFAULT, startPos + Vector2(i, y), Tile::ID::WALL, station, room);
+                    CreateTile(Tile::Type::WALL, startPos + Vector2(i, y), Tile::ID::WALL, station, room);
                 }
             }
         }
