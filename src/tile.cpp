@@ -1,11 +1,8 @@
 #include "tile.h"
 
-const std::string Tile::names[int(ID::ID_LENGTH)] = {
-    "Blue Floor",
-    "Wall",
-};
-
 std::string Tile::GetName() const
 {
-    return id == ID::ID_LENGTH ? "INVALID" : names[int(id)];
+    std::string name = magic_enum::enum_name(id).data();
+    std::replace(name.begin(), name.end(), '_', ' ');
+    return ToTitleCase(name);
 }

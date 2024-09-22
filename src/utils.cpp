@@ -133,3 +133,29 @@ Rectangle Vector2ToRect(const Vector2 &a, const Vector2 &b)
     float startY = std::min(a.y, b.y);
     return Rectangle{startX, startY, std::max(a.x, b.x) - startX, std::max(a.y, b.y) - startY};
 }
+
+std::string ToTitleCase(const std::string &a)
+{
+    std::string result = a;
+    bool capitalizeNext = true;
+
+    for (size_t i = 0; i < result.length(); ++i)
+    {
+        if (std::isalpha(result[i]))
+        {
+            if (capitalizeNext)
+            {
+                result[i] = std::toupper(result[i]);
+                capitalizeNext = false;
+            }
+            else
+            {
+                result[i] = std::tolower(result[i]);
+            }
+        }
+        else
+            capitalizeNext = true;
+    }
+
+    return result;
+}

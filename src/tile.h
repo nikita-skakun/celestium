@@ -1,5 +1,6 @@
 #pragma once
 #include "utils.h"
+#include <magic_enum.hpp>
 #include <memory>
 #include <vector>
 
@@ -21,10 +22,7 @@ struct Tile
     {
         BLUE_FLOOR,
         WALL,
-        ID_LENGTH
     };
-
-    static const std::string names[int(ID::ID_LENGTH)];
 
     Vector2 position;
     ID id;

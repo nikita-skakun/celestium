@@ -1,6 +1,7 @@
 #pragma once
 #include "const.h"
 #include <algorithm>
+#include <cctype>
 #include <cmath>
 #include <fmt/core.h>
 #include <iostream>
@@ -26,7 +27,7 @@ float Vector2DistanceSq(const Vector2 &a, const Vector2 &b);
 bool IsVector2WithinBounds(const Vector2 &a, const Vector2 &boxStart, const Vector2 &boxEnd);
 Vector2 Vector2Round(const Vector2 &a);
 Vector2 Vector2Floor(const Vector2 &a);
-int Vector2ToRandomInt(const Vector2& a, int min, int max);
+int Vector2ToRandomInt(const Vector2 &a, int min, int max);
 std::string ToString(const Vector2 &a);
 
 struct Vector2Hash
@@ -70,3 +71,6 @@ bool Contains(const Container &container, const T &value)
 {
     return std::find(container.begin(), container.end(), value) != container.end();
 }
+
+// Utility functions for std::string
+std::string ToTitleCase(const std::string &a);
