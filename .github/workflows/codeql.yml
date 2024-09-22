@@ -59,8 +59,8 @@ jobs:
           latest_version=$(curl -s https://api.github.com/repos/github/codeql-action/releases/latest | jq -r .tag_name)
           curl -L -o codeql-bundle.zip https://github.com/github/codeql-action/releases/download/${latest_version}/codeql-bundle-linux64.tar.gz
           tar -xzf codeql-bundle.zip
-          ls -l codeql-bundle-linux64/
-          sudo mv codeql-bundle-linux64/codeql /usr/local/bin
+          ls -l codeql
+          sudo mv codeql/codeql /usr/local/bin
           chmod +x /usr/local/bin/codeql
           codeql --version
 
