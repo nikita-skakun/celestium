@@ -2,9 +2,9 @@ name: "CodeQL Advanced"
 
 on:
   push:
-    branches: ["master"]
+    branches: ["*"]
   pull_request:
-    branches: ["master"]
+    branches: ["*"]
   schedule:
     - cron: "41 8 * * 0"
 
@@ -23,15 +23,29 @@ jobs:
       matrix:
         include:
           - language: c-cpp
-            build-mode: autobuild
+            build-mode: manual
 
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Set up Nix and GLFW
+      - name: Install build dependencies for GLFW
+        run: sudo apt-get install -y build-essential cmake xorg-dev libgl1-mesa-dev libglu1-mesa-dev libwayland-dev wayland-protocols libxkbcommon-dev jq
+
+      - name: Build and install GLFW from source
         run: |
-          sudo apt-get install -y curl libglfw3-dev
+          git clone https://github.com/glfw/glfw.git
+          cd glfw
+          mkdir -p build
+          cd build
+          cmake .. -DCMAKE_INSTALL_PREFIX=$HOME/local/glfw -DGLFW_BUILD_DOCS=OFF -DGLFW_BUILD_TESTS=OFF -DGLFW_BUILD_EXAMPLES=OFF
+          make -j$(nproc)
+          make install
+        shell: bash
+
+      - name: Set up Nix
+        run: |
+          sudo apt-get install -y curl
           sh <(curl -L https://nixos.org/nix/install) --no-daemon
           . /home/runner/.nix-profile/etc/profile.d/nix.sh
 
@@ -40,21 +54,29 @@ jobs:
           . /home/runner/.nix-profile/etc/profile.d/nix.sh
           nix-shell --run "echo 'Nix environment loaded.'"
 
-      - name: Build project
+      - name: Download CodeQL CLI
+        run: |
+          latest_version=$(curl -s https://api.github.com/repos/github/codeql-action/releases/latest | jq -r .tag_name)
+          curl -L -o codeql-bundle.zip https://github.com/github/codeql-action/releases/download/${latest_version}/codeql-bundle-linux64.tar.gz
+          tar -xzf codeql-bundle.zip
+          ls -l codeql
+          sudo mv codeql /usr/local/bin/codeql
+          chmod +x /usr/local/bin/codeql/codeql
+          /usr/local/bin/codeql/codeql --version
+
+      - name: Build with CodeQL and generate database
         run: |
           mkdir -p build
           cd build
-          cmake .. -DCMAKE_PREFIX_PATH=/nix/store
-          make -j$(nproc)
-          echo 'Build completed successfully!'
-
-      - name: Initialize CodeQL
-        uses: github/codeql-action/init@v3
-        with:
-          languages: ${{ matrix.language }}
-          build-mode: ${{ matrix.build-mode }}
+          cmake .. -DCMAKE_PREFIX_PATH=$HOME/local/glfw
+          /usr/local/bin/codeql/codeql database create /tmp/codeql-db --language=cpp --command="make -j$(nproc)"
 
       - name: Perform CodeQL Analysis
-        uses: github/codeql-action/analyze@v3
+        run: |
+          /usr/local/bin/codeql/codeql database analyze /tmp/codeql-db --format=sarif-latest --output=/tmp/codeql-results.sarif --threads=$(nproc)
+
+      - name: Upload CodeQL SARIF results
+        uses: actions/upload-artifact@v4
         with:
-          category: "/language:${{matrix.language}}"
+          name: codeql-results
+          path: /tmp/codeql-results.sarif
