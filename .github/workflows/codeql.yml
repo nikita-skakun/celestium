@@ -30,7 +30,7 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Install build dependencies for GLFW
-        run: sudo apt-get install -y build-essential cmake xorg-dev libgl1-mesa-dev libglu1-mesa-dev libwayland-dev wayland-protocols libxkbcommon-dev
+        run: sudo apt-get install -y build-essential cmake xorg-dev libgl1-mesa-dev libglu1-mesa-dev libwayland-dev wayland-protocols libxkbcommon-dev jq
 
       - name: Build and install GLFW from source
         run: |
@@ -59,7 +59,8 @@ jobs:
           latest_version=$(curl -s https://api.github.com/repos/github/codeql-action/releases/latest | jq -r .tag_name)
           curl -L -o codeql-bundle.zip https://github.com/github/codeql-action/releases/download/${latest_version}/codeql-bundle-linux64.tar.gz
           tar -xzf codeql-bundle.zip
-          sudo mv codeql /usr/local/bin
+          ls -l codeql-bundle-linux64/
+          sudo mv codeql-bundle-linux64/codeql /usr/local/bin
           chmod +x /usr/local/bin/codeql
           codeql --version
 
