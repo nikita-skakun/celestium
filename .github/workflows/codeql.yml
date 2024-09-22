@@ -76,7 +76,6 @@ jobs:
           /usr/local/bin/codeql/codeql database analyze /tmp/codeql-db --format=sarif-latest --output=/tmp/codeql-results.sarif --threads=$(nproc)
 
       - name: Upload CodeQL SARIF results
-        uses: actions/upload-artifact@v4
+        uses: github/codeql-action/upload-sarif@v3
         with:
-          name: codeql-results
-          path: /tmp/codeql-results.sarif
+          sarif_file: /tmp/codeql-results.sarif
