@@ -70,7 +70,7 @@ void AssignCrewTasks(std::vector<Crew> &crewList, const PlayerCam &camera)
 
     if (IsMouseButtonPressed(MOUSE_RIGHT_BUTTON) && camera.selectedCrewList.size() > 0)
     {
-        Vector2 worldPos = ScreenToTile(GetMousePosition(), camera);
+        Vector2Int worldPos = ScreenToTile(GetMousePosition(), camera);
         for (int crewId : camera.selectedCrewList)
         {
             Crew &crew = crewList[crewId];
@@ -99,17 +99,18 @@ void HandleCrewTasks(float deltaTime, std::vector<Crew> &crewList)
             {
                 auto moveTask = dynamic_cast<MoveTask *>(task);
 
+                Vector2Int floorCrewPos = ToVector2Int(crew.position);
                 if (moveTask->path.empty())
                 {
-                    moveTask->path = AStar(crew.position, moveTask->targetPosition, crew.currentTile->station);
+                    moveTask->path = AStar(floorCrewPos, moveTask->targetPosition, crew.currentTile->station);
 
                     if (moveTask->path.size() <= 0)
                     {
-                        if (moveTask->targetPosition != Vector2Floor(crew.position))
+                        if (moveTask->targetPosition != floorCrewPos)
                         {
-                            moveTask->targetPosition = Vector2Floor(crew.position);
-                            moveTask->path = std::queue<Vector2>();
-                            moveTask->path.push(Vector2Floor(crew.position));
+                            moveTask->targetPosition = floorCrewPos;
+                            moveTask->path = std::queue<Vector2Int>();
+                            moveTask->path.push(floorCrewPos);
                         }
                         else
                         {
@@ -120,9 +121,9 @@ void HandleCrewTasks(float deltaTime, std::vector<Crew> &crewList)
                 }
 
                 const float moveDelta = CREW_MOVE_SPEED * deltaTime;
-                if (Vector2DistanceSq(crew.position, moveTask->path.front()) <= moveDelta * moveDelta)
+                if (Vector2DistanceSq(crew.position, ToVector2(moveTask->path.front())) <= moveDelta * moveDelta)
                 {
-                    crew.position = moveTask->path.front();
+                    crew.position = ToVector2(moveTask->path.front());
                     moveTask->path.pop();
 
                     if (moveTask->path.empty())
@@ -134,13 +135,13 @@ void HandleCrewTasks(float deltaTime, std::vector<Crew> &crewList)
                     // Check if there are any tiles are in the way, if yes, clear path for recalculation
                     if (DoesPathHaveObstacles(moveTask->path, crew.currentTile->station, crew.CanPathInSpace()))
                     {
-                        moveTask->path = std::queue<Vector2>();
+                        moveTask->path = std::queue<Vector2Int>();
                         continue;
                     }
                 }
                 else
                 {
-                    crew.position += Vector2Normalize(moveTask->path.front() - crew.position) * moveDelta;
+                    crew.position += Vector2Normalize(ToVector2(moveTask->path.front()) - crew.position) * moveDelta;
                 }
                 break;
             }
@@ -177,20 +178,12 @@ void UpdateCrewCurrentTile(std::vector<Crew> &crewList, std::shared_ptr<Station>
         if (!crew.isAlive)
             continue;
 
-        Vector2 roundCrewPos = Vector2Round(crew.position);
+        Vector2Int floorCrewPos = ToVector2Int(crew.position);
 
-        if (crew.currentTile && crew.currentTile->position == roundCrewPos)
+        if (crew.currentTile && crew.currentTile->position == floorCrewPos)
             continue;
 
-        auto it = station->tileMap.find(roundCrewPos);
-        if (it != station->tileMap.end())
-        {
-            crew.currentTile = it->second;
-        }
-        else
-        {
-            crew.currentTile = nullptr;
-        }
+        crew.currentTile = station->GetTileAtPosition(floorCrewPos, Tile::Height::FLOOR);
     }
 }
 
@@ -203,11 +196,11 @@ void UpdateTiles(float deltaTime, std::shared_ptr<Station> station)
 
         FloorTile *floorTile = dynamic_cast<FloorTile *>(tile.get());
 
-        std::vector<Vector2> neighbors = {
-            tile->position + Vector2(1.f, 0),  // Right
-            tile->position + Vector2(-1.f, 0), // Left
-            tile->position + Vector2(0, 1.f),  // Down
-            tile->position + Vector2(0, -1.f), // Up
+        std::vector<Vector2Int> neighbors = {
+            tile->position + Vector2Int(1, 0),  // Right
+            tile->position + Vector2Int(-1, 0), // Left
+            tile->position + Vector2Int(0, 1),  // Down
+            tile->position + Vector2Int(0, -1), // Up
         };
 
         for (int i = 0; i < 4; i++)

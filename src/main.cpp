@@ -1,4 +1,3 @@
-#include "logging.h"
 #include "ui.h"
 #include "update.h"
 
@@ -54,7 +53,7 @@ int main()
         {
             for (std::shared_ptr<Tile> tile : station->tiles)
             {
-                Vector2 startScreenPos = WorldToScreen(tile->position, camera);
+                Vector2 startScreenPos = WorldToScreen(ToVector2(tile->position), camera);
                 Vector2 sizeScreenPos = Vector2(1.f, 1.f) * TILE_SIZE * camera.zoom;
 
                 Rectangle destRect = Vector2ToRect(startScreenPos, startScreenPos + sizeScreenPos);
@@ -64,7 +63,7 @@ int main()
 
                 for (auto &&vTile : tile->verticalTiles)
                 {
-                    Vector2 v_startScreenPos = WorldToScreen(tile->position + vTile->offset, camera);
+                    Vector2 v_startScreenPos = WorldToScreen(ToVector2(tile->position + vTile->offset), camera);
                     Rectangle v_destRect = Vector2ToRect(v_startScreenPos, v_startScreenPos + sizeScreenPos);
                     Rectangle v_sourceRec = Rectangle(vTile->spriteOffset.x, vTile->spriteOffset.y, 1, 1) * TILE_SIZE;
 

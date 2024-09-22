@@ -8,6 +8,8 @@
 #include <random>
 #include <string>
 
+struct Vector2Int;
+
 // Vector2 operator overloads
 Vector2 operator+(const Vector2 &a, const Vector2 &b);
 Vector2 operator-(const Vector2 &a, const Vector2 &b);
@@ -28,6 +30,7 @@ bool IsVector2WithinBounds(const Vector2 &a, const Vector2 &boxStart, const Vect
 Vector2 Vector2Round(const Vector2 &a);
 Vector2 Vector2Floor(const Vector2 &a);
 int Vector2ToRandomInt(const Vector2 &a, int min, int max);
+Vector2 ToVector2(const Vector2Int &a);
 std::string ToString(const Vector2 &a);
 
 struct Vector2Hash
@@ -46,15 +49,32 @@ struct Vector2Equal
     }
 };
 
+// Utility functions for Vector2Int
 struct Vector2Int
 {
     int x, y;
 
     Vector2Int() : x(0), y(0) {}
     Vector2Int(int x, int y) : x(x), y(y) {}
+
+    Vector2Int operator+(const Vector2Int &a) const;
+    Vector2Int operator-(const Vector2Int &a) const;
+    Vector2Int &operator+=(Vector2Int &a);
+    Vector2Int &operator-=(Vector2Int &a);
+    bool operator==(const Vector2Int &a) const;
+
+    struct Hash
+    {
+        std::size_t operator()(const Vector2Int &v) const
+        {
+            return std::hash<int>()(v.x) ^ (std::hash<int>()(v.y) << 1);
+        }
+    };
 };
 
-// Utility functions for Vector2Int
+float Vector2IntDistanceSq(const Vector2Int &a, const Vector2Int &b);
+int Vector2IntToRandomInt(const Vector2Int &a, int min, int max);
+Vector2Int ToVector2Int(const Vector2 &a);
 std::string ToString(const Vector2Int &a);
 
 // Rectangle operator overloads

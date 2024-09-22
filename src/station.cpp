@@ -1,16 +1,16 @@
 #include "station.h"
 
-std::shared_ptr<Tile> CreateTile(Tile::Type type, const Vector2 &position, Tile::ID id, std::shared_ptr<Station> station, std::shared_ptr<Room> room = nullptr, std::shared_ptr<Component> component = nullptr)
+std::shared_ptr<Tile> CreateTile(Tile::ID id, const Vector2Int &position, std::shared_ptr<Station> station, std::shared_ptr<Room> room = nullptr, std::shared_ptr<Component> component = nullptr)
 {
     std::shared_ptr<Tile> tile;
-    switch (type)
+    switch (id)
     {
-    case Tile::Type::FLOOR:
-        tile = std::make_shared<FloorTile>(position, id, station, room, component);
+    case Tile::ID::BLUE_FLOOR:
+        tile = std::make_shared<FloorTile>(id, position, station, room, component);
         break;
 
-    case Tile::Type::WALL:
-        tile = std::make_shared<WallTile>(position, id, station, room, component);
+    case Tile::ID::WALL:
+        tile = std::make_shared<WallTile>(id, position, station, room, component);
         break;
 
     default:
@@ -19,8 +19,18 @@ std::shared_ptr<Tile> CreateTile(Tile::Type type, const Vector2 &position, Tile:
 
     if (station)
     {
+        auto &heightMap = station->tileMap[position];
+        for (const auto &[existingHeight, existingTile] : heightMap)
+        {
+            if (magic_enum::enum_integer(existingHeight & tile->GetHeight()) > 0)
+            {
+                LogMessage(LogLevel::ERROR, "A tile already exists at " + ToString(position) + " with overlapping height.");
+                return nullptr;
+            }
+        }
+
         station->tiles.push_back(tile);
-        station->tileMap.insert(std::make_pair(position, tile));
+        heightMap[tile->GetHeight()] = tile;
     }
 
     if (room)
@@ -67,7 +77,7 @@ std::shared_ptr<Room> CreateEmptyRoom(std::shared_ptr<Station> station)
     return room;
 }
 
-std::shared_ptr<Room> CreateRectRoom(const Vector2 &pos, const Vector2Int &size, std::shared_ptr<Station> station)
+std::shared_ptr<Room> CreateRectRoom(const Vector2Int &pos, const Vector2Int &size, std::shared_ptr<Station> station)
 {
     std::shared_ptr<Room> room = CreateEmptyRoom(station);
 
@@ -77,11 +87,11 @@ std::shared_ptr<Room> CreateRectRoom(const Vector2 &pos, const Vector2Int &size,
         {
             if (x == 0 || y == 0 || x == size.x - 1 || y == size.y - 1)
             {
-                CreateTile(Tile::Type::WALL, pos + Vector2(x, y), Tile::ID::WALL, station, room);
+                CreateTile(Tile::ID::WALL, pos + Vector2Int(x, y), station, room);
             }
             else
             {
-                CreateTile(Tile::Type::FLOOR, pos + Vector2(x, y), Tile::ID::BLUE_FLOOR, station, room);
+                CreateTile(Tile::ID::BLUE_FLOOR, pos + Vector2Int(x, y), station, room);
             }
         }
     }
@@ -89,7 +99,7 @@ std::shared_ptr<Room> CreateRectRoom(const Vector2 &pos, const Vector2Int &size,
     return room;
 }
 
-std::shared_ptr<Room> CreateHorizontalCorridor(const Vector2 &startPos, int length, std::shared_ptr<Station> station)
+std::shared_ptr<Room> CreateHorizontalCorridor(const Vector2Int &startPos, int length, std::shared_ptr<Station> station)
 {
     std::shared_ptr<Room> room = CreateEmptyRoom(station);
 
@@ -97,13 +107,13 @@ std::shared_ptr<Room> CreateHorizontalCorridor(const Vector2 &startPos, int leng
     {
         for (int y = -1; y <= 1; y++)
         {
-            auto oldTile = station->GetTileAtPosition(startPos + Vector2(i, y));
+            auto oldTile = station->GetTileAtPosition(startPos + Vector2Int(i, y));
             if (oldTile)
             {
                 if (y == 0)
                 {
                     DeleteTile(oldTile);
-                    CreateTile(Tile::Type::FLOOR, startPos + Vector2(i, y), Tile::ID::BLUE_FLOOR, station, room);
+                    CreateTile(Tile::ID::BLUE_FLOOR, startPos + Vector2Int(i, y), station, room);
                     // Add door later
                 }
             }
@@ -111,11 +121,11 @@ std::shared_ptr<Room> CreateHorizontalCorridor(const Vector2 &startPos, int leng
             {
                 if (y == 0)
                 {
-                    CreateTile(Tile::Type::FLOOR, startPos + Vector2(i, y), Tile::ID::BLUE_FLOOR, station, room);
+                    CreateTile(Tile::ID::BLUE_FLOOR, startPos + Vector2Int(i, y), station, room);
                 }
                 else
                 {
-                    CreateTile(Tile::Type::WALL, startPos + Vector2(i, y), Tile::ID::WALL, station, room);
+                    CreateTile(Tile::ID::WALL, startPos + Vector2Int(i, y), station, room);
                 }
             }
         }
@@ -127,9 +137,9 @@ std::shared_ptr<Room> CreateHorizontalCorridor(const Vector2 &startPos, int leng
 std::shared_ptr<Station> CreateStation()
 {
     std::shared_ptr<Station> station = std::make_shared<Station>();
-    CreateRectRoom(Vector2(-4, -4), Vector2Int(9, 9), station);
-    CreateRectRoom(Vector2(10, -4), Vector2Int(9, 9), station);
-    CreateHorizontalCorridor(Vector2(4, 0), 7, station);
+    CreateRectRoom(Vector2Int(-4, -4), Vector2Int(9, 9), station);
+    CreateRectRoom(Vector2Int(10, -4), Vector2Int(9, 9), station);
+    CreateHorizontalCorridor(Vector2Int(4, 0), 7, station);
 
     station->UpdateSpriteOffsets();
     return station;
@@ -141,13 +151,13 @@ void Station::UpdateSpriteOffsets()
     {
         tile->verticalTiles.clear();
 
-        std::shared_ptr<Tile> rTile = GetTileAtPosition(tile->position + Vector2(1, 0));
+        std::shared_ptr<Tile> rTile = GetTileAtPosition(tile->position + Vector2Int(1, 0));
         bool right = rTile && rTile->id == tile->id;
-        std::shared_ptr<Tile> lTile = GetTileAtPosition(tile->position + Vector2(-1, 0));
+        std::shared_ptr<Tile> lTile = GetTileAtPosition(tile->position + Vector2Int(-1, 0));
         bool left = lTile && lTile->id == tile->id;
-        std::shared_ptr<Tile> dTile = GetTileAtPosition(tile->position + Vector2(0, 1));
+        std::shared_ptr<Tile> dTile = GetTileAtPosition(tile->position + Vector2Int(0, 1));
         bool down = dTile && dTile->id == tile->id;
-        std::shared_ptr<Tile> uTile = GetTileAtPosition(tile->position + Vector2(0, -1));
+        std::shared_ptr<Tile> uTile = GetTileAtPosition(tile->position + Vector2Int(0, -1));
         bool up = uTile && uTile->id == tile->id;
 
         switch (tile->id)
@@ -168,13 +178,13 @@ void Station::UpdateSpriteOffsets()
                 tile->spriteOffset = Vector2Int(5, 1);
             else if (right && left && down && up)
             {
-                std::shared_ptr<Tile> rdTile = GetTileAtPosition(tile->position + Vector2(1, 1));
+                std::shared_ptr<Tile> rdTile = GetTileAtPosition(tile->position + Vector2Int(1, 1));
                 bool rd = rdTile && rdTile->id == tile->id;
-                std::shared_ptr<Tile> ldTile = GetTileAtPosition(tile->position + Vector2(-1, 1));
+                std::shared_ptr<Tile> ldTile = GetTileAtPosition(tile->position + Vector2Int(-1, 1));
                 bool ld = ldTile && ldTile->id == tile->id;
-                std::shared_ptr<Tile> ruTile = GetTileAtPosition(tile->position + Vector2(1, -1));
+                std::shared_ptr<Tile> ruTile = GetTileAtPosition(tile->position + Vector2Int(1, -1));
                 bool ru = ruTile && ruTile->id == tile->id;
-                std::shared_ptr<Tile> luTile = GetTileAtPosition(tile->position + Vector2(-1, -1));
+                std::shared_ptr<Tile> luTile = GetTileAtPosition(tile->position + Vector2Int(-1, -1));
                 bool lu = luTile && luTile->id == tile->id;
 
                 if (rd && !ld && ru && !lu)
@@ -218,7 +228,7 @@ void Station::UpdateSpriteOffsets()
                 if (!uTile)
                 {
                     tile->spriteOffset = Vector2Int(2, 4);
-                    tile->verticalTiles.push_back(std::make_shared<VerticalTile>(Vector2(0, -1), Vector2Int(5, 3)));
+                    tile->verticalTiles.push_back(std::make_shared<VerticalTile>(Vector2Int(0, -1), Vector2Int(5, 3)));
                 }
                 else
                     tile->spriteOffset = Vector2Int(5, 3);
@@ -230,7 +240,7 @@ void Station::UpdateSpriteOffsets()
                 if (!uTile)
                 {
                     tile->spriteOffset = Vector2Int(2, 4);
-                    tile->verticalTiles.push_back(std::make_shared<VerticalTile>(Vector2(0, -1), Vector2Int(7, 3)));
+                    tile->verticalTiles.push_back(std::make_shared<VerticalTile>(Vector2Int(0, -1), Vector2Int(7, 3)));
                 }
                 else
                     tile->spriteOffset = Vector2Int(7, 3);
@@ -240,16 +250,16 @@ void Station::UpdateSpriteOffsets()
                 if (!uTile)
                 {
                     tile->spriteOffset = Vector2Int(4, 1);
-                    tile->verticalTiles.push_back(std::make_shared<VerticalTile>(Vector2(0, -1), Vector2Int(0, 4)));
+                    tile->verticalTiles.push_back(std::make_shared<VerticalTile>(Vector2Int(0, -1), Vector2Int(0, 4)));
                 }
                 else
                     tile->spriteOffset = Vector2Int(0, 4);
             }
             else if (!right && !left && down && up)
             {
-                std::shared_ptr<Tile> rdTile = GetTileAtPosition(tile->position + Vector2(1, 1));
-                std::shared_ptr<Tile> ldTile = GetTileAtPosition(tile->position + Vector2(-1, 1));
-                std::shared_ptr<Tile> ddTile = GetTileAtPosition(tile->position + Vector2(0, 2));
+                std::shared_ptr<Tile> rdTile = GetTileAtPosition(tile->position + Vector2Int(1, 1));
+                std::shared_ptr<Tile> ldTile = GetTileAtPosition(tile->position + Vector2Int(-1, 1));
+                std::shared_ptr<Tile> ddTile = GetTileAtPosition(tile->position + Vector2Int(0, 2));
 
                 if (ddTile && ddTile->id != tile->id)
                 {
@@ -290,8 +300,8 @@ void Station::UpdateSpriteOffsets()
 
             if (!dTile)
             {
-                tile->verticalTiles.push_back(std::make_shared<VerticalTile>(Vector2(0, 1), Vector2Int(Vector2ToRandomInt(tile->position, 0, 1), 2)));
-                tile->verticalTiles.push_back(std::make_shared<VerticalTile>(Vector2(0, 2), Vector2Int(Vector2ToRandomInt(tile->position, 2, 3), 2)));
+                tile->verticalTiles.push_back(std::make_shared<VerticalTile>(Vector2Int(0, 1), Vector2Int(Vector2IntToRandomInt(tile->position, 0, 1), 2)));
+                tile->verticalTiles.push_back(std::make_shared<VerticalTile>(Vector2Int(0, 2), Vector2Int(Vector2IntToRandomInt(tile->position, 2, 3), 2)));
             }
             break;
         }
@@ -301,11 +311,29 @@ void Station::UpdateSpriteOffsets()
     }
 }
 
-std::shared_ptr<Tile> Station::GetTileAtPosition(const Vector2 &pos) const
+std::shared_ptr<Tile> Station::GetTileAtPosition(const Vector2Int &pos, Tile::Height height) const
 {
-    auto tileIter = tileMap.find(pos);
-    if (tileIter != tileMap.end())
-        return tileIter->second;
+    auto posIt = tileMap.find(pos);
+    if (posIt != tileMap.end())
+    {
+        if (height == Tile::Height::NONE)
+        {
+            if (!posIt->second.empty())
+            {
+                return posIt->second.begin()->second;
+            }
+        }
+        else
+        {
+            for (const auto &[tileHeight, tilePtr] : posIt->second)
+            {
+                if ((magic_enum::enum_integer(tileHeight) & magic_enum::enum_integer(height)) != 0)
+                {
+                    return tilePtr;
+                }
+            }
+        }
+    }
 
     return nullptr;
 }
