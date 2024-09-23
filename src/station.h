@@ -12,6 +12,7 @@ struct Station
     std::unordered_map<Vector2Int, std::map<Tile::Height, std::shared_ptr<Tile>>, Vector2Int::Hash> tileMap;
 
     std::shared_ptr<Tile> GetTileAtPosition(const Vector2Int &pos, Tile::Height height = Tile::Height::NONE) const;
+    std::vector<std::shared_ptr<Tile>> GetTilesAtPosition(const Vector2Int &pos) const;
     void UpdateSpriteOffsets();
 };
 

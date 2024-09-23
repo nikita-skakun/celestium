@@ -11,6 +11,12 @@ struct Component;
 struct Room;
 struct Station;
 
+struct IOxygenProducer
+{
+    // virtual float ProduceOxygen(float deltaTime) = 0;
+    virtual ~IOxygenProducer() = default;
+};
+
 struct Tile
 {
     enum class Type : u_int8_t
@@ -18,12 +24,14 @@ struct Tile
         DEFAULT,
         FLOOR,
         WALL,
+        OXYGEN_PRODUCER,
     };
 
     enum class ID : u_int16_t
     {
         BLUE_FLOOR,
         WALL,
+        OXYGEN_PRODUCER,
     };
 
     enum class Height : u_int8_t
@@ -101,6 +109,29 @@ struct WallTile : Tile
     Type GetType() const
     {
         return Type::WALL;
+    };
+};
+
+struct OxygenProducingTile : Tile, IOxygenProducer
+{
+    std::shared_ptr<FloorTile> floorTile;
+
+    OxygenProducingTile(ID i, const Vector2Int &p, std::shared_ptr<FloorTile> f, std::shared_ptr<Station> s, std::shared_ptr<Room> r = nullptr, std::shared_ptr<Component> c = nullptr)
+        : Tile(i, p, s, r, c), floorTile(f) {}
+
+    bool IsWalkable() const
+    {
+        return false;
+    }
+
+    Height GetHeight() const
+    {
+        return Height::WAIST;
+    }
+
+    Type GetType() const
+    {
+        return Type::OXYGEN_PRODUCER;
     };
 };
 

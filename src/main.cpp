@@ -74,7 +74,7 @@ int main()
                 {
                     if (tile->GetType() == Tile::Type::FLOOR)
                     {
-                        const FloorTile *floorTile = dynamic_cast<const FloorTile *>(tile.get());
+                        const std::shared_ptr<FloorTile> floorTile = std::dynamic_pointer_cast<FloorTile>(tile);
                         {
                             Color color = Color(50, 150, 255, floorTile->oxygen / TILE_OXYGEN_MAX * 255 * .8f);
                             DrawRectangleV(startScreenPos, sizeScreenPos, color);
@@ -93,7 +93,7 @@ int main()
         {
             if (crew.taskQueue.size() > 0 && crew.taskQueue[0]->GetType() == Task::Type::MOVE)
             {
-                const auto moveTask = dynamic_cast<const MoveTask *>(crew.taskQueue[0].get());
+                const std::shared_ptr<MoveTask> moveTask = std::dynamic_pointer_cast<MoveTask>(crew.taskQueue[0]);
                 if (!moveTask->path.empty())
                     DrawPath(moveTask->path, crew.position, camera);
             }
@@ -114,19 +114,25 @@ int main()
             if (crew.isAlive)
             {
                 hoverText += fmt::format("\nOxygen: {:.2f}", crew.oxygen);
-                if (crew.currentTile)
-                {
-                    if (crew.currentTile->GetType() == Tile::Type::FLOOR)
-                    {
-                        const FloorTile *floorTile = dynamic_cast<const FloorTile *>(crew.currentTile.get());
-                        hoverText += fmt::format("\nTile Ox: {:.2f}", floorTile->oxygen);
-                    }
-                    hoverText += "\n" + crew.currentTile->GetName();
-                }
             }
             else
             {
                 hoverText += "\nDEAD";
+            }
+        }
+
+        Vector2Int tileHoverPos = ScreenToTile(mousePos, camera);
+        std::vector<std::shared_ptr<Tile>> tiles = station->GetTilesAtPosition(tileHoverPos);
+
+        for (const std::shared_ptr<Tile> tile : tiles)
+        {
+            if (!hoverText.empty())
+                hoverText += "\n";
+            hoverText += " - " + tile->GetName();
+            if (tile->GetType() == Tile::Type::FLOOR)
+            {
+                const std::shared_ptr<FloorTile> floorTile = std::dynamic_pointer_cast<FloorTile>(tile);
+                hoverText += fmt::format("\n   + Tile Ox: {:.2f}", floorTile->oxygen);
             }
         }
 

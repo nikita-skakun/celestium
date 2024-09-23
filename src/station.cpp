@@ -13,6 +13,21 @@ std::shared_ptr<Tile> CreateTile(Tile::ID id, const Vector2Int &position, std::s
         tile = std::make_shared<WallTile>(id, position, station, room, component);
         break;
 
+    case Tile::ID::OXYGEN_PRODUCER:
+    {
+        if (!station)
+            return nullptr;
+        std::shared_ptr<Tile> tileBelow = station->GetTileAtPosition(position, Tile::Height::FLOOR);
+        std::shared_ptr<FloorTile> floorTile;
+
+        if (tileBelow && tileBelow->GetType() == Tile::Type::FLOOR)
+            floorTile = std::dynamic_pointer_cast<FloorTile>(tileBelow);
+        else
+            return nullptr;
+
+        tile = std::make_shared<OxygenProducingTile>(id, position, floorTile, station, room, component);
+        break;
+    }
     default:
         return nullptr;
     }
@@ -138,8 +153,10 @@ std::shared_ptr<Station> CreateStation()
 {
     std::shared_ptr<Station> station = std::make_shared<Station>();
     CreateRectRoom(Vector2Int(-4, -4), Vector2Int(9, 9), station);
-    CreateRectRoom(Vector2Int(10, -4), Vector2Int(9, 9), station);
+    std::shared_ptr<Room> room = CreateRectRoom(Vector2Int(10, -4), Vector2Int(9, 9), station);
     CreateHorizontalCorridor(Vector2Int(4, 0), 7, station);
+
+    CreateTile(Tile::ID::OXYGEN_PRODUCER, Vector2Int(14, 0), station, room);
 
     station->UpdateSpriteOffsets();
     return station;
@@ -305,6 +322,9 @@ void Station::UpdateSpriteOffsets()
             }
             break;
         }
+        case Tile::ID::OXYGEN_PRODUCER:
+            tile->spriteOffset = Vector2Int(6, 7);
+            break;
         default:
             break;
         }
@@ -336,4 +356,20 @@ std::shared_ptr<Tile> Station::GetTileAtPosition(const Vector2Int &pos, Tile::He
     }
 
     return nullptr;
+}
+
+std::vector<std::shared_ptr<Tile>> Station::GetTilesAtPosition(const Vector2Int &pos) const
+{
+    std::vector<std::shared_ptr<Tile>> result;
+
+    auto posIt = tileMap.find(pos);
+    if (posIt != tileMap.end())
+    {
+        for (const auto &pair : posIt->second)
+        {
+            result.push_back(pair.second);
+        }
+    }
+
+    return result;
 }

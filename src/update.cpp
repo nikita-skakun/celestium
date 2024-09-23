@@ -92,12 +92,12 @@ void HandleCrewTasks(float deltaTime, std::vector<Crew> &crewList)
     {
         if (!crew.taskQueue.empty() && crew.isAlive)
         {
-            Task *task = crew.taskQueue[0].get();
+            std::shared_ptr<Task> task = crew.taskQueue[0];
             switch (task->GetType())
             {
             case Task::Type::MOVE:
             {
-                auto moveTask = dynamic_cast<MoveTask *>(task);
+                std::shared_ptr<MoveTask> moveTask = std::dynamic_pointer_cast<MoveTask>(task);
 
                 Vector2Int floorCrewPos = ToVector2Int(crew.position);
                 if (moveTask->path.empty())
@@ -161,7 +161,7 @@ void HandleCrewEnvironment(float deltaTime, std::vector<Crew> &crewList)
             crew.ConsumeOxygen(deltaTime);
             if (crew.currentTile && crew.currentTile->GetType() == Tile::Type::FLOOR)
             {
-                FloorTile *floorTile = dynamic_cast<FloorTile *>(crew.currentTile.get());
+                std::shared_ptr<FloorTile> floorTile = std::dynamic_pointer_cast<FloorTile>(crew.currentTile);
                 crew.RefillOxygen(deltaTime, floorTile->oxygen);
             }
         }
@@ -191,10 +191,19 @@ void UpdateTiles(float deltaTime, std::shared_ptr<Station> station)
 {
     for (auto &tile : station->tiles)
     {
+        if (tile->GetType() == Tile::Type::OXYGEN_PRODUCER)
+        {
+            std::shared_ptr<OxygenProducingTile> oxProducingTile = std::dynamic_pointer_cast<OxygenProducingTile>(tile);
+            if (!oxProducingTile->floorTile)
+                continue;
+
+            oxProducingTile->floorTile->oxygen = std::min(oxProducingTile->floorTile->oxygen + OXYGEN_PRODUCTION_RATE * deltaTime, TILE_OXYGEN_MAX);
+        }
+
         if (tile->GetType() != Tile::Type::FLOOR)
             continue;
 
-        FloorTile *floorTile = dynamic_cast<FloorTile *>(tile.get());
+        std::shared_ptr<FloorTile> floorTile = std::dynamic_pointer_cast<FloorTile>(tile);
 
         std::vector<Vector2Int> neighbors = {
             tile->position + Vector2Int(1, 0),  // Right
@@ -205,16 +214,16 @@ void UpdateTiles(float deltaTime, std::shared_ptr<Station> station)
 
         for (int i = 0; i < 4; i++)
         {
-            std::shared_ptr<Tile> neighbor = station->GetTileAtPosition(neighbors[i]);
+            std::shared_ptr<Tile> neighbor = station->GetTileAtPosition(neighbors[i], Tile::Height::FLOOR);
             if (!neighbor || neighbor->GetType() != Tile::Type::FLOOR)
                 continue;
 
-            FloorTile *neighbourFloorTile = dynamic_cast<FloorTile *>(neighbor.get());
+            std::shared_ptr<FloorTile> neighbourFloorTile = std::dynamic_pointer_cast<FloorTile>(neighbor);
             float oxygenDiff = floorTile->oxygen - neighbourFloorTile->oxygen;
 
             if (oxygenDiff > 0)
             {
-                float oxygenTransfer = oxygenDiff * OXYGEN_DIFFUSION_RATE * deltaTime;
+                float oxygenTransfer = std::min(oxygenDiff * OXYGEN_DIFFUSION_RATE * deltaTime, oxygenDiff);
 
                 floorTile->oxygen -= oxygenTransfer;
                 neighbourFloorTile->oxygen += oxygenTransfer;
