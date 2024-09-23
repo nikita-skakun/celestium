@@ -13,7 +13,6 @@ struct Station;
 
 struct IOxygenProducer
 {
-    // virtual float ProduceOxygen(float deltaTime) = 0;
     virtual ~IOxygenProducer() = default;
 };
 
