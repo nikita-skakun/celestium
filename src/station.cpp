@@ -1,16 +1,16 @@
 #include "station.h"
 
-std::shared_ptr<Tile> CreateTile(Tile::ID id, const Vector2Int &position, std::shared_ptr<Station> station, std::shared_ptr<Room> room = nullptr, std::shared_ptr<Component> component = nullptr)
+std::shared_ptr<Tile> CreateTile(Tile::ID id, const Vector2Int &position, std::shared_ptr<Station> station, std::shared_ptr<Room> room = nullptr)
 {
     std::shared_ptr<Tile> tile;
     switch (id)
     {
     case Tile::ID::BLUE_FLOOR:
-        tile = std::make_shared<FloorTile>(id, position, station, room, component);
+        tile = std::make_shared<FloorTile>(id, position, station, room);
         break;
 
     case Tile::ID::WALL:
-        tile = std::make_shared<WallTile>(id, position, station, room, component);
+        tile = std::make_shared<WallTile>(id, position, station, room);
         break;
 
     case Tile::ID::OXYGEN_PRODUCER:
@@ -25,7 +25,7 @@ std::shared_ptr<Tile> CreateTile(Tile::ID id, const Vector2Int &position, std::s
         else
             return nullptr;
 
-        tile = std::make_shared<OxygenProducingTile>(id, position, floorTile, station, room, component);
+        tile = std::make_shared<OxygenProducingTile>(id, position, floorTile, station, room);
         break;
     }
     default:
@@ -51,9 +51,6 @@ std::shared_ptr<Tile> CreateTile(Tile::ID id, const Vector2Int &position, std::s
     if (room)
         room->tiles.push_back(tile);
 
-    if (component)
-        component->tiles.push_back(tile);
-
     return tile;
 }
 
@@ -73,12 +70,6 @@ void DeleteTile(std::shared_ptr<Tile> tile)
     {
         auto &roomTiles = tile->room->tiles;
         roomTiles.erase(std::remove(roomTiles.begin(), roomTiles.end(), tile), roomTiles.end());
-    }
-
-    if (tile->component)
-    {
-        auto &componentTiles = tile->component->tiles;
-        componentTiles.erase(std::remove(componentTiles.begin(), componentTiles.end(), tile), componentTiles.end());
     }
 }
 

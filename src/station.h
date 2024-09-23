@@ -7,7 +7,6 @@
 struct Station
 {
     std::vector<std::shared_ptr<Tile>> tiles;
-    std::vector<std::shared_ptr<Component>> components;
     std::vector<std::shared_ptr<Room>> rooms;
     std::unordered_map<Vector2Int, std::map<Tile::Height, std::shared_ptr<Tile>>, Vector2Int::Hash> tileMap;
 
@@ -16,7 +15,7 @@ struct Station
     void UpdateSpriteOffsets();
 };
 
-std::shared_ptr<Tile> CreateTile(Tile::ID id, const Vector2Int &position, std::shared_ptr<Station> station, std::shared_ptr<Room> room, std::shared_ptr<Component> component);
+std::shared_ptr<Tile> CreateTile(Tile::ID id, const Vector2Int &position, std::shared_ptr<Station> station, std::shared_ptr<Room> room);
 std::shared_ptr<Room> CreateEmptyRoom(std::shared_ptr<Station> station);
 std::shared_ptr<Room> CreateRectRoom(const Vector2Int &pos, const Vector2Int &size, std::shared_ptr<Station> station);
 std::shared_ptr<Room> CreateHorizontalCorridor(const Vector2Int &startPos, int length, std::shared_ptr<Station> station);
