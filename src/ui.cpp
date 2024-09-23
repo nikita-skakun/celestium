@@ -78,20 +78,22 @@ void DrawTooltip(const std::string &tooltip, const Vector2 &pos, int fontSize, f
 /**
  * Draws a path as a series of lines between waypoints.
  *
- * @param path     A queue of Vector2 positions representing the path to draw.
+ * @param path     A queue of Vector2Int positions representing the path to draw.
  * @param startPos The starting position of the path.
  * @param camera   The PlayerCam used for converting world coordinates to screen coordinates.
  */
-void DrawPath(std::queue<Vector2> path, const Vector2 &startPos, const PlayerCam &camera)
+void DrawPath(const std::queue<Vector2Int> &path, const Vector2 &startPos, const PlayerCam &camera)
 {
     if (path.empty())
         return;
 
+    std::queue<Vector2Int> p = path;
+
     Vector2 a = startPos + Vector2(.5f, .5f);
-    while (!path.empty())
+    while (!p.empty())
     {
-        Vector2 b = path.front() + Vector2(.5f, .5f);
-        path.pop();
+        Vector2 b = ToVector2(p.front()) + Vector2(.5f, .5f);
+        p.pop();
 
         DrawLineV(WorldToScreen(a, camera), WorldToScreen(b, camera), Fade(GREEN, .5f));
         a = b;

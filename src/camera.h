@@ -32,5 +32,5 @@ void HandleCameraOverlays(PlayerCam &camera);
 
 // Utility function for Screen to World space transformations
 Vector2 ScreenToWorld(const Vector2 &screenPos, const PlayerCam &camera);
-Vector2 ScreenToTile(const Vector2 &screenPos, const PlayerCam &camera);
+Vector2Int ScreenToTile(const Vector2 &screenPos, const PlayerCam &camera);
 Vector2 WorldToScreen(const Vector2 &worldPos, const PlayerCam &camera);

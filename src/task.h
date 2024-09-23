@@ -16,10 +16,10 @@ struct Task
 
 struct MoveTask : Task
 {
-    Vector2 targetPosition;
-    std::queue<Vector2> path;
+    Vector2Int targetPosition;
+    std::queue<Vector2Int> path;
 
-    MoveTask(const Vector2& p) : targetPosition(p) {}
+    MoveTask(const Vector2Int& p) : targetPosition(p) {}
 
     Type GetType() const override
     {

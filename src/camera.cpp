@@ -70,10 +70,10 @@ Vector2 ScreenToWorld(const Vector2 &screenPos, const PlayerCam &camera)
  * @param camera The PlayerCam object containing the camera's properties.
  * @return The tile position in world coordinates as a Vector2, rounded down to the nearest tile.
  */
-Vector2 ScreenToTile(const Vector2 &screenPos, const PlayerCam &camera)
+Vector2Int ScreenToTile(const Vector2 &screenPos, const PlayerCam &camera)
 {
     Vector2 worldPos = ScreenToWorld(screenPos, camera);
-    return Vector2(floor(worldPos.x), floor(worldPos.y));
+    return ToVector2Int(worldPos);
 }
 
 /**
