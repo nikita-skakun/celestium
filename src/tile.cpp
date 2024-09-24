@@ -12,3 +12,17 @@ std::string Tile::GetName() const
     std::replace(name.begin(), name.end(), '_', ' ');
     return ToTitleCase(name);
 }
+
+bool Tile::IsWalkable() const
+{
+    if (HasComponent<WalkableComponent>())
+    {
+        return true;
+    }
+    return false;
+}
+
+Tile::Height Tile::GetHeight() const
+{
+    return height;
+}

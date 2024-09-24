@@ -61,24 +61,25 @@ int main()
 
                 DrawTexturePro(tileset, sourceRec, destRect, Vector2(), 0, WHITE);
 
-                for (auto &&vTile : tile->verticalTiles)
+                auto decorativeComp = tile->GetComponent<DecorativeComponent>();
+                if (decorativeComp)
                 {
-                    Vector2 v_startScreenPos = WorldToScreen(ToVector2(tile->position + vTile->offset), camera);
-                    Rectangle v_destRect = Vector2ToRect(v_startScreenPos, v_startScreenPos + sizeScreenPos);
-                    Rectangle v_sourceRec = Rectangle(vTile->spriteOffset.x, vTile->spriteOffset.y, 1, 1) * TILE_SIZE;
+                    for (const DecorativeTile &dTile : decorativeComp->GetDecorativeTiles())
+                    {
+                        Vector2 v_startScreenPos = WorldToScreen(ToVector2(tile->position + dTile.offset), camera);
+                        Rectangle v_destRect = Vector2ToRect(v_startScreenPos, v_startScreenPos + sizeScreenPos);
+                        Rectangle v_sourceRec = Rectangle(dTile.spriteOffset.x, dTile.spriteOffset.y, 1, 1) * TILE_SIZE;
 
-                    DrawTexturePro(tileset, v_sourceRec, v_destRect, Vector2(), 0, WHITE);
+                        DrawTexturePro(tileset, v_sourceRec, v_destRect, Vector2(), 0, WHITE);
+                    }
                 }
 
                 if (camera.overlay == PlayerCam::Overlay::OXYGEN)
                 {
-                    if (tile->GetType() == Tile::Type::FLOOR)
+                    if (auto oxygenComp = tile->GetComponent<OxygenComponent>())
                     {
-                        const std::shared_ptr<FloorTile> floorTile = std::dynamic_pointer_cast<FloorTile>(tile);
-                        {
-                            Color color = Color(50, 150, 255, floorTile->oxygen / TILE_OXYGEN_MAX * 255 * .8f);
-                            DrawRectangleV(startScreenPos, sizeScreenPos, color);
-                        }
+                        Color color = Color(50, 150, 255, oxygenComp->GetOxygenLevel() / TILE_OXYGEN_MAX * 255 * .8f);
+                        DrawRectangleV(startScreenPos, sizeScreenPos, color);
                     }
                 }
 
@@ -129,10 +130,9 @@ int main()
             if (!hoverText.empty())
                 hoverText += "\n";
             hoverText += " - " + tile->GetName();
-            if (tile->GetType() == Tile::Type::FLOOR)
+            if (auto oxygenComp = tile->GetComponent<OxygenComponent>())
             {
-                const std::shared_ptr<FloorTile> floorTile = std::dynamic_pointer_cast<FloorTile>(tile);
-                hoverText += fmt::format("\n   + Tile Ox: {:.2f}", floorTile->oxygen);
+                hoverText += fmt::format("\n   + Tile Ox: {:.2f}", oxygenComp->GetOxygenLevel());
             }
         }
 

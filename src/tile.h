@@ -1,30 +1,15 @@
 #pragma once
-#include "utils.h"
+#include "component.h"
 #include <magic_enum.hpp>
-#include <memory>
-#include <vector>
+#include <unordered_set>
 
 using namespace magic_enum::bitwise_operators;
 
-struct VerticalTile;
 struct Room;
 struct Station;
 
-struct IOxygenProducer
-{
-    virtual ~IOxygenProducer() = default;
-};
-
 struct Tile
 {
-    enum class Type : u_int8_t
-    {
-        DEFAULT,
-        FLOOR,
-        WALL,
-        OXYGEN_PRODUCER,
-    };
-
     enum class ID : u_int16_t
     {
         BLUE_FLOOR,
@@ -41,101 +26,73 @@ struct Tile
     };
 
     ID id;
+    Height height;
     Vector2Int position;
     Vector2Int spriteOffset;
+    std::unordered_set<std::shared_ptr<Component>, Component::Hash> components;
     std::shared_ptr<Room> room;
     std::shared_ptr<Station> station;
-    std::vector<std::shared_ptr<VerticalTile>> verticalTiles;
 
     Tile() {}
-    Tile(ID i, const Vector2Int &p, std::shared_ptr<Station> s, std::shared_ptr<Room> r = nullptr)
-        : id(i), position(p), room(r), station(s) {}
+    Tile(ID i, Height h, const Vector2Int &p, std::shared_ptr<Station> s, std::shared_ptr<Room> r = nullptr)
+        : id(i), height(h), position(p), room(r), station(s) {}
 
     std::string GetName() const;
-    virtual bool IsWalkable() const = 0;
-    virtual Height GetHeight() const = 0;
+    bool IsWalkable() const;
+    Height GetHeight() const;
 
-    virtual Type GetType() const
+    template <typename T>
+    bool HasComponent() const
     {
-        return Type::DEFAULT;
-    };
-
-    virtual ~Tile() = default;
-};
-
-struct FloorTile : Tile
-{
-    float oxygen;
-
-    FloorTile() : Tile(), oxygen(TILE_OXYGEN_MAX) {}
-    FloorTile(ID i, const Vector2Int &p, std::shared_ptr<Station> s, std::shared_ptr<Room> r = nullptr)
-        : Tile(i, p, s, r), oxygen(TILE_OXYGEN_MAX) {}
-
-    bool IsWalkable() const
-    {
-        return true;
-    }
-
-    Height GetHeight() const
-    {
-        return Height::FLOOR;
-    }
-
-    Type GetType() const
-    {
-        return Type::FLOOR;
-    }
-};
-
-struct WallTile : Tile
-{
-    WallTile() : Tile() {}
-    WallTile(ID i, const Vector2Int &p, std::shared_ptr<Station> s, std::shared_ptr<Room> r = nullptr)
-        : Tile(i, p, s, r) {}
-
-    bool IsWalkable() const
-    {
+        for (const auto &component : components)
+        {
+            if (std::dynamic_pointer_cast<T>(component))
+            {
+                return true;
+            }
+        }
         return false;
     }
 
-    Height GetHeight() const
+    template <typename T>
+    std::shared_ptr<T> GetComponent() const
     {
-        return Height::FLOOR | Height::WAIST | Height::CEILING;
+        for (const auto &component : components)
+        {
+            if (auto trueComponent = std::dynamic_pointer_cast<T>(component))
+            {
+                return trueComponent;
+            }
+        }
+        return nullptr;
     }
 
-    Type GetType() const
+    template <typename T, typename... Args>
+    std::shared_ptr<T> AddComponent(Args &&...args)
     {
-        return Type::WALL;
-    };
-};
+        if (auto existingComponent = GetComponent<T>())
+        {
+            return existingComponent;
+        }
 
-struct OxygenProducingTile : Tile, IOxygenProducer
-{
-    std::shared_ptr<FloorTile> floorTile;
+        auto newComponent = std::make_shared<T>(std::forward<Args>(args)...);
 
-    OxygenProducingTile(ID i, const Vector2Int &p, std::shared_ptr<FloorTile> f, std::shared_ptr<Station> s, std::shared_ptr<Room> r = nullptr)
-        : Tile(i, p, s, r), floorTile(f) {}
+        components.insert(newComponent);
 
-    bool IsWalkable() const
+        return newComponent;
+    }
+
+    template <typename T>
+    bool RemoveComponent()
     {
+        for (auto it = components.begin(); it != components.end(); ++it)
+        {
+            if (std::dynamic_pointer_cast<T>(*it))
+            {
+                components.erase(it);
+                return true;
+            }
+        }
         return false;
     }
-
-    Height GetHeight() const
-    {
-        return Height::WAIST;
-    }
-
-    Type GetType() const
-    {
-        return Type::OXYGEN_PRODUCER;
-    };
-};
-
-struct VerticalTile
-{
-    Vector2Int offset;
-    Vector2Int spriteOffset;
-
-    VerticalTile(const Vector2Int &o, const Vector2Int &sO) : offset(o), spriteOffset(sO) {}
 };

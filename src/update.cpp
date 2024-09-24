@@ -159,10 +159,12 @@ void HandleCrewEnvironment(float deltaTime, std::vector<Crew> &crewList)
         if (crew.isAlive)
         {
             crew.ConsumeOxygen(deltaTime);
-            if (crew.currentTile && crew.currentTile->GetType() == Tile::Type::FLOOR)
+            if (crew.currentTile)
             {
-                std::shared_ptr<FloorTile> floorTile = std::dynamic_pointer_cast<FloorTile>(crew.currentTile);
-                crew.RefillOxygen(deltaTime, floorTile->oxygen);
+                if (auto oxygenComp = crew.currentTile->GetComponent<OxygenComponent>())
+                {
+                    crew.RefillOxygen(deltaTime, oxygenComp->GetOxygenLevel());
+                }
             }
         }
     }
@@ -191,42 +193,41 @@ void UpdateTiles(float deltaTime, std::shared_ptr<Station> station)
 {
     for (auto &tile : station->tiles)
     {
-        if (tile->GetType() == Tile::Type::OXYGEN_PRODUCER)
+        if (auto oxProdComp = tile->GetComponent<OxygenProducerComponent>())
         {
-            std::shared_ptr<OxygenProducingTile> oxProducingTile = std::dynamic_pointer_cast<OxygenProducingTile>(tile);
-            if (!oxProducingTile->floorTile)
+            if (!oxProdComp->output)
                 continue;
 
-            oxProducingTile->floorTile->oxygen = std::min(oxProducingTile->floorTile->oxygen + OXYGEN_PRODUCTION_RATE * deltaTime, TILE_OXYGEN_MAX);
+            oxProdComp->output->SetOxygenLevel(std::min(oxProdComp->output->GetOxygenLevel() + OXYGEN_PRODUCTION_RATE * deltaTime, TILE_OXYGEN_MAX));
         }
 
-        if (tile->GetType() != Tile::Type::FLOOR)
-            continue;
-
-        std::shared_ptr<FloorTile> floorTile = std::dynamic_pointer_cast<FloorTile>(tile);
-
-        std::vector<Vector2Int> neighbors = {
-            tile->position + Vector2Int(1, 0),  // Right
-            tile->position + Vector2Int(-1, 0), // Left
-            tile->position + Vector2Int(0, 1),  // Down
-            tile->position + Vector2Int(0, -1), // Up
-        };
-
-        for (int i = 0; i < 4; i++)
+        if (auto oxygenComp = tile->GetComponent<OxygenComponent>())
         {
-            std::shared_ptr<Tile> neighbor = station->GetTileAtPosition(neighbors[i], Tile::Height::FLOOR);
-            if (!neighbor || neighbor->GetType() != Tile::Type::FLOOR)
-                continue;
+            std::vector<Vector2Int> neighbors = {
+                tile->position + Vector2Int(1, 0),  // Right
+                tile->position + Vector2Int(-1, 0), // Left
+                tile->position + Vector2Int(0, 1),  // Down
+                tile->position + Vector2Int(0, -1), // Up
+            };
 
-            std::shared_ptr<FloorTile> neighbourFloorTile = std::dynamic_pointer_cast<FloorTile>(neighbor);
-            float oxygenDiff = floorTile->oxygen - neighbourFloorTile->oxygen;
-
-            if (oxygenDiff > 0)
+            for (int i = 0; i < 4; i++)
             {
-                float oxygenTransfer = std::min(oxygenDiff * OXYGEN_DIFFUSION_RATE * deltaTime, oxygenDiff);
+                std::shared_ptr<Tile> neighbor = station->GetTileAtPosition(neighbors[i], Tile::Height::FLOOR);
 
-                floorTile->oxygen -= oxygenTransfer;
-                neighbourFloorTile->oxygen += oxygenTransfer;
+                if (!neighbor)
+                    continue;
+
+                if (auto neighborOxygenComp = neighbor->GetComponent<OxygenComponent>())
+                {
+                    float oxygenDiff = oxygenComp->GetOxygenLevel() - neighborOxygenComp->GetOxygenLevel();
+
+                    if (oxygenDiff > 0)
+                    {
+                        float oxygenTransfer = std::min(oxygenDiff * OXYGEN_DIFFUSION_RATE * deltaTime, oxygenDiff);
+                        oxygenComp->SetOxygenLevel(oxygenComp->GetOxygenLevel() - oxygenTransfer);
+                        neighborOxygenComp->SetOxygenLevel(neighborOxygenComp->GetOxygenLevel() + oxygenTransfer);
+                    }
+                }
             }
         }
     }

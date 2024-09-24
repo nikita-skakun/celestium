@@ -6,11 +6,14 @@ std::shared_ptr<Tile> CreateTile(Tile::ID id, const Vector2Int &position, std::s
     switch (id)
     {
     case Tile::ID::BLUE_FLOOR:
-        tile = std::make_shared<FloorTile>(id, position, station, room);
+        tile = std::make_shared<Tile>(id, Tile::Height::FLOOR, position, station, room);
+        tile->AddComponent<WalkableComponent>();
+        tile->AddComponent<OxygenComponent>();
         break;
 
     case Tile::ID::WALL:
-        tile = std::make_shared<WallTile>(id, position, station, room);
+        tile = std::make_shared<Tile>(id, Tile::Height::FLOOR | Tile::Height::WAIST | Tile::Height::CEILING, position, station, room);
+        tile->AddComponent<SolidComponent>();
         break;
 
     case Tile::ID::OXYGEN_PRODUCER:
@@ -18,14 +21,15 @@ std::shared_ptr<Tile> CreateTile(Tile::ID id, const Vector2Int &position, std::s
         if (!station)
             return nullptr;
         std::shared_ptr<Tile> tileBelow = station->GetTileAtPosition(position, Tile::Height::FLOOR);
-        std::shared_ptr<FloorTile> floorTile;
 
-        if (tileBelow && tileBelow->GetType() == Tile::Type::FLOOR)
-            floorTile = std::dynamic_pointer_cast<FloorTile>(tileBelow);
-        else
+        if (!tileBelow)
             return nullptr;
 
-        tile = std::make_shared<OxygenProducingTile>(id, position, floorTile, station, room);
+        if (auto oxygenComp = tileBelow->GetComponent<OxygenComponent>())
+        {
+            tile = std::make_shared<Tile>(id, Tile::Height::WAIST, position, station, room);
+            tile->AddComponent<OxygenProducerComponent>(oxygenComp);
+        }
         break;
     }
     default:
@@ -157,7 +161,7 @@ void Station::UpdateSpriteOffsets()
 {
     for (std::shared_ptr<Tile> tile : tiles)
     {
-        tile->verticalTiles.clear();
+        tile->RemoveComponent<DecorativeTile>();
 
         std::shared_ptr<Tile> rTile = GetTileAtPosition(tile->position + Vector2Int(1, 0));
         bool right = rTile && rTile->id == tile->id;
@@ -236,7 +240,8 @@ void Station::UpdateSpriteOffsets()
                 if (!uTile)
                 {
                     tile->spriteOffset = Vector2Int(2, 4);
-                    tile->verticalTiles.push_back(std::make_shared<VerticalTile>(Vector2Int(0, -1), Vector2Int(5, 3)));
+                    auto dComp = tile->AddComponent<DecorativeComponent>();
+                    dComp->AddDecorativeTile(Vector2Int(0, -1), Vector2Int(5, 3));
                 }
                 else
                     tile->spriteOffset = Vector2Int(5, 3);
@@ -248,7 +253,8 @@ void Station::UpdateSpriteOffsets()
                 if (!uTile)
                 {
                     tile->spriteOffset = Vector2Int(2, 4);
-                    tile->verticalTiles.push_back(std::make_shared<VerticalTile>(Vector2Int(0, -1), Vector2Int(7, 3)));
+                    auto dComp = tile->AddComponent<DecorativeComponent>();
+                    dComp->AddDecorativeTile(Vector2Int(0, -1), Vector2Int(7, 3));
                 }
                 else
                     tile->spriteOffset = Vector2Int(7, 3);
@@ -258,7 +264,8 @@ void Station::UpdateSpriteOffsets()
                 if (!uTile)
                 {
                     tile->spriteOffset = Vector2Int(4, 1);
-                    tile->verticalTiles.push_back(std::make_shared<VerticalTile>(Vector2Int(0, -1), Vector2Int(0, 4)));
+                    auto dComp = tile->AddComponent<DecorativeComponent>();
+                    dComp->AddDecorativeTile(Vector2Int(0, -1), Vector2Int(0, 4));
                 }
                 else
                     tile->spriteOffset = Vector2Int(0, 4);
@@ -308,8 +315,9 @@ void Station::UpdateSpriteOffsets()
 
             if (!dTile)
             {
-                tile->verticalTiles.push_back(std::make_shared<VerticalTile>(Vector2Int(0, 1), Vector2Int(Vector2IntToRandomInt(tile->position, 0, 1), 2)));
-                tile->verticalTiles.push_back(std::make_shared<VerticalTile>(Vector2Int(0, 2), Vector2Int(Vector2IntToRandomInt(tile->position, 2, 3), 2)));
+                auto dComp = tile->AddComponent<DecorativeComponent>();
+                dComp->AddDecorativeTile(Vector2Int(0, 1), Vector2Int(Vector2IntToRandomInt(tile->position, 0, 1), 2));
+                dComp->AddDecorativeTile(Vector2Int(0, 2), Vector2Int(Vector2IntToRandomInt(tile->position, 2, 3), 2));
             }
             break;
         }
