@@ -51,6 +51,39 @@ struct SolidComponent : Component
     }
 };
 
+struct BatteryComponent : Component
+{
+private:
+    float charge;
+
+public:
+    BatteryComponent(float c = BATTERY_CHARGE_MAX) : charge(c) {}
+
+    void Charge(float amount)
+    {
+        charge = std::min(charge + amount, BATTERY_CHARGE_MAX);
+    }
+
+    bool Drain(float amount)
+    {
+        if (amount < charge)
+            return false;
+
+        charge = charge - amount;
+        return true;
+    }
+
+    float GetChargeLevel() const
+    {
+        return charge;
+    }
+
+    std::string GetName() const override
+    {
+        return "Battery";
+    }
+};
+
 struct OxygenComponent : Component
 {
 private:

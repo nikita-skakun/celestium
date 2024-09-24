@@ -32,6 +32,10 @@ std::shared_ptr<Tile> CreateTile(Tile::ID id, const Vector2Int &position, std::s
         }
         break;
     }
+    case Tile::ID::BATTERY:
+        tile = std::make_shared<Tile>(id, Tile::Height::WAIST, position, station, room);
+        tile->AddComponent<BatteryComponent>(BATTERY_CHARGE_MAX);
+        break;
     default:
         return nullptr;
     }
@@ -152,7 +156,7 @@ std::shared_ptr<Station> CreateStation()
     CreateHorizontalCorridor(Vector2Int(4, 0), 7, station);
 
     CreateTile(Tile::ID::OXYGEN_PRODUCER, Vector2Int(14, 0), station, room);
-
+    CreateTile(Tile::ID::BATTERY, Vector2Int(11, -3), station, room);
     station->UpdateSpriteOffsets();
     return station;
 }
@@ -323,6 +327,9 @@ void Station::UpdateSpriteOffsets()
         }
         case Tile::ID::OXYGEN_PRODUCER:
             tile->spriteOffset = Vector2Int(6, 7);
+            break;
+        case Tile::ID::BATTERY:
+            tile->spriteOffset = Vector2Int(5, 7);
             break;
         default:
             break;

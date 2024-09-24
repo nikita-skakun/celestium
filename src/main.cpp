@@ -134,6 +134,10 @@ int main()
             {
                 hoverText += fmt::format("\n   + Tile Ox: {:.2f}", oxygenComp->GetOxygenLevel());
             }
+            if (auto batteryComp = tile->GetComponent<BatteryComponent>())
+            {
+                hoverText += fmt::format("\n   + Energy: {:.2f}", batteryComp->GetChargeLevel());
+            }
         }
 
         if (hoverText.length() > 0)

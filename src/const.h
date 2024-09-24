@@ -11,6 +11,8 @@ const float TILE_OXYGEN_MAX = 100.f;
 const float OXYGEN_DIFFUSION_RATE = 10.f;
 const float OXYGEN_PRODUCTION_RATE = 100.f;
 
+inline const float BATTERY_CHARGE_MAX = 200.f;
+
 const float DRAG_THRESHOLD = .25f;
 const float OUTLINE_SIZE = 1.f;
 const Color OUTLINE_COLOR = BLACK;

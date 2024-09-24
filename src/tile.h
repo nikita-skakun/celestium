@@ -15,6 +15,7 @@ struct Tile
         BLUE_FLOOR,
         WALL,
         OXYGEN_PRODUCER,
+        BATTERY,
     };
 
     enum class Height : u_int8_t

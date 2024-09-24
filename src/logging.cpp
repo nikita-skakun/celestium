@@ -8,6 +8,9 @@
  */
 void LogMessage(LogLevel level, const std::string &message)
 {
+    if (message.empty())
+        return;
+
     switch (level)
     {
     case LogLevel::INFO:
