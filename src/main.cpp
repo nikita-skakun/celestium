@@ -107,41 +107,7 @@ int main()
             DrawCircleV(crewScreenPos, CREW_RADIUS * camera.zoom, crew.isAlive ? crew.color : GRAY);
         }
 
-        std::string hoverText;
-        if (camera.crewHoverIndex >= 0)
-        {
-            const Crew &crew = crewList[camera.crewHoverIndex];
-            hoverText += "Name: " + crew.name;
-            if (crew.isAlive)
-            {
-                hoverText += fmt::format("\nOxygen: {:.2f}", crew.oxygen);
-            }
-            else
-            {
-                hoverText += "\nDEAD";
-            }
-        }
-
-        Vector2Int tileHoverPos = ScreenToTile(mousePos, camera);
-        std::vector<std::shared_ptr<Tile>> tiles = station->GetTilesAtPosition(tileHoverPos);
-
-        for (const std::shared_ptr<Tile> tile : tiles)
-        {
-            if (!hoverText.empty())
-                hoverText += "\n";
-            hoverText += " - " + tile->GetName();
-            if (auto oxygenComp = tile->GetComponent<OxygenComponent>())
-            {
-                hoverText += fmt::format("\n   + Tile Ox: {:.2f}", oxygenComp->GetOxygenLevel());
-            }
-            if (auto batteryComp = tile->GetComponent<BatteryComponent>())
-            {
-                hoverText += fmt::format("\n   + Energy: {:.2f}", batteryComp->GetChargeLevel());
-            }
-        }
-
-        if (hoverText.length() > 0)
-            DrawTooltip(hoverText, mousePos);
+        DrawMainTooltip(crewList, camera, mousePos, station);
 
         if (camera.isDragging)
         {

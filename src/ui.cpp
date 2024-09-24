@@ -99,3 +99,45 @@ void DrawPath(const std::queue<Vector2Int> &path, const Vector2 &startPos, const
         a = b;
     }
 }
+
+void DrawMainTooltip(const std::vector<Crew> &crewList, const PlayerCam &camera, const Vector2 &mousePos, std::shared_ptr<Station> station)
+{
+    std::string hoverText;
+    if (camera.crewHoverIndex >= 0)
+    {
+        const Crew &crew = crewList[camera.crewHoverIndex];
+        hoverText += "Name: " + crew.name;
+        if (crew.isAlive)
+        {
+            hoverText += fmt::format("\nOxygen: {:.2f}", crew.oxygen);
+        }
+        else
+        {
+            hoverText += "\nDEAD";
+        }
+    }
+
+    if (station)
+    {
+        Vector2Int tileHoverPos = ScreenToTile(mousePos, camera);
+        std::vector<std::shared_ptr<Tile>> tiles = station->GetTilesAtPosition(tileHoverPos);
+
+        for (const std::shared_ptr<Tile> tile : tiles)
+        {
+            if (!hoverText.empty())
+                hoverText += "\n";
+            hoverText += " - " + tile->GetName();
+            if (auto oxygenComp = tile->GetComponent<OxygenComponent>())
+            {
+                hoverText += fmt::format("\n   + Tile Ox: {:.2f}", oxygenComp->GetOxygenLevel());
+            }
+            if (auto batteryComp = tile->GetComponent<BatteryComponent>())
+            {
+                hoverText += fmt::format("\n   + Energy: {:.2f}", batteryComp->GetChargeLevel());
+            }
+        }
+    }
+
+    if (hoverText.length() > 0)
+        DrawTooltip(hoverText, mousePos);
+}
