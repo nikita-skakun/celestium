@@ -29,7 +29,7 @@ struct Tile
     Height height;
     Vector2Int position;
     Vector2Int spriteOffset;
-    std::unordered_set<std::shared_ptr<Component>, Component::Hash> components;
+    std::unordered_set<std::shared_ptr<Component>> components;
     std::shared_ptr<Room> room;
     std::shared_ptr<Station> station;
 

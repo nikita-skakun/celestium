@@ -21,23 +21,19 @@ struct Component
     {
         return GetName() == other.GetName();
     }
+};
 
-    struct Hash
+namespace std
+{
+    template <>
+    struct hash<std::shared_ptr<Component>>
     {
         std::size_t operator()(const std::shared_ptr<Component> &component) const
         {
             return std::hash<std::string>()(component->GetName());
         }
     };
-
-    // struct Equal
-    // {
-    //     bool operator()(const std::shared_ptr<Component> &lhs, const std::shared_ptr<Component> &rhs) const
-    //     {
-    //         return lhs->GetName() == rhs->GetName();
-    //     }
-    // };
-};
+}
 
 struct WalkableComponent : Component
 {
