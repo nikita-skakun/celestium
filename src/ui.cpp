@@ -100,6 +100,28 @@ void DrawPath(const std::queue<Vector2Int> &path, const Vector2 &startPos, const
     }
 }
 
+/**
+ * Draws a rectangle selection box on the screen when the user is dragging the mouse.
+ *
+ * @param camera   The PlayerCam that stores the mouse drag information.
+ */
+void DrawDragSelectBox(const PlayerCam &camera)
+{
+    if (camera.isDragging)
+    {
+        Rectangle selectBox = Vector2ToRect(WorldToScreen(camera.dragStartPos, camera), WorldToScreen(camera.dragEndPos, camera));
+        DrawRectangleLines(selectBox.x, selectBox.y, selectBox.width, selectBox.height, BLUE);
+    }
+}
+
+/**
+ * Draws a tooltip about the crew member or station tile under the mouse cursor.
+ *
+ * @param crewList   A vector of Crew objects, used to retrieve the hovered crew member's information.
+ * @param camera     The PlayerCam used for handling hover state and converting coordinates.
+ * @param mousePos   The current position of the mouse cursor in screen space.
+ * @param station    A shared pointer to the Station, used to fetch tiles and their components.
+ */
 void DrawMainTooltip(const std::vector<Crew> &crewList, const PlayerCam &camera, const Vector2 &mousePos, std::shared_ptr<Station> station)
 {
     std::string hoverText;

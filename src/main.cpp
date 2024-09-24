@@ -107,14 +107,8 @@ int main()
             DrawCircleV(crewScreenPos, CREW_RADIUS * camera.zoom, crew.isAlive ? crew.color : GRAY);
         }
 
+        DrawDragSelectBox(camera);
         DrawMainTooltip(crewList, camera, mousePos, station);
-
-        if (camera.isDragging)
-        {
-            Rectangle selectBox = Vector2ToRect(WorldToScreen(camera.dragStartPos, camera), WorldToScreen(camera.dragEndPos, camera));
-            DrawRectangleLines(selectBox.x, selectBox.y, selectBox.width, selectBox.height, BLUE);
-        }
-
         DrawFpsCounter(20, 6, deltaTime);
 
         EndDrawing();
