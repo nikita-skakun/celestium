@@ -108,7 +108,7 @@ int main()
 
         DrawDragSelectBox(camera);
         DrawMainTooltip(crewList, camera, station, font);
-        DrawFpsCounter(DEFAULT_FONT_SIZE, 6, deltaTime);
+        DrawFpsCounter(deltaTime, 6);
 
         EndDrawing();
     }

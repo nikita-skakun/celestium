@@ -70,15 +70,16 @@ void DrawDragSelectBox(const PlayerCam &camera)
 /**
  * Displays the current FPS and the time taken for the last frame in milliseconds.
  *
- * @param textSize  The size of the text to be drawn.
- * @param padding   The padding from the screen edges for positioning the text.
  * @param deltaTime The time taken for the last frame, used to display in milliseconds.
+ * @param padding   The padding from the screen edges for positioning the text.
+ * @param fontSize  The size of the text to be drawn.
+ * @param font      The font to use when drawing the FPS counter, defaults to RayLib's default.
  */
-void DrawFpsCounter(int textSize, int padding, float deltaTime)
+void DrawFpsCounter(float deltaTime, int padding, int fontSize, const Font &font)
 {
-    std::string fpsText = "FPS: " + std::to_string(GetFPS()) + " (" + fmt::format("{:.2f}", deltaTime * 1000.f) + "ms)";
+    std::string fpsText = fmt::format("FPS: {:} ({:.2f}ms)", GetFPS(), deltaTime * 1000.f);
     const char *text = fpsText.c_str();
-    DrawText(text, GetScreenWidth() - MeasureText(text, textSize) - padding, padding, textSize, BLACK);
+    DrawTextEx(font, text, Vector2(GetScreenWidth() - MeasureTextEx(font, text, fontSize, 1).x - padding, padding), fontSize, 1, BLACK);
 }
 
 /**
