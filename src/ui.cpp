@@ -29,53 +29,6 @@ void DrawTileGrid(const PlayerCam &camera)
 }
 
 /**
- * Displays the current FPS and the time taken for the last frame in milliseconds.
- *
- * @param textSize  The size of the text to be drawn.
- * @param padding   The padding from the screen edges for positioning the text.
- * @param deltaTime The time taken for the last frame, used to display in milliseconds.
- */
-void DrawFpsCounter(int textSize, int padding, float deltaTime)
-{
-    std::string fpsText = "FPS: " + std::to_string(GetFPS()) + " (" + fmt::format("{:.2f}", deltaTime * 1000.f) + "ms)";
-    const char *text = fpsText.c_str();
-    DrawText(text, GetScreenWidth() - MeasureText(text, textSize) - padding, padding, textSize, BLACK);
-}
-
-/**
- * Draws a tooltip with a background rectangle at the specified position.
- *
- * @param tooltip  The text to display in the tooltip.
- * @param pos      The position where the tooltip will be drawn.
- * @param padding  The padding around the text within the tooltip background.
- * @param fontSize The size of the text in the tooltip.
- */
-void DrawTooltip(const std::string &tooltip, const Vector2 &pos, float padding, int fontSize = DEFAULT_FONT_SIZE)
-{
-    int lineCount = 0;
-    const char **lines = TextSplit(tooltip.c_str(), '\n', &lineCount);
-
-    int textWidth = 0;
-    for (int i = 0; i < lineCount; i++)
-    {
-        textWidth = std::max(textWidth, MeasureText(lines[i], fontSize));
-    }
-
-    Rectangle backgroundRect = {
-        pos.x,
-        pos.y,
-        textWidth + 2.f * padding,
-        lineCount * fontSize + 2.f * padding};
-
-    DrawRectangleRec(backgroundRect, Fade(LIGHTGRAY, 0.7f));
-
-    for (int i = 0; i < lineCount; i++)
-    {
-        DrawText(lines[i], pos.x + padding, pos.y + padding + (i * fontSize), fontSize, BLACK);
-    }
-}
-
-/**
  * Draws a path as a series of lines between waypoints.
  *
  * @param path     A queue of Vector2Int positions representing the path to draw.
@@ -111,6 +64,54 @@ void DrawDragSelectBox(const PlayerCam &camera)
     {
         Rectangle selectBox = Vector2ToRect(WorldToScreen(camera.dragStartPos, camera), WorldToScreen(camera.dragEndPos, camera));
         DrawRectangleLines(selectBox.x, selectBox.y, selectBox.width, selectBox.height, BLUE);
+    }
+}
+
+/**
+ * Displays the current FPS and the time taken for the last frame in milliseconds.
+ *
+ * @param textSize  The size of the text to be drawn.
+ * @param padding   The padding from the screen edges for positioning the text.
+ * @param deltaTime The time taken for the last frame, used to display in milliseconds.
+ */
+void DrawFpsCounter(int textSize, int padding, float deltaTime)
+{
+    std::string fpsText = "FPS: " + std::to_string(GetFPS()) + " (" + fmt::format("{:.2f}", deltaTime * 1000.f) + "ms)";
+    const char *text = fpsText.c_str();
+    DrawText(text, GetScreenWidth() - MeasureText(text, textSize) - padding, padding, textSize, BLACK);
+}
+
+/**
+ * Draws a tooltip with a background rectangle at the specified position.
+ *
+ * @param tooltip  The text to display in the tooltip.
+ * @param pos      The position where the tooltip will be drawn.
+ * @param padding  The padding around the text within the tooltip background.
+ * @param fontSize The size of the text in the tooltip.
+ * @param font     The font to use when drawing the tooltip, defaults to RayLib's default.
+ */
+void DrawTooltip(const std::string &tooltip, const Vector2 &pos, float padding, int fontSize, const Font &font)
+{
+    int lineCount = 0;
+    const char **lines = TextSplit(tooltip.c_str(), '\n', &lineCount);
+
+    float textWidth = 0;
+    for (int i = 0; i < lineCount; i++)
+    {
+        textWidth = std::max(textWidth, MeasureTextEx(font, lines[i], fontSize, 1).x);
+    }
+
+    Rectangle backgroundRect = {
+        pos.x,
+        pos.y,
+        textWidth + 2.f * padding,
+        lineCount * fontSize + 2.f * padding};
+
+    DrawRectangleRec(backgroundRect, Fade(LIGHTGRAY, 0.7f));
+
+    for (int i = 0; i < lineCount; i++)
+    {
+        DrawTextEx(font, lines[i], pos + Vector2(padding, padding + (i * fontSize)), fontSize, 1, BLACK);
     }
 }
 
