@@ -47,10 +47,10 @@ void DrawFpsCounter(int textSize, int padding, float deltaTime)
  *
  * @param tooltip  The text to display in the tooltip.
  * @param pos      The position where the tooltip will be drawn.
- * @param fontSize The size of the text in the tooltip.
  * @param padding  The padding around the text within the tooltip background.
+ * @param fontSize The size of the text in the tooltip.
  */
-void DrawTooltip(const std::string &tooltip, const Vector2 &pos, int fontSize, float padding)
+void DrawTooltip(const std::string &tooltip, const Vector2 &pos, float padding, int fontSize = DEFAULT_FONT_SIZE)
 {
     int lineCount = 0;
     const char **lines = TextSplit(tooltip.c_str(), '\n', &lineCount);
@@ -126,7 +126,6 @@ void DrawMainTooltip(const std::vector<Crew> &crewList, const PlayerCam &camera,
 {
     std::string hoverText;
     const float padding = 10.0f;
-    const int fontSize = 20;
     const Vector2 mousePos = GetMousePosition();
 
     // Check if we're hovering over a crew member
@@ -150,7 +149,7 @@ void DrawMainTooltip(const std::vector<Crew> &crewList, const PlayerCam &camera,
         Vector2Int tileHoverPos = ScreenToTile(mousePos, camera);
         std::vector<std::shared_ptr<Tile>> tiles = station->GetTilesAtPosition(tileHoverPos);
 
-        for (const std::shared_ptr<Tile> tile : tiles)
+        for (const std::shared_ptr<Tile> &tile : tiles)
         {
             if (!hoverText.empty())
                 hoverText += "\n";
@@ -176,10 +175,10 @@ void DrawMainTooltip(const std::vector<Crew> &crewList, const PlayerCam &camera,
         float textWidth = 0;
         for (int i = 0; i < lineCount; i++)
         {
-            textWidth = std::max(textWidth, MeasureTextEx(font, lines[i], fontSize, 1).x);
+            textWidth = std::max(textWidth, MeasureTextEx(font, lines[i], DEFAULT_FONT_SIZE, 1).x);
         }
 
-        Vector2 size = {textWidth + 2.f * padding, lineCount * fontSize + 2.f * padding};
+        Vector2 size = {textWidth + 2.f * padding, lineCount * DEFAULT_FONT_SIZE + 2.f * padding};
         Vector2 tooltipPos = mousePos;
 
         // Check if the tooltip goes beyond the screen's right edge (considering padding)
@@ -211,7 +210,7 @@ void DrawMainTooltip(const std::vector<Crew> &crewList, const PlayerCam &camera,
         // Draw the tooltip with the calculated position and padding
         for (int i = 0; i < lineCount; i++)
         {
-            DrawTextEx(font, lines[i], tooltipPos + Vector2(padding, padding + (i * fontSize)), fontSize, 1, BLACK);
+            DrawTextEx(font, lines[i], tooltipPos + Vector2(padding, padding + (i * DEFAULT_FONT_SIZE)), DEFAULT_FONT_SIZE, 1, BLACK);
         }
     }
 }

@@ -9,7 +9,7 @@ int main()
     SetTargetFPS(GetMonitorRefreshRate(GetCurrentMonitor()));
 
     Texture2D tileset = LoadTexture("../assets/tilesets/station.png");
-    Font font = LoadFontEx("../assets/fonts/Inconsolata.ttf", 20, NULL, 0);
+    Font font = LoadFontEx("../assets/fonts/Inconsolata.ttf", DEFAULT_FONT_SIZE, NULL, 0);
 
     PlayerCam camera = PlayerCam();
 
@@ -29,8 +29,6 @@ int main()
         float currentTime = GetTime();
         float deltaTime = currentTime - previousTime;
         previousTime = currentTime;
-
-        Vector2 mousePos = GetMousePosition();
 
         HandleCameraMovement(camera);
         HandleCameraOverlays(camera);
@@ -110,7 +108,7 @@ int main()
 
         DrawDragSelectBox(camera);
         DrawMainTooltip(crewList, camera, station, font);
-        DrawFpsCounter(20, 6, deltaTime);
+        DrawFpsCounter(DEFAULT_FONT_SIZE, 6, deltaTime);
 
         EndDrawing();
     }
