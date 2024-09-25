@@ -60,8 +60,7 @@ int main()
 
                 DrawTexturePro(tileset, sourceRec, destRect, Vector2(), 0, WHITE);
 
-                auto decorativeComp = tile->GetComponent<DecorativeComponent>();
-                if (decorativeComp)
+                if (auto decorativeComp = tile->GetComponent<DecorativeComponent>())
                 {
                     for (const DecorativeTile &dTile : decorativeComp->GetDecorativeTiles())
                     {
@@ -82,7 +81,7 @@ int main()
                     }
                 }
 
-                if (camera.overlay == PlayerCam::Overlay::WALL && tile->id == Tile::ID::WALL)
+                if (camera.overlay == PlayerCam::Overlay::WALL && tile->HasComponent<SolidComponent>())
                 {
                     DrawRectangleV(startScreenPos, sizeScreenPos, Color(255, 0, 0, 64));
                 }
