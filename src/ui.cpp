@@ -125,6 +125,10 @@ void DrawDragSelectBox(const PlayerCam &camera)
 void DrawMainTooltip(const std::vector<Crew> &crewList, const PlayerCam &camera, const Vector2 &mousePos, std::shared_ptr<Station> station)
 {
     std::string hoverText;
+    const float padding = 10.0f;
+    const int fontSize = 20;
+
+    // Check if we're hovering over a crew member
     if (camera.crewHoverIndex >= 0)
     {
         const Crew &crew = crewList[camera.crewHoverIndex];
@@ -139,6 +143,7 @@ void DrawMainTooltip(const std::vector<Crew> &crewList, const PlayerCam &camera,
         }
     }
 
+    // Check if we're hovering over a station tile
     if (station)
     {
         Vector2Int tileHoverPos = ScreenToTile(mousePos, camera);
@@ -149,6 +154,7 @@ void DrawMainTooltip(const std::vector<Crew> &crewList, const PlayerCam &camera,
             if (!hoverText.empty())
                 hoverText += "\n";
             hoverText += " - " + tile->GetName();
+
             if (auto oxygenComp = tile->GetComponent<OxygenComponent>())
             {
                 hoverText += fmt::format("\n   + Tile Ox: {:.2f}", oxygenComp->GetOxygenLevel());
@@ -160,6 +166,53 @@ void DrawMainTooltip(const std::vector<Crew> &crewList, const PlayerCam &camera,
         }
     }
 
-    if (hoverText.length() > 0)
-        DrawTooltip(hoverText, mousePos);
+    // If there is text to display in the tooltip
+    if (!hoverText.empty())
+    {
+        int lineCount = 0;
+        const char **lines = TextSplit(hoverText.c_str(), '\n', &lineCount);
+
+        int textWidth = 0;
+        for (int i = 0; i < lineCount; i++)
+        {
+            textWidth = std::max(textWidth, MeasureText(lines[i], fontSize));
+        }
+
+        Vector2 size = {textWidth + 2.f * padding, lineCount * fontSize + 2.f * padding};
+
+        // Calculate the default position for the tooltip
+        Vector2 tooltipPos = mousePos;
+
+        // Check if the tooltip goes beyond the screen's right edge (considering padding)
+        if (tooltipPos.x + size.x > GetScreenWidth())
+        {
+            // Slide the tooltip back to fit within the screen's right edge
+            tooltipPos.x = GetScreenWidth() - size.x;
+        }
+
+        // Ensure the tooltip doesn't go beyond the left edge of the screen
+        if (tooltipPos.x < 0)
+        {
+            tooltipPos.x = 0;
+        }
+
+        // Ensure the tooltip doesn't go beyond the bottom or top of the screen
+        if (tooltipPos.y + size.y > GetScreenHeight())
+        {
+            tooltipPos.y = GetScreenHeight() - size.y;
+        }
+        else if (tooltipPos.y < 0)
+        {
+            tooltipPos.y = 0;
+        }
+
+        Rectangle backgroundRect = Vector2ToRect(tooltipPos, tooltipPos + size);
+        DrawRectangleRec(backgroundRect, Fade(LIGHTGRAY, 0.7f));
+
+        // Draw the tooltip with the calculated position and padding
+        for (int i = 0; i < lineCount; i++)
+        {
+            DrawText(lines[i], tooltipPos.x + padding, tooltipPos.y + padding + (i * fontSize), fontSize, BLACK);
+        }
+    }
 }
