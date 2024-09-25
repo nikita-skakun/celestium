@@ -9,6 +9,7 @@ int main()
     SetTargetFPS(GetMonitorRefreshRate(GetCurrentMonitor()));
 
     Texture2D tileset = LoadTexture("../assets/tilesets/station.png");
+    Font font = LoadFontEx("../assets/fonts/Inconsolata.ttf", 20, NULL, 0);
 
     PlayerCam camera = PlayerCam();
 
@@ -108,7 +109,7 @@ int main()
         }
 
         DrawDragSelectBox(camera);
-        DrawMainTooltip(crewList, camera, mousePos, station);
+        DrawMainTooltip(crewList, camera, station, font);
         DrawFpsCounter(20, 6, deltaTime);
 
         EndDrawing();
@@ -117,6 +118,7 @@ int main()
     CloseWindow();
 
     UnloadTexture(tileset);
+    UnloadFont(font);
 
     LogMessage(LogLevel::INFO, "Clean-up Complete");
     return 0;

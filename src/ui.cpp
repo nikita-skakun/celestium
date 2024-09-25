@@ -119,14 +119,15 @@ void DrawDragSelectBox(const PlayerCam &camera)
  *
  * @param crewList   A vector of Crew objects, used to retrieve the hovered crew member's information.
  * @param camera     The PlayerCam used for handling hover state and converting coordinates.
- * @param mousePos   The current position of the mouse cursor in screen space.
  * @param station    A shared pointer to the Station, used to fetch tiles and their components.
+ * @param font       The font to use when drawing the tooltip, defaults to RayLib's default.
  */
-void DrawMainTooltip(const std::vector<Crew> &crewList, const PlayerCam &camera, const Vector2 &mousePos, std::shared_ptr<Station> station)
+void DrawMainTooltip(const std::vector<Crew> &crewList, const PlayerCam &camera, std::shared_ptr<Station> station, const Font &font)
 {
     std::string hoverText;
     const float padding = 10.0f;
     const int fontSize = 20;
+    const Vector2 mousePos = GetMousePosition();
 
     // Check if we're hovering over a crew member
     if (camera.crewHoverIndex >= 0)
@@ -172,15 +173,13 @@ void DrawMainTooltip(const std::vector<Crew> &crewList, const PlayerCam &camera,
         int lineCount = 0;
         const char **lines = TextSplit(hoverText.c_str(), '\n', &lineCount);
 
-        int textWidth = 0;
+        float textWidth = 0;
         for (int i = 0; i < lineCount; i++)
         {
-            textWidth = std::max(textWidth, MeasureText(lines[i], fontSize));
+            textWidth = std::max(textWidth, MeasureTextEx(font, lines[i], fontSize, 1).x);
         }
 
         Vector2 size = {textWidth + 2.f * padding, lineCount * fontSize + 2.f * padding};
-
-        // Calculate the default position for the tooltip
         Vector2 tooltipPos = mousePos;
 
         // Check if the tooltip goes beyond the screen's right edge (considering padding)
@@ -212,7 +211,7 @@ void DrawMainTooltip(const std::vector<Crew> &crewList, const PlayerCam &camera,
         // Draw the tooltip with the calculated position and padding
         for (int i = 0; i < lineCount; i++)
         {
-            DrawText(lines[i], tooltipPos.x + padding, tooltipPos.y + padding + (i * fontSize), fontSize, BLACK);
+            DrawTextEx(font, lines[i], tooltipPos + Vector2(padding, padding + (i * fontSize)), fontSize, 1, BLACK);
         }
     }
 }
