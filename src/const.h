@@ -5,7 +5,7 @@ const float MIN_ZOOM = .25f;
 const float MAX_ZOOM = 5.f;
 const float ZOOM_SPEED = .1f;
 
-const int DEFAULT_FONT_SIZE = 24;
+const int DEFAULT_FONT_SIZE = 20;
 
 const float TILE_SIZE = 32.f;
 const float TILE_OXYGEN_MAX = 100.f;
