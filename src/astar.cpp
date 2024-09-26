@@ -4,14 +4,17 @@
  * Implements the A* pathfinding algorithm to find the shortest path
  * from a start position to an end position in a grid-based environment.
  *
- * @param startRaw The starting position as a Vector2Int.
- * @param endRaw   The target position as a Vector2Int.
+ * @param start    The starting position as a Vector2Int.
+ * @param end      The target position as a Vector2Int.
  * @param station  A shared pointer to the Station.
  * @return         A queue of Vector2Int positions representing the path,
  *                 or an empty queue if no path is found.
  */
 std::queue<Vector2Int> AStar(const Vector2Int &start, const Vector2Int &end, std::shared_ptr<Station> station)
 {
+    if (start == end)
+        return std::queue<Vector2Int>();
+
     // Cost maps for tracking the cost to reach each node
     std::unordered_map<Vector2Int, float, Vector2Int::Hash> gCost, fCost;
     // Map to reconstruct the path
@@ -22,7 +25,6 @@ std::queue<Vector2Int> AStar(const Vector2Int &start, const Vector2Int &end, std
     // Comparator for the priority queue
     auto compare = [&fCost](const Vector2Int &a, const Vector2Int &b)
     {
-        // Min-heap based on fCost
         return fCost[a] > fCost[b];
     };
     // Sorted queue of open nodes

@@ -9,6 +9,7 @@ int main()
     SetTargetFPS(GetMonitorRefreshRate(GetCurrentMonitor()));
 
     Texture2D tileset = LoadTexture("../assets/tilesets/station.png");
+    Font font = LoadFontEx("../assets/fonts/Inconsolata-Bold.ttf", DEFAULT_FONT_SIZE, NULL, 0);
 
     PlayerCam camera = PlayerCam();
 
@@ -28,8 +29,6 @@ int main()
         float currentTime = GetTime();
         float deltaTime = currentTime - previousTime;
         previousTime = currentTime;
-
-        Vector2 mousePos = GetMousePosition();
 
         HandleCameraMovement(camera);
         HandleCameraOverlays(camera);
@@ -61,8 +60,7 @@ int main()
 
                 DrawTexturePro(tileset, sourceRec, destRect, Vector2(), 0, WHITE);
 
-                auto decorativeComp = tile->GetComponent<DecorativeComponent>();
-                if (decorativeComp)
+                if (auto decorativeComp = tile->GetComponent<DecorativeComponent>())
                 {
                     for (const DecorativeTile &dTile : decorativeComp->GetDecorativeTiles())
                     {
@@ -83,7 +81,7 @@ int main()
                     }
                 }
 
-                if (camera.overlay == PlayerCam::Overlay::WALL && tile->id == Tile::ID::WALL)
+                if (camera.overlay == PlayerCam::Overlay::WALL && tile->HasComponent<SolidComponent>())
                 {
                     DrawRectangleV(startScreenPos, sizeScreenPos, Color(255, 0, 0, 64));
                 }
@@ -108,8 +106,8 @@ int main()
         }
 
         DrawDragSelectBox(camera);
-        DrawMainTooltip(crewList, camera, mousePos, station);
-        DrawFpsCounter(20, 6, deltaTime);
+        DrawMainTooltip(crewList, camera, station, font);
+        DrawFpsCounter(deltaTime, 6, DEFAULT_FONT_SIZE, font);
 
         EndDrawing();
     }
@@ -117,6 +115,7 @@ int main()
     CloseWindow();
 
     UnloadTexture(tileset);
+    UnloadFont(font);
 
     LogMessage(LogLevel::INFO, "Clean-up Complete");
     return 0;

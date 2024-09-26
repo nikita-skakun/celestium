@@ -29,53 +29,6 @@ void DrawTileGrid(const PlayerCam &camera)
 }
 
 /**
- * Displays the current FPS and the time taken for the last frame in milliseconds.
- *
- * @param textSize  The size of the text to be drawn.
- * @param padding   The padding from the screen edges for positioning the text.
- * @param deltaTime The time taken for the last frame, used to display in milliseconds.
- */
-void DrawFpsCounter(int textSize, int padding, float deltaTime)
-{
-    std::string fpsText = "FPS: " + std::to_string(GetFPS()) + " (" + fmt::format("{:.2f}", deltaTime * 1000.f) + "ms)";
-    const char *text = fpsText.c_str();
-    DrawText(text, GetScreenWidth() - MeasureText(text, textSize) - padding, padding, textSize, BLACK);
-}
-
-/**
- * Draws a tooltip with a background rectangle at the specified position.
- *
- * @param tooltip  The text to display in the tooltip.
- * @param pos      The position where the tooltip will be drawn.
- * @param fontSize The size of the text in the tooltip.
- * @param padding  The padding around the text within the tooltip background.
- */
-void DrawTooltip(const std::string &tooltip, const Vector2 &pos, int fontSize, float padding)
-{
-    int lineCount = 0;
-    const char **lines = TextSplit(tooltip.c_str(), '\n', &lineCount);
-
-    int textWidth = 0;
-    for (int i = 0; i < lineCount; i++)
-    {
-        textWidth = std::max(textWidth, MeasureText(lines[i], fontSize));
-    }
-
-    Rectangle backgroundRect = {
-        pos.x,
-        pos.y,
-        textWidth + 2.f * padding,
-        lineCount * fontSize + 2.f * padding};
-
-    DrawRectangleRec(backgroundRect, Fade(LIGHTGRAY, 0.7f));
-
-    for (int i = 0; i < lineCount; i++)
-    {
-        DrawText(lines[i], pos.x + padding, pos.y + padding + (i * fontSize), fontSize, BLACK);
-    }
-}
-
-/**
  * Draws a path as a series of lines between waypoints.
  *
  * @param path     A queue of Vector2Int positions representing the path to draw.
@@ -115,16 +68,69 @@ void DrawDragSelectBox(const PlayerCam &camera)
 }
 
 /**
+ * Displays the current FPS and the time taken for the last frame in milliseconds.
+ *
+ * @param deltaTime The time taken for the last frame, used to display in milliseconds.
+ * @param padding   The padding from the screen edges for positioning the text.
+ * @param fontSize  The size of the text to be drawn.
+ * @param font      The font to use when drawing the FPS counter, defaults to RayLib's default.
+ */
+void DrawFpsCounter(float deltaTime, int padding, int fontSize, const Font &font)
+{
+    std::string fpsText = fmt::format("FPS: {:} ({:.2f}ms)", GetFPS(), deltaTime * 1000.f);
+    const char *text = fpsText.c_str();
+    DrawTextEx(font, text, Vector2(GetScreenWidth() - MeasureTextEx(font, text, fontSize, 1).x - padding, padding), fontSize, 1, BLACK);
+}
+
+/**
+ * Draws a tooltip with a background rectangle at the specified position.
+ *
+ * @param tooltip  The text to display in the tooltip.
+ * @param pos      The position where the tooltip will be drawn.
+ * @param padding  The padding around the text within the tooltip background.
+ * @param fontSize The size of the text in the tooltip.
+ * @param font     The font to use when drawing the tooltip, defaults to RayLib's default.
+ */
+void DrawTooltip(const std::string &tooltip, const Vector2 &pos, float padding, int fontSize, const Font &font)
+{
+    int lineCount = 0;
+    const char **lines = TextSplit(tooltip.c_str(), '\n', &lineCount);
+
+    float textWidth = 0;
+    for (int i = 0; i < lineCount; i++)
+    {
+        textWidth = std::max(textWidth, MeasureTextEx(font, lines[i], fontSize, 1).x);
+    }
+
+    Rectangle backgroundRect = {
+        pos.x,
+        pos.y,
+        textWidth + 2.f * padding,
+        lineCount * fontSize + 2.f * padding};
+
+    DrawRectangleRec(backgroundRect, Fade(LIGHTGRAY, 0.7f));
+
+    for (int i = 0; i < lineCount; i++)
+    {
+        DrawTextEx(font, lines[i], pos + Vector2(padding, padding + (i * fontSize)), fontSize, 1, BLACK);
+    }
+}
+
+/**
  * Draws a tooltip about the crew member or station tile under the mouse cursor.
  *
  * @param crewList   A vector of Crew objects, used to retrieve the hovered crew member's information.
  * @param camera     The PlayerCam used for handling hover state and converting coordinates.
- * @param mousePos   The current position of the mouse cursor in screen space.
  * @param station    A shared pointer to the Station, used to fetch tiles and their components.
+ * @param font       The font to use when drawing the tooltip, defaults to RayLib's default.
  */
-void DrawMainTooltip(const std::vector<Crew> &crewList, const PlayerCam &camera, const Vector2 &mousePos, std::shared_ptr<Station> station)
+void DrawMainTooltip(const std::vector<Crew> &crewList, const PlayerCam &camera, std::shared_ptr<Station> station, const Font &font)
 {
     std::string hoverText;
+    const float padding = 10.0f;
+    const Vector2 mousePos = GetMousePosition();
+
+    // Check if we're hovering over a crew member
     if (camera.crewHoverIndex >= 0)
     {
         const Crew &crew = crewList[camera.crewHoverIndex];
@@ -139,16 +145,18 @@ void DrawMainTooltip(const std::vector<Crew> &crewList, const PlayerCam &camera,
         }
     }
 
+    // Check if we're hovering over a station tile
     if (station)
     {
         Vector2Int tileHoverPos = ScreenToTile(mousePos, camera);
         std::vector<std::shared_ptr<Tile>> tiles = station->GetTilesAtPosition(tileHoverPos);
 
-        for (const std::shared_ptr<Tile> tile : tiles)
+        for (const std::shared_ptr<Tile> &tile : tiles)
         {
             if (!hoverText.empty())
                 hoverText += "\n";
             hoverText += " - " + tile->GetName();
+
             if (auto oxygenComp = tile->GetComponent<OxygenComponent>())
             {
                 hoverText += fmt::format("\n   + Tile Ox: {:.2f}", oxygenComp->GetOxygenLevel());
@@ -160,6 +168,51 @@ void DrawMainTooltip(const std::vector<Crew> &crewList, const PlayerCam &camera,
         }
     }
 
-    if (hoverText.length() > 0)
-        DrawTooltip(hoverText, mousePos);
+    // If there is text to display in the tooltip
+    if (!hoverText.empty())
+    {
+        int lineCount = 0;
+        const char **lines = TextSplit(hoverText.c_str(), '\n', &lineCount);
+
+        float textWidth = 0;
+        for (int i = 0; i < lineCount; i++)
+        {
+            textWidth = std::max(textWidth, MeasureTextEx(font, lines[i], DEFAULT_FONT_SIZE, 1).x);
+        }
+
+        Vector2 size = {textWidth + 2.f * padding, lineCount * DEFAULT_FONT_SIZE + 2.f * padding};
+        Vector2 tooltipPos = mousePos;
+
+        // Check if the tooltip goes beyond the screen's right edge (considering padding)
+        if (tooltipPos.x + size.x > GetScreenWidth())
+        {
+            // Slide the tooltip back to fit within the screen's right edge
+            tooltipPos.x = GetScreenWidth() - size.x;
+        }
+
+        // Ensure the tooltip doesn't go beyond the left edge of the screen
+        if (tooltipPos.x < 0)
+        {
+            tooltipPos.x = 0;
+        }
+
+        // Ensure the tooltip doesn't go beyond the bottom or top of the screen
+        if (tooltipPos.y + size.y > GetScreenHeight())
+        {
+            tooltipPos.y = GetScreenHeight() - size.y;
+        }
+        else if (tooltipPos.y < 0)
+        {
+            tooltipPos.y = 0;
+        }
+
+        Rectangle backgroundRect = Vector2ToRect(tooltipPos, tooltipPos + size);
+        DrawRectangleRec(backgroundRect, Fade(LIGHTGRAY, 0.7f));
+
+        // Draw the tooltip with the calculated position and padding
+        for (int i = 0; i < lineCount; i++)
+        {
+            DrawTextEx(font, lines[i], tooltipPos + Vector2(padding, padding + (i * DEFAULT_FONT_SIZE)), DEFAULT_FONT_SIZE, 1, BLACK);
+        }
+    }
 }
