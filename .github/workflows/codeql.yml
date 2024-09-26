@@ -12,7 +12,7 @@ on:
 
 jobs:
   analyze:
-    name: Analyze (${{ matrix.language }})
+    name: Analyze C++
     runs-on: "ubuntu-latest"
     permissions:
       security-events: write
@@ -21,11 +21,7 @@ jobs:
       contents: read
 
     strategy:
-      fail-fast: false
-      matrix:
-        include:
-          - language: c-cpp
-            build-mode: manual
+      fail-fast: true
 
     steps:
       - name: Checkout repository
@@ -36,6 +32,7 @@ jobs:
 
       - name: Build and install GLFW from source
         run: |
+          set -e
           git clone https://github.com/glfw/glfw.git
           cd glfw
           mkdir -p build
@@ -47,38 +44,43 @@ jobs:
 
       - name: Set up Nix
         run: |
+          set -e
           sudo apt-get install -y curl
           sh <(curl -L https://nixos.org/nix/install) --no-daemon
           . /home/runner/.nix-profile/etc/profile.d/nix.sh
 
       - name: Enter Nix shell and install dependencies
         run: |
+          set -e
           . /home/runner/.nix-profile/etc/profile.d/nix.sh
           nix-shell --run "echo 'Nix environment loaded.'"
 
       - name: Download CodeQL CLI
         run: |
+          set -e
           latest_version=$(curl -s https://api.github.com/repos/github/codeql-action/releases/latest | jq -r .tag_name)
-          curl -L -o codeql-bundle.zip https://github.com/github/codeql-action/releases/download/${latest_version}/codeql-bundle-linux64.tar.gz
-          tar -xzf codeql-bundle.zip
+          curl -L -o codeql-bundle.tar.gz https://github.com/github/codeql-action/releases/download/${latest_version}/codeql-bundle-linux64.tar.gz
+          tar -xzf codeql-bundle.tar.gz
           ls -l codeql
-          sudo mv codeql /usr/local/bin/codeql
-          chmod +x /usr/local/bin/codeql/codeql
-          /usr/local/bin/codeql/codeql --version
+          sudo mv codeql /usr/local/codeql
+          sudo ln -s /usr/local/codeql/codeql /usr/local/bin/codeql
+          codeql --version
 
       - name: Build with CodeQL and generate database
         run: |
+          set -e
           mkdir -p build
           cd build
           cmake .. -DCMAKE_PREFIX_PATH=$HOME/local/glfw
-          /usr/local/bin/codeql/codeql database create /tmp/codeql-db --language=cpp --command="make -j$(nproc)"
+          codeql database create /tmp/codeql-db --language=cpp --command="make -j$(nproc)"
 
       - name: Perform CodeQL Analysis
         run: |
-          /usr/local/bin/codeql/codeql database analyze /tmp/codeql-db --format=sarif-latest --output=/tmp/codeql-results.sarif --threads=$(nproc)
+          set -e
+          codeql database analyze /tmp/codeql-db --format=sarif-latest --output=/tmp/codeql-results.sarif --threads=$(nproc)
 
       - name: Upload CodeQL SARIF results
         uses: github/codeql-action/upload-sarif@v3
         with:
           sarif_file: /tmp/codeql-results.sarif
-          category: "/language:${{matrix.language}}"
+          category: "/language:c-cpp"
