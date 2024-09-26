@@ -18,5 +18,5 @@ struct Station
 std::shared_ptr<Tile> CreateTile(Tile::ID id, const Vector2Int &position, std::shared_ptr<Station> station, std::shared_ptr<Room> room);
 std::shared_ptr<Room> CreateEmptyRoom(std::shared_ptr<Station> station);
 std::shared_ptr<Room> CreateRectRoom(const Vector2Int &pos, const Vector2Int &size, std::shared_ptr<Station> station);
-std::shared_ptr<Room> CreateHorizontalCorridor(const Vector2Int &startPos, int length, std::shared_ptr<Station> station);
+std::shared_ptr<Room> CreateHorizontalCorridor(const Vector2Int &startPos, int length, int width, std::shared_ptr<Station> station);
 std::shared_ptr<Station> CreateStation();

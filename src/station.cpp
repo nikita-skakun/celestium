@@ -47,7 +47,7 @@ std::shared_ptr<Tile> CreateTile(Tile::ID id, const Vector2Int &position, std::s
         {
             if (magic_enum::enum_integer(existingHeight & tile->GetHeight()) > 0)
             {
-                LogMessage(LogLevel::ERROR, "A tile already exists at " + ToString(position) + " with overlapping height.");
+                LogMessage(LogLevel::ERROR, "A tile " + existingTile->GetName() + " already exists at " + ToString(position) + " with overlapping height.");
                 return nullptr;
             }
         }
@@ -113,35 +113,32 @@ std::shared_ptr<Room> CreateRectRoom(const Vector2Int &pos, const Vector2Int &si
     return room;
 }
 
-std::shared_ptr<Room> CreateHorizontalCorridor(const Vector2Int &startPos, int length, std::shared_ptr<Station> station)
+std::shared_ptr<Room> CreateHorizontalCorridor(const Vector2Int &startPos, int length, int width, std::shared_ptr<Station> station)
 {
+    if (width < 1 || length < 1)
+        return nullptr;
+
     std::shared_ptr<Room> room = CreateEmptyRoom(station);
+
+    int totalWidth = width + 2;
+    int start = -(int)floor(totalWidth / 2.f);
+    int end = (int)ceil(totalWidth / 2.f);
 
     for (int i = 0; i < length; i++)
     {
-        for (int y = -1; y <= 1; y++)
+        for (int y = start; y < end; y++)
         {
-            auto oldTile = station->GetTileAtPosition(startPos + Vector2Int(i, y));
-            if (oldTile)
-            {
-                if (y == 0)
-                {
-                    DeleteTile(oldTile);
-                    CreateTile(Tile::ID::BLUE_FLOOR, startPos + Vector2Int(i, y), station, room);
-                    // Add door later
-                }
-            }
-            else
-            {
-                if (y == 0)
-                {
-                    CreateTile(Tile::ID::BLUE_FLOOR, startPos + Vector2Int(i, y), station, room);
-                }
-                else
-                {
-                    CreateTile(Tile::ID::WALL, startPos + Vector2Int(i, y), station, room);
-                }
-            }
+            bool isWall = (y == start || y == end - 1);
+            Vector2Int pos = startPos + Vector2Int(i, y);
+            std::shared_ptr<Tile> oldTile = station->GetTileAtPosition(pos);
+            if (isWall && oldTile)
+                continue;
+
+            if (oldTile && !isWall)
+                DeleteTile(oldTile);
+
+            Tile::ID tileType = isWall ? Tile::ID::WALL : Tile::ID::BLUE_FLOOR;
+            CreateTile(tileType, pos, station, room);
         }
     }
 
@@ -153,7 +150,7 @@ std::shared_ptr<Station> CreateStation()
     std::shared_ptr<Station> station = std::make_shared<Station>();
     CreateRectRoom(Vector2Int(-4, -4), Vector2Int(9, 9), station);
     std::shared_ptr<Room> room = CreateRectRoom(Vector2Int(10, -4), Vector2Int(9, 9), station);
-    CreateHorizontalCorridor(Vector2Int(4, 0), 7, station);
+    CreateHorizontalCorridor(Vector2Int(4, 0), 7, 3, station);
 
     CreateTile(Tile::ID::OXYGEN_PRODUCER, Vector2Int(14, 0), station, room);
     CreateTile(Tile::ID::BATTERY, Vector2Int(11, -3), station, room);
