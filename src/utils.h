@@ -29,6 +29,8 @@ float Vector2DistanceSq(const Vector2 &a, const Vector2 &b);
 bool IsVector2WithinBounds(const Vector2 &a, const Vector2 &boxStart, const Vector2 &boxEnd);
 Vector2 Vector2Round(const Vector2 &a);
 Vector2 Vector2Floor(const Vector2 &a);
+Vector2 Vector2Lerp(const Vector2 &a, const Vector2 &b, float i);
+Vector2 Vector2Cap(const Vector2 &a, const Vector2 &b, float delta);
 int Vector2ToRandomInt(const Vector2 &a, int min, int max);
 Vector2 ToVector2(const Vector2Int &a);
 std::string ToString(const Vector2 &a);

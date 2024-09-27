@@ -93,6 +93,19 @@ Vector2 Vector2Floor(const Vector2 &a)
     return Vector2(floor(a.x), floor(a.y));
 }
 
+Vector2 Vector2Lerp(const Vector2 &a, const Vector2 &b, float i)
+{
+    return Vector2(a.x + (b.x - a.x) * i, a.y + (b.y - a.y) * i);
+}
+
+Vector2 Vector2Cap(const Vector2 &a, const Vector2 &b, float delta)
+{
+    if (Vector2DistanceSq(a, b) < delta * delta)
+        return b;
+    else
+        return a + Vector2Normalize(b - a) * delta;
+}
+
 int Vector2ToRandomInt(const Vector2 &a, int min, int max)
 {
     Vector2Hash vectorHash;

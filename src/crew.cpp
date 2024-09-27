@@ -36,4 +36,5 @@ void Crew::Die()
 {
     isAlive = false;
     taskQueue.clear();
+    oxygen = 0;
 }

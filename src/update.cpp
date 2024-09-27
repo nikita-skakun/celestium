@@ -86,7 +86,7 @@ void AssignCrewTasks(std::vector<Crew> &crewList, const PlayerCam &camera)
     }
 }
 
-void HandleCrewTasks(float deltaTime, std::vector<Crew> &crewList)
+void HandleCrewTasks(std::vector<Crew> &crewList)
 {
     for (Crew &crew : crewList)
     {
@@ -120,7 +120,7 @@ void HandleCrewTasks(float deltaTime, std::vector<Crew> &crewList)
                     }
                 }
 
-                const float moveDelta = CREW_MOVE_SPEED * deltaTime;
+                const float moveDelta = CREW_MOVE_SPEED * FIXED_DELTA_TIME;
                 if (Vector2DistanceSq(crew.position, ToVector2(moveTask->path.front())) <= moveDelta * moveDelta)
                 {
                     crew.position = ToVector2(moveTask->path.front());
@@ -152,18 +152,18 @@ void HandleCrewTasks(float deltaTime, std::vector<Crew> &crewList)
     }
 }
 
-void HandleCrewEnvironment(float deltaTime, std::vector<Crew> &crewList)
+void HandleCrewEnvironment(std::vector<Crew> &crewList)
 {
     for (Crew &crew : crewList)
     {
         if (crew.isAlive)
         {
-            crew.ConsumeOxygen(deltaTime);
+            crew.ConsumeOxygen(FIXED_DELTA_TIME);
             if (crew.currentTile)
             {
                 if (auto oxygenComp = crew.currentTile->GetComponent<OxygenComponent>())
                 {
-                    crew.RefillOxygen(deltaTime, oxygenComp->GetOxygenLevel());
+                    crew.RefillOxygen(FIXED_DELTA_TIME, oxygenComp->GetOxygenLevel());
                 }
             }
         }
@@ -189,7 +189,7 @@ void UpdateCrewCurrentTile(std::vector<Crew> &crewList, std::shared_ptr<Station>
     }
 }
 
-void UpdateTiles(float deltaTime, std::shared_ptr<Station> station)
+void UpdateTiles(std::shared_ptr<Station> station)
 {
     for (auto &tile : station->tiles)
     {
@@ -198,7 +198,7 @@ void UpdateTiles(float deltaTime, std::shared_ptr<Station> station)
             if (!oxProdComp->output)
                 continue;
 
-            oxProdComp->output->SetOxygenLevel(std::min(oxProdComp->output->GetOxygenLevel() + OXYGEN_PRODUCTION_RATE * deltaTime, TILE_OXYGEN_MAX));
+            oxProdComp->output->SetOxygenLevel(std::min(oxProdComp->output->GetOxygenLevel() + OXYGEN_PRODUCTION_RATE * FIXED_DELTA_TIME, TILE_OXYGEN_MAX));
         }
 
         if (auto oxygenComp = tile->GetComponent<OxygenComponent>())
@@ -223,7 +223,7 @@ void UpdateTiles(float deltaTime, std::shared_ptr<Station> station)
 
                     if (oxygenDiff > 0)
                     {
-                        float oxygenTransfer = std::min(oxygenDiff * OXYGEN_DIFFUSION_RATE * deltaTime, oxygenDiff);
+                        float oxygenTransfer = std::min(oxygenDiff * OXYGEN_DIFFUSION_RATE * FIXED_DELTA_TIME, oxygenDiff);
                         oxygenComp->SetOxygenLevel(oxygenComp->GetOxygenLevel() - oxygenTransfer);
                         neighborOxygenComp->SetOxygenLevel(neighborOxygenComp->GetOxygenLevel() + oxygenTransfer);
                     }

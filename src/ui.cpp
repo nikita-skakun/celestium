@@ -53,6 +53,13 @@ void DrawPath(const std::queue<Vector2Int> &path, const Vector2 &startPos, const
     }
 }
 
+/**
+ * Draws the station tiles and visual overlays.
+ *
+ * @param station The station to draw the tiles of.
+ * @param tileset A texture containing all tile assets.
+ * @param camera  The PlayerCam used for handling overlays and converting coordinates.
+ */
 void DrawStation(std::shared_ptr<Station> station, const Texture2D &tileset, const PlayerCam &camera)
 {
     if (station)
@@ -133,18 +140,32 @@ void DrawStation(std::shared_ptr<Station> station, const Texture2D &tileset, con
     }
 }
 
-void DrawCrew(const std::vector<Crew> &crewList, const PlayerCam &camera)
+/**
+ * Draws the crew members on the screen, accounting for their movement.
+ *
+ * @param timeSinceFixedUpdate The elapsed time since the last fixed update.
+ * @param crewList             List of crew members to be drawn.
+ * @param camera               The PlayerCam used for handling hover state and converting coordinates.
+ */
+void DrawCrew(double timeSinceFixedUpdate, const std::vector<Crew> &crewList, const PlayerCam &camera)
 {
     for (const Crew &crew : crewList)
     {
-        if (crew.taskQueue.size() > 0 && crew.taskQueue[0]->GetType() == Task::Type::MOVE)
+        Vector2 drawPosition = crew.position;
+
+        if (!crew.taskQueue.empty() && crew.taskQueue.front()->GetType() == Task::Type::MOVE)
         {
-            const std::shared_ptr<MoveTask> moveTask = std::dynamic_pointer_cast<MoveTask>(crew.taskQueue[0]);
+            const std::shared_ptr<MoveTask> moveTask = std::dynamic_pointer_cast<MoveTask>(crew.taskQueue.front());
+
             if (!moveTask->path.empty())
+            {
                 DrawPath(moveTask->path, crew.position, camera);
+                Vector2 nextPosition = ToVector2(moveTask->path.front());
+                drawPosition = Vector2Cap(crew.position, nextPosition, timeSinceFixedUpdate * CREW_MOVE_SPEED);
+            }
         }
 
-        Vector2 crewScreenPos = WorldToScreen(crew.position + Vector2(.5f, .5f), camera);
+        Vector2 crewScreenPos = WorldToScreen(drawPosition + Vector2(.5f, .5f), camera);
 
         if (camera.selectedCrewList.contains(&crew - &crewList[0]))
             DrawCircleV(crewScreenPos, (CREW_RADIUS + OUTLINE_SIZE) * camera.zoom, OUTLINE_COLOR);

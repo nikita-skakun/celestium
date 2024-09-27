@@ -1,5 +1,42 @@
 #include "ui.h"
 #include "update.h"
+#include <condition_variable>
+#include <mutex>
+#include <thread>
+
+std::mutex updateMutex;
+std::condition_variable fixedUpdateCondition;
+bool isGameRunning = true;
+
+void FixedUpdate(std::shared_ptr<Station> station, std::vector<Crew> &crewList, double &timeSinceFixedUpdate)
+{
+    double previousTime = GetTime();
+
+    while (isGameRunning)
+    {
+        double currentTime = GetTime();
+        double deltaTime = currentTime - previousTime;
+        previousTime = currentTime;
+
+        timeSinceFixedUpdate += deltaTime;
+
+        while (timeSinceFixedUpdate >= FIXED_DELTA_TIME)
+        {
+            std::unique_lock<std::mutex> lock(updateMutex);
+
+            // Perform the fixed updates
+            HandleCrewTasks(crewList);
+            HandleCrewEnvironment(crewList);
+            UpdateCrewCurrentTile(crewList, station);
+            UpdateTiles(station);
+
+            timeSinceFixedUpdate -= FIXED_DELTA_TIME;
+        }
+
+        fixedUpdateCondition.notify_all();
+        std::this_thread::sleep_for(std::chrono::milliseconds(1));
+    }
+}
 
 int main()
 {
@@ -7,6 +44,7 @@ int main()
 
     ToggleFullscreen();
     SetTargetFPS(GetMonitorRefreshRate(GetCurrentMonitor()));
+    SetExitKey(0);
 
     Texture2D tileset = LoadTexture("../assets/tilesets/station.png");
     Font font = LoadFontEx("../assets/fonts/Inconsolata-Bold.ttf", DEFAULT_FONT_SIZE, NULL, 0);
@@ -22,36 +60,41 @@ int main()
 
     LogMessage(LogLevel::INFO, "Initialization Complete");
 
-    float previousTime = GetTime();
+    double timeSinceFixedUpdate = 0;
+    // Start the update thread
+    std::thread updateThread(FixedUpdate, station, std::ref(crewList), std::ref(timeSinceFixedUpdate));
 
-    while (!WindowShouldClose())
+    double deltaTime = 0;
+
+    while (isGameRunning)
     {
-        float currentTime = GetTime();
-        float deltaTime = currentTime - previousTime;
-        previousTime = currentTime;
+        deltaTime = GetFrameTime();
 
+        // Handle all real-time input and camera logic in the main thread
         HandleCameraMovement(camera);
         HandleCameraOverlays(camera);
         HandleCrewHover(crewList, camera);
         HandleCrewSelection(crewList, camera);
         AssignCrewTasks(crewList, camera);
-        HandleCrewTasks(deltaTime, crewList);
-        HandleCrewEnvironment(deltaTime, crewList);
-        UpdateCrewCurrentTile(crewList, station);
-        UpdateTiles(deltaTime, station);
 
+        // Render logic
         BeginDrawing();
         ClearBackground(RAYWHITE);
 
         DrawTileGrid(camera);
         DrawStation(station, tileset, camera);
-        DrawCrew(crewList, camera);
+        DrawCrew(timeSinceFixedUpdate, crewList, camera);
         DrawDragSelectBox(camera);
         DrawMainTooltip(crewList, camera, station, font);
         DrawFpsCounter(deltaTime, 6, DEFAULT_FONT_SIZE, font);
 
         EndDrawing();
+
+        isGameRunning = !WindowShouldClose();
     }
+
+    fixedUpdateCondition.notify_all();
+    updateThread.join();
 
     CloseWindow();
 
