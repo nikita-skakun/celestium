@@ -1,5 +1,6 @@
 #pragma once
 #include "utils.h"
+#include <magic_enum_flags.hpp>
 #include <magic_enum.hpp>
 #include <memory>
 #include <vector>

@@ -297,6 +297,10 @@ void DrawMainTooltip(const std::vector<Crew> &crewList, const PlayerCam &camera,
             {
                 hoverText += fmt::format("\n   + Energy: {:.2f}", batteryComp->GetChargeLevel());
             }
+            if (auto powerConComp = tile->GetComponent<PowerConnectorComponent>())
+            {
+                hoverText += fmt::format("\n   + Power Connector: {}", magic_enum::enum_flags_name(powerConComp->io));
+            }
         }
     }
 
