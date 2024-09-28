@@ -1,7 +1,10 @@
 #pragma once
 #include "utils.h"
+#include <magic_enum.hpp>
 #include <memory>
 #include <vector>
+
+using namespace magic_enum::bitwise_operators;
 
 struct DecorativeTile
 {
@@ -84,6 +87,25 @@ public:
     }
 };
 
+struct PowerConnectorComponent : Component
+{
+    enum class IO : u_int8_t
+    {
+        NONE = 0,
+        INPUT = 1 << 0,
+        OUTPUT = 1 << 1,
+    };
+
+    IO io;
+
+    PowerConnectorComponent(IO io) : io(io) {}
+
+    std::string GetName() const override
+    {
+        return "Power Connector";
+    }
+};
+
 struct OxygenComponent : Component
 {
 private:
@@ -116,7 +138,7 @@ struct OxygenProducerComponent : Component
 
     std::string GetName() const override
     {
-        return "OxygenProducer";
+        return "Oxygen Producer";
     }
 };
 

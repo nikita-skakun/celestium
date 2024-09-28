@@ -29,12 +29,14 @@ std::shared_ptr<Tile> CreateTile(Tile::ID id, const Vector2Int &position, std::s
         {
             tile = std::make_shared<Tile>(id, Tile::Height::WAIST, position, station, room);
             tile->AddComponent<OxygenProducerComponent>(oxygenComp);
+            tile->AddComponent<PowerConnectorComponent>(PowerConnectorComponent::IO::INPUT);
         }
         break;
     }
     case Tile::ID::BATTERY:
         tile = std::make_shared<Tile>(id, Tile::Height::WAIST, position, station, room);
         tile->AddComponent<BatteryComponent>(BATTERY_CHARGE_MAX);
+        tile->AddComponent<PowerConnectorComponent>(PowerConnectorComponent::IO::INPUT | PowerConnectorComponent::IO::OUTPUT);
         break;
     default:
         return nullptr;
