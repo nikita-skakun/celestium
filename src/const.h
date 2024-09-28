@@ -21,6 +21,8 @@ constexpr float DRAG_THRESHOLD = .25f;
 constexpr float OUTLINE_SIZE = 1.f;
 constexpr Color OUTLINE_COLOR = BLACK;
 
+constexpr float POWER_CONNECTION_WIDTH = 2.f;
+
 constexpr float CREW_RADIUS = 12.f;
 constexpr float CREW_MOVE_SPEED = 2.f;
 constexpr float CREW_OXYGEN_MAX = 100.f;

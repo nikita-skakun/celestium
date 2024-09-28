@@ -1,11 +1,10 @@
 #pragma once
 #include "utils.h"
-#include <magic_enum_flags.hpp>
-#include <magic_enum.hpp>
+#include "logging.h"
 #include <memory>
 #include <vector>
 
-using namespace magic_enum::bitwise_operators;
+struct Tile;
 
 struct DecorativeTile
 {
@@ -18,6 +17,10 @@ struct DecorativeTile
 
 struct Component
 {
+    std::weak_ptr<Tile> parent;
+
+    Component(std::shared_ptr<Tile> p) : parent(p) {}
+
     virtual std::string GetName() const = 0;
     virtual ~Component() = default;
 
@@ -41,6 +44,8 @@ namespace std
 
 struct WalkableComponent : Component
 {
+    WalkableComponent(std::shared_ptr<Tile> p) : Component(p) {}
+
     std::string GetName() const override
     {
         return "Walkable";
@@ -49,6 +54,8 @@ struct WalkableComponent : Component
 
 struct SolidComponent : Component
 {
+    SolidComponent(std::shared_ptr<Tile> p) : Component(p) {}
+
     std::string GetName() const override
     {
         return "Solid";
@@ -61,7 +68,7 @@ private:
     float charge;
 
 public:
-    BatteryComponent(float c = BATTERY_CHARGE_MAX) : charge(c) {}
+    BatteryComponent(std::shared_ptr<Tile> p, float c = BATTERY_CHARGE_MAX) : Component(p), charge(c) {}
 
     void Charge(float amount)
     {
@@ -92,14 +99,42 @@ struct PowerConnectorComponent : Component
 {
     enum class IO : u_int8_t
     {
-        NONE = 0,
         INPUT = 1 << 0,
         OUTPUT = 1 << 1,
     };
 
     IO io;
+    std::vector<std::weak_ptr<PowerConnectorComponent>> connections;
+    PowerConnectorComponent(std::shared_ptr<Tile> p, IO io) : Component(p), io(io) {}
 
-    PowerConnectorComponent(IO io) : io(io) {}
+    static bool AddConnection(std::shared_ptr<PowerConnectorComponent> thisCon, std::shared_ptr<PowerConnectorComponent> otherCon)
+    {
+        for (int i = thisCon->connections.size() - 1; i >= 0; --i)
+        {
+            if (auto sharedConn = thisCon->connections[i].lock())
+            {
+                if (sharedConn == otherCon)
+                    return false;
+            }
+            else
+                thisCon->connections.erase(thisCon->connections.begin() + i);
+        }
+
+        if ((thisCon->io | otherCon->io) == (IO::INPUT | IO::OUTPUT))
+        {
+            thisCon->connections.push_back(otherCon);
+            otherCon->connections.push_back(thisCon);
+            return true;
+        }
+        return false;
+    }
+
+    void CleanOldConnections()
+    {
+        connections.erase(std::remove_if(connections.begin(), connections.end(), [](const std::weak_ptr<PowerConnectorComponent> &wp)
+                                         { return wp.expired(); }),
+                          connections.end());
+    }
 
     std::string GetName() const override
     {
@@ -113,7 +148,7 @@ private:
     float oxygenLevel;
 
 public:
-    OxygenComponent(float o = TILE_OXYGEN_MAX) : oxygenLevel(o) {}
+    OxygenComponent(std::shared_ptr<Tile> p, float o = TILE_OXYGEN_MAX) : Component(p), oxygenLevel(o) {}
 
     void SetOxygenLevel(float oxygen)
     {
@@ -133,9 +168,9 @@ public:
 
 struct OxygenProducerComponent : Component
 {
-    std::shared_ptr<OxygenComponent> output;
+    std::weak_ptr<OxygenComponent> output;
 
-    OxygenProducerComponent(std::shared_ptr<OxygenComponent> o) : output(o) {}
+    OxygenProducerComponent(std::shared_ptr<Tile> p, std::shared_ptr<OxygenComponent> o) : Component(p), output(o) {}
 
     std::string GetName() const override
     {
@@ -149,6 +184,8 @@ private:
     std::vector<DecorativeTile> decorativeTiles;
 
 public:
+    DecorativeComponent(std::shared_ptr<Tile> p) : Component(p) {}
+
     void AddDecorativeTile(const Vector2Int &offset, const Vector2Int &spriteOffset)
     {
         decorativeTiles.emplace_back(offset, spriteOffset);

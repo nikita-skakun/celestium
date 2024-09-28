@@ -59,79 +59,61 @@ void DrawPath(const std::deque<Vector2Int> &path, const Vector2 &startPos, const
  */
 void DrawStation(std::shared_ptr<Station> station, const Texture2D &tileset, const PlayerCam &camera)
 {
-    if (station)
+    if (!station)
+        return;
+
+    Vector2 sizeScreenPos = Vector2(1.f, 1.f) * TILE_SIZE * camera.zoom;
+    for (std::shared_ptr<Tile> tile : station->tiles)
     {
-        for (std::shared_ptr<Tile> tile : station->tiles)
+        Vector2 startScreenPos = WorldToScreen(ToVector2(tile->position), camera);
+
+        Rectangle destRect = Vector2ToRect(startScreenPos, startScreenPos + sizeScreenPos);
+        Rectangle sourceRec = Rectangle(tile->spriteOffset.x, tile->spriteOffset.y, 1, 1) * TILE_SIZE;
+
+        DrawTexturePro(tileset, sourceRec, destRect, Vector2(), 0, WHITE);
+
+        if (camera.overlay == PlayerCam::Overlay::OXYGEN)
         {
-            Vector2 startScreenPos = WorldToScreen(ToVector2(tile->position), camera);
-            Vector2 sizeScreenPos = Vector2(1.f, 1.f) * TILE_SIZE * camera.zoom;
-
-            Rectangle destRect = Vector2ToRect(startScreenPos, startScreenPos + sizeScreenPos);
-            Rectangle sourceRec = Rectangle(tile->spriteOffset.x, tile->spriteOffset.y, 1, 1) * TILE_SIZE;
-
-            DrawTexturePro(tileset, sourceRec, destRect, Vector2(), 0, WHITE);
-
-            if (auto decorativeComp = tile->GetComponent<DecorativeComponent>())
+            if (auto oxygenComp = tile->GetComponent<OxygenComponent>())
             {
-                for (const DecorativeTile &dTile : decorativeComp->GetDecorativeTiles())
-                {
-                    Vector2 v_startScreenPos = WorldToScreen(ToVector2(tile->position + dTile.offset), camera);
-                    Rectangle v_destRect = Vector2ToRect(v_startScreenPos, v_startScreenPos + sizeScreenPos);
-                    Rectangle v_sourceRec = Rectangle(dTile.spriteOffset.x, dTile.spriteOffset.y, 1, 1) * TILE_SIZE;
-
-                    DrawTexturePro(tileset, v_sourceRec, v_destRect, Vector2(), 0, WHITE);
-                }
-            }
-
-            if (camera.overlay == PlayerCam::Overlay::OXYGEN)
-            {
-                if (auto oxygenComp = tile->GetComponent<OxygenComponent>())
-                {
-                    Color color = Color(50, 150, 255, oxygenComp->GetOxygenLevel() / TILE_OXYGEN_MAX * 255 * .8f);
-                    DrawRectangleV(startScreenPos, sizeScreenPos, color);
-                }
-            }
-
-            if (camera.overlay == PlayerCam::Overlay::WALL && tile->HasComponent<SolidComponent>())
-            {
-                DrawRectangleV(startScreenPos, sizeScreenPos, Color(255, 0, 0, 64));
+                Color color = Color(50, 150, 255, oxygenComp->GetOxygenLevel() / TILE_OXYGEN_MAX * 255 * .8f);
+                DrawRectangleV(startScreenPos, sizeScreenPos, color);
             }
         }
 
-        for (std::shared_ptr<Tile> tile : station->tiles)
+        if (camera.overlay == PlayerCam::Overlay::WALL && tile->HasComponent<SolidComponent>())
         {
-            Vector2 startScreenPos = WorldToScreen(ToVector2(tile->position), camera);
-            Vector2 sizeScreenPos = Vector2(1.f, 1.f) * TILE_SIZE * camera.zoom;
+            DrawRectangleV(startScreenPos, sizeScreenPos, Color(255, 0, 0, 64));
+        }
+    }
 
-            Rectangle destRect = Vector2ToRect(startScreenPos, startScreenPos + sizeScreenPos);
-            Rectangle sourceRec = Rectangle(tile->spriteOffset.x, tile->spriteOffset.y, 1, 1) * TILE_SIZE;
-
-            DrawTexturePro(tileset, sourceRec, destRect, Vector2(), 0, WHITE);
-
-            if (auto decorativeComp = tile->GetComponent<DecorativeComponent>())
+    for (std::shared_ptr<Tile> tile : station->tiles)
+    {
+        if (auto decorativeComp = tile->GetComponent<DecorativeComponent>())
+        {
+            for (const DecorativeTile &dTile : decorativeComp->GetDecorativeTiles())
             {
-                for (const DecorativeTile &dTile : decorativeComp->GetDecorativeTiles())
-                {
-                    Vector2 v_startScreenPos = WorldToScreen(ToVector2(tile->position + dTile.offset), camera);
-                    Rectangle v_destRect = Vector2ToRect(v_startScreenPos, v_startScreenPos + sizeScreenPos);
-                    Rectangle v_sourceRec = Rectangle(dTile.spriteOffset.x, dTile.spriteOffset.y, 1, 1) * TILE_SIZE;
+                Vector2 v_startScreenPos = WorldToScreen(ToVector2(tile->position + dTile.offset), camera);
+                Rectangle v_destRect = Vector2ToRect(v_startScreenPos, v_startScreenPos + sizeScreenPos);
+                Rectangle v_sourceRec = Rectangle(dTile.spriteOffset.x, dTile.spriteOffset.y, 1, 1) * TILE_SIZE;
 
-                    DrawTexturePro(tileset, v_sourceRec, v_destRect, Vector2(), 0, WHITE);
-                }
+                DrawTexturePro(tileset, v_sourceRec, v_destRect, Vector2(), 0, WHITE);
             }
+        }
 
-            if (camera.overlay == PlayerCam::Overlay::OXYGEN)
+        if (auto powerConComp = tile->GetComponent<PowerConnectorComponent>())
+        {
+            for (auto &&connection : powerConComp->connections)
             {
-                if (auto oxygenComp = tile->GetComponent<OxygenComponent>())
+                if (auto conOther = connection.lock())
                 {
-                    Color color = Color(50, 150, 255, oxygenComp->GetOxygenLevel() / TILE_OXYGEN_MAX * 255 * .8f);
-                    DrawRectangleV(startScreenPos, sizeScreenPos, color);
+                    if (auto conTileOther = conOther->parent.lock())
+                    {
+                        DrawLineEx(WorldToScreen(ToVector2(tile->position) + Vector2(.5f, .5f), camera),
+                                   WorldToScreen(ToVector2(conTileOther->position) + Vector2(.5f, .5f), camera),
+                                   std::max(POWER_CONNECTION_WIDTH * camera.zoom, 2.f), YELLOW);
+                    }
                 }
-            }
-
-            if (camera.overlay == PlayerCam::Overlay::WALL && tile->HasComponent<SolidComponent>())
-            {
-                DrawRectangleV(startScreenPos, sizeScreenPos, Color(255, 0, 0, 64));
             }
         }
     }
@@ -186,16 +168,27 @@ void DrawCrew(double timeSinceFixedUpdate, const std::vector<Crew> &crewList, co
 }
 
 /**
- * Draws a rectangle selection box on the screen when the user is dragging the mouse.
+ * Draws a power connect line or a rectangle selection box based on mouse drag.
  *
  * @param camera   The PlayerCam that stores the mouse drag information.
  */
 void DrawDragSelectBox(const PlayerCam &camera)
 {
-    if (camera.isDragging)
+    if (!camera.isDragging)
+        return;
+
+    switch (camera.dragType)
     {
-        Rectangle selectBox = Vector2ToRect(WorldToScreen(camera.dragStartPos, camera), WorldToScreen(camera.dragEndPos, camera));
-        DrawRectangleLines(selectBox.x, selectBox.y, selectBox.width, selectBox.height, BLUE);
+    case PlayerCam::DragType::SELECT:
+        DrawRectangleLinesEx(Vector2ToRect(WorldToScreen(camera.dragStartPos, camera), WorldToScreen(camera.dragEndPos, camera)), 1.f, BLUE);
+        break;
+
+    case PlayerCam::DragType::POWER_CONNECT:
+        DrawLineEx(WorldToScreen(camera.dragStartPos, camera), WorldToScreen(camera.dragEndPos, camera), POWER_CONNECTION_WIDTH * camera.zoom, YELLOW);
+        break;
+
+    default:
+        break;
     }
 }
 

@@ -11,18 +11,23 @@ struct PlayerCam
         WALL,
     };
 
+    enum DragType : u_int8_t
+    {
+        SELECT,
+        POWER_CONNECT,
+    };
+
     Vector2 position;
+    bool isDragging;
     Vector2 dragStartPos;
     Vector2 dragEndPos;
+    DragType dragType;
     std::unordered_set<int> selectedCrewList;
     int crewHoverIndex;
     float zoom;
-    bool isDragging;
     Overlay overlay;
 
-    PlayerCam() : crewHoverIndex(-1), zoom(1.f), isDragging(false), overlay(Overlay::NONE)
-    {
-    }
+    PlayerCam() : crewHoverIndex(-1), zoom(1.f), isDragging(false), dragType(DragType::SELECT), overlay(Overlay::NONE) {}
 
     Vector2 GetWorldMousePos();
 };

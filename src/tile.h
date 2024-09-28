@@ -1,9 +1,6 @@
 #pragma once
 #include "component.h"
-#include <magic_enum.hpp>
 #include <unordered_set>
-
-using namespace magic_enum::bitwise_operators;
 
 struct Room;
 struct Station;

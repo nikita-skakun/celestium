@@ -5,8 +5,13 @@
 #include <cmath>
 #include <fmt/core.h>
 #include <iostream>
+#include <magic_enum_flags.hpp>
+#include <magic_enum.hpp>
+#include <memory>
 #include <random>
 #include <string>
+
+using namespace magic_enum::bitwise_operators;
 
 // Vector2 operator overloads
 constexpr Vector2 operator+(const Vector2 &a, const Vector2 &b)

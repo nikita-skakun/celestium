@@ -52,7 +52,7 @@ int main()
     PlayerCam camera = PlayerCam();
 
     std::vector<Crew> crewList{
-        Crew("ALICE", {0, 0}, RED),
+        Crew("ALICE", {-2, 2}, RED),
         Crew("BOB", {3, 2}, GREEN),
         Crew("CHARLIE", {-3, -3}, ORANGE)};
 
@@ -76,6 +76,7 @@ int main()
         HandleCrewHover(crewList, camera);
         HandleCrewSelection(crewList, camera);
         AssignCrewTasks(crewList, camera);
+        HandleMouseDragging(station, camera);
 
         // Render logic
         BeginDrawing();

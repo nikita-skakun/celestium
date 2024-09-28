@@ -16,7 +16,7 @@ void HandleCrewHover(const std::vector<Crew> &crewList, PlayerCam &camera)
     }
 }
 
-void HandleCrewSelection(const std::vector<Crew> &crewList, PlayerCam &camera)
+void HandleMouseDragging(std::shared_ptr<Station> station, PlayerCam &camera)
 {
     if (IsMouseButtonPressed(MOUSE_LEFT_BUTTON))
     {
@@ -27,6 +27,18 @@ void HandleCrewSelection(const std::vector<Crew> &crewList, PlayerCam &camera)
     {
         if (!camera.isDragging && Vector2DistanceSq(camera.dragStartPos, camera.GetWorldMousePos()) > DRAG_THRESHOLD * DRAG_THRESHOLD)
         {
+            camera.dragType = PlayerCam::DragType::SELECT;
+            std::vector<std::shared_ptr<Tile>> tiles = station->GetTilesAtPosition(ToVector2Int(camera.dragStartPos));
+            for (std::shared_ptr<Tile> &tile : tiles)
+            {
+                if (tile->HasComponent<PowerConnectorComponent>())
+                {
+                    camera.dragType = PlayerCam::DragType::POWER_CONNECT;
+                    camera.dragStartPos = Vector2Floor(camera.dragStartPos) + Vector2(.5f, .5f);
+                    break;
+                }
+            }
+
             camera.isDragging = true;
         }
         if (camera.isDragging)
@@ -37,6 +49,48 @@ void HandleCrewSelection(const std::vector<Crew> &crewList, PlayerCam &camera)
 
     if (IsMouseButtonReleased(MOUSE_LEFT_BUTTON))
     {
+        if (camera.isDragging && camera.dragType == PlayerCam::DragType::POWER_CONNECT)
+        {
+            Vector2Int dragStart = ToVector2Int(camera.dragStartPos);
+            Vector2Int dragEnd = ToVector2Int(camera.dragEndPos);
+
+            if (dragStart != dragEnd)
+            {
+                std::shared_ptr<PowerConnectorComponent> start, end;
+
+                std::vector<std::shared_ptr<Tile>> startTiles = station->GetTilesAtPosition(dragStart);
+                for (std::shared_ptr<Tile> &startTile : startTiles)
+                {
+                    if ((start = startTile->GetComponent<PowerConnectorComponent>()))
+                        break;
+                }
+
+                std::vector<std::shared_ptr<Tile>> endTiles = station->GetTilesAtPosition(dragEnd);
+                for (std::shared_ptr<Tile> &endTile : endTiles)
+                {
+                    if ((end = endTile->GetComponent<PowerConnectorComponent>()))
+                        break;
+                }
+
+                if (start && end)
+                {
+                    if (PowerConnectorComponent::AddConnection(start, end))
+                        LogMessage(LogLevel::DEBUG, fmt::format("{} connected to {}!", start->parent.lock()->GetName(), end->parent.lock()->GetName()));
+                }
+            }
+        }
+
+        camera.isDragging = false;
+    }
+}
+
+void HandleCrewSelection(const std::vector<Crew> &crewList, PlayerCam &camera)
+{
+    if (IsMouseButtonReleased(MOUSE_LEFT_BUTTON))
+    {
+        if (camera.isDragging && camera.dragType != PlayerCam::DragType::SELECT)
+            return;
+
         if (!IsKeyDown(KEY_LEFT_SHIFT))
             camera.selectedCrewList.clear();
         if (camera.isDragging)
@@ -49,7 +103,6 @@ void HandleCrewSelection(const std::vector<Crew> &crewList, PlayerCam &camera)
                     camera.selectedCrewList.insert(i);
                 }
             }
-            camera.isDragging = false;
         }
         else
         {
@@ -198,10 +251,10 @@ void UpdateTiles(std::shared_ptr<Station> station)
     {
         if (auto oxProdComp = tile->GetComponent<OxygenProducerComponent>())
         {
-            if (!oxProdComp->output)
-                continue;
-
-            oxProdComp->output->SetOxygenLevel(std::min(oxProdComp->output->GetOxygenLevel() + OXYGEN_PRODUCTION_RATE * FIXED_DELTA_TIME, TILE_OXYGEN_MAX));
+            if (auto output = oxProdComp->output.lock())
+            {
+                output->SetOxygenLevel(std::min(output->GetOxygenLevel() + OXYGEN_PRODUCTION_RATE * FIXED_DELTA_TIME, TILE_OXYGEN_MAX));
+            }
         }
 
         if (auto oxygenComp = tile->GetComponent<OxygenComponent>())
