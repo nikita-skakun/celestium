@@ -49,7 +49,7 @@ std::deque<Vector2Int> AStar(const Vector2Int &start, const Vector2Int &end, std
         if (current == end)
         {
             // The path backwards
-            std::vector<Vector2Int> backPath;
+            std::deque<Vector2Int> backPath;
             for (Vector2Int step = end; step != start; step = cameFrom[step])
             {
                 // Backtrack to get the path
@@ -58,16 +58,7 @@ std::deque<Vector2Int> AStar(const Vector2Int &start, const Vector2Int &end, std
             // Reverse to get the correct order
             std::reverse(backPath.begin(), backPath.end());
 
-            // Prepare the final path as a queue
-            std::deque<Vector2Int> path;
-            for (const auto &step : backPath)
-            {
-                // Push each step to the path queue
-                path.push_back(step);
-            }
-
-            // Return the complete path
-            return path;
+            return backPath;
         }
 
         // Mark the current node as evaluated
@@ -141,7 +132,7 @@ bool DoesPathHaveObstacles(const std::deque<Vector2Int> &path, std::shared_ptr<S
         return true;
 
     // Traverse the path directly using a range-based loop
-    for (const auto& step : path)
+    for (const auto &step : path)
     {
         // Get tile at current step
         std::shared_ptr<Tile> tile = station->GetTileAtPosition(step);
