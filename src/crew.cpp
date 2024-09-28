@@ -29,6 +29,7 @@ void Crew::RefillOxygen(float deltaTime, float &sourceOxygen)
 
 bool Crew::CanPathInSpace() const
 {
+    // Later could be true if they are wearing a spacesuit
     return false;
 }
 

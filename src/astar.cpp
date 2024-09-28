@@ -10,10 +10,10 @@
  * @return         A queue of Vector2Int positions representing the path,
  *                 or an empty queue if no path is found.
  */
-std::queue<Vector2Int> AStar(const Vector2Int &start, const Vector2Int &end, std::shared_ptr<Station> station)
+std::deque<Vector2Int> AStar(const Vector2Int &start, const Vector2Int &end, std::shared_ptr<Station> station)
 {
     if (start == end)
-        return std::queue<Vector2Int>();
+        return {};
 
     // Cost maps for tracking the cost to reach each node
     std::unordered_map<Vector2Int, float, Vector2Int::Hash> gCost, fCost;
@@ -59,11 +59,11 @@ std::queue<Vector2Int> AStar(const Vector2Int &start, const Vector2Int &end, std
             std::reverse(backPath.begin(), backPath.end());
 
             // Prepare the final path as a queue
-            std::queue<Vector2Int> path;
+            std::deque<Vector2Int> path;
             for (const auto &step : backPath)
             {
                 // Push each step to the path queue
-                path.push(step);
+                path.push_back(step);
             }
 
             // Return the complete path
@@ -122,7 +122,7 @@ std::queue<Vector2Int> AStar(const Vector2Int &start, const Vector2Int &end, std
     }
 
     // Return an empty queue if no path found
-    return std::queue<Vector2Int>();
+    return {};
 }
 
 /**
@@ -134,22 +134,15 @@ std::queue<Vector2Int> AStar(const Vector2Int &start, const Vector2Int &end, std
  *
  * @return                True if an obstacle is found or station is null, false otherwise.
  */
-bool DoesPathHaveObstacles(const std::queue<Vector2Int> &path, std::shared_ptr<Station> station, bool canPathInSpace)
+bool DoesPathHaveObstacles(const std::deque<Vector2Int> &path, std::shared_ptr<Station> station, bool canPathInSpace)
 {
     // Return that obstacle is found if station is null
     if (!station)
         return true;
 
-    // Copy the path queue locally
-    std::queue<Vector2Int> pathCopy = path;
-
-    // Traverse the path
-    while (!pathCopy.empty())
+    // Traverse the path directly using a range-based loop
+    for (const auto& step : path)
     {
-        // Advance to the next step
-        Vector2Int step = pathCopy.front();
-        pathCopy.pop();
-
         // Get tile at current step
         std::shared_ptr<Tile> tile = station->GetTileAtPosition(step);
 

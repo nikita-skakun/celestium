@@ -1,6 +1,6 @@
 #pragma once
 #include <raylib.h>
-#include <queue>
+#include <deque>
 
 struct Task
 {
@@ -17,7 +17,7 @@ struct Task
 struct MoveTask : Task
 {
     Vector2Int targetPosition;
-    std::queue<Vector2Int> path;
+    std::deque<Vector2Int> path;
 
     MoveTask(const Vector2Int& p) : targetPosition(p) {}
 

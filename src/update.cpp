@@ -109,8 +109,8 @@ void HandleCrewTasks(std::vector<Crew> &crewList)
                         if (moveTask->targetPosition != floorCrewPos)
                         {
                             moveTask->targetPosition = floorCrewPos;
-                            moveTask->path = std::queue<Vector2Int>();
-                            moveTask->path.push(floorCrewPos);
+                            moveTask->path = {};
+                            moveTask->path.push_back(floorCrewPos);
                         }
                         else
                         {
@@ -120,11 +120,12 @@ void HandleCrewTasks(std::vector<Crew> &crewList)
                     }
                 }
 
-                const float moveDelta = CREW_MOVE_SPEED * FIXED_DELTA_TIME;
-                if (Vector2DistanceSq(crew.position, ToVector2(moveTask->path.front())) <= moveDelta * moveDelta)
+                constexpr float moveDelta = CREW_MOVE_SPEED * FIXED_DELTA_TIME;
+                const float distanceLeftSq = Vector2DistanceSq(crew.position, ToVector2(moveTask->path.front())) - moveDelta * moveDelta;
+                if (distanceLeftSq <= 0)
                 {
                     crew.position = ToVector2(moveTask->path.front());
-                    moveTask->path.pop();
+                    moveTask->path.pop_front();
 
                     if (moveTask->path.empty())
                     {
@@ -135,9 +136,11 @@ void HandleCrewTasks(std::vector<Crew> &crewList)
                     // Check if there are any tiles are in the way, if yes, clear path for recalculation
                     if (DoesPathHaveObstacles(moveTask->path, crew.currentTile->station, crew.CanPathInSpace()))
                     {
-                        moveTask->path = std::queue<Vector2Int>();
+                        moveTask->path = {};
                         continue;
                     }
+
+                    crew.position += Vector2Normalize(ToVector2(moveTask->path.front()) - crew.position) * sqrtf(-distanceLeftSq);
                 }
                 else
                 {

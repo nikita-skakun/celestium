@@ -35,19 +35,16 @@ void DrawTileGrid(const PlayerCam &camera)
  * @param startPos The starting position of the path.
  * @param camera   The PlayerCam used for converting world coordinates to screen coordinates.
  */
-void DrawPath(const std::queue<Vector2Int> &path, const Vector2 &startPos, const PlayerCam &camera)
+void DrawPath(const std::deque<Vector2Int> &path, const Vector2 &startPos, const PlayerCam &camera)
 {
     if (path.empty())
         return;
 
-    std::queue<Vector2Int> p = path;
-
     Vector2 a = startPos + Vector2(.5f, .5f);
-    while (!p.empty())
-    {
-        Vector2 b = ToVector2(p.front()) + Vector2(.5f, .5f);
-        p.pop();
 
+    for (const auto &point : path)
+    {
+        Vector2 b = ToVector2(point) + Vector2(.5f, .5f);
         DrawLineV(WorldToScreen(a, camera), WorldToScreen(b, camera), Fade(GREEN, .5f));
         a = b;
     }
@@ -161,7 +158,21 @@ void DrawCrew(double timeSinceFixedUpdate, const std::vector<Crew> &crewList, co
             {
                 DrawPath(moveTask->path, crew.position, camera);
                 Vector2 nextPosition = ToVector2(moveTask->path.front());
-                drawPosition = Vector2Cap(crew.position, nextPosition, timeSinceFixedUpdate * CREW_MOVE_SPEED);
+
+                const float moveDelta = timeSinceFixedUpdate * CREW_MOVE_SPEED;
+                const float distanceLeftSq = Vector2DistanceSq(crew.position, nextPosition) - moveDelta * moveDelta;
+                if (distanceLeftSq <= 0)
+                {
+                    drawPosition = nextPosition;
+
+                    if (moveTask->path.size() > 1)
+                    {
+                        Vector2 futurePosition = ToVector2(moveTask->path.at(1));
+                        drawPosition += Vector2Normalize(futurePosition - drawPosition) * sqrtf(-distanceLeftSq);
+                    }
+                }
+                else
+                    drawPosition += Vector2Normalize(nextPosition - crew.position) * moveDelta;
             }
         }
 
