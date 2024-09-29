@@ -27,14 +27,17 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Install build dependencies for GLFW
-        run: sudo apt-get install -y build-essential cmake xorg-dev libgl1-mesa-dev libglu1-mesa-dev libwayland-dev wayland-protocols libxkbcommon-dev jq
+      - name: Install build dependencies
+        run: |
+          set -e
+          sudo apt upgrade -y
+          sudo apt install -y build-essential cmake xorg-dev libgl1-mesa-dev libglu1-mesa-dev libwayland-dev wayland-protocols libxkbcommon-dev jq
 
       - name: Install latest Clang using LLVM script
         run: |
           set -e
-          sudo apt-get remove --purge -y clang
-          sudo apt-get autoremove -y
+          sudo apt remove --purge -y clang*
+          sudo apt autoremove -y
           wget https://apt.llvm.org/llvm.sh
           chmod +x llvm.sh
           sudo ./llvm.sh
@@ -56,7 +59,7 @@ jobs:
       - name: Set up Nix
         run: |
           set -e
-          sudo apt-get install -y curl
+          sudo apt install -y curl
           sh <(curl -L https://nixos.org/nix/install) --no-daemon
           . /home/runner/.nix-profile/etc/profile.d/nix.sh
 
