@@ -33,9 +33,8 @@ jobs:
       - name: Add LLVM repository and install Clang 18
         run: |
           set -e
-          wget https://apt.llvm.org/llvm-snapshot.gpg.key
-          sudo apt-key add llvm-snapshot.gpg.key
-          sudo bash -c 'echo "deb http://apt.llvm.org/focal/ llvm-toolchain-focal-18 main" > /etc/apt/sources.list.d/llvm.list'
+          wget -qO - https://apt.llvm.org/llvm-snapshot.gpg.key | sudo tee /usr/share/keyrings/llvm-archive-keyring.gpg > /dev/null
+          echo "deb [signed-by=/usr/share/keyrings/llvm-archive-keyring.gpg] http://apt.llvm.org/focal/ llvm-toolchain-focal-18 main" | sudo tee /etc/apt/sources.list.d/llvm.list
           sudo apt-get update
           sudo apt-get install -y clang-18 clang++-18
           sudo update-alternatives --install /usr/bin/clang clang /usr/bin/clang-18 100
@@ -50,7 +49,7 @@ jobs:
           cd glfw
           mkdir -p build
           cd build
-          cmake .. -DCMAKE_INSTALL_PREFIX=$HOME/local/glfw -DGLFW_BUILD_DOCS=OFF -DGLFW_BUILD_TESTS=OFF -DGLFW_BUILD_EXAMPLES=OFF -DCMAKE_C_COMPILER=clang -DCMAKE_CXX_COMPILER=clang++
+          cmake .. -DCMAKE_INSTALL_PREFIX=$HOME/local/glfw -DGLFW_BUILD_DOCS=OFF -DGLFW_BUILD_TESTS=OFF -DGLFW_BUILD_EXAMPLES=OFF -DCMAKE_C_COMPILER=/usr/bin/clang-18 -DCMAKE_CXX_COMPILER=/usr/bin/clang++-18
           make -j$(nproc)
           make install
         shell: bash
@@ -84,7 +83,7 @@ jobs:
           set -e
           mkdir -p build
           cd build
-          cmake .. -DCMAKE_PREFIX_PATH=$HOME/local/glfw -DCMAKE_C_COMPILER=clang -DCMAKE_CXX_COMPILER=clang++
+          cmake .. -DCMAKE_PREFIX_PATH=$HOME/local/glfw -DCMAKE_C_COMPILER=/usr/bin/clang-18 -DCMAKE_CXX_COMPILER=/usr/bin/clang++-18
           codeql database create /tmp/codeql-db --language=cpp --command="make -j$(nproc)"
 
       - name: Perform CodeQL Analysis
