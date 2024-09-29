@@ -1,6 +1,6 @@
 #pragma once
-#include "utils.h"
-#include "logging.h"
+#include "utils.hpp"
+#include "logging.hpp"
 #include <memory>
 #include <vector>
 

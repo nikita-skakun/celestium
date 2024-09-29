@@ -1,5 +1,5 @@
 #pragma once
-#include "component.h"
+#include "component.hpp"
 #include <unordered_set>
 
 struct Room;

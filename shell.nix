@@ -1,4 +1,9 @@
-{ pkgs ? import <nixpkgs> { } }:
+{ pkgs ? import <nixpkgs> {
+    config = {
+      allowUnfree = true;
+    };
+  }
+}:
 
 pkgs.mkShell {
   buildInputs = with pkgs; [
@@ -13,4 +18,10 @@ pkgs.mkShell {
     wayland # Wayland development libraries
     wayland-protocols # Wayland protocols for Wayland support
   ];
+
+  shellHook = ''
+    export CC=${pkgs.clang}/bin/clang
+    export CXX=${pkgs.clang}/bin/clang++
+    echo "Using Clang: $CC and $CXX"
+  '';
 }

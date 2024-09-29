@@ -1,6 +1,6 @@
 #pragma once
-#include "camera.h"
-#include "crew.h"
+#include "camera.hpp"
+#include "crew.hpp"
 
 void DrawTileGrid(const PlayerCam &camera);
 void DrawPath(const std::deque<Vector2Int> &path, const Vector2 &startPos, const PlayerCam &camera);

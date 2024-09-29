@@ -1,4 +1,4 @@
-#include "astar.h"
+#include "astar.hpp"
 
 /**
  * Implements the A* pathfinding algorithm to find the shortest path

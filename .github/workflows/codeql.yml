@@ -27,44 +27,17 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Install build dependencies for GLFW
-        run: sudo apt-get install -y build-essential cmake xorg-dev libgl1-mesa-dev libglu1-mesa-dev libwayland-dev wayland-protocols libxkbcommon-dev jq
-
-      - name: Install Clang 18 using LLVM script
+      - name: Remove out-of-date pre-installed Clang
         run: |
           set -e
-          wget https://apt.llvm.org/llvm.sh
-          chmod +x llvm.sh
-          sudo ./llvm.sh 18
-          sudo update-alternatives --install /usr/bin/clang clang /usr/bin/clang-18 100
-          sudo update-alternatives --install /usr/bin/clang++ clang++ /usr/bin/clang++-18 100
-          clang --version
-          clang++ --version
-
-      - name: Build and install GLFW from source
-        run: |
-          set -e
-          git clone https://github.com/glfw/glfw.git
-          cd glfw
-          mkdir -p build
-          cd build
-          cmake .. -DCMAKE_INSTALL_PREFIX=$HOME/local/glfw -DGLFW_BUILD_DOCS=OFF -DGLFW_BUILD_TESTS=OFF -DGLFW_BUILD_EXAMPLES=OFF -DCMAKE_C_COMPILER=/usr/bin/clang-18 -DCMAKE_CXX_COMPILER=/usr/bin/clang++-18
-          make -j$(nproc)
-          make install
-        shell: bash
+          sudo apt remove --purge -y clang*
+          sudo apt autoremove -y
 
       - name: Set up Nix
         run: |
           set -e
-          sudo apt-get install -y curl
           sh <(curl -L https://nixos.org/nix/install) --no-daemon
           . /home/runner/.nix-profile/etc/profile.d/nix.sh
-
-      - name: Enter Nix shell and install dependencies
-        run: |
-          set -e
-          . /home/runner/.nix-profile/etc/profile.d/nix.sh
-          nix-shell --run "echo 'Nix environment loaded.'"
 
       - name: Download CodeQL CLI
         run: |
@@ -77,18 +50,17 @@ jobs:
           sudo ln -s /usr/local/codeql/codeql /usr/local/bin/codeql
           codeql --version
 
-      - name: Build with CodeQL and generate database
+      - name: Build and analyze project with CodeQL
         run: |
           set -e
-          mkdir -p build
-          cd build
-          cmake .. -DCMAKE_PREFIX_PATH=$HOME/local/glfw -DCMAKE_C_COMPILER=/usr/bin/clang-18 -DCMAKE_CXX_COMPILER=/usr/bin/clang++-18
-          codeql database create /tmp/codeql-db --language=cpp --command="make -j$(nproc)"
-
-      - name: Perform CodeQL Analysis
-        run: |
-          set -e
-          codeql database analyze /tmp/codeql-db --format=sarif-latest --output=/tmp/codeql-results.sarif --threads=$(nproc)
+          . /home/runner/.nix-profile/etc/profile.d/nix.sh
+          nix-shell --run "
+            mkdir -p build;
+            cd build;
+            cmake ..;
+            codeql database create /tmp/codeql-db --language=cpp --command='make -j$(nproc)';
+            codeql database analyze /tmp/codeql-db --format=sarif-latest --output=/tmp/codeql-results.sarif --threads=$(nproc)
+          "
 
       - name: Upload CodeQL SARIF results
         uses: github/codeql-action/upload-sarif@v3

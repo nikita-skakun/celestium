@@ -1,7 +1,7 @@
 #pragma once
-#include "astar.h"
-#include "camera.h"
-#include "crew.h"
+#include "astar.hpp"
+#include "camera.hpp"
+#include "crew.hpp"
 
 void HandleCrewHover(const std::vector<Crew> &crewList, PlayerCam &camera);
 void HandleMouseDragging(std::shared_ptr<Station> station, PlayerCam &camera);

@@ -1,11 +1,11 @@
-#include "camera.h"
+#include "camera.hpp"
 
 /**
  * Converts the current mouse position from screen coordinates to world coordinates.
  *
  * @return The world position of the mouse as a Vector2.
  */
-Vector2 PlayerCam::GetWorldMousePos()
+Vector2 PlayerCam::GetWorldMousePos() const
 {
     return ScreenToWorld(GetMousePosition(), *this);
 }
