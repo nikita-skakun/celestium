@@ -1,4 +1,4 @@
-#include "station.h"
+#include "station.hpp"
 
 std::shared_ptr<Tile> CreateTile(Tile::ID id, const Vector2Int &position, std::shared_ptr<Station> station, std::shared_ptr<Room> room = nullptr)
 {

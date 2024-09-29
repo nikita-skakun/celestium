@@ -1,5 +1,5 @@
-#include "ui.h"
-#include "update.h"
+#include "ui.hpp"
+#include "update.hpp"
 #include <condition_variable>
 #include <mutex>
 #include <thread>

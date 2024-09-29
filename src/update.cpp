@@ -1,4 +1,4 @@
-#include "update.h"
+#include "update.hpp"
 
 void HandleCrewHover(const std::vector<Crew> &crewList, PlayerCam &camera)
 {
@@ -75,7 +75,7 @@ void HandleMouseDragging(std::shared_ptr<Station> station, PlayerCam &camera)
                 if (start && end)
                 {
                     if (PowerConnectorComponent::AddConnection(start, end))
-                        LogMessage(LogLevel::DEBUG, fmt::format("{} connected to {}!", start->parent.lock()->GetName(), end->parent.lock()->GetName()));
+                        LogMessage(LogLevel::DEBUG, std::format("{} connected to {}!", start->parent.lock()->GetName(), end->parent.lock()->GetName()));
                 }
             }
         }
@@ -313,7 +313,7 @@ void MouseDeleteExistingConnection(std::shared_ptr<Station> station, const Playe
 
                         if (DistanceSqFromPointToLine(start, end, mousePos) <= threshold * threshold)
                         {
-                            LogMessage(LogLevel::DEBUG, fmt::format("Deleting connection between {} and {}!", tile->GetName(), conTileOther->GetName()));
+                            LogMessage(LogLevel::DEBUG, std::format("Deleting connection between {} and {}!", tile->GetName(), conTileOther->GetName()));
                             PowerConnectorComponent::DeleteConnection(powerConComp, conOther);
                             return;
                         }

@@ -1,9 +1,9 @@
 #pragma once
-#include "const.h"
+#include "const.hpp"
 #include <algorithm>
 #include <cctype>
 #include <cmath>
-#include <fmt/core.h>
+#include <format>
 #include <iostream>
 #include <magic_enum_flags.hpp>
 #include <magic_enum.hpp>
@@ -66,16 +66,10 @@ constexpr bool operator==(const Vector2 &a, const Vector2 &b)
     return a.x == b.x && a.y == b.y;
 }
 
-inline std::ostream &operator<<(std::ostream &os, const Vector2 &a)
-{
-    os << "{" << a.x << ", " << a.y << "}";
-    return os;
-}
-
 // Utility functions for Vector2
 struct Vector2Hash
 {
-    inline std::size_t operator()(const Vector2 &v) const
+    constexpr std::size_t operator()(const Vector2 &v) const
     {
         return std::hash<float>()(v.x) ^ (std::hash<float>()(v.y) << 1);
     }
@@ -152,9 +146,9 @@ inline int Vector2ToRandomInt(const Vector2 &a, int min, int max)
     return distribution(generator);
 }
 
-inline std::string ToString(const Vector2 &a)
+constexpr std::string ToString(const Vector2 &a)
 {
-    return fmt::format("({:.2f}, {:.2f})", a.x, a.y);
+    return std::format("({:.2f}, {:.2f})", a.x, a.y);
 }
 
 // Utility functions for Vector2Int
@@ -230,7 +224,7 @@ constexpr Vector2 ToVector2(const Vector2Int &a)
 
 inline std::string ToString(const Vector2Int &a)
 {
-    return fmt::format("({:}, {:})", a.x, a.y);
+    return std::format("({:}, {:})", a.x, a.y);
 }
 
 // Rectangle operator overloads

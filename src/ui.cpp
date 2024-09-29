@@ -1,4 +1,4 @@
-#include "ui.h"
+#include "ui.hpp"
 
 /**
  * Draws a grid of tiles on the screen based on the current camera position and zoom level.
@@ -202,7 +202,7 @@ void DrawDragSelectBox(const PlayerCam &camera)
  */
 void DrawFpsCounter(float deltaTime, int padding, int fontSize, const Font &font)
 {
-    std::string fpsText = fmt::format("FPS: {:} ({:.2f}ms)", GetFPS(), deltaTime * 1000.f);
+    std::string fpsText = std::format("FPS: {:} ({:.2f}ms)", GetFPS(), deltaTime * 1000.f);
     const char *text = fpsText.c_str();
     DrawTextEx(font, text, Vector2(GetScreenWidth() - MeasureTextEx(font, text, fontSize, 1).x - padding, padding), fontSize, 1, BLACK);
 }
@@ -262,7 +262,7 @@ void DrawMainTooltip(const std::vector<Crew> &crewList, const PlayerCam &camera,
         hoverText += "Name: " + crew.name;
         if (crew.isAlive)
         {
-            hoverText += fmt::format("\nOxygen: {:.2f}", crew.oxygen);
+            hoverText += std::format("\nOxygen: {:.2f}", crew.oxygen);
         }
         else
         {
@@ -284,15 +284,15 @@ void DrawMainTooltip(const std::vector<Crew> &crewList, const PlayerCam &camera,
 
             if (auto oxygenComp = tile->GetComponent<OxygenComponent>())
             {
-                hoverText += fmt::format("\n   + Tile Ox: {:.2f}", oxygenComp->GetOxygenLevel());
+                hoverText += std::format("\n   + Tile Ox: {:.2f}", oxygenComp->GetOxygenLevel());
             }
             if (auto batteryComp = tile->GetComponent<BatteryComponent>())
             {
-                hoverText += fmt::format("\n   + Energy: {:.2f}", batteryComp->GetChargeLevel());
+                hoverText += std::format("\n   + Energy: {:.2f}", batteryComp->GetChargeLevel());
             }
             if (auto powerConComp = tile->GetComponent<PowerConnectorComponent>())
             {
-                hoverText += fmt::format("\n   + Power Connector: {}", magic_enum::enum_flags_name(powerConComp->io));
+                hoverText += std::format("\n   + Power Connector: {}", magic_enum::enum_flags_name(powerConComp->io));
             }
         }
     }

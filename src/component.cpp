@@ -1,4 +1,4 @@
-#include "component.h"
+#include "component.hpp"
 
 template <>
 struct magic_enum::customize::enum_range<PowerConnectorComponent::IO>

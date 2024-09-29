@@ -13,8 +13,6 @@ Celestium is an open-source project. The code is free to use and modify, but cer
 
 - [Termcolor](https://github.com/ikalnytskyi/termcolor) library, licensed under the [BSD (3-clause) License](https://github.com/ikalnytskyi/termcolor/blob/master/LICENSE).
 
-- [{fmt}](https://github.com/fmtlib/fmt) library, licensed under the [MIT License](https://github.com/fmtlib/fmt/blob/master/LICENSE).
-
 - [Magic Enum C++](https://github.com/Neargye/magic_enum) library, licensed under the [MIT License](https://github.com/Neargye/magic_enum/blob/master/LICENSE).
 
 - Visual assets inspired by [Jonik9i's Space Station Game Asset](https://jonik9i.itch.io/free-space-station-game-asset), licensed under the [Creative Commons Zero v1.0 Universal (CC0)](https://creativecommons.org/publicdomain/zero/1.0/).

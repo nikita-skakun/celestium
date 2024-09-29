@@ -1,4 +1,4 @@
-#include "camera.h"
+#include "camera.hpp"
 
 /**
  * Converts the current mouse position from screen coordinates to world coordinates.

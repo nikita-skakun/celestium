@@ -1,4 +1,4 @@
-#include "crew.h"
+#include "crew.hpp"
 
 Crew::Crew(const std::string &n, const Vector2 &p, const Color &c)
     : name(n), position(p), color(c), oxygen(100.f), isAlive(true)
