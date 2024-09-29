@@ -30,6 +30,19 @@ jobs:
       - name: Install build dependencies for GLFW
         run: sudo apt-get install -y build-essential cmake xorg-dev libgl1-mesa-dev libglu1-mesa-dev libwayland-dev wayland-protocols libxkbcommon-dev jq
 
+      - name: Add LLVM repository and install Clang 18
+        run: |
+          set -e
+          wget https://apt.llvm.org/llvm-snapshot.gpg.key
+          sudo apt-key add llvm-snapshot.gpg.key
+          sudo bash -c 'echo "deb http://apt.llvm.org/focal/ llvm-toolchain-focal-18 main" > /etc/apt/sources.list.d/llvm.list'
+          sudo apt-get update
+          sudo apt-get install -y clang-18 clang++-18
+          sudo update-alternatives --install /usr/bin/clang clang /usr/bin/clang-18 100
+          sudo update-alternatives --install /usr/bin/clang++ clang++ /usr/bin/clang++-18 100
+          clang --version
+          clang++ --version
+
       - name: Build and install GLFW from source
         run: |
           set -e
@@ -37,7 +50,7 @@ jobs:
           cd glfw
           mkdir -p build
           cd build
-          cmake .. -DCMAKE_INSTALL_PREFIX=$HOME/local/glfw -DGLFW_BUILD_DOCS=OFF -DGLFW_BUILD_TESTS=OFF -DGLFW_BUILD_EXAMPLES=OFF
+          cmake .. -DCMAKE_INSTALL_PREFIX=$HOME/local/glfw -DGLFW_BUILD_DOCS=OFF -DGLFW_BUILD_TESTS=OFF -DGLFW_BUILD_EXAMPLES=OFF -DCMAKE_C_COMPILER=clang -DCMAKE_CXX_COMPILER=clang++
           make -j$(nproc)
           make install
         shell: bash
