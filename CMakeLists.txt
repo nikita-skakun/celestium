@@ -1,7 +1,3 @@
-# Set Clang as the default compiler
-set(CMAKE_C_COMPILER clang)
-set(CMAKE_CXX_COMPILER clang++)
-
 cmake_minimum_required(VERSION 3.29)
 project(Celestium VERSION 1.0 LANGUAGES CXX)
 
