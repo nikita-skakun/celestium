@@ -27,7 +27,7 @@ struct PlayerCam
     float zoom;
     Overlay overlay;
 
-    PlayerCam() : crewHoverIndex(-1), zoom(1.f), isDragging(false), dragType(DragType::SELECT), overlay(Overlay::NONE) {}
+    PlayerCam() : isDragging(false), dragType(DragType::SELECT), crewHoverIndex(-1), zoom(1.f), overlay(Overlay::NONE) {}
 
     Vector2 GetWorldMousePos();
 };

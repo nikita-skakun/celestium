@@ -71,7 +71,7 @@ jobs:
           set -e
           mkdir -p build
           cd build
-          cmake .. -DCMAKE_PREFIX_PATH=$HOME/local/glfw
+          cmake .. -DCMAKE_PREFIX_PATH=$HOME/local/glfw -DCMAKE_C_COMPILER=clang -DCMAKE_CXX_COMPILER=clang++
           codeql database create /tmp/codeql-db --language=cpp --command="make -j$(nproc)"
 
       - name: Perform CodeQL Analysis

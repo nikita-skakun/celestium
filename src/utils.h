@@ -285,7 +285,7 @@ constexpr bool Contains(const Container &container, const T &value)
 }
 
 // Utility functions for std::string
-inline std::string ToTitleCase(const std::string &a)
+constexpr std::string ToTitleCase(const std::string &a)
 {
     std::string result = a;
     bool capitalizeNext = true;

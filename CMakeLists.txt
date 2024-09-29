@@ -1,9 +1,17 @@
+# Set Clang as the default compiler
+set(CMAKE_C_COMPILER clang)
+set(CMAKE_CXX_COMPILER clang++)
+
 cmake_minimum_required(VERSION 3.29)
 project(Celestium VERSION 1.0 LANGUAGES CXX)
 
 # Specify the C++ standard
-set(CMAKE_CXX_STANDARD 20)
+set(CMAKE_CXX_STANDARD 23)
 set(CMAKE_CXX_STANDARD_REQUIRED True)
+
+# Specify the C standard
+set(CMAKE_C_STANDARD 17)
+set(CMAKE_C_STANDARD_REQUIRED ON)
 
 # Specify the build type
 set(CMAKE_BUILD_TYPE "Release" CACHE STRING "" FORCE)
@@ -28,6 +36,14 @@ file(GLOB SOURCES "src/*.cpp")
 
 # Add the executable
 add_executable(celestium ${SOURCES})
+
+# Ensure the target uses C++23 and C17
+set_target_properties(celestium PROPERTIES
+    CXX_STANDARD 23
+    CXX_STANDARD_REQUIRED YES
+    CMAKE_C_STANDARD 17
+    CMAKE_C_STANDARD_REQUIRED YES
+)
 
 # Add extra warnings and optimizations for the main target
 if(CMAKE_CXX_COMPILER_ID STREQUAL "Clang")
