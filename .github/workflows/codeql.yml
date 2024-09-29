@@ -27,7 +27,7 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Install build dependencies
+      - name: Remove out-of-date pre-installed Clang
         run: |
           set -e
           sudo apt remove --purge -y clang*

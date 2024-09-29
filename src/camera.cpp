@@ -5,7 +5,7 @@
  *
  * @return The world position of the mouse as a Vector2.
  */
-Vector2 PlayerCam::GetWorldMousePos()
+Vector2 PlayerCam::GetWorldMousePos() const
 {
     return ScreenToWorld(GetMousePosition(), *this);
 }

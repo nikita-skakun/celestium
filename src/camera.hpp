@@ -29,7 +29,7 @@ struct PlayerCam
 
     PlayerCam() : isDragging(false), dragType(DragType::SELECT), crewHoverIndex(-1), zoom(1.f), overlay(Overlay::NONE) {}
 
-    Vector2 GetWorldMousePos();
+    Vector2 GetWorldMousePos() const;
 };
 
 void HandleCameraMovement(PlayerCam &camera);
