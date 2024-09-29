@@ -32,12 +32,10 @@ jobs:
           set -e
           sudo apt remove --purge -y clang*
           sudo apt autoremove -y
-          sudo apt install -y build-essential xorg-dev libgl1-mesa-dev libglu1-mesa-dev libwayland-dev jq
 
       - name: Set up Nix
         run: |
           set -e
-          sudo apt install -y curl
           sh <(curl -L https://nixos.org/nix/install) --no-daemon
           . /home/runner/.nix-profile/etc/profile.d/nix.sh
 
@@ -51,7 +49,7 @@ jobs:
           sudo mv codeql /usr/local/codeql
           sudo ln -s /usr/local/codeql/codeql /usr/local/bin/codeql
           codeql --version
-  
+
       - name: Build and analyze project with CodeQL
         run: |
           set -e
