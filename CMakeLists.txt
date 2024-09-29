@@ -1,6 +1,15 @@
 cmake_minimum_required(VERSION 3.29)
 project(Celestium VERSION 1.0 LANGUAGES CXX)
 
+# Ensure CMake has compilers set
+if(NOT DEFINED CMAKE_C_COMPILER)
+    set(CMAKE_C_COMPILER ${CC} CACHE STRING "" FORCE)
+endif()
+
+if(NOT DEFINED CMAKE_CXX_COMPILER)
+    set(CMAKE_CXX_COMPILER ${CXX} CACHE STRING "" FORCE)
+endif()
+
 # Specify the C++ standard
 set(CMAKE_CXX_STANDARD 23)
 set(CMAKE_CXX_STANDARD_REQUIRED True)
