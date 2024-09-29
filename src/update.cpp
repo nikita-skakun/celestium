@@ -288,3 +288,38 @@ void UpdateTiles(std::shared_ptr<Station> station)
         }
     }
 }
+
+void MouseDeleteExistingConnection(std::shared_ptr<Station> station, const PlayerCam &camera)
+{
+    if (!station || !IsMouseButtonPressed(MOUSE_BUTTON_RIGHT))
+        return;
+
+    Vector2 mousePos = GetMousePosition();
+
+    const float threshold = std::max(POWER_CONNECTION_WIDTH * camera.zoom, 2.f);
+
+    for (std::shared_ptr<Tile> tile : station->tiles)
+    {
+        if (auto powerConComp = tile->GetComponent<PowerConnectorComponent>())
+        {
+            for (auto &&connection : powerConComp->connections)
+            {
+                if (auto conOther = connection.lock())
+                {
+                    if (auto conTileOther = conOther->parent.lock())
+                    {
+                        Vector2 start = WorldToScreen(ToVector2(tile->position) + Vector2(.5f, .5f), camera);
+                        Vector2 end = WorldToScreen(ToVector2(conTileOther->position) + Vector2(.5f, .5f), camera);
+
+                        if (DistanceSqFromPointToLine(start, end, mousePos) <= threshold * threshold)
+                        {
+                            LogMessage(LogLevel::DEBUG, fmt::format("Deleting connection between {} and {}!", tile->GetName(), conTileOther->GetName()));
+                            PowerConnectorComponent::DeleteConnection(powerConComp, conOther);
+                            return;
+                        }
+                    }
+                }
+            }
+        }
+    }
+}

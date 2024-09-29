@@ -77,6 +77,7 @@ int main()
         HandleCrewSelection(crewList, camera);
         AssignCrewTasks(crewList, camera);
         HandleMouseDragging(station, camera);
+        MouseDeleteExistingConnection(station, camera);
 
         // Render logic
         BeginDrawing();

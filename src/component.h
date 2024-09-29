@@ -107,26 +107,57 @@ struct PowerConnectorComponent : Component
     std::vector<std::weak_ptr<PowerConnectorComponent>> connections;
     PowerConnectorComponent(std::shared_ptr<Tile> p, IO io) : Component(p), io(io) {}
 
-    static bool AddConnection(std::shared_ptr<PowerConnectorComponent> thisCon, std::shared_ptr<PowerConnectorComponent> otherCon)
+    static bool AddConnection(std::shared_ptr<PowerConnectorComponent> a, std::shared_ptr<PowerConnectorComponent> b)
     {
-        for (int i = thisCon->connections.size() - 1; i >= 0; --i)
+        for (int i = a->connections.size() - 1; i >= 0; --i)
         {
-            if (auto sharedConn = thisCon->connections[i].lock())
+            if (auto sharedConn = a->connections[i].lock())
             {
-                if (sharedConn == otherCon)
+                if (sharedConn == b)
                     return false;
             }
             else
-                thisCon->connections.erase(thisCon->connections.begin() + i);
+                a->connections.erase(a->connections.begin() + i);
         }
 
-        if ((thisCon->io | otherCon->io) == (IO::INPUT | IO::OUTPUT))
+        if ((a->io | b->io) == (IO::INPUT | IO::OUTPUT))
         {
-            thisCon->connections.push_back(otherCon);
-            otherCon->connections.push_back(thisCon);
+            a->connections.push_back(b);
+            b->connections.push_back(a);
             return true;
         }
         return false;
+    }
+
+    static void DeleteConnection(std::shared_ptr<PowerConnectorComponent> a, std::shared_ptr<PowerConnectorComponent> b)
+    {
+        for (int i = a->connections.size() - 1; i >= 0; --i)
+        {
+            if (auto sharedConn = a->connections[i].lock())
+            {
+                if (sharedConn == b)
+                {
+                    a->connections.erase(a->connections.begin() + i);
+                    break;
+                }
+            }
+            else
+                a->connections.erase(a->connections.begin() + i);
+        }
+
+        for (int i = b->connections.size() - 1; i >= 0; --i)
+        {
+            if (auto sharedConn = b->connections[i].lock())
+            {
+                if (sharedConn == a)
+                {
+                    b->connections.erase(b->connections.begin() + i);
+                    break;
+                }
+            }
+            else
+                b->connections.erase(b->connections.begin() + i);
+        }
     }
 
     void CleanOldConnections()

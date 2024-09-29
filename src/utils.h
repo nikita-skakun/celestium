@@ -99,6 +99,11 @@ constexpr Vector2 Vector2Normalize(const Vector2 &a)
     return a / length;
 }
 
+constexpr float Vector2LengthSq(const Vector2 &a)
+{
+    return a.x * a.x + a.y * a.y;
+}
+
 constexpr float Vector2Distance(const Vector2 &a, const Vector2 &b)
 {
     return sqrt((b.x - a.x) * (b.x - a.x) + (b.y - a.y) * (b.y - a.y));
@@ -251,6 +256,27 @@ constexpr Rectangle Vector2ToRect(const Vector2 &a, const Vector2 &b)
     return Rectangle(startX, startY, std::max(a.x, b.x) - startX, std::max(a.y, b.y) - startY);
 }
 
+// Utility functions for Line
+constexpr float DistanceSqFromPointToLine(const Vector2 &a, const Vector2 &b, const Vector2 &p)
+{
+    Vector2 ab = b - a; // Vector from A to B
+    Vector2 ap = p - a; // Vector from A to P
+
+    float abLengthSquared = Vector2LengthSq(ab);
+
+    // Project point P onto line AB, computing parameterized position t
+    float t = (ap.x * ab.x + ap.y * ab.y) / abLengthSquared;
+
+    // Clamp t to the range [0, 1] to ensure the point is on the segment
+    t = std::clamp(t, 0.f, 1.f);
+
+    // Compute the closest point on the line segment to P
+    Vector2 closestPoint = a + ab * t;
+
+    // Return the distance between the mouse and the closest point on the line segment
+    return Vector2DistanceSq(p, closestPoint);
+}
+
 // Utility functions for Containers
 template <typename Container, typename T>
 constexpr bool Contains(const Container &container, const T &value)
@@ -259,7 +285,7 @@ constexpr bool Contains(const Container &container, const T &value)
 }
 
 // Utility functions for std::string
-constexpr std::string ToTitleCase(const std::string &a)
+inline std::string ToTitleCase(const std::string &a)
 {
     std::string result = a;
     bool capitalizeNext = true;
