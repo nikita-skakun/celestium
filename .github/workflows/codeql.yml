@@ -27,22 +27,20 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Install build dependencies
+      - name: Install build dependencies for GLFW
         run: |
           set -e
-          sudo apt upgrade -y
           sudo apt install -y build-essential cmake xorg-dev libgl1-mesa-dev libglu1-mesa-dev libwayland-dev wayland-protocols libxkbcommon-dev jq
 
-      - name: Install latest Clang using LLVM script
+      - name: Install Clang 18 using LLVM script
         run: |
           set -e
           sudo apt remove --purge -y clang*
           sudo apt autoremove -y
           wget https://apt.llvm.org/llvm.sh
           chmod +x llvm.sh
-          sudo ./llvm.sh
-          clang --version
-          clang++ --version
+          sudo ./llvm.sh 18
+          whereis clang-18
 
       - name: Build and install GLFW from source
         run: |
@@ -51,7 +49,7 @@ jobs:
           cd glfw
           mkdir -p build
           cd build
-          cmake .. -DCMAKE_INSTALL_PREFIX=$HOME/local/glfw -DGLFW_BUILD_DOCS=OFF -DGLFW_BUILD_TESTS=OFF -DGLFW_BUILD_EXAMPLES=OFF -DCMAKE_C_COMPILER=clang -DCMAKE_CXX_COMPILER=clang++
+          cmake .. -DCMAKE_INSTALL_PREFIX=$HOME/local/glfw -DGLFW_BUILD_DOCS=OFF -DGLFW_BUILD_TESTS=OFF -DGLFW_BUILD_EXAMPLES=OFF -DCMAKE_C_COMPILER=/usr/bin/clang-18 -DCMAKE_CXX_COMPILER=/usr/bin/clang++-18
           make -j$(nproc)
           make install
         shell: bash
@@ -85,7 +83,7 @@ jobs:
           set -e
           mkdir -p build
           cd build
-          cmake .. -DCMAKE_PREFIX_PATH=$HOME/local/glfw -DCMAKE_C_COMPILER=clang -DCMAKE_CXX_COMPILER=clang++
+          cmake .. -DCMAKE_C_COMPILER=/usr/bin/clang-18 -DCMAKE_CXX_COMPILER=/usr/bin/clang++-18 -DCMAKE_PREFIX_PATH=$HOME/local/glfw
           codeql database create /tmp/codeql-db --language=cpp --command="make -j$(nproc)"
 
       - name: Perform CodeQL Analysis
