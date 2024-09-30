@@ -89,9 +89,9 @@ void DrawStation(std::shared_ptr<Station> station, const Texture2D &tileset, con
 
     for (std::shared_ptr<Tile> tile : station->tiles)
     {
-        if (auto decorativeComp = tile->GetComponent<DecorativeComponent>())
+        if (auto decorative = tile->GetComponent<DecorativeComponent>())
         {
-            for (const DecorativeTile &dTile : decorativeComp->GetDecorativeTiles())
+            for (const DecorativeTile &dTile : decorative->GetDecorativeTiles())
             {
                 Vector2 v_startScreenPos = camera.WorldToScreen(ToVector2(tile->position + dTile.offset));
                 Rectangle v_destRect = Vector2ToRect(v_startScreenPos, v_startScreenPos + sizeScreenPos);
@@ -103,18 +103,29 @@ void DrawStation(std::shared_ptr<Station> station, const Texture2D &tileset, con
 
         if (camera.overlay == PlayerCam::Overlay::POWER)
         {
-            if (auto powerConComp = tile->GetComponent<PowerConnectorComponent>())
+            if (auto powerConsumer = tile->GetComponent<PowerConsumerComponent>())
             {
-                for (auto &&connection : powerConComp->_connections)
+                if (!powerConsumer->IsActive())
                 {
-                    if (auto conOther = connection.lock())
+                    Vector2 startScreenPos = camera.WorldToScreen(ToVector2(tile->position) + Vector2(.25f, .25f));
+
+                    Rectangle destRect = Vector2ToRect(startScreenPos, startScreenPos + sizeScreenPos / 2.f);
+                    Rectangle sourceRec = Rectangle(0, 7, 1, 1) * TILE_SIZE;
+
+                    DrawTexturePro(tileset, sourceRec, destRect, Vector2(), 0, Fade(YELLOW, .8f));
+                }
+            }
+
+            if (auto powerConnector = tile->GetComponent<PowerConnectorComponent>())
+            {
+                auto connections = powerConnector->GetConnections();
+                for (auto &&connection : connections)
+                {
+                    if (auto connectionTile = connection->_parent.lock())
                     {
-                        if (auto conTileOther = conOther->_parent.lock())
-                        {
-                            DrawLineEx(camera.WorldToScreen(ToVector2(tile->position) + Vector2(.5f, .5f)),
-                                       camera.WorldToScreen(ToVector2(conTileOther->position) + Vector2(.5f, .5f)),
-                                       POWER_CONNECTION_WIDTH * std::max(camera.zoom, 1.f), POWER_CONNECTION_COLOR);
-                        }
+                        DrawLineEx(camera.WorldToScreen(ToVector2(tile->position) + Vector2(.5f, .5f)),
+                                   camera.WorldToScreen(ToVector2(connectionTile->position) + Vector2(.5f, .5f)),
+                                   POWER_CONNECTION_WIDTH * std::max(camera.zoom, 1.f), POWER_CONNECTION_COLOR);
                     }
                 }
             }
@@ -309,9 +320,9 @@ void DrawMainTooltip(const std::vector<Crew> &crewList, const PlayerCam &camera,
             {
                 hoverText += std::format("\n   + Energy: {:.2f}", batteryComp->GetChargeLevel());
             }
-            if (auto powerConComp = tile->GetComponent<PowerConnectorComponent>())
+            if (auto powerConnector = tile->GetComponent<PowerConnectorComponent>())
             {
-                hoverText += std::format("\n   + Power Connector: {}", magic_enum::enum_flags_name(powerConComp->GetIO()));
+                hoverText += std::format("\n   + Power Connector: {}", magic_enum::enum_flags_name(powerConnector->GetIO()));
             }
         }
     }
