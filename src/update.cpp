@@ -162,7 +162,7 @@ void HandleCrewTasks(std::vector<Crew> &crewList)
 
                     if (moveTask->path.size() <= 0)
                     {
-                        if (moveTask->targetPosition != floorCrewPos)
+                        if (ToVector2(moveTask->targetPosition) != crew.position)
                         {
                             moveTask->targetPosition = floorCrewPos;
                             moveTask->path = {};
