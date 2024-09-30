@@ -18,20 +18,10 @@ std::shared_ptr<Tile> CreateTile(Tile::ID id, const Vector2Int &position, std::s
 
     case Tile::ID::OXYGEN_PRODUCER:
     {
-        if (!station)
-            return nullptr;
-        std::shared_ptr<Tile> tileBelow = station->GetTileAtPosition(position, Tile::Height::FLOOR);
-
-        if (!tileBelow)
-            return nullptr;
-
-        if (auto oxygenComp = tileBelow->GetComponent<OxygenComponent>())
-        {
-            tile = std::make_shared<Tile>(id, Tile::Height::WAIST, position, station, room);
-            tile->AddComponent<PowerConnectorComponent>(tile, PowerConnectorComponent::IO::INPUT);
-            auto powerConsumer = tile->AddComponent<PowerConsumerComponent>(tile, OxygenProducerComponent::POWER_CONSUMPTION);
-            tile->AddComponent<OxygenProducerComponent>(tile, oxygenComp, powerConsumer);
-        }
+        tile = std::make_shared<Tile>(id, Tile::Height::WAIST, position, station, room);
+        tile->AddComponent<PowerConnectorComponent>(tile, PowerConnectorComponent::IO::INPUT);
+        tile->AddComponent<PowerConsumerComponent>(tile, OxygenProducerComponent::POWER_CONSUMPTION);
+        tile->AddComponent<OxygenProducerComponent>(tile);
         break;
     }
     case Tile::ID::BATTERY:
@@ -80,7 +70,13 @@ void DeleteTile(std::shared_ptr<Tile> tile)
     if (tile->room)
     {
         auto &roomTiles = tile->room->tiles;
-        roomTiles.erase(std::remove(roomTiles.begin(), roomTiles.end(), tile), roomTiles.end());
+        roomTiles.erase(std::remove_if(roomTiles.begin(), roomTiles.end(),
+                                       [&tile](const std::weak_ptr<Tile> &weakTile)
+                                       {
+                                           if (auto sharedTile = weakTile.lock())
+                                               return sharedTile == tile;
+                                           return true; }),
+                        roomTiles.end());
     }
 }
 

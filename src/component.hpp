@@ -258,23 +258,11 @@ public:
 
 struct OxygenProducerComponent : Component
 {
-    std::weak_ptr<OxygenComponent> _output;
-    std::weak_ptr<PowerConsumerComponent> _powerConsumer;
-
     static constexpr float POWER_CONSUMPTION = 2.f;
 
-    OxygenProducerComponent(std::shared_ptr<Tile> parent, std::shared_ptr<OxygenComponent> oxygen, std::shared_ptr<PowerConsumerComponent> powerConsumer)
-        : Component(parent), _output(oxygen), _powerConsumer(powerConsumer) {}
+    OxygenProducerComponent(std::shared_ptr<Tile> parent) : Component(parent) {}
 
-    void ProduceOxygen(float deltaTime) const
-    {
-        auto oxygen = _output.lock();
-        auto powerConsumer = _powerConsumer.lock();
-        if (!oxygen || !powerConsumer || !powerConsumer->IsActive())
-            return;
-
-        oxygen->SetOxygenLevel(std::min(oxygen->GetOxygenLevel() + OXYGEN_PRODUCTION_RATE * deltaTime, TILE_OXYGEN_MAX));
-    }
+    void ProduceOxygen(float deltaTime) const;
 
     std::string GetName() const override
     {

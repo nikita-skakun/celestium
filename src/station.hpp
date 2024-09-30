@@ -12,6 +12,40 @@ struct Station
     std::shared_ptr<Tile> GetTileAtPosition(const Vector2Int &pos, Tile::Height height = Tile::Height::NONE) const;
     std::vector<std::shared_ptr<Tile>> GetTilesAtPosition(const Vector2Int &pos) const;
     void UpdateSpriteOffsets();
+
+    template <typename T>
+    std::shared_ptr<Tile> GetTileWithComponentAtPosition(const Vector2Int &pos) const
+    {
+        auto posIt = tileMap.find(pos);
+        if (posIt == tileMap.end())
+            return nullptr;
+
+        for (const auto &pair : posIt->second)
+        {
+            if (pair.second->HasComponent<T>())
+                return pair.second;
+        }
+
+        return nullptr;
+    }
+
+    template <typename T>
+    std::vector<std::shared_ptr<Tile>> GetTilesWithComponentAtPosition(const Vector2Int &pos) const
+    {
+        std::vector<std::shared_ptr<Tile>> result;
+
+        auto posIt = tileMap.find(pos);
+        if (posIt == tileMap.end())
+            return result;
+
+        for (const auto &pair : posIt->second)
+        {
+            if (pair.second->HasComponent<T>())
+                result.push_back(pair.second);
+        }
+
+        return result;
+    }
 };
 
 std::shared_ptr<Tile> CreateTile(Tile::ID id, const Vector2Int &position, std::shared_ptr<Station> station, std::shared_ptr<Room> room);

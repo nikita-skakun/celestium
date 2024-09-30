@@ -1,5 +1,5 @@
 #include "component.hpp"
-#include "tile.hpp"
+#include "station.hpp"
 
 template <>
 struct magic_enum::customize::enum_range<PowerConnectorComponent::IO>
@@ -64,4 +64,19 @@ void PowerConsumerComponent::ConsumePower(float deltaTime)
     }
 
     isActive = false;
+}
+
+void OxygenProducerComponent::ProduceOxygen(float deltaTime) const
+{
+    auto parent = _parent.lock();
+    if (!parent || !parent->station)
+        return;
+
+    auto oxygenTile = parent->station->GetTileWithComponentAtPosition<OxygenComponent>(parent->position);
+    auto powerConsumer = parent->GetComponent<PowerConsumerComponent>();
+    if (!oxygenTile || !powerConsumer || !powerConsumer->IsActive())
+        return;
+
+    auto oxygen = oxygenTile->GetComponent<OxygenComponent>();
+    oxygen->SetOxygenLevel(std::min(oxygen->GetOxygenLevel() + OXYGEN_PRODUCTION_RATE * deltaTime, TILE_OXYGEN_MAX));
 }
