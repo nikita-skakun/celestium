@@ -2,7 +2,7 @@
 
 void HandleCrewHover(const std::vector<Crew> &crewList, PlayerCam &camera)
 {
-    const Vector2 worldMousePos = ScreenToWorld(GetMousePosition(), camera) - Vector2(.5f, .5f);
+    const Vector2 worldMousePos = camera.GetWorldMousePos() - Vector2(.5f, .5f);
     const float crewSizeSq = CREW_RADIUS / TILE_SIZE * CREW_RADIUS / TILE_SIZE;
 
     camera.crewHoverIndex = -1;
@@ -29,13 +29,16 @@ void HandleMouseDragging(std::shared_ptr<Station> station, PlayerCam &camera)
         {
             camera.dragType = PlayerCam::DragType::SELECT;
             std::vector<std::shared_ptr<Tile>> tiles = station->GetTilesAtPosition(ToVector2Int(camera.dragStartPos));
-            for (std::shared_ptr<Tile> &tile : tiles)
+            if (camera.overlay == PlayerCam::Overlay::POWER)
             {
-                if (tile->HasComponent<PowerConnectorComponent>())
+                for (std::shared_ptr<Tile> &tile : tiles)
                 {
-                    camera.dragType = PlayerCam::DragType::POWER_CONNECT;
-                    camera.dragStartPos = Vector2Floor(camera.dragStartPos) + Vector2(.5f, .5f);
-                    break;
+                    if (tile->HasComponent<PowerConnectorComponent>())
+                    {
+                        camera.dragType = PlayerCam::DragType::POWER_CONNECT;
+                        camera.dragStartPos = Vector2Floor(camera.dragStartPos) + Vector2(.5f, .5f);
+                        break;
+                    }
                 }
             }
 
@@ -75,7 +78,7 @@ void HandleMouseDragging(std::shared_ptr<Station> station, PlayerCam &camera)
                 if (start && end)
                 {
                     if (PowerConnectorComponent::AddConnection(start, end))
-                        LogMessage(LogLevel::DEBUG, std::format("{} connected to {}!", start->parent.lock()->GetName(), end->parent.lock()->GetName()));
+                        LogMessage(LogLevel::DEBUG, std::format("{} connected to {}!", start->_parent.lock()->GetName(), end->_parent.lock()->GetName()));
                 }
             }
         }
@@ -123,7 +126,7 @@ void AssignCrewTasks(std::vector<Crew> &crewList, const PlayerCam &camera)
 
     if (IsMouseButtonPressed(MOUSE_RIGHT_BUTTON) && camera.selectedCrewList.size() > 0)
     {
-        Vector2Int worldPos = ScreenToTile(GetMousePosition(), camera);
+        Vector2Int worldPos = camera.ScreenToTile(GetMousePosition());
         for (int crewId : camera.selectedCrewList)
         {
             Crew &crew = crewList[crewId];
@@ -217,9 +220,9 @@ void HandleCrewEnvironment(std::vector<Crew> &crewList)
             crew.ConsumeOxygen(FIXED_DELTA_TIME);
             if (crew.currentTile)
             {
-                if (auto oxygenComp = crew.currentTile->GetComponent<OxygenComponent>())
+                if (auto oxygen = crew.currentTile->GetComponent<OxygenComponent>())
                 {
-                    crew.RefillOxygen(FIXED_DELTA_TIME, oxygenComp->GetOxygenLevel());
+                    crew.RefillOxygen(FIXED_DELTA_TIME, oxygen->GetOxygenLevel());
                 }
             }
         }
@@ -249,15 +252,17 @@ void UpdateTiles(std::shared_ptr<Station> station)
 {
     for (auto &tile : station->tiles)
     {
-        if (auto oxProdComp = tile->GetComponent<OxygenProducerComponent>())
+        if (auto powerConsumer = tile->GetComponent<PowerConsumerComponent>())
         {
-            if (auto output = oxProdComp->output.lock())
-            {
-                output->SetOxygenLevel(std::min(output->GetOxygenLevel() + OXYGEN_PRODUCTION_RATE * FIXED_DELTA_TIME, TILE_OXYGEN_MAX));
-            }
+            powerConsumer->ConsumePower(FIXED_DELTA_TIME);
         }
 
-        if (auto oxygenComp = tile->GetComponent<OxygenComponent>())
+        if (auto oxygenProducer = tile->GetComponent<OxygenProducerComponent>())
+        {
+            oxygenProducer->ProduceOxygen(FIXED_DELTA_TIME);
+        }
+
+        if (auto oxygen = tile->GetComponent<OxygenComponent>())
         {
             std::vector<Vector2Int> neighbors = {
                 tile->position + Vector2Int(1, 0),  // Right
@@ -273,15 +278,15 @@ void UpdateTiles(std::shared_ptr<Station> station)
                 if (!neighbor)
                     continue;
 
-                if (auto neighborOxygenComp = neighbor->GetComponent<OxygenComponent>())
+                if (auto neighborOxygen = neighbor->GetComponent<OxygenComponent>())
                 {
-                    float oxygenDiff = oxygenComp->GetOxygenLevel() - neighborOxygenComp->GetOxygenLevel();
+                    float oxygenDiff = oxygen->GetOxygenLevel() - neighborOxygen->GetOxygenLevel();
 
                     if (oxygenDiff > 0)
                     {
                         float oxygenTransfer = std::min(oxygenDiff * OXYGEN_DIFFUSION_RATE * FIXED_DELTA_TIME, oxygenDiff);
-                        oxygenComp->SetOxygenLevel(oxygenComp->GetOxygenLevel() - oxygenTransfer);
-                        neighborOxygenComp->SetOxygenLevel(neighborOxygenComp->GetOxygenLevel() + oxygenTransfer);
+                        oxygen->SetOxygenLevel(oxygen->GetOxygenLevel() - oxygenTransfer);
+                        neighborOxygen->SetOxygenLevel(neighborOxygen->GetOxygenLevel() + oxygenTransfer);
                     }
                 }
             }
@@ -291,7 +296,7 @@ void UpdateTiles(std::shared_ptr<Station> station)
 
 void MouseDeleteExistingConnection(std::shared_ptr<Station> station, const PlayerCam &camera)
 {
-    if (!station || !IsMouseButtonPressed(MOUSE_BUTTON_RIGHT))
+    if (!station || !IsMouseButtonPressed(MOUSE_BUTTON_RIGHT) || camera.overlay != PlayerCam::Overlay::POWER)
         return;
 
     Vector2 mousePos = GetMousePosition();
@@ -302,14 +307,14 @@ void MouseDeleteExistingConnection(std::shared_ptr<Station> station, const Playe
     {
         if (auto powerConComp = tile->GetComponent<PowerConnectorComponent>())
         {
-            for (auto &&connection : powerConComp->connections)
+            for (auto &&connection : powerConComp->_connections)
             {
                 if (auto conOther = connection.lock())
                 {
-                    if (auto conTileOther = conOther->parent.lock())
+                    if (auto conTileOther = conOther->_parent.lock())
                     {
-                        Vector2 start = WorldToScreen(ToVector2(tile->position) + Vector2(.5f, .5f), camera);
-                        Vector2 end = WorldToScreen(ToVector2(conTileOther->position) + Vector2(.5f, .5f), camera);
+                        Vector2 start = camera.WorldToScreen(ToVector2(tile->position) + Vector2(.5f, .5f));
+                        Vector2 end = camera.WorldToScreen(ToVector2(conTileOther->position) + Vector2(.5f, .5f));
 
                         if (DistanceSqFromPointToLine(start, end, mousePos) <= threshold * threshold)
                         {

@@ -45,7 +45,7 @@ void DrawPath(const std::deque<Vector2Int> &path, const Vector2 &startPos, const
     for (const auto &point : path)
     {
         Vector2 b = ToVector2(point) + Vector2(.5f, .5f);
-        DrawLineV(WorldToScreen(a, camera), WorldToScreen(b, camera), Fade(GREEN, .5f));
+        DrawLineV(camera.WorldToScreen(a), camera.WorldToScreen(b), Fade(GREEN, .5f));
         a = b;
     }
 }
@@ -65,7 +65,7 @@ void DrawStation(std::shared_ptr<Station> station, const Texture2D &tileset, con
     Vector2 sizeScreenPos = Vector2(1.f, 1.f) * TILE_SIZE * camera.zoom;
     for (std::shared_ptr<Tile> tile : station->tiles)
     {
-        Vector2 startScreenPos = WorldToScreen(ToVector2(tile->position), camera);
+        Vector2 startScreenPos = camera.WorldToScreen(ToVector2(tile->position));
 
         Rectangle destRect = Vector2ToRect(startScreenPos, startScreenPos + sizeScreenPos);
         Rectangle sourceRec = Rectangle(tile->spriteOffset.x, tile->spriteOffset.y, 1, 1) * TILE_SIZE;
@@ -93,7 +93,7 @@ void DrawStation(std::shared_ptr<Station> station, const Texture2D &tileset, con
         {
             for (const DecorativeTile &dTile : decorativeComp->GetDecorativeTiles())
             {
-                Vector2 v_startScreenPos = WorldToScreen(ToVector2(tile->position + dTile.offset), camera);
+                Vector2 v_startScreenPos = camera.WorldToScreen(ToVector2(tile->position + dTile.offset));
                 Rectangle v_destRect = Vector2ToRect(v_startScreenPos, v_startScreenPos + sizeScreenPos);
                 Rectangle v_sourceRec = Rectangle(dTile.spriteOffset.x, dTile.spriteOffset.y, 1, 1) * TILE_SIZE;
 
@@ -101,17 +101,20 @@ void DrawStation(std::shared_ptr<Station> station, const Texture2D &tileset, con
             }
         }
 
-        if (auto powerConComp = tile->GetComponent<PowerConnectorComponent>())
+        if (camera.overlay == PlayerCam::Overlay::POWER)
         {
-            for (auto &&connection : powerConComp->connections)
+            if (auto powerConComp = tile->GetComponent<PowerConnectorComponent>())
             {
-                if (auto conOther = connection.lock())
+                for (auto &&connection : powerConComp->_connections)
                 {
-                    if (auto conTileOther = conOther->parent.lock())
+                    if (auto conOther = connection.lock())
                     {
-                        DrawLineEx(WorldToScreen(ToVector2(tile->position) + Vector2(.5f, .5f), camera),
-                                   WorldToScreen(ToVector2(conTileOther->position) + Vector2(.5f, .5f), camera),
-                                   std::max(POWER_CONNECTION_WIDTH * camera.zoom, 2.f), YELLOW);
+                        if (auto conTileOther = conOther->_parent.lock())
+                        {
+                            DrawLineEx(camera.WorldToScreen(ToVector2(tile->position) + Vector2(.5f, .5f)),
+                                       camera.WorldToScreen(ToVector2(conTileOther->position) + Vector2(.5f, .5f)),
+                                       POWER_CONNECTION_WIDTH * std::max(camera.zoom, 1.f), POWER_CONNECTION_COLOR);
+                        }
                     }
                 }
             }
@@ -158,7 +161,7 @@ void DrawCrew(double timeSinceFixedUpdate, const std::vector<Crew> &crewList, co
             }
         }
 
-        Vector2 crewScreenPos = WorldToScreen(drawPosition + Vector2(.5f, .5f), camera);
+        Vector2 crewScreenPos = camera.WorldToScreen(drawPosition + Vector2(.5f, .5f));
 
         if (camera.selectedCrewList.contains(&crew - &crewList[0]))
             DrawCircleV(crewScreenPos, (CREW_RADIUS + OUTLINE_SIZE) * camera.zoom, OUTLINE_COLOR);
@@ -180,11 +183,12 @@ void DrawDragSelectBox(const PlayerCam &camera)
     switch (camera.dragType)
     {
     case PlayerCam::DragType::SELECT:
-        DrawRectangleLinesEx(Vector2ToRect(WorldToScreen(camera.dragStartPos, camera), WorldToScreen(camera.dragEndPos, camera)), 1.f, BLUE);
+        DrawRectangleLinesEx(Vector2ToRect(camera.WorldToScreen(camera.dragStartPos), camera.WorldToScreen(camera.dragEndPos)), 1.f, BLUE);
         break;
 
     case PlayerCam::DragType::POWER_CONNECT:
-        DrawLineEx(WorldToScreen(camera.dragStartPos, camera), WorldToScreen(camera.dragEndPos, camera), POWER_CONNECTION_WIDTH * camera.zoom, YELLOW);
+        DrawLineEx(camera.WorldToScreen(camera.dragStartPos), camera.WorldToScreen(camera.dragEndPos),
+                   POWER_CONNECTION_WIDTH * std::max(camera.zoom, 1.f), POWER_CONNECTION_COLOR);
         break;
 
     default:
@@ -193,7 +197,7 @@ void DrawDragSelectBox(const PlayerCam &camera)
 }
 
 /**
- * Displays the current FPS and the time taken for the last frame in milliseconds.
+ * Displays the current FPS in the top-right corner.
  *
  * @param deltaTime The time taken for the last frame, used to display in milliseconds.
  * @param padding   The padding from the screen edges for positioning the text.
@@ -205,6 +209,21 @@ void DrawFpsCounter(float deltaTime, int padding, int fontSize, const Font &font
     std::string fpsText = std::format("FPS: {:} ({:.2f}ms)", GetFPS(), deltaTime * 1000.f);
     const char *text = fpsText.c_str();
     DrawTextEx(font, text, Vector2(GetScreenWidth() - MeasureTextEx(font, text, fontSize, 1).x - padding, padding), fontSize, 1, BLACK);
+}
+
+/**
+ * Displays the current overlay in the top-left corner.
+ *
+ * @param camera    The PlayerCam that stores the overlay information.
+ * @param padding   The padding from the screen edges for positioning the text.
+ * @param fontSize  The size of the text to be drawn.
+ * @param font      The font to use when drawing the FPS counter, defaults to RayLib's default.
+ */
+void DrawOverlay(const PlayerCam &camera, int padding, int fontSize, const Font &font)
+{
+    std::string overlayText = std::format("Overlay: {:}", ToTitleCase(std::string(magic_enum::enum_name(camera.overlay))));
+    const char *text = overlayText.c_str();
+    DrawTextEx(font, text, Vector2(padding, padding), fontSize, 1, BLACK);
 }
 
 /**
@@ -273,7 +292,7 @@ void DrawMainTooltip(const std::vector<Crew> &crewList, const PlayerCam &camera,
     // Check if we're hovering over a station tile
     if (station)
     {
-        Vector2Int tileHoverPos = ScreenToTile(mousePos, camera);
+        Vector2Int tileHoverPos = camera.ScreenToTile(mousePos);
         std::vector<std::shared_ptr<Tile>> tiles = station->GetTilesAtPosition(tileHoverPos);
 
         for (const std::shared_ptr<Tile> &tile : tiles)
@@ -292,7 +311,7 @@ void DrawMainTooltip(const std::vector<Crew> &crewList, const PlayerCam &camera,
             }
             if (auto powerConComp = tile->GetComponent<PowerConnectorComponent>())
             {
-                hoverText += std::format("\n   + Power Connector: {}", magic_enum::enum_flags_name(powerConComp->io));
+                hoverText += std::format("\n   + Power Connector: {}", magic_enum::enum_flags_name(powerConComp->GetIO()));
             }
         }
     }

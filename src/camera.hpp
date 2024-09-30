@@ -4,11 +4,12 @@
 
 struct PlayerCam
 {
-    enum Overlay : u_int8_t
+    enum class Overlay : u_int8_t
     {
         NONE,
         OXYGEN,
         WALL,
+        POWER,
     };
 
     enum DragType : u_int8_t
@@ -29,13 +30,13 @@ struct PlayerCam
 
     PlayerCam() : isDragging(false), dragType(DragType::SELECT), crewHoverIndex(-1), zoom(1.f), overlay(Overlay::NONE) {}
 
+
+    // Utility function for Screen to World space transformations
     Vector2 GetWorldMousePos() const;
+    Vector2 ScreenToWorld(const Vector2 &screenPos) const;
+    Vector2Int ScreenToTile(const Vector2 &screenPos) const;
+    Vector2 WorldToScreen(const Vector2 &worldPos) const;
 };
 
 void HandleCameraMovement(PlayerCam &camera);
 void HandleCameraOverlays(PlayerCam &camera);
-
-// Utility function for Screen to World space transformations
-Vector2 ScreenToWorld(const Vector2 &screenPos, const PlayerCam &camera);
-Vector2Int ScreenToTile(const Vector2 &screenPos, const PlayerCam &camera);
-Vector2 WorldToScreen(const Vector2 &worldPos, const PlayerCam &camera);

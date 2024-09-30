@@ -7,7 +7,40 @@
  */
 Vector2 PlayerCam::GetWorldMousePos() const
 {
-    return ScreenToWorld(GetMousePosition(), *this);
+    return ScreenToWorld(GetMousePosition());
+}
+
+/**
+ * Converts screen coordinates to world coordinates based on the camera's position and zoom level.
+ *
+ * @param screenPos The position in screen coordinates.
+ * @return The corresponding position in world coordinates as a Vector2.
+ */
+Vector2 PlayerCam::ScreenToWorld(const Vector2 &screenPos) const
+{
+    return (screenPos - (Vector2(GetScreenWidth(), GetScreenHeight()) / 2.f)) / zoom / TILE_SIZE + position;
+}
+
+/**
+ * Converts screen coordinates to the corresponding tile position in the world.
+ *
+ * @param screenPos The position in screen coordinates.
+ * @return The tile position in world coordinates as a Vector2, rounded down to the nearest tile.
+ */
+Vector2Int PlayerCam::ScreenToTile(const Vector2 &screenPos) const
+{
+    return ToVector2Int(ScreenToWorld(screenPos));
+}
+
+/**
+ * Converts world coordinates to screen coordinates based on the camera's position and zoom level.
+ *
+ * @param worldPos The position in world coordinates.
+ * @return The position in screen coordinates as a Vector2.
+ */
+Vector2 PlayerCam::WorldToScreen(const Vector2 &worldPos) const
+{
+    return (worldPos - position) * TILE_SIZE * zoom + (Vector2(GetScreenWidth(), GetScreenHeight()) / 2.f);
 }
 
 /**
@@ -49,41 +82,12 @@ void HandleCameraOverlays(PlayerCam &camera)
                              ? PlayerCam::Overlay::WALL
                              : PlayerCam::Overlay::NONE;
     }
-}
 
-/**
- * Converts screen coordinates to world coordinates based on the camera's position and zoom level.
- *
- * @param screenPos The position in screen coordinates.
- * @param camera The PlayerCam object containing the camera's properties.
- * @return The corresponding position in world coordinates as a Vector2.
- */
-Vector2 ScreenToWorld(const Vector2 &screenPos, const PlayerCam &camera)
-{
-    return (screenPos - (Vector2(GetScreenWidth(), GetScreenHeight()) / 2.f)) / camera.zoom / TILE_SIZE + camera.position;
-}
-
-/**
- * Converts screen coordinates to the corresponding tile position in the world.
- *
- * @param screenPos The position in screen coordinates.
- * @param camera The PlayerCam object containing the camera's properties.
- * @return The tile position in world coordinates as a Vector2, rounded down to the nearest tile.
- */
-Vector2Int ScreenToTile(const Vector2 &screenPos, const PlayerCam &camera)
-{
-    Vector2 worldPos = ScreenToWorld(screenPos, camera);
-    return ToVector2Int(worldPos);
-}
-
-/**
- * Converts world coordinates to screen coordinates based on the camera's position and zoom level.
- *
- * @param worldPos The position in world coordinates.
- * @param camera The PlayerCam object containing the camera's properties.
- * @return The position in screen coordinates as a Vector2.
- */
-Vector2 WorldToScreen(const Vector2 &worldPos, const PlayerCam &camera)
-{
-    return (worldPos - camera.position) * TILE_SIZE * camera.zoom + (Vector2(GetScreenWidth(), GetScreenHeight()) / 2.f);
+    // Toggle power overlay when 'P' is pressed
+    if (IsKeyPressed(KEY_P))
+    {
+        camera.overlay = (camera.overlay != PlayerCam::Overlay::POWER)
+                             ? PlayerCam::Overlay::POWER
+                             : PlayerCam::Overlay::NONE;
+    }
 }

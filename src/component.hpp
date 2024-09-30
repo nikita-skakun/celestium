@@ -12,14 +12,14 @@ struct DecorativeTile
     Vector2Int offset;
     Vector2Int spriteOffset;
 
-    DecorativeTile(const Vector2Int &o, const Vector2Int &sO) : offset(o), spriteOffset(sO) {}
+    DecorativeTile(const Vector2Int &offset, const Vector2Int &spriteOffset) : offset(offset), spriteOffset(spriteOffset) {}
 };
 
 struct Component
 {
-    std::weak_ptr<Tile> parent;
+    std::weak_ptr<Tile> _parent;
 
-    Component(std::shared_ptr<Tile> p) : parent(p) {}
+    Component(std::shared_ptr<Tile> parent) : _parent(parent) {}
 
     virtual std::string GetName() const = 0;
     virtual ~Component() = default;
@@ -44,7 +44,7 @@ namespace std
 
 struct WalkableComponent : Component
 {
-    WalkableComponent(std::shared_ptr<Tile> p) : Component(p) {}
+    WalkableComponent(std::shared_ptr<Tile> parent) : Component(parent) {}
 
     std::string GetName() const override
     {
@@ -54,7 +54,7 @@ struct WalkableComponent : Component
 
 struct SolidComponent : Component
 {
-    SolidComponent(std::shared_ptr<Tile> p) : Component(p) {}
+    SolidComponent(std::shared_ptr<Tile> parent) : Component(parent) {}
 
     std::string GetName() const override
     {
@@ -68,7 +68,8 @@ private:
     float charge;
 
 public:
-    BatteryComponent(std::shared_ptr<Tile> p, float c = BATTERY_CHARGE_MAX) : Component(p), charge(c) {}
+    BatteryComponent(std::shared_ptr<Tile> parent, float startCharge = BATTERY_CHARGE_MAX)
+        : Component(parent), charge(startCharge) {}
 
     void Charge(float amount)
     {
@@ -77,10 +78,10 @@ public:
 
     bool Drain(float amount)
     {
-        if (amount < charge)
+        if (charge < amount)
             return false;
 
-        charge = charge - amount;
+        charge -= amount;
         return true;
     }
 
@@ -103,27 +104,52 @@ struct PowerConnectorComponent : Component
         OUTPUT = 1 << 1,
     };
 
+private:
     IO io;
-    std::vector<std::weak_ptr<PowerConnectorComponent>> connections;
-    PowerConnectorComponent(std::shared_ptr<Tile> p, IO io) : Component(p), io(io) {}
+
+public:
+    std::vector<std::weak_ptr<PowerConnectorComponent>> _connections;
+    PowerConnectorComponent(std::shared_ptr<Tile> parent, IO io) : Component(parent), io(io) {}
+
+    constexpr IO GetIO() const
+    {
+        return io;
+    }
+
+    std::vector<std::shared_ptr<PowerConnectorComponent>> GetConnections()
+    {
+        std::vector<std::shared_ptr<PowerConnectorComponent>> connections;
+
+        for (int i = _connections.size() - 1; i >= 0; --i)
+        {
+            if (auto connection = _connections[i].lock())
+            {
+                connections.push_back(connection);
+            }
+            else
+                _connections.erase(_connections.begin() + i);
+        }
+
+        return connections;
+    }
 
     static bool AddConnection(std::shared_ptr<PowerConnectorComponent> a, std::shared_ptr<PowerConnectorComponent> b)
     {
-        for (int i = a->connections.size() - 1; i >= 0; --i)
+        for (int i = a->_connections.size() - 1; i >= 0; --i)
         {
-            if (auto sharedConn = a->connections[i].lock())
+            if (auto connection = a->_connections[i].lock())
             {
-                if (sharedConn == b)
+                if (connection == b)
                     return false;
             }
             else
-                a->connections.erase(a->connections.begin() + i);
+                a->_connections.erase(a->_connections.begin() + i);
         }
 
         if ((a->io | b->io) == (IO::INPUT | IO::OUTPUT))
         {
-            a->connections.push_back(b);
-            b->connections.push_back(a);
+            a->_connections.push_back(b);
+            b->_connections.push_back(a);
             return true;
         }
         return false;
@@ -131,45 +157,77 @@ struct PowerConnectorComponent : Component
 
     static void DeleteConnection(std::shared_ptr<PowerConnectorComponent> a, std::shared_ptr<PowerConnectorComponent> b)
     {
-        for (int i = a->connections.size() - 1; i >= 0; --i)
+        for (int i = a->_connections.size() - 1; i >= 0; --i)
         {
-            if (auto sharedConn = a->connections[i].lock())
+            if (auto connection = a->_connections[i].lock())
             {
-                if (sharedConn == b)
+                if (connection == b)
                 {
-                    a->connections.erase(a->connections.begin() + i);
+                    a->_connections.erase(a->_connections.begin() + i);
                     break;
                 }
             }
             else
-                a->connections.erase(a->connections.begin() + i);
+                a->_connections.erase(a->_connections.begin() + i);
         }
 
-        for (int i = b->connections.size() - 1; i >= 0; --i)
+        for (int i = b->_connections.size() - 1; i >= 0; --i)
         {
-            if (auto sharedConn = b->connections[i].lock())
+            if (auto connection = b->_connections[i].lock())
             {
-                if (sharedConn == a)
+                if (connection == a)
                 {
-                    b->connections.erase(b->connections.begin() + i);
+                    b->_connections.erase(b->_connections.begin() + i);
                     break;
                 }
             }
             else
-                b->connections.erase(b->connections.begin() + i);
+                b->_connections.erase(b->_connections.begin() + i);
         }
-    }
-
-    void CleanOldConnections()
-    {
-        connections.erase(std::remove_if(connections.begin(), connections.end(), [](const std::weak_ptr<PowerConnectorComponent> &wp)
-                                         { return wp.expired(); }),
-                          connections.end());
     }
 
     std::string GetName() const override
     {
         return "Power Connector";
+    }
+};
+
+struct PowerConsumerComponent : Component
+{
+private:
+    bool isPoweredOn;
+    bool isActive;
+    float powerConsumption;
+
+public:
+    PowerConsumerComponent(std::shared_ptr<Tile> parent, float powerConsumption)
+        : Component(parent), isPoweredOn(true), isActive(false), powerConsumption(std::max(powerConsumption, 0.f)) {}
+
+    constexpr bool IsPoweredOn() const
+    {
+        return isPoweredOn;
+    }
+
+    constexpr void SetPoweredState(bool state)
+    {
+        isPoweredOn = state;
+    }
+
+    constexpr bool IsActive() const
+    {
+        return isActive;
+    }
+
+    constexpr float GetPowerConsumption() const
+    {
+        return powerConsumption;
+    }
+
+    void ConsumePower(float deltaTime);
+
+    std::string GetName() const override
+    {
+        return "Power Consumer";
     }
 };
 
@@ -179,7 +237,8 @@ private:
     float oxygenLevel;
 
 public:
-    OxygenComponent(std::shared_ptr<Tile> p, float o = TILE_OXYGEN_MAX) : Component(p), oxygenLevel(o) {}
+    OxygenComponent(std::shared_ptr<Tile> parent, float startOxygenLevel = TILE_OXYGEN_MAX)
+        : Component(parent), oxygenLevel(startOxygenLevel) {}
 
     void SetOxygenLevel(float oxygen)
     {
@@ -199,9 +258,23 @@ public:
 
 struct OxygenProducerComponent : Component
 {
-    std::weak_ptr<OxygenComponent> output;
+    std::weak_ptr<OxygenComponent> _output;
+    std::weak_ptr<PowerConsumerComponent> _powerConsumer;
 
-    OxygenProducerComponent(std::shared_ptr<Tile> p, std::shared_ptr<OxygenComponent> o) : Component(p), output(o) {}
+    static constexpr float POWER_CONSUMPTION = 2.f;
+
+    OxygenProducerComponent(std::shared_ptr<Tile> parent, std::shared_ptr<OxygenComponent> oxygen, std::shared_ptr<PowerConsumerComponent> powerConsumer)
+        : Component(parent), _output(oxygen), _powerConsumer(powerConsumer) {}
+
+    void ProduceOxygen(float deltaTime) const
+    {
+        auto oxygen = _output.lock();
+        auto powerConsumer = _powerConsumer.lock();
+        if (!oxygen || !powerConsumer || !powerConsumer->IsActive())
+            return;
+
+        oxygen->SetOxygenLevel(std::min(oxygen->GetOxygenLevel() + OXYGEN_PRODUCTION_RATE * deltaTime, TILE_OXYGEN_MAX));
+    }
 
     std::string GetName() const override
     {
@@ -215,7 +288,7 @@ private:
     std::vector<DecorativeTile> decorativeTiles;
 
 public:
-    DecorativeComponent(std::shared_ptr<Tile> p) : Component(p) {}
+    DecorativeComponent(std::shared_ptr<Tile> parent) : Component(parent) {}
 
     void AddDecorativeTile(const Vector2Int &offset, const Vector2Int &spriteOffset)
     {

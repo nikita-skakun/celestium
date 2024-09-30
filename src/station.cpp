@@ -28,8 +28,9 @@ std::shared_ptr<Tile> CreateTile(Tile::ID id, const Vector2Int &position, std::s
         if (auto oxygenComp = tileBelow->GetComponent<OxygenComponent>())
         {
             tile = std::make_shared<Tile>(id, Tile::Height::WAIST, position, station, room);
-            tile->AddComponent<OxygenProducerComponent>(tile, oxygenComp);
             tile->AddComponent<PowerConnectorComponent>(tile, PowerConnectorComponent::IO::INPUT);
+            auto powerConsumer = tile->AddComponent<PowerConsumerComponent>(tile, OxygenProducerComponent::POWER_CONSUMPTION);
+            tile->AddComponent<OxygenProducerComponent>(tile, oxygenComp, powerConsumer);
         }
         break;
     }
