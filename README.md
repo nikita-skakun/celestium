@@ -2,8 +2,20 @@
 
 ## What is this?
 
-Celestium is a 2D space station simulation and management game that explores procedural generation, simulation mechanics, and AI pathfinding.
+**Celestium** is a 2D space station simulation and management game that explores procedural generation, simulation mechanics, and AI pathfinding.
 This is a passion project, created as a way to explore advanced programming concepts and to unify them in a coherent and engaging game.
+
+## Progress Update
+
+Exciting new features have been added to **Celestium**! Here's a quick look at the latest developments:
+
+- **A\* Pathfinding**: Crew members can now navigate the station using A* pathfinding, ensuring efficient movement and intelligent routing around obstacles, bringing crew interactions to life.
+
+- **Air Diffusion Simulation**: Oxygen management has become a key aspect of station life. Oxygen production systems can now be installed, and crew members consume oxygen as they go about their tasks. Maintaining a steady supply of breathable air is critical to keeping your crew alive and the station functional.
+
+- **Power Storage and Connections**: Energy is now a crucial resource. Batteries can store and distribute power throughout the station, ensuring that critical life support systems stay online.
+
+These features bring the station to life and enhance player interaction, setting the stage for deeper simulation gameplay. Stay tuned for more!
 
 ## License
 
