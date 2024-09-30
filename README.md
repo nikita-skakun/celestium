@@ -17,6 +17,8 @@ Exciting new features have been added to **Celestium**! Here's a quick look at t
 
 These features bring the station to life and enhance player interaction, setting the stage for deeper simulation gameplay. Stay tuned for more!
 
+[progress-update-2024-09-29.webm](https://github.com/user-attachments/assets/4367d366-b55f-4bcb-a2c6-ae5160bae2b7)
+
 ## License
 
 Celestium is an open-source project. The code is free to use and modify, but certain assets are inspired by external resources. Please respect the following attributions:
