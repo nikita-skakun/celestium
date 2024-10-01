@@ -14,54 +14,54 @@
 using namespace magic_enum::bitwise_operators;
 
 // Vector2 operator overloads
-constexpr Vector2 operator+(const Vector2 &a, const Vector2 &b)
+constexpr Vector2 operator+(const Vector2 &a, const Vector2 &b) noexcept
 {
     return Vector2(a.x + b.x, a.y + b.y);
 }
 
-constexpr Vector2 operator-(const Vector2 &a, const Vector2 &b)
+constexpr Vector2 operator-(const Vector2 &a, const Vector2 &b) noexcept
 {
     return Vector2(a.x - b.x, a.y - b.y);
 }
 
-constexpr Vector2 &operator+=(Vector2 &a, const Vector2 &b)
+constexpr Vector2 &operator+=(Vector2 &a, const Vector2 &b) noexcept
 {
     a.x += b.x;
     a.y += b.y;
     return a;
 }
 
-constexpr Vector2 &operator-=(Vector2 &a, const Vector2 &b)
+constexpr Vector2 &operator-=(Vector2 &a, const Vector2 &b) noexcept
 {
     a.x -= b.x;
     a.y -= b.y;
     return a;
 }
 
-constexpr Vector2 operator*(const Vector2 &a, float b)
+constexpr Vector2 operator*(const Vector2 &a, float b) noexcept
 {
     return Vector2(a.x * b, a.y * b);
 }
 
-constexpr Vector2 operator/(const Vector2 &a, float b)
+constexpr Vector2 operator/(const Vector2 &a, float b) noexcept
 {
     return Vector2(a.x / b, a.y / b);
 }
 
-constexpr Vector2 &operator*=(Vector2 &a, float b)
+constexpr Vector2 &operator*=(Vector2 &a, float b) noexcept
 {
     a.x *= b;
     a.y *= b;
     return a;
 }
-constexpr Vector2 &operator/=(Vector2 &a, float b)
+constexpr Vector2 &operator/=(Vector2 &a, float b) noexcept
 {
     a.x /= b;
     a.y /= b;
     return a;
 }
 
-constexpr bool operator==(const Vector2 &a, const Vector2 &b)
+constexpr bool operator==(const Vector2 &a, const Vector2 &b) noexcept
 {
     return a.x == b.x && a.y == b.y;
 }
@@ -69,7 +69,7 @@ constexpr bool operator==(const Vector2 &a, const Vector2 &b)
 // Utility functions for Vector2
 struct Vector2Hash
 {
-    constexpr std::size_t operator()(const Vector2 &v) const
+    constexpr std::size_t operator()(const Vector2 &v) const noexcept
     {
         return std::hash<float>()(v.x) ^ (std::hash<float>()(v.y) << 1);
     }
@@ -83,7 +83,7 @@ struct Vector2Equal
     }
 };
 
-constexpr Vector2 Vector2Normalize(const Vector2 &a)
+constexpr Vector2 Vector2Normalize(const Vector2 &a) noexcept
 {
     float length = std::sqrt(a.x * a.x + a.y * a.y);
     if (length == 0)
@@ -93,42 +93,42 @@ constexpr Vector2 Vector2Normalize(const Vector2 &a)
     return a / length;
 }
 
-constexpr float Vector2LengthSq(const Vector2 &a)
+constexpr float Vector2LengthSq(const Vector2 &a) noexcept
 {
     return a.x * a.x + a.y * a.y;
 }
 
-constexpr float Vector2Distance(const Vector2 &a, const Vector2 &b)
+constexpr float Vector2Distance(const Vector2 &a, const Vector2 &b) noexcept
 {
     return sqrt((b.x - a.x) * (b.x - a.x) + (b.y - a.y) * (b.y - a.y));
 }
 
-constexpr float Vector2DistanceSq(const Vector2 &a, const Vector2 &b)
+constexpr float Vector2DistanceSq(const Vector2 &a, const Vector2 &b) noexcept
 {
     return (b.x - a.x) * (b.x - a.x) + (b.y - a.y) * (b.y - a.y);
 }
 
-constexpr bool IsVector2WithinBounds(const Vector2 &a, const Vector2 &boxStart, const Vector2 &boxEnd)
+constexpr bool IsVector2WithinBounds(const Vector2 &a, const Vector2 &boxStart, const Vector2 &boxEnd) noexcept
 {
     return (a.x >= std::min(boxStart.x, boxEnd.x) && a.x <= std::max(boxStart.x, boxEnd.x) && a.y >= std::min(boxStart.y, boxEnd.y) && a.y <= std::max(boxStart.y, boxEnd.y));
 }
 
-constexpr Vector2 Vector2Round(const Vector2 &a)
+constexpr Vector2 Vector2Round(const Vector2 &a) noexcept
 {
     return Vector2(round(a.x), round(a.y));
 }
 
-constexpr Vector2 Vector2Floor(const Vector2 &a)
+constexpr Vector2 Vector2Floor(const Vector2 &a) noexcept
 {
     return Vector2(floor(a.x), floor(a.y));
 }
 
-constexpr Vector2 Vector2Lerp(const Vector2 &a, const Vector2 &b, float i)
+constexpr Vector2 Vector2Lerp(const Vector2 &a, const Vector2 &b, float i) noexcept
 {
     return Vector2(a.x + (b.x - a.x) * i, a.y + (b.y - a.y) * i);
 }
 
-constexpr Vector2 Vector2Cap(const Vector2 &a, const Vector2 &b, float delta)
+constexpr Vector2 Vector2Cap(const Vector2 &a, const Vector2 &b, float delta) noexcept
 {
     if (Vector2DistanceSq(a, b) < delta * delta)
         return b;
@@ -136,7 +136,7 @@ constexpr Vector2 Vector2Cap(const Vector2 &a, const Vector2 &b, float delta)
         return a + Vector2Normalize(b - a) * delta;
 }
 
-inline int Vector2ToRandomInt(const Vector2 &a, int min, int max)
+inline int Vector2ToRandomInt(const Vector2 &a, int min, int max) noexcept
 {
     Vector2Hash vectorHash;
     std::size_t seed = vectorHash(a);
@@ -146,7 +146,7 @@ inline int Vector2ToRandomInt(const Vector2 &a, int min, int max)
     return distribution(generator);
 }
 
-constexpr std::string ToString(const Vector2 &a)
+constexpr std::string ToString(const Vector2 &a) noexcept
 {
     return std::format("({:.2f}, {:.2f})", a.x, a.y);
 }
@@ -159,50 +159,50 @@ struct Vector2Int
     constexpr Vector2Int() : x(0), y(0) {}
     constexpr Vector2Int(int x, int y) : x(x), y(y) {}
 
-    constexpr Vector2Int operator+(const Vector2Int &a) const
+    constexpr Vector2Int operator+(const Vector2Int &a) const noexcept
     {
         return Vector2Int(x + a.x, y + a.y);
     }
 
-    constexpr Vector2Int operator-(const Vector2Int &a) const
+    constexpr Vector2Int operator-(const Vector2Int &a) const noexcept
     {
         return Vector2Int(x - a.x, y - a.y);
     }
 
-    constexpr Vector2Int &operator+=(Vector2Int &a)
+    constexpr Vector2Int &operator+=(Vector2Int &a) noexcept
     {
         x += a.x;
         y += a.y;
         return *this;
     }
 
-    constexpr Vector2Int &operator-=(Vector2Int &a)
+    constexpr Vector2Int &operator-=(Vector2Int &a) noexcept
     {
         x -= a.x;
         y -= a.y;
         return *this;
     }
 
-    constexpr bool operator==(const Vector2Int &a) const
+    constexpr bool operator==(const Vector2Int &a) const noexcept
     {
         return x == a.x && y == a.y;
     }
 
     struct Hash
     {
-        inline std::size_t operator()(const Vector2Int &v) const
+        constexpr std::size_t operator()(const Vector2Int &v) const noexcept
         {
             return std::hash<int>()(v.x) ^ (std::hash<int>()(v.y) << 1);
         }
     };
 };
 
-constexpr float Vector2IntDistanceSq(const Vector2Int &a, const Vector2Int &b)
+constexpr float Vector2IntDistanceSq(const Vector2Int &a, const Vector2Int &b) noexcept
 {
     return float(b.x - a.x) * float(b.x - a.x) + float(b.y - a.y) * float(b.y - a.y);
 }
 
-inline int Vector2IntToRandomInt(const Vector2Int &a, int min, int max)
+inline int Vector2IntToRandomInt(const Vector2Int &a, int min, int max) noexcept
 {
     Vector2Int::Hash hash;
     std::size_t seed = hash(a);
@@ -212,28 +212,28 @@ inline int Vector2IntToRandomInt(const Vector2Int &a, int min, int max)
     return distribution(generator);
 }
 
-constexpr Vector2Int ToVector2Int(const Vector2 &a)
+constexpr Vector2Int ToVector2Int(const Vector2 &a) noexcept
 {
     return Vector2Int((int)std::floor(a.x), (int)std::floor(a.y));
 }
 
-constexpr Vector2 ToVector2(const Vector2Int &a)
+constexpr Vector2 ToVector2(const Vector2Int &a) noexcept
 {
     return Vector2((float)(a.x), (float)(a.y));
 }
 
-inline std::string ToString(const Vector2Int &a)
+constexpr std::string ToString(const Vector2Int &a) noexcept
 {
     return std::format("({:}, {:})", a.x, a.y);
 }
 
 // Rectangle operator overloads
-constexpr Rectangle operator*(const Rectangle &a, float b)
+constexpr Rectangle operator*(const Rectangle &a, float b) noexcept
 {
     return {a.x * b, a.y * b, a.width * b, a.height * b};
 }
 
-constexpr Rectangle &operator*=(Rectangle &a, float b)
+constexpr Rectangle &operator*=(Rectangle &a, float b) noexcept
 {
     a.x *= b;
     a.y *= b;
@@ -243,7 +243,7 @@ constexpr Rectangle &operator*=(Rectangle &a, float b)
 }
 
 // Utility functions for Rectangle
-constexpr Rectangle Vector2ToRect(const Vector2 &a, const Vector2 &b)
+constexpr Rectangle Vector2ToRect(const Vector2 &a, const Vector2 &b) noexcept
 {
     float startX = std::min(a.x, b.x);
     float startY = std::min(a.y, b.y);
@@ -251,7 +251,7 @@ constexpr Rectangle Vector2ToRect(const Vector2 &a, const Vector2 &b)
 }
 
 // Utility functions for Line
-constexpr float DistanceSqFromPointToLine(const Vector2 &a, const Vector2 &b, const Vector2 &p)
+constexpr float DistanceSqFromPointToLine(const Vector2 &a, const Vector2 &b, const Vector2 &p) noexcept
 {
     Vector2 ab = b - a; // Vector from A to B
     Vector2 ap = p - a; // Vector from A to P
@@ -273,13 +273,13 @@ constexpr float DistanceSqFromPointToLine(const Vector2 &a, const Vector2 &b, co
 
 // Utility functions for Containers
 template <typename Container, typename T>
-constexpr bool Contains(const Container &container, const T &value)
+constexpr bool Contains(const Container &container, const T &value) noexcept
 {
     return std::find(container.begin(), container.end(), value) != container.end();
 }
 
 // Utility functions for std::string
-constexpr std::string ToTitleCase(const std::string &a)
+constexpr std::string ToTitleCase(const std::string &a) noexcept
 {
     std::string result = a;
     bool capitalizeNext = true;
