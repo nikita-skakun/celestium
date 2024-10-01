@@ -252,9 +252,19 @@ void UpdateTiles(std::shared_ptr<Station> station)
 {
     for (auto &tile : station->tiles)
     {
+        if (auto powerProducer = tile->GetComponent<PowerProducerComponent>())
+        {
+            powerProducer->ProducePower(FIXED_DELTA_TIME);
+        }
+
         if (auto powerConsumer = tile->GetComponent<PowerConsumerComponent>())
         {
             powerConsumer->ConsumePower(FIXED_DELTA_TIME);
+        }
+
+        if (auto battery = tile->GetComponent<BatteryComponent>())
+        {
+            battery->Charge();
         }
 
         if (auto oxygenProducer = tile->GetComponent<OxygenProducerComponent>())

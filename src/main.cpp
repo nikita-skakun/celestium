@@ -81,15 +81,15 @@ int main()
 
         // Render logic
         BeginDrawing();
-        ClearBackground(RAYWHITE);
+        ClearBackground(Color(31, 40, 45));
 
         DrawTileGrid(camera);
         DrawStation(station, tileset, camera);
         DrawCrew(timeSinceFixedUpdate, crewList, camera);
         DrawDragSelectBox(camera);
         DrawMainTooltip(crewList, camera, station, font);
-        DrawFpsCounter(deltaTime, 6, DEFAULT_FONT_SIZE, font);
-        DrawOverlay(camera, 6, DEFAULT_FONT_SIZE, font);
+        DrawFpsCounter(deltaTime, 12, DEFAULT_FONT_SIZE, font);
+        DrawOverlay(camera, 12, DEFAULT_FONT_SIZE, font);
 
         EndDrawing();
 

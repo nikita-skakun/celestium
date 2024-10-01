@@ -13,6 +13,7 @@ struct Tile
         WALL,
         OXYGEN_PRODUCER,
         BATTERY,
+        SOLAR_PANEL,
     };
 
     enum class Height : u_int8_t

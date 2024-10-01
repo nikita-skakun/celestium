@@ -17,14 +17,14 @@ void DrawTileGrid(const PlayerCam &camera)
     for (float x = floor(topLeft.x / TILE_SIZE) * TILE_SIZE; x <= ceil((topLeft.x + screenWidth / camera.zoom) / TILE_SIZE) * TILE_SIZE; x += TILE_SIZE)
     {
         float screenX = (x - camera.position.x * TILE_SIZE) * camera.zoom + screenWidth / 2.0f;
-        DrawLineV({screenX, 0}, {screenX, (float)screenHeight}, LIGHTGRAY);
+        DrawLineV({screenX, 0}, {screenX, (float)screenHeight}, GRID_COLOR);
     }
 
     // Draw horizontal lines
     for (float y = floor(topLeft.y / TILE_SIZE) * TILE_SIZE; y <= ceil((topLeft.y + screenHeight / camera.zoom) / TILE_SIZE) * TILE_SIZE; y += TILE_SIZE)
     {
         float screenY = (y - camera.position.y * TILE_SIZE) * camera.zoom + screenHeight / 2.0f;
-        DrawLineV({0, screenY}, {(float)screenWidth, screenY}, LIGHTGRAY);
+        DrawLineV({0, screenY}, {(float)screenWidth, screenY}, GRID_COLOR);
     }
 }
 
@@ -107,13 +107,26 @@ void DrawStation(std::shared_ptr<Station> station, const Texture2D &tileset, con
             {
                 if (!powerConsumer->IsActive())
                 {
-                    Vector2 startScreenPos = camera.WorldToScreen(ToVector2(tile->position) + Vector2(.25f, .25f));
+                    Vector2 startScreenPos = camera.WorldToScreen(ToVector2(tile->position) + Vector2(.66f, 0.f));
 
-                    Rectangle destRect = Vector2ToRect(startScreenPos, startScreenPos + sizeScreenPos / 2.f);
+                    Rectangle destRect = Vector2ToRect(startScreenPos, startScreenPos + sizeScreenPos / 3.f);
                     Rectangle sourceRec = Rectangle(0, 7, 1, 1) * TILE_SIZE;
 
                     DrawTexturePro(tileset, sourceRec, destRect, Vector2(), 0, Fade(YELLOW, .8f));
                 }
+            }
+
+            if (auto battery = tile->GetComponent<BatteryComponent>())
+            {
+                float barProgress = battery->GetChargeLevel() / BATTERY_CHARGE_MAX;
+                Vector2 topLeftPos = camera.WorldToScreen(ToVector2(tile->position) + Vector2(1.f / 16.f, 0.f));
+                Vector2 barStartPos = camera.WorldToScreen(ToVector2(tile->position) + Vector2(1.f / 16.f, 1.f - barProgress));
+
+                Vector2 totalSize = Vector2(1.f / 8.f, 1.f) * TILE_SIZE * camera.zoom;
+                Vector2 barSize = Vector2(1.f / 8.f, barProgress) * TILE_SIZE * camera.zoom;
+
+                DrawRectangleV(topLeftPos, totalSize, Color(25, 25, 25, 200));
+                DrawRectangleV(barStartPos, barSize, Fade(YELLOW, .8f));
             }
 
             if (auto powerConnector = tile->GetComponent<PowerConnectorComponent>())
@@ -219,7 +232,7 @@ void DrawFpsCounter(float deltaTime, int padding, int fontSize, const Font &font
 {
     std::string fpsText = std::format("FPS: {:} ({:.2f}ms)", GetFPS(), deltaTime * 1000.f);
     const char *text = fpsText.c_str();
-    DrawTextEx(font, text, Vector2(GetScreenWidth() - MeasureTextEx(font, text, fontSize, 1).x - padding, padding), fontSize, 1, BLACK);
+    DrawTextEx(font, text, Vector2(GetScreenWidth() - MeasureTextEx(font, text, fontSize, 1).x - padding, padding), fontSize, 1, UI_TEXT_COLOR);
 }
 
 /**
@@ -234,7 +247,7 @@ void DrawOverlay(const PlayerCam &camera, int padding, int fontSize, const Font 
 {
     std::string overlayText = std::format("Overlay: {:}", ToTitleCase(std::string(magic_enum::enum_name(camera.overlay))));
     const char *text = overlayText.c_str();
-    DrawTextEx(font, text, Vector2(padding, padding), fontSize, 1, BLACK);
+    DrawTextEx(font, text, Vector2(padding, padding), fontSize, 1, UI_TEXT_COLOR);
 }
 
 /**

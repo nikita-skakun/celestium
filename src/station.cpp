@@ -17,18 +17,24 @@ std::shared_ptr<Tile> CreateTile(Tile::ID id, const Vector2Int &position, std::s
         break;
 
     case Tile::ID::OXYGEN_PRODUCER:
-    {
         tile = std::make_shared<Tile>(id, Tile::Height::WAIST, position, station, room);
         tile->AddComponent<PowerConnectorComponent>(tile, PowerConnectorComponent::IO::INPUT);
         tile->AddComponent<PowerConsumerComponent>(tile, OxygenProducerComponent::POWER_CONSUMPTION);
         tile->AddComponent<OxygenProducerComponent>(tile);
         break;
-    }
+
     case Tile::ID::BATTERY:
         tile = std::make_shared<Tile>(id, Tile::Height::WAIST, position, station, room);
-        tile->AddComponent<BatteryComponent>(tile, BATTERY_CHARGE_MAX);
         tile->AddComponent<PowerConnectorComponent>(tile, PowerConnectorComponent::IO::INPUT | PowerConnectorComponent::IO::OUTPUT);
+        tile->AddComponent<BatteryComponent>(tile, BATTERY_CHARGE_MAX);
         break;
+
+    case Tile::ID::SOLAR_PANEL:
+        tile = std::make_shared<Tile>(id, Tile::Height::WAIST, position, station, room);
+        tile->AddComponent<PowerConnectorComponent>(tile, PowerConnectorComponent::IO::OUTPUT);
+        tile->AddComponent<PowerProducerComponent>(tile, 20.f);
+        break;
+
     default:
         return nullptr;
     }
@@ -154,6 +160,7 @@ std::shared_ptr<Station> CreateStation()
     CreateTile(Tile::ID::OXYGEN_PRODUCER, Vector2Int(0, 0), station, room1);
     CreateTile(Tile::ID::OXYGEN_PRODUCER, Vector2Int(14, 0), station, room2);
     CreateTile(Tile::ID::BATTERY, Vector2Int(11, -3), station, room2);
+    CreateTile(Tile::ID::SOLAR_PANEL, Vector2Int(0, -6), station);
     station->UpdateSpriteOffsets();
     return station;
 }
@@ -327,6 +334,9 @@ void Station::UpdateSpriteOffsets()
             break;
         case Tile::ID::BATTERY:
             tile->spriteOffset = Vector2Int(5, 7);
+            break;
+        case Tile::ID::SOLAR_PANEL:
+            tile->spriteOffset = Vector2Int(7, 7);
             break;
         default:
             break;

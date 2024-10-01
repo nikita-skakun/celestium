@@ -8,24 +8,27 @@ constexpr float MAX_ZOOM = 5.f;
 constexpr float ZOOM_SPEED = .1f;
 
 constexpr int DEFAULT_FONT_SIZE = 20;
+constexpr Color UI_TEXT_COLOR = LIGHTGRAY;
 
 constexpr float TILE_SIZE = 32.f;
 constexpr float TILE_OXYGEN_MAX = 100.f;
 
-constexpr float OXYGEN_DIFFUSION_RATE = 10.f;
-constexpr float OXYGEN_PRODUCTION_RATE = 1000.f;
+constexpr Color GRID_COLOR = Color(0, 0, 0, 50);
 
-constexpr float BATTERY_CHARGE_MAX = 200.f;
+constexpr float OXYGEN_DIFFUSION_RATE = 10.f;
+constexpr float OXYGEN_PRODUCTION_RATE = 100.f;
+
+constexpr float BATTERY_CHARGE_MAX = 2000.f;
+
+constexpr float POWER_CONNECTION_WIDTH = 2.f;
+constexpr Color POWER_CONNECTION_COLOR = Color(253, 249, 0, 77);
 
 constexpr float DRAG_THRESHOLD = .25f;
 constexpr float OUTLINE_SIZE = 1.f;
 constexpr Color OUTLINE_COLOR = BLACK;
 
-constexpr float POWER_CONNECTION_WIDTH = 2.f;
-constexpr Color POWER_CONNECTION_COLOR = Color(253, 249, 0, 77);
-
 constexpr float CREW_RADIUS = 12.f;
 constexpr float CREW_MOVE_SPEED = 2.f;
 constexpr float CREW_OXYGEN_MAX = 100.f;
-constexpr float CREW_OXYGEN_USE = 100.f;
-constexpr float CREW_OXYGEN_REFILL = 200.0f;
+constexpr float CREW_OXYGEN_USE = 10.f;
+constexpr float CREW_OXYGEN_REFILL = 50.0f;

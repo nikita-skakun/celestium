@@ -62,40 +62,6 @@ struct SolidComponent : Component
     }
 };
 
-struct BatteryComponent : Component
-{
-private:
-    float charge;
-
-public:
-    BatteryComponent(std::shared_ptr<Tile> parent, float startCharge = BATTERY_CHARGE_MAX)
-        : Component(parent), charge(startCharge) {}
-
-    void Charge(float amount)
-    {
-        charge = std::min(charge + amount, BATTERY_CHARGE_MAX);
-    }
-
-    bool Drain(float amount)
-    {
-        if (charge < amount)
-            return false;
-
-        charge -= amount;
-        return true;
-    }
-
-    float GetChargeLevel() const
-    {
-        return charge;
-    }
-
-    std::string GetName() const override
-    {
-        return "Battery";
-    }
-};
-
 struct PowerConnectorComponent : Component
 {
     enum class IO : u_int8_t
@@ -192,6 +158,37 @@ public:
     }
 };
 
+struct BatteryComponent : Component
+{
+private:
+    float charge;
+
+public:
+    BatteryComponent(std::shared_ptr<Tile> parent, float startingCharge = BATTERY_CHARGE_MAX)
+        : Component(parent), charge(startingCharge) {}
+
+    constexpr bool Drain(float amount)
+    {
+        if (charge < amount)
+            return false;
+
+        charge -= amount;
+        return true;
+    }
+
+    constexpr float GetChargeLevel() const
+    {
+        return charge;
+    }
+
+    void Charge();
+
+    std::string GetName() const override
+    {
+        return "Battery";
+    }
+};
+
 struct PowerConsumerComponent : Component
 {
 private:
@@ -231,6 +228,42 @@ public:
     }
 };
 
+struct PowerProducerComponent : Component
+{
+private:
+    float powerProduction;
+    float availablePower;
+
+public:
+    PowerProducerComponent(std::shared_ptr<Tile> parent, float powerProduction)
+        : Component(parent), powerProduction(std::max(powerProduction, 0.f)), availablePower(0.f) {}
+
+    constexpr float GetPowerProduction() const
+    {
+        return powerProduction;
+    }
+
+    constexpr float GetAvailablePower() const
+    {
+        return availablePower;
+    }
+
+    constexpr void UseAvailablePower(float usedPower)
+    {
+        availablePower -= usedPower;
+    }
+
+    constexpr void ProducePower(float deltaTime)
+    {
+        availablePower = GetPowerProduction() * deltaTime;
+    }
+
+    std::string GetName() const override
+    {
+        return "Power Producer";
+    }
+};
+
 struct OxygenComponent : Component
 {
 private:
@@ -258,7 +291,7 @@ public:
 
 struct OxygenProducerComponent : Component
 {
-    static constexpr float POWER_CONSUMPTION = 2.f;
+    static constexpr float POWER_CONSUMPTION = 20.f;
 
     OxygenProducerComponent(std::shared_ptr<Tile> parent) : Component(parent) {}
 
