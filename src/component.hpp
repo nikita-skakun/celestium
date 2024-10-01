@@ -264,6 +264,18 @@ public:
     }
 };
 
+struct SolarPanelComponent : Component
+{
+    static constexpr float SOLAR_PANEL_POWER_OUTPUT = 20.f;
+
+    SolarPanelComponent(std::shared_ptr<Tile> parent) : Component(parent) {}
+
+    std::string GetName() const override
+    {
+        return "Solar Panel";
+    }
+};
+
 struct OxygenComponent : Component
 {
 private:

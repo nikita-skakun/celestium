@@ -32,7 +32,8 @@ std::shared_ptr<Tile> CreateTile(Tile::ID id, const Vector2Int &position, std::s
     case Tile::ID::SOLAR_PANEL:
         tile = std::make_shared<Tile>(id, Tile::Height::WAIST, position, station, room);
         tile->AddComponent<PowerConnectorComponent>(tile, PowerConnectorComponent::IO::OUTPUT);
-        tile->AddComponent<PowerProducerComponent>(tile, 20.f);
+        tile->AddComponent<PowerProducerComponent>(tile, SolarPanelComponent::SOLAR_PANEL_POWER_OUTPUT);
+        tile->AddComponent<SolarPanelComponent>(tile);
         break;
 
     default:
