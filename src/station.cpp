@@ -36,6 +36,11 @@ std::shared_ptr<Tile> CreateTile(Tile::ID id, const Vector2Int &position, std::s
         tile->AddComponent<SolarPanelComponent>(tile);
         break;
 
+    case Tile::ID::FRAME:
+        tile = std::make_shared<Tile>(id, Tile::Height::FLOOR, position, station, room);
+        tile->AddComponent<WalkableComponent>(tile);
+        break;
+
     default:
         return nullptr;
     }
@@ -158,10 +163,26 @@ std::shared_ptr<Station> CreateStation()
     std::shared_ptr<Room> room2 = CreateRectRoom(Vector2Int(10, -4), Vector2Int(9, 9), station);
     CreateHorizontalCorridor(Vector2Int(4, 0), 7, 3, station);
 
-    CreateTile(Tile::ID::OXYGEN_PRODUCER, Vector2Int(0, 0), station, room1);
-    CreateTile(Tile::ID::OXYGEN_PRODUCER, Vector2Int(14, 0), station, room2);
-    CreateTile(Tile::ID::BATTERY, Vector2Int(11, -3), station, room2);
-    CreateTile(Tile::ID::SOLAR_PANEL, Vector2Int(0, -6), station);
+    auto oxygenProducer1 = CreateTile(Tile::ID::OXYGEN_PRODUCER, Vector2Int(0, 0), station, room1);
+    auto oxygenProducer2 = CreateTile(Tile::ID::OXYGEN_PRODUCER, Vector2Int(14, 0), station, room2);
+    auto battery = CreateTile(Tile::ID::BATTERY, Vector2Int(3, -3), station, room1);
+    CreateTile(Tile::ID::FRAME, Vector2Int(0, -6), station);
+    CreateTile(Tile::ID::FRAME, Vector2Int(0, -7), station);
+    CreateTile(Tile::ID::FRAME, Vector2Int(-1, -7), station);
+    CreateTile(Tile::ID::FRAME, Vector2Int(1, -7), station);
+    CreateTile(Tile::ID::FRAME, Vector2Int(0, -8), station);
+    CreateTile(Tile::ID::FRAME, Vector2Int(-1, -8), station);
+    CreateTile(Tile::ID::FRAME, Vector2Int(1, -8), station);
+    auto panel1 = CreateTile(Tile::ID::SOLAR_PANEL, Vector2Int(0, -8), station);
+    auto panel2 = CreateTile(Tile::ID::SOLAR_PANEL, Vector2Int(-1, -8), station);
+    auto panel3 = CreateTile(Tile::ID::SOLAR_PANEL, Vector2Int(1, -8), station);
+
+    PowerConnectorComponent::AddConnection(battery->GetComponent<PowerConnectorComponent>(), panel1->GetComponent<PowerConnectorComponent>());
+    PowerConnectorComponent::AddConnection(battery->GetComponent<PowerConnectorComponent>(), panel2->GetComponent<PowerConnectorComponent>());
+    PowerConnectorComponent::AddConnection(battery->GetComponent<PowerConnectorComponent>(), panel3->GetComponent<PowerConnectorComponent>());
+    PowerConnectorComponent::AddConnection(battery->GetComponent<PowerConnectorComponent>(), oxygenProducer1->GetComponent<PowerConnectorComponent>());
+    PowerConnectorComponent::AddConnection(battery->GetComponent<PowerConnectorComponent>(), oxygenProducer2->GetComponent<PowerConnectorComponent>());
+
     station->UpdateSpriteOffsets();
     return station;
 }
@@ -330,15 +351,23 @@ void Station::UpdateSpriteOffsets()
             }
             break;
         }
+
         case Tile::ID::OXYGEN_PRODUCER:
             tile->spriteOffset = Vector2Int(6, 7);
             break;
+
         case Tile::ID::BATTERY:
             tile->spriteOffset = Vector2Int(5, 7);
             break;
+
         case Tile::ID::SOLAR_PANEL:
             tile->spriteOffset = Vector2Int(7, 7);
             break;
+
+        case Tile::ID::FRAME:
+            tile->spriteOffset = Vector2Int(3, 4);
+            break;
+
         default:
             break;
         }
