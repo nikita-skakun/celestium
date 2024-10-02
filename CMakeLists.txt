@@ -50,10 +50,11 @@ set_target_properties(celestium PROPERTIES
     CMAKE_C_STANDARD_REQUIRED YES
 )
 
-# Add extra warnings and optimizations for the main target
-if(CMAKE_CXX_COMPILER_ID STREQUAL "Clang")
-    target_compile_options(celestium PRIVATE -Wall -Wextra -Wpedantic -O2)
-endif()
+# Add extra warnings for the main target
+target_compile_options(celestium PRIVATE
+    $<$<CXX_COMPILER_ID:Clang,GNU>:-Wall -Wextra -Wpedantic>
+    $<$<CXX_COMPILER_ID:MSVC>:/W4>
+)
 
 # Helper function to fetch, make available, and link dependencies
 function(fetch_and_link_dependency name repo tag)
