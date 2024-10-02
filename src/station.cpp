@@ -126,7 +126,7 @@ std::shared_ptr<Room> CreateRectRoom(const Vector2Int &pos, const Vector2Int &si
 
 std::shared_ptr<Room> CreateHorizontalCorridor(const Vector2Int &startPos, int length, int width, std::shared_ptr<Station> station)
 {
-    if (width < 1 || length < 1)
+    if (width < 1 || length == 0)
         return nullptr;
 
     std::shared_ptr<Room> room = CreateEmptyRoom(station);
@@ -135,12 +135,15 @@ std::shared_ptr<Room> CreateHorizontalCorridor(const Vector2Int &startPos, int l
     int start = -(int)floor(totalWidth / 2.f);
     int end = (int)ceil(totalWidth / 2.f);
 
-    for (int i = 0; i < length; i++)
+    int direction = (length > 0) ? 1 : -1;
+    int absLength = std::abs(length);
+
+    for (int i = 0; i < absLength; i++)
     {
         for (int y = start; y < end; y++)
         {
             bool isWall = (y == start || y == end - 1);
-            Vector2Int pos = startPos + Vector2Int(i, y);
+            Vector2Int pos = startPos + Vector2Int(i * direction, y);
             std::shared_ptr<Tile> oldTile = station->GetTileAtPosition(pos);
             if (isWall && oldTile)
                 continue;
