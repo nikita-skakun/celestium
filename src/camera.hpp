@@ -28,8 +28,9 @@ struct PlayerCam
     float zoom;
     Overlay overlay;
 
-    PlayerCam() : isDragging(false), dragType(DragType::SELECT), crewHoverIndex(-1), zoom(1.f), overlay(Overlay::NONE) {}
-
+    PlayerCam()
+        : position(Vector2(0, 0)), isDragging(false), dragStartPos(Vector2(0, 0)), dragEndPos(Vector2(0, 0)),
+          dragType(DragType::SELECT), crewHoverIndex(-1), zoom(1.f), overlay(Overlay::NONE) {}
 
     // Utility function for Screen to World space transformations
     Vector2 GetWorldMousePos() const;

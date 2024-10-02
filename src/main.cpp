@@ -31,9 +31,9 @@ void FixedUpdate(std::shared_ptr<Station> station, std::vector<Crew> &crewList, 
             UpdateTiles(station);
 
             timeSinceFixedUpdate -= FIXED_DELTA_TIME;
+            fixedUpdateCondition.notify_all();
         }
 
-        fixedUpdateCondition.notify_all();
         std::this_thread::sleep_for(std::chrono::milliseconds(1));
     }
 }
@@ -96,7 +96,6 @@ int main()
         isGameRunning = !WindowShouldClose();
     }
 
-    fixedUpdateCondition.notify_all();
     updateThread.join();
 
     CloseWindow();
