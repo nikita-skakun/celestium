@@ -232,7 +232,15 @@ void Station::UpdateSpriteOffsets()
                 std::shared_ptr<Tile> luTile = GetTileAtPosition(tile->position + Vector2Int(-1, -1));
                 bool lu = luTile && luTile->id == tile->id;
 
-                if (rd && !ld && ru && !lu)
+                if (rd && ld && !ru && lu)
+                    tile->spriteOffset = Vector2Int(0, 2);
+                else if (rd && ld && ru && !lu)
+                    tile->spriteOffset = Vector2Int(1, 2);
+                else if (!rd && ld && ru && lu)
+                    tile->spriteOffset = Vector2Int(2, 2);
+                else if (rd && !ld && ru && lu)
+                    tile->spriteOffset = Vector2Int(3, 2);
+                else if (rd && !ld && ru && !lu)
                     tile->spriteOffset = Vector2Int(0, 1);
                 else if (!rd && ld && !ru && lu)
                     tile->spriteOffset = Vector2Int(1, 1);
@@ -259,38 +267,38 @@ void Station::UpdateSpriteOffsets()
         case Tile::ID::WALL:
         {
             if (!right && !left && !down && !up)
-                tile->spriteOffset = Vector2Int(0, 3);
+                tile->spriteOffset = Vector2Int(3, 4);
             else if (right && !left && !down && !up)
-                tile->spriteOffset = Vector2Int(1, 3);
+                tile->spriteOffset = Vector2Int(0, 3);
             else if (!right && left && !down && !up)
-                tile->spriteOffset = Vector2Int(2, 3);
+                tile->spriteOffset = Vector2Int(1, 3);
             else if (!right && !left && down && !up)
-                tile->spriteOffset = Vector2Int(3, 3);
+                tile->spriteOffset = Vector2Int(2, 3);
             else if (!right && !left && !down && up)
-                tile->spriteOffset = Vector2Int(4, 3);
+                tile->spriteOffset = Vector2Int(3, 3);
             else if (right && !left && down && !up)
             {
                 if (!uTile)
                 {
                     tile->spriteOffset = Vector2Int(2, 4);
                     auto dComp = tile->AddComponent<DecorativeComponent>(tile);
-                    dComp->AddDecorativeTile(Vector2Int(0, -1), Vector2Int(5, 3));
+                    dComp->AddDecorativeTile(Vector2Int(0, -1), Vector2Int(5, 4));
                 }
                 else
-                    tile->spriteOffset = Vector2Int(5, 3);
+                    tile->spriteOffset = Vector2Int(5, 4);
             }
             else if (right && left && down && !up)
-                tile->spriteOffset = Vector2Int(6, 3);
+                tile->spriteOffset = Vector2Int(6, 4);
             else if (!right && left && down && !up)
             {
                 if (!uTile)
                 {
                     tile->spriteOffset = Vector2Int(2, 4);
                     auto dComp = tile->AddComponent<DecorativeComponent>(tile);
-                    dComp->AddDecorativeTile(Vector2Int(0, -1), Vector2Int(7, 3));
+                    dComp->AddDecorativeTile(Vector2Int(0, -1), Vector2Int(7, 4));
                 }
                 else
-                    tile->spriteOffset = Vector2Int(7, 3);
+                    tile->spriteOffset = Vector2Int(7, 4);
             }
             else if (right && left && !down && !up)
             {
@@ -312,11 +320,11 @@ void Station::UpdateSpriteOffsets()
                 if (ddTile && ddTile->id != tile->id)
                 {
                     if (rdTile && rdTile->id == tile->id && ldTile && ldTile->id == tile->id)
-                        tile->spriteOffset = Vector2Int(6, 5);
+                        tile->spriteOffset = Vector2Int(6, 6);
                     else if (rdTile && rdTile->id == tile->id && (!ldTile || ldTile->id != tile->id))
-                        tile->spriteOffset = Vector2Int(5, 5);
+                        tile->spriteOffset = Vector2Int(5, 6);
                     else if ((!rdTile || rdTile->id != tile->id) && ldTile && ldTile->id == tile->id)
-                        tile->spriteOffset = Vector2Int(7, 5);
+                        tile->spriteOffset = Vector2Int(7, 6);
                     else
                         tile->spriteOffset = Vector2Int(2, 4);
                 }
@@ -324,33 +332,33 @@ void Station::UpdateSpriteOffsets()
                     tile->spriteOffset = Vector2Int(2, 4);
             }
             else if (right && !left && down && up)
-                tile->spriteOffset = Vector2Int(5, 4);
+                tile->spriteOffset = Vector2Int(5, 5);
             else if (right && left && down && up)
-                tile->spriteOffset = Vector2Int(6, 4);
+                tile->spriteOffset = Vector2Int(6, 5);
             else if (!right && left && down && up)
-                tile->spriteOffset = Vector2Int(7, 4);
+                tile->spriteOffset = Vector2Int(7, 5);
             else if (right && !left && !down && up)
             {
                 if (dTile)
                     tile->spriteOffset = Vector2Int(4, 1);
                 else
-                    tile->spriteOffset = Vector2Int(5, 5);
+                    tile->spriteOffset = Vector2Int(5, 6);
             }
             else if (right && left && !down && up)
-                tile->spriteOffset = Vector2Int(6, 5);
+                tile->spriteOffset = Vector2Int(6, 6);
             else if (!right && left && !down && up)
             {
                 if (dTile)
                     tile->spriteOffset = Vector2Int(4, 1);
                 else
-                    tile->spriteOffset = Vector2Int(7, 5);
+                    tile->spriteOffset = Vector2Int(7, 6);
             }
 
             if (!dTile)
             {
                 auto dComp = tile->AddComponent<DecorativeComponent>(tile);
-                dComp->AddDecorativeTile(Vector2Int(0, 1), Vector2Int(Vector2IntToRandomInt(tile->position, 0, 1), 2));
-                dComp->AddDecorativeTile(Vector2Int(0, 2), Vector2Int(Vector2IntToRandomInt(tile->position, 2, 3), 2));
+                dComp->AddDecorativeTile(Vector2Int(0, 1), Vector2Int(Vector2IntToRandomInt(tile->position, 4, 5), 3));
+                dComp->AddDecorativeTile(Vector2Int(0, 2), Vector2Int(Vector2IntToRandomInt(tile->position, 6, 7), 3));
             }
             break;
         }
@@ -368,7 +376,7 @@ void Station::UpdateSpriteOffsets()
             break;
 
         case Tile::ID::FRAME:
-            tile->spriteOffset = Vector2Int(3, 4);
+            tile->spriteOffset = Vector2Int(4, 4);
             break;
 
         default:
