@@ -268,11 +268,11 @@ void DrawOverlay(const PlayerCam &camera, int padding, int fontSize, const Font 
  *
  * @param tooltip  The text to display in the tooltip.
  * @param pos      The position where the tooltip will be drawn.
+ * @param font     The font to use when drawing the tooltip, defaults to RayLib's default.
  * @param padding  The padding around the text within the tooltip background.
  * @param fontSize The size of the text in the tooltip.
- * @param font     The font to use when drawing the tooltip, defaults to RayLib's default.
  */
-void DrawTooltip(const std::string &tooltip, const Vector2 &pos, float padding, int fontSize, const Font &font)
+void DrawTooltip(const std::string &tooltip, const Vector2 &pos, const Font &font, float padding, int fontSize)
 {
     int lineCount = 0;
     const char **lines = TextSplit(tooltip.c_str(), '\n', &lineCount);
@@ -283,17 +283,39 @@ void DrawTooltip(const std::string &tooltip, const Vector2 &pos, float padding, 
         textWidth = std::max(textWidth, MeasureTextEx(font, lines[i], fontSize, 1).x);
     }
 
-    Rectangle backgroundRect = {
-        pos.x,
-        pos.y,
-        textWidth + 2.f * padding,
-        lineCount * fontSize + 2.f * padding};
+    Vector2 size = {textWidth + 2.f * padding, lineCount * fontSize + 2.f * padding};
+    Vector2 tooltipPos = pos;
 
+    // Check if the tooltip goes beyond the screen's right edge (considering padding)
+    if (tooltipPos.x + size.x > GetScreenWidth())
+    {
+        // Slide the tooltip back to fit within the screen's right edge
+        tooltipPos.x = GetScreenWidth() - size.x;
+    }
+
+    // Ensure the tooltip doesn't go beyond the left edge of the screen
+    if (tooltipPos.x < 0)
+    {
+        tooltipPos.x = 0;
+    }
+
+    // Ensure the tooltip doesn't go beyond the bottom or top of the screen
+    if (tooltipPos.y + size.y > GetScreenHeight())
+    {
+        tooltipPos.y = GetScreenHeight() - size.y;
+    }
+    else if (tooltipPos.y < 0)
+    {
+        tooltipPos.y = 0;
+    }
+
+    Rectangle backgroundRect = Vector2ToRect(tooltipPos, tooltipPos + size);
     DrawRectangleRec(backgroundRect, Fade(LIGHTGRAY, 0.7f));
 
+    // Draw the tooltip with the calculated position and padding
     for (int i = 0; i < lineCount; i++)
     {
-        DrawTextEx(font, lines[i], pos + Vector2(padding, padding + (i * fontSize)), fontSize, 1, BLACK);
+        DrawTextEx(font, lines[i], tooltipPos + Vector2(padding, padding + (i * fontSize)), fontSize, 1, BLACK);
     }
 }
 
@@ -308,10 +330,9 @@ void DrawTooltip(const std::string &tooltip, const Vector2 &pos, float padding, 
 void DrawMainTooltip(const std::vector<Crew> &crewList, const PlayerCam &camera, std::shared_ptr<Station> station, const Font &font)
 {
     std::string hoverText;
-    const float padding = 10.0f;
     const Vector2 mousePos = GetMousePosition();
 
-    // Check if we're hovering over a crew member
+    // Add crew info we are hovering over
     if (camera.crewHoverIndex >= 0)
     {
         const Crew &crew = crewList[camera.crewHoverIndex];
@@ -326,7 +347,7 @@ void DrawMainTooltip(const std::vector<Crew> &crewList, const PlayerCam &camera,
         }
     }
 
-    // Check if we're hovering over a station tile
+    // Add tile info we are hovering over
     if (station)
     {
         Vector2Int tileHoverPos = camera.ScreenToTile(mousePos);
@@ -353,51 +374,8 @@ void DrawMainTooltip(const std::vector<Crew> &crewList, const PlayerCam &camera,
         }
     }
 
-    // If there is text to display in the tooltip
-    if (!hoverText.empty())
-    {
-        int lineCount = 0;
-        const char **lines = TextSplit(hoverText.c_str(), '\n', &lineCount);
+    if (hoverText.empty())
+        return;
 
-        float textWidth = 0;
-        for (int i = 0; i < lineCount; i++)
-        {
-            textWidth = std::max(textWidth, MeasureTextEx(font, lines[i], DEFAULT_FONT_SIZE, 1).x);
-        }
-
-        Vector2 size = {textWidth + 2.f * padding, lineCount * DEFAULT_FONT_SIZE + 2.f * padding};
-        Vector2 tooltipPos = mousePos;
-
-        // Check if the tooltip goes beyond the screen's right edge (considering padding)
-        if (tooltipPos.x + size.x > GetScreenWidth())
-        {
-            // Slide the tooltip back to fit within the screen's right edge
-            tooltipPos.x = GetScreenWidth() - size.x;
-        }
-
-        // Ensure the tooltip doesn't go beyond the left edge of the screen
-        if (tooltipPos.x < 0)
-        {
-            tooltipPos.x = 0;
-        }
-
-        // Ensure the tooltip doesn't go beyond the bottom or top of the screen
-        if (tooltipPos.y + size.y > GetScreenHeight())
-        {
-            tooltipPos.y = GetScreenHeight() - size.y;
-        }
-        else if (tooltipPos.y < 0)
-        {
-            tooltipPos.y = 0;
-        }
-
-        Rectangle backgroundRect = Vector2ToRect(tooltipPos, tooltipPos + size);
-        DrawRectangleRec(backgroundRect, Fade(LIGHTGRAY, 0.7f));
-
-        // Draw the tooltip with the calculated position and padding
-        for (int i = 0; i < lineCount; i++)
-        {
-            DrawTextEx(font, lines[i], tooltipPos + Vector2(padding, padding + (i * DEFAULT_FONT_SIZE)), DEFAULT_FONT_SIZE, 1, BLACK);
-        }
-    }
+    DrawTooltip(hoverText, mousePos, font);
 }
