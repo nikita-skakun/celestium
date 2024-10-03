@@ -86,7 +86,8 @@ int main()
         ClearBackground(Color(31, 40, 45));
 
         DrawTileGrid(camera);
-        DrawStation(station, tileset, camera);
+        DrawStationTiles(station, tileset, camera);
+        DrawStationOverlays(station, tileset, camera);
         DrawCrew(timeSinceFixedUpdate, crewList, camera);
         DrawDragSelectBox(camera);
         DrawMainTooltip(crewList, camera, station, font);

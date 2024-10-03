@@ -51,18 +51,19 @@ void DrawPath(const std::deque<Vector2Int> &path, const Vector2 &startPos, const
 }
 
 /**
- * Draws the station tiles and visual overlays.
+ * Draws the station tiles and direct overlays.
  *
  * @param station The station to draw the tiles of.
  * @param tileset A texture containing all tile assets.
  * @param camera  The PlayerCam used for handling overlays and converting coordinates.
  */
-void DrawStation(std::shared_ptr<Station> station, const Texture2D &tileset, const PlayerCam &camera)
+void DrawStationTiles(std::shared_ptr<Station> station, const Texture2D &tileset, const PlayerCam &camera)
 {
     if (!station)
         return;
 
     Vector2 sizeScreenPos = Vector2(1.f, 1.f) * TILE_SIZE * camera.zoom;
+
     for (std::shared_ptr<Tile> tile : station->tiles)
     {
         Vector2 startScreenPos = camera.WorldToScreen(ToVector2(tile->GetPosition()));
@@ -86,6 +87,18 @@ void DrawStation(std::shared_ptr<Station> station, const Texture2D &tileset, con
             DrawRectangleV(startScreenPos, sizeScreenPos, Color(255, 0, 0, 64));
         }
     }
+}
+
+/**
+ * Draws the indirect visual overlays.
+ *
+ * @param station The station to draw the overlays of.
+ * @param tileset A texture containing all tile assets.
+ * @param camera  The PlayerCam used for handling overlays and converting coordinates.
+ */
+void DrawStationOverlays(std::shared_ptr<Station> station, const Texture2D &tileset, const PlayerCam &camera)
+{
+    Vector2 sizeScreenPos = Vector2(1.f, 1.f) * TILE_SIZE * camera.zoom;
 
     for (std::shared_ptr<Tile> tile : station->tiles)
     {
@@ -93,11 +106,11 @@ void DrawStation(std::shared_ptr<Station> station, const Texture2D &tileset, con
         {
             for (const DecorativeTile &dTile : decorative->GetDecorativeTiles())
             {
-                Vector2 v_startScreenPos = camera.WorldToScreen(ToVector2(tile->GetPosition() + dTile.offset));
-                Rectangle v_destRect = Vector2ToRect(v_startScreenPos, v_startScreenPos + sizeScreenPos);
-                Rectangle v_sourceRec = Rectangle(dTile.spriteOffset.x, dTile.spriteOffset.y, 1, 1) * TILE_SIZE;
+                Rectangle sourceRec = Rectangle(dTile.spriteOffset.x, dTile.spriteOffset.y, 1, 1) * TILE_SIZE;
+                Vector2 startPos = camera.WorldToScreen(ToVector2(tile->GetPosition() + dTile.offset));
+                Rectangle destRect = Rectangle(startPos.x, startPos.y, sizeScreenPos.x, sizeScreenPos.y);
 
-                DrawTexturePro(tileset, v_sourceRec, v_destRect, Vector2(), 0, WHITE);
+                DrawTexturePro(tileset, sourceRec, destRect, Vector2(), 0, WHITE);
             }
         }
 
