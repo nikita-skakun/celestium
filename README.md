@@ -1,4 +1,4 @@
-# **Celestium**
+# **Celestium** [![CodeFactor](https://www.codefactor.io/repository/github/nikita-skakun/celestium/badge)](https://www.codefactor.io/repository/github/nikita-skakun/celestium)
 
 ## What is this?
 
