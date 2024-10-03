@@ -30,63 +30,46 @@ void HandleMouseDragging(std::shared_ptr<Station> station, PlayerCam &camera)
             camera.dragType = PlayerCam::DragType::SELECT;
             if (station)
             {
-                std::vector<std::shared_ptr<Tile>> tiles = station->GetTilesAtPosition(ToVector2Int(camera.dragStartPos));
-                if (camera.overlay == PlayerCam::Overlay::POWER)
+                if (camera.overlay == PlayerCam::Overlay::POWER &&
+                    station->GetTileWithComponentAtPosition<PowerConnectorComponent>(ToVector2Int(camera.dragStartPos)))
                 {
-                    for (std::shared_ptr<Tile> &tile : tiles)
-                    {
-                        if (tile->HasComponent<PowerConnectorComponent>())
-                        {
-                            camera.dragType = PlayerCam::DragType::POWER_CONNECT;
-                            camera.dragStartPos = Vector2Floor(camera.dragStartPos) + Vector2(.5f, .5f);
-                            break;
-                        }
-                    }
+                    camera.dragType = PlayerCam::DragType::POWER_CONNECT;
+                    camera.dragStartPos = Vector2Floor(camera.dragStartPos) + Vector2(.5f, .5f);
                 }
             }
 
             camera.isDragging = true;
         }
         if (camera.isDragging)
-        {
             camera.dragEndPos = camera.GetWorldMousePos();
-        }
     }
 
     if (IsMouseButtonReleased(MOUSE_LEFT_BUTTON))
     {
-        if (camera.isDragging && station && camera.dragType == PlayerCam::DragType::POWER_CONNECT)
+        if (camera.isDragging)
         {
-            Vector2Int dragStart = ToVector2Int(camera.dragStartPos);
-            Vector2Int dragEnd = ToVector2Int(camera.dragEndPos);
-
-            if (dragStart != dragEnd)
+            camera.isDragging = false;
+            if (camera.dragType == PlayerCam::DragType::POWER_CONNECT && station)
             {
-                std::shared_ptr<PowerConnectorComponent> start, end;
+                Vector2Int dragStart = ToVector2Int(camera.dragStartPos);
+                Vector2Int dragEnd = ToVector2Int(camera.dragEndPos);
 
-                std::vector<std::shared_ptr<Tile>> startTiles = station->GetTilesAtPosition(dragStart);
-                for (std::shared_ptr<Tile> &startTile : startTiles)
-                {
-                    if ((start = startTile->GetComponent<PowerConnectorComponent>()))
-                        break;
-                }
+                if (dragStart == dragEnd)
+                    return;
 
-                std::vector<std::shared_ptr<Tile>> endTiles = station->GetTilesAtPosition(dragEnd);
-                for (std::shared_ptr<Tile> &endTile : endTiles)
-                {
-                    if ((end = endTile->GetComponent<PowerConnectorComponent>()))
-                        break;
-                }
+                auto startTile = station->GetTileWithComponentAtPosition<PowerConnectorComponent>(dragStart);
+                auto endTile = station->GetTileWithComponentAtPosition<PowerConnectorComponent>(dragEnd);
 
-                if (start && end)
+                if (startTile && endTile)
                 {
+                    auto start = startTile->GetComponent<PowerConnectorComponent>();
+                    auto end = endTile->GetComponent<PowerConnectorComponent>();
+
                     if (PowerConnectorComponent::AddConnection(start, end))
                         LogMessage(LogLevel::DEBUG, std::format("{} connected to {}!", start->_parent.lock()->GetName(), end->_parent.lock()->GetName()));
                 }
             }
         }
-
-        camera.isDragging = false;
     }
 }
 
@@ -126,7 +109,6 @@ void HandleCrewSelection(const std::vector<Crew> &crewList, PlayerCam &camera)
 
 void AssignCrewTasks(std::vector<Crew> &crewList, const PlayerCam &camera)
 {
-
     if (IsMouseButtonPressed(MOUSE_RIGHT_BUTTON) && camera.selectedCrewList.size() > 0)
     {
         Vector2Int worldPos = camera.ScreenToTile(GetMousePosition());
