@@ -66,7 +66,7 @@ void HandleMouseDragging(std::shared_ptr<Station> station, PlayerCam &camera)
                     auto end = endTile->GetComponent<PowerConnectorComponent>();
 
                     if (PowerConnectorComponent::AddConnection(start, end))
-                        LogMessage(LogLevel::DEBUG, std::format("{} connected to {}!", start->_parent.lock()->GetName(), end->_parent.lock()->GetName()));
+                        LogMessage(LogLevel::DEBUG, std::format("{} connected to {}!", startTile->GetName(), endTile->GetName()));
                 }
             }
         }
