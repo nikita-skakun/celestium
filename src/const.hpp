@@ -18,8 +18,6 @@ constexpr Color GRID_COLOR = Color(0, 0, 0, 50);
 constexpr float OXYGEN_DIFFUSION_RATE = 10.f;
 constexpr float OXYGEN_PRODUCTION_RATE = 100.f;
 
-constexpr float BATTERY_CHARGE_MAX = 2000.f;
-
 constexpr float POWER_CONNECTION_WIDTH = 2.f;
 constexpr Color POWER_CONNECTION_COLOR = Color(253, 249, 0, 77);
 

@@ -12,7 +12,7 @@
  */
 std::deque<Vector2Int> AStar(const Vector2Int &start, const Vector2Int &end, std::shared_ptr<Station> station)
 {
-    if (start == end)
+    if (start == end || !station)
         return {};
 
     // Cost maps for tracking the cost to reach each node
@@ -83,12 +83,12 @@ std::deque<Vector2Int> AStar(const Vector2Int &start, const Vector2Int &end, std
                 std::shared_ptr<Tile> side2Tile = station->GetTileAtPosition(side2Pos);
 
                 // Ensure both adjacent sides are walkable for diagonals
-                if (!side1Tile || !side2Tile || !side1Tile->IsWalkable() || !side2Tile->IsWalkable())
+                if (!side1Tile || !side2Tile || !side1Tile->HasComponent<WalkableComponent>() || !side2Tile->HasComponent<WalkableComponent>())
                     continue; // Skip to the next neighbor
             }
 
             // Evaluate the neighbor if it is walkable and not in the closed set
-            if (neighborTile && neighborTile->IsWalkable() && closedSet.find(neighborPos) == closedSet.end())
+            if (neighborTile && neighborTile->HasComponent<WalkableComponent>() && closedSet.find(neighborPos) == closedSet.end())
             {
                 // Calculate tentative G cost
                 float tentativeGCost = gCost[current] + Vector2IntDistanceSq(current, neighborPos);
@@ -142,7 +142,7 @@ bool DoesPathHaveObstacles(const std::deque<Vector2Int> &path, std::shared_ptr<S
             return true;
 
         // Return that an obstacle is found if the tile is not walkable
-        if (tile && !tile->IsWalkable())
+        if (tile && !tile->HasComponent<WalkableComponent>())
             return true;
     }
 

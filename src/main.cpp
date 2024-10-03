@@ -49,6 +49,8 @@ int main()
     Texture2D tileset = LoadTexture("../assets/tilesets/station.png");
     Font font = LoadFontEx("../assets/fonts/Inconsolata-Bold.ttf", DEFAULT_FONT_SIZE, NULL, 0);
 
+    TileDefinitionRegistry::GetInstance().RegisterAllTileDefinitions();
+
     PlayerCam camera = PlayerCam();
 
     std::vector<Crew> crewList{

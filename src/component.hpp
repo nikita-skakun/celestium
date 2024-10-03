@@ -8,7 +8,6 @@ struct Tile;
 
 struct DecorativeTile
 {
-
     Vector2Int offset;
     Vector2Int spriteOffset;
 
@@ -19,8 +18,9 @@ struct Component
 {
     std::weak_ptr<Tile> _parent;
 
-    Component(std::shared_ptr<Tile> parent) : _parent(parent) {}
+    Component(std::shared_ptr<Tile> parent = nullptr) : _parent(parent) {}
 
+    virtual std::shared_ptr<Component> Clone(std::shared_ptr<Tile> newParent) const = 0;
     virtual std::string GetName() const = 0;
     virtual ~Component() = default;
 
@@ -33,6 +33,15 @@ struct Component
 namespace std
 {
     template <>
+    struct hash<Component>
+    {
+        std::size_t operator()(const Component &component) const
+        {
+            return std::hash<std::string>()(component.GetName());
+        }
+    };
+
+    template <>
     struct hash<std::shared_ptr<Component>>
     {
         std::size_t operator()(const std::shared_ptr<Component> &component) const
@@ -44,7 +53,12 @@ namespace std
 
 struct WalkableComponent : Component
 {
-    WalkableComponent(std::shared_ptr<Tile> parent) : Component(parent) {}
+    WalkableComponent(std::shared_ptr<Tile> parent = nullptr) : Component(parent) {}
+
+    std::shared_ptr<Component> Clone(std::shared_ptr<Tile> newParent) const override
+    {
+        return std::make_shared<WalkableComponent>(newParent);
+    }
 
     std::string GetName() const override
     {
@@ -54,7 +68,12 @@ struct WalkableComponent : Component
 
 struct SolidComponent : Component
 {
-    SolidComponent(std::shared_ptr<Tile> parent) : Component(parent) {}
+    SolidComponent(std::shared_ptr<Tile> parent = nullptr) : Component(parent) {}
+
+    std::shared_ptr<Component> Clone(std::shared_ptr<Tile> newParent) const override
+    {
+        return std::make_shared<SolidComponent>(newParent);
+    }
 
     std::string GetName() const override
     {
@@ -75,7 +94,7 @@ private:
 
 public:
     std::vector<std::weak_ptr<PowerConnectorComponent>> _connections;
-    PowerConnectorComponent(std::shared_ptr<Tile> parent, IO io) : Component(parent), io(io) {}
+    PowerConnectorComponent(IO io, std::shared_ptr<Tile> parent = nullptr) : Component(parent), io(io) {}
 
     constexpr IO GetIO() const
     {
@@ -152,6 +171,11 @@ public:
         }
     }
 
+    std::shared_ptr<Component> Clone(std::shared_ptr<Tile> newParent) const override
+    {
+        return std::make_shared<PowerConnectorComponent>(io, newParent);
+    }
+
     std::string GetName() const override
     {
         return "Power Connector";
@@ -162,10 +186,11 @@ struct BatteryComponent : Component
 {
 private:
     float charge;
+    float maxCharge;
 
 public:
-    BatteryComponent(std::shared_ptr<Tile> parent, float startingCharge = BATTERY_CHARGE_MAX)
-        : Component(parent), charge(startingCharge) {}
+    BatteryComponent(float maxCharge, std::shared_ptr<Tile> parent = nullptr)
+        : Component(parent), charge(maxCharge), maxCharge(maxCharge) {}
 
     constexpr bool Drain(float amount)
     {
@@ -176,12 +201,22 @@ public:
         return true;
     }
 
+    constexpr float GetMaxChargeLevel() const
+    {
+        return maxCharge;
+    }
+
     constexpr float GetChargeLevel() const
     {
         return charge;
     }
 
     void Charge();
+
+    std::shared_ptr<Component> Clone(std::shared_ptr<Tile> newParent) const override
+    {
+        return std::make_shared<BatteryComponent>(charge, newParent);
+    }
 
     std::string GetName() const override
     {
@@ -197,7 +232,7 @@ private:
     float powerConsumption;
 
 public:
-    PowerConsumerComponent(std::shared_ptr<Tile> parent, float powerConsumption)
+    PowerConsumerComponent(float powerConsumption, std::shared_ptr<Tile> parent = nullptr)
         : Component(parent), isPoweredOn(true), isActive(false), powerConsumption(std::max(powerConsumption, 0.f)) {}
 
     constexpr bool IsPoweredOn() const
@@ -222,6 +257,11 @@ public:
 
     void ConsumePower(float deltaTime);
 
+    std::shared_ptr<Component> Clone(std::shared_ptr<Tile> newParent) const override
+    {
+        return std::make_shared<PowerConsumerComponent>(powerConsumption, newParent);
+    }
+
     std::string GetName() const override
     {
         return "Power Consumer";
@@ -235,7 +275,7 @@ private:
     float availablePower;
 
 public:
-    PowerProducerComponent(std::shared_ptr<Tile> parent, float powerProduction)
+    PowerProducerComponent(float powerProduction, std::shared_ptr<Tile> parent = nullptr)
         : Component(parent), powerProduction(std::max(powerProduction, 0.f)), availablePower(0.f) {}
 
     constexpr float GetPowerProduction() const
@@ -258,6 +298,11 @@ public:
         availablePower = GetPowerProduction() * deltaTime;
     }
 
+    std::shared_ptr<Component> Clone(std::shared_ptr<Tile> newParent) const override
+    {
+        return std::make_shared<PowerProducerComponent>(powerProduction, newParent);
+    }
+
     std::string GetName() const override
     {
         return "Power Producer";
@@ -268,7 +313,12 @@ struct SolarPanelComponent : Component
 {
     static constexpr float SOLAR_PANEL_POWER_OUTPUT = 20.f;
 
-    SolarPanelComponent(std::shared_ptr<Tile> parent) : Component(parent) {}
+    SolarPanelComponent(std::shared_ptr<Tile> parent = nullptr) : Component(parent) {}
+
+    std::shared_ptr<Component> Clone(std::shared_ptr<Tile> newParent) const override
+    {
+        return std::make_shared<SolarPanelComponent>(newParent);
+    }
 
     std::string GetName() const override
     {
@@ -282,7 +332,7 @@ private:
     float oxygenLevel;
 
 public:
-    OxygenComponent(std::shared_ptr<Tile> parent, float startOxygenLevel = TILE_OXYGEN_MAX)
+    OxygenComponent(float startOxygenLevel = TILE_OXYGEN_MAX, std::shared_ptr<Tile> parent = nullptr)
         : Component(parent), oxygenLevel(startOxygenLevel) {}
 
     void SetOxygenLevel(float oxygen)
@@ -295,6 +345,11 @@ public:
         return oxygenLevel;
     }
 
+    std::shared_ptr<Component> Clone(std::shared_ptr<Tile> newParent) const override
+    {
+        return std::make_shared<OxygenComponent>(oxygenLevel, newParent);
+    }
+
     std::string GetName() const override
     {
         return "Oxygen";
@@ -305,9 +360,14 @@ struct OxygenProducerComponent : Component
 {
     static constexpr float POWER_CONSUMPTION = 20.f;
 
-    OxygenProducerComponent(std::shared_ptr<Tile> parent) : Component(parent) {}
+    OxygenProducerComponent(std::shared_ptr<Tile> parent = nullptr) : Component(parent) {}
 
     void ProduceOxygen(float deltaTime) const;
+
+    std::shared_ptr<Component> Clone(std::shared_ptr<Tile> newParent) const override
+    {
+        return std::make_shared<OxygenProducerComponent>(newParent);
+    }
 
     std::string GetName() const override
     {
@@ -321,7 +381,7 @@ private:
     std::vector<DecorativeTile> decorativeTiles;
 
 public:
-    DecorativeComponent(std::shared_ptr<Tile> parent) : Component(parent) {}
+    DecorativeComponent(std::shared_ptr<Tile> parent = nullptr) : Component(parent) {}
 
     void AddDecorativeTile(const Vector2Int &offset, const Vector2Int &spriteOffset)
     {
@@ -336,6 +396,11 @@ public:
     void ClearDecorativeTiles()
     {
         decorativeTiles.clear();
+    }
+
+    std::shared_ptr<Component> Clone(std::shared_ptr<Tile> newParent) const override
+    {
+        return std::make_shared<DecorativeComponent>(newParent);
     }
 
     std::string GetName() const override

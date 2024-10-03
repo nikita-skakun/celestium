@@ -65,10 +65,10 @@ void DrawStation(std::shared_ptr<Station> station, const Texture2D &tileset, con
     Vector2 sizeScreenPos = Vector2(1.f, 1.f) * TILE_SIZE * camera.zoom;
     for (std::shared_ptr<Tile> tile : station->tiles)
     {
-        Vector2 startScreenPos = camera.WorldToScreen(ToVector2(tile->position));
+        Vector2 startScreenPos = camera.WorldToScreen(ToVector2(tile->GetPosition()));
 
         Rectangle destRect = Vector2ToRect(startScreenPos, startScreenPos + sizeScreenPos);
-        Rectangle sourceRec = Rectangle(tile->spriteOffset.x, tile->spriteOffset.y, 1, 1) * TILE_SIZE;
+        Rectangle sourceRec = Rectangle(tile->GetSpriteOffset().x, tile->GetSpriteOffset().y, 1, 1) * TILE_SIZE;
 
         DrawTexturePro(tileset, sourceRec, destRect, Vector2(), 0, WHITE);
 
@@ -93,7 +93,7 @@ void DrawStation(std::shared_ptr<Station> station, const Texture2D &tileset, con
         {
             for (const DecorativeTile &dTile : decorative->GetDecorativeTiles())
             {
-                Vector2 v_startScreenPos = camera.WorldToScreen(ToVector2(tile->position + dTile.offset));
+                Vector2 v_startScreenPos = camera.WorldToScreen(ToVector2(tile->GetPosition() + dTile.offset));
                 Rectangle v_destRect = Vector2ToRect(v_startScreenPos, v_startScreenPos + sizeScreenPos);
                 Rectangle v_sourceRec = Rectangle(dTile.spriteOffset.x, dTile.spriteOffset.y, 1, 1) * TILE_SIZE;
 
@@ -107,7 +107,7 @@ void DrawStation(std::shared_ptr<Station> station, const Texture2D &tileset, con
             {
                 if (!powerConsumer->IsActive())
                 {
-                    Vector2 startScreenPos = camera.WorldToScreen(ToVector2(tile->position) + Vector2(.66f, 0.f));
+                    Vector2 startScreenPos = camera.WorldToScreen(ToVector2(tile->GetPosition()) + Vector2(.66f, 0.f));
 
                     Rectangle destRect = Vector2ToRect(startScreenPos, startScreenPos + sizeScreenPos / 3.f);
                     Rectangle sourceRec = Rectangle(0, 7, 1, 1) * TILE_SIZE;
@@ -118,9 +118,9 @@ void DrawStation(std::shared_ptr<Station> station, const Texture2D &tileset, con
 
             if (auto battery = tile->GetComponent<BatteryComponent>())
             {
-                float barProgress = battery->GetChargeLevel() / BATTERY_CHARGE_MAX;
-                Vector2 topLeftPos = camera.WorldToScreen(ToVector2(tile->position) + Vector2(1.f / 16.f, 0.f));
-                Vector2 barStartPos = camera.WorldToScreen(ToVector2(tile->position) + Vector2(1.f / 16.f, 1.f - barProgress));
+                float barProgress = battery->GetChargeLevel() / battery->GetMaxChargeLevel();
+                Vector2 topLeftPos = camera.WorldToScreen(ToVector2(tile->GetPosition()) + Vector2(1.f / 16.f, 0.f));
+                Vector2 barStartPos = camera.WorldToScreen(ToVector2(tile->GetPosition()) + Vector2(1.f / 16.f, 1.f - barProgress));
 
                 Vector2 totalSize = Vector2(1.f / 8.f, 1.f) * TILE_SIZE * camera.zoom;
                 Vector2 barSize = Vector2(1.f / 8.f, barProgress) * TILE_SIZE * camera.zoom;
@@ -136,8 +136,8 @@ void DrawStation(std::shared_ptr<Station> station, const Texture2D &tileset, con
                 {
                     if (auto connectionTile = connection->_parent.lock())
                     {
-                        DrawLineEx(camera.WorldToScreen(ToVector2(tile->position) + Vector2(.5f, .5f)),
-                                   camera.WorldToScreen(ToVector2(connectionTile->position) + Vector2(.5f, .5f)),
+                        DrawLineEx(camera.WorldToScreen(ToVector2(tile->GetPosition()) + Vector2(.5f, .5f)),
+                                   camera.WorldToScreen(ToVector2(connectionTile->GetPosition()) + Vector2(.5f, .5f)),
                                    POWER_CONNECTION_WIDTH * std::max(camera.zoom, 1.f), POWER_CONNECTION_COLOR);
                     }
                 }

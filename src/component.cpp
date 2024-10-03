@@ -9,7 +9,7 @@ struct magic_enum::customize::enum_range<PowerConnectorComponent::IO>
 
 void BatteryComponent::Charge()
 {
-    if (charge >= BATTERY_CHARGE_MAX)
+    if (charge >= maxCharge)
         return;
 
     std::shared_ptr<Tile> parent = _parent.lock();
@@ -30,12 +30,12 @@ void BatteryComponent::Charge()
 
         if (auto connectedProducer = connectedTile->GetComponent<PowerProducerComponent>())
         {
-            float transferredCharge = std::clamp(connectedProducer->GetAvailablePower(), 0.f, BATTERY_CHARGE_MAX - charge);
+            float transferredCharge = std::clamp(connectedProducer->GetAvailablePower(), 0.f, maxCharge - charge);
             charge += transferredCharge;
             connectedProducer->UseAvailablePower(transferredCharge);
         }
 
-        if (charge >= BATTERY_CHARGE_MAX)
+        if (charge >= maxCharge)
             return;
     }
 }
@@ -126,10 +126,10 @@ void PowerConsumerComponent::ConsumePower(float deltaTime)
 void OxygenProducerComponent::ProduceOxygen(float deltaTime) const
 {
     auto parent = _parent.lock();
-    if (!parent || !parent->station)
+    if (!parent || !parent->GetStation())
         return;
 
-    auto oxygenTile = parent->station->GetTileWithComponentAtPosition<OxygenComponent>(parent->position);
+    auto oxygenTile = parent->GetStation()->GetTileWithComponentAtPosition<OxygenComponent>(parent->GetPosition());
     auto powerConsumer = parent->GetComponent<PowerConsumerComponent>();
     if (!oxygenTile || !powerConsumer || !powerConsumer->IsActive())
         return;

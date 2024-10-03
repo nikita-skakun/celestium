@@ -1,87 +1,20 @@
 #include "station.hpp"
 
-std::shared_ptr<Tile> CreateTile(Tile::ID id, const Vector2Int &position, std::shared_ptr<Station> station, std::shared_ptr<Room> room = nullptr)
-{
-    std::shared_ptr<Tile> tile;
-    switch (id)
-    {
-    case Tile::ID::BLUE_FLOOR:
-        tile = std::make_shared<Tile>(id, Tile::Height::FLOOR, position, station, room);
-        tile->AddComponent<WalkableComponent>(tile);
-        tile->AddComponent<OxygenComponent>(tile);
-        break;
-
-    case Tile::ID::WALL:
-        tile = std::make_shared<Tile>(id, Tile::Height::FLOOR | Tile::Height::WAIST | Tile::Height::CEILING, position, station, room);
-        tile->AddComponent<SolidComponent>(tile);
-        break;
-
-    case Tile::ID::OXYGEN_PRODUCER:
-        tile = std::make_shared<Tile>(id, Tile::Height::WAIST, position, station, room);
-        tile->AddComponent<PowerConnectorComponent>(tile, PowerConnectorComponent::IO::INPUT);
-        tile->AddComponent<PowerConsumerComponent>(tile, OxygenProducerComponent::POWER_CONSUMPTION);
-        tile->AddComponent<OxygenProducerComponent>(tile);
-        break;
-
-    case Tile::ID::BATTERY:
-        tile = std::make_shared<Tile>(id, Tile::Height::WAIST, position, station, room);
-        tile->AddComponent<PowerConnectorComponent>(tile, PowerConnectorComponent::IO::INPUT | PowerConnectorComponent::IO::OUTPUT);
-        tile->AddComponent<BatteryComponent>(tile, BATTERY_CHARGE_MAX);
-        break;
-
-    case Tile::ID::SOLAR_PANEL:
-        tile = std::make_shared<Tile>(id, Tile::Height::WAIST, position, station, room);
-        tile->AddComponent<PowerConnectorComponent>(tile, PowerConnectorComponent::IO::OUTPUT);
-        tile->AddComponent<PowerProducerComponent>(tile, SolarPanelComponent::SOLAR_PANEL_POWER_OUTPUT);
-        tile->AddComponent<SolarPanelComponent>(tile);
-        break;
-
-    case Tile::ID::FRAME:
-        tile = std::make_shared<Tile>(id, Tile::Height::FLOOR, position, station, room);
-        tile->AddComponent<WalkableComponent>(tile);
-        break;
-
-    default:
-        return nullptr;
-    }
-
-    if (station)
-    {
-        auto &heightMap = station->tileMap[position];
-        for (const auto &[existingHeight, existingTile] : heightMap)
-        {
-            if (magic_enum::enum_integer(existingHeight & tile->GetHeight()) > 0)
-            {
-                LogMessage(LogLevel::ERROR, "A tile " + existingTile->GetName() + " already exists at " + ToString(position) + " with overlapping height.");
-                return nullptr;
-            }
-        }
-
-        station->tiles.push_back(tile);
-        heightMap[tile->GetHeight()] = tile;
-    }
-
-    if (room)
-        room->tiles.push_back(tile);
-
-    return tile;
-}
-
 void DeleteTile(std::shared_ptr<Tile> tile)
 {
     if (!tile)
         return;
 
-    if (tile->station)
+    if (tile->GetStation())
     {
-        auto &stationTiles = tile->station->tiles;
+        auto &stationTiles = tile->GetStation()->tiles;
         stationTiles.erase(std::remove(stationTiles.begin(), stationTiles.end(), tile), stationTiles.end());
-        tile->station->tileMap.erase(tile->position);
+        tile->GetStation()->tileMap.erase(tile->GetPosition());
     }
 
-    if (tile->room)
+    if (tile->GetRoom())
     {
-        auto &roomTiles = tile->room->tiles;
+        auto &roomTiles = tile->GetRoom()->tiles;
         roomTiles.erase(std::remove_if(roomTiles.begin(), roomTiles.end(),
                                        [&tile](const std::weak_ptr<Tile> &weakTile)
                                        {
@@ -92,32 +25,16 @@ void DeleteTile(std::shared_ptr<Tile> tile)
     }
 }
 
-std::shared_ptr<Room> CreateEmptyRoom(std::shared_ptr<Station> station)
-{
-    std::shared_ptr<Room> room = std::make_shared<Room>(station);
-
-    if (station)
-        station->rooms.push_back(room);
-
-    return room;
-}
-
 std::shared_ptr<Room> CreateRectRoom(const Vector2Int &pos, const Vector2Int &size, std::shared_ptr<Station> station)
 {
-    std::shared_ptr<Room> room = CreateEmptyRoom(station);
+    std::shared_ptr<Room> room = Room::CreateEmptyRoom(station);
 
     for (int y = 0; y < size.y; y++)
     {
         for (int x = 0; x < size.x; x++)
         {
-            if (x == 0 || y == 0 || x == size.x - 1 || y == size.y - 1)
-            {
-                CreateTile(Tile::ID::WALL, pos + Vector2Int(x, y), station, room);
-            }
-            else
-            {
-                CreateTile(Tile::ID::BLUE_FLOOR, pos + Vector2Int(x, y), station, room);
-            }
+            bool isWall = (x == 0 || y == 0 || x == size.x - 1 || y == size.y - 1);
+            Tile::CreateTile(isWall ? "WALL" : "BLUE_FLOOR", pos + Vector2Int(x, y), station, room);
         }
     }
 
@@ -129,7 +46,7 @@ std::shared_ptr<Room> CreateHorizontalCorridor(const Vector2Int &startPos, int l
     if (width < 1 || length == 0)
         return nullptr;
 
-    std::shared_ptr<Room> room = CreateEmptyRoom(station);
+    std::shared_ptr<Room> room = Room::CreateEmptyRoom(station);
 
     int totalWidth = width + 2;
     int start = -(int)floor(totalWidth / 2.f);
@@ -151,8 +68,7 @@ std::shared_ptr<Room> CreateHorizontalCorridor(const Vector2Int &startPos, int l
             if (oldTile && !isWall)
                 DeleteTile(oldTile);
 
-            Tile::ID tileType = isWall ? Tile::ID::WALL : Tile::ID::BLUE_FLOOR;
-            CreateTile(tileType, pos, station, room);
+            Tile::CreateTile(isWall ? "WALL" : "BLUE_FLOOR", pos, station, room);
         }
     }
 
@@ -166,19 +82,19 @@ std::shared_ptr<Station> CreateStation()
     std::shared_ptr<Room> room2 = CreateRectRoom(Vector2Int(10, -4), Vector2Int(9, 9), station);
     CreateHorizontalCorridor(Vector2Int(4, 0), 7, 3, station);
 
-    auto oxygenProducer1 = CreateTile(Tile::ID::OXYGEN_PRODUCER, Vector2Int(0, 0), station, room1);
-    auto oxygenProducer2 = CreateTile(Tile::ID::OXYGEN_PRODUCER, Vector2Int(14, 0), station, room2);
-    auto battery = CreateTile(Tile::ID::BATTERY, Vector2Int(3, -3), station, room1);
-    CreateTile(Tile::ID::FRAME, Vector2Int(0, -6), station);
-    CreateTile(Tile::ID::FRAME, Vector2Int(0, -7), station);
-    CreateTile(Tile::ID::FRAME, Vector2Int(-1, -7), station);
-    CreateTile(Tile::ID::FRAME, Vector2Int(1, -7), station);
-    CreateTile(Tile::ID::FRAME, Vector2Int(0, -8), station);
-    CreateTile(Tile::ID::FRAME, Vector2Int(-1, -8), station);
-    CreateTile(Tile::ID::FRAME, Vector2Int(1, -8), station);
-    auto panel1 = CreateTile(Tile::ID::SOLAR_PANEL, Vector2Int(0, -8), station);
-    auto panel2 = CreateTile(Tile::ID::SOLAR_PANEL, Vector2Int(-1, -8), station);
-    auto panel3 = CreateTile(Tile::ID::SOLAR_PANEL, Vector2Int(1, -8), station);
+    auto oxygenProducer1 = Tile::CreateTile("OXYGEN_PRODUCER", Vector2Int(0, 0), station, room1);
+    auto oxygenProducer2 = Tile::CreateTile("OXYGEN_PRODUCER", Vector2Int(14, 0), station, room2);
+    auto battery = Tile::CreateTile("BATTERY", Vector2Int(3, -3), station, room1);
+    Tile::CreateTile("FRAME", Vector2Int(0, -6), station);
+    Tile::CreateTile("FRAME", Vector2Int(0, -7), station);
+    Tile::CreateTile("FRAME", Vector2Int(-1, -7), station);
+    Tile::CreateTile("FRAME", Vector2Int(1, -7), station);
+    Tile::CreateTile("FRAME", Vector2Int(0, -8), station);
+    Tile::CreateTile("FRAME", Vector2Int(-1, -8), station);
+    Tile::CreateTile("FRAME", Vector2Int(1, -8), station);
+    auto panel1 = Tile::CreateTile("SOLAR_PANEL", Vector2Int(0, -8), station);
+    auto panel2 = Tile::CreateTile("SOLAR_PANEL", Vector2Int(-1, -8), station);
+    auto panel3 = Tile::CreateTile("SOLAR_PANEL", Vector2Int(1, -8), station);
 
     PowerConnectorComponent::AddConnection(battery->GetComponent<PowerConnectorComponent>(), panel1->GetComponent<PowerConnectorComponent>());
     PowerConnectorComponent::AddConnection(battery->GetComponent<PowerConnectorComponent>(), panel2->GetComponent<PowerConnectorComponent>());
@@ -194,203 +110,197 @@ void Station::UpdateSpriteOffsets()
 {
     for (std::shared_ptr<Tile> tile : tiles)
     {
+        const std::shared_ptr<TileDef> &tileDef = tile->GetTileDefinition();
+
         tile->RemoveComponent<DecorativeTile>();
 
-        std::shared_ptr<Tile> rTile = GetTileAtPosition(tile->position + Vector2Int(1, 0));
-        bool right = rTile && rTile->id == tile->id;
-        std::shared_ptr<Tile> lTile = GetTileAtPosition(tile->position + Vector2Int(-1, 0));
-        bool left = lTile && lTile->id == tile->id;
-        std::shared_ptr<Tile> dTile = GetTileAtPosition(tile->position + Vector2Int(0, 1));
-        bool down = dTile && dTile->id == tile->id;
-        std::shared_ptr<Tile> uTile = GetTileAtPosition(tile->position + Vector2Int(0, -1));
-        bool up = uTile && uTile->id == tile->id;
+        std::shared_ptr<Tile> rTile = GetTileAtPosition(tile->GetPosition() + Vector2Int(1, 0));
+        bool right = rTile && rTile->GetTileDefinition()->GetId() == tileDef->GetId();
+        std::shared_ptr<Tile> lTile = GetTileAtPosition(tile->GetPosition() + Vector2Int(-1, 0));
+        bool left = lTile && lTile->GetTileDefinition()->GetId() == tileDef->GetId();
+        std::shared_ptr<Tile> dTile = GetTileAtPosition(tile->GetPosition() + Vector2Int(0, 1));
+        bool down = dTile && dTile->GetTileDefinition()->GetId() == tileDef->GetId();
+        std::shared_ptr<Tile> uTile = GetTileAtPosition(tile->GetPosition() + Vector2Int(0, -1));
+        bool up = uTile && uTile->GetTileDefinition()->GetId() == tileDef->GetId();
 
-        switch (tile->id)
-        {
-        case Tile::ID::BLUE_FLOOR:
+        const std::string &tileId = tile->GetTileDefinition()->GetId();
+        if (tileId == "BLUE_FLOOR")
         {
             if (right && left && !down && !up)
-                tile->spriteOffset = Vector2Int(1, 0);
+                tile->SetSpriteOffset(Vector2Int(1, 0));
             else if (!right && !left && down && up)
-                tile->spriteOffset = Vector2Int(2, 0);
+                tile->SetSpriteOffset(Vector2Int(2, 0));
             else if (right && !left && down && !up)
-                tile->spriteOffset = Vector2Int(5, 0);
+                tile->SetSpriteOffset(Vector2Int(5, 0));
             else if (right && left && down && !up)
-                tile->spriteOffset = Vector2Int(6, 0);
+                tile->SetSpriteOffset(Vector2Int(6, 0));
             else if (!right && left && down && !up)
-                tile->spriteOffset = Vector2Int(7, 0);
+                tile->SetSpriteOffset(Vector2Int(7, 0));
             else if (right && !left && down && up)
-                tile->spriteOffset = Vector2Int(5, 1);
+                tile->SetSpriteOffset(Vector2Int(5, 1));
             else if (right && left && down && up)
             {
-                std::shared_ptr<Tile> rdTile = GetTileAtPosition(tile->position + Vector2Int(1, 1));
-                bool rd = rdTile && rdTile->id == tile->id;
-                std::shared_ptr<Tile> ldTile = GetTileAtPosition(tile->position + Vector2Int(-1, 1));
-                bool ld = ldTile && ldTile->id == tile->id;
-                std::shared_ptr<Tile> ruTile = GetTileAtPosition(tile->position + Vector2Int(1, -1));
-                bool ru = ruTile && ruTile->id == tile->id;
-                std::shared_ptr<Tile> luTile = GetTileAtPosition(tile->position + Vector2Int(-1, -1));
-                bool lu = luTile && luTile->id == tile->id;
+                std::shared_ptr<Tile> rdTile = GetTileAtPosition(tile->GetPosition() + Vector2Int(1, 1));
+                bool rd = rdTile && rdTile->GetTileDefinition()->GetId() == tileDef->GetId();
+                std::shared_ptr<Tile> ldTile = GetTileAtPosition(tile->GetPosition() + Vector2Int(-1, 1));
+                bool ld = ldTile && ldTile->GetTileDefinition()->GetId() == tileDef->GetId();
+                std::shared_ptr<Tile> ruTile = GetTileAtPosition(tile->GetPosition() + Vector2Int(1, -1));
+                bool ru = ruTile && ruTile->GetTileDefinition()->GetId() == tileDef->GetId();
+                std::shared_ptr<Tile> luTile = GetTileAtPosition(tile->GetPosition() + Vector2Int(-1, -1));
+                bool lu = luTile && luTile->GetTileDefinition()->GetId() == tileDef->GetId();
 
                 if (rd && ld && !ru && lu)
-                    tile->spriteOffset = Vector2Int(0, 2);
+                    tile->SetSpriteOffset(Vector2Int(0, 2));
                 else if (rd && ld && ru && !lu)
-                    tile->spriteOffset = Vector2Int(1, 2);
+                    tile->SetSpriteOffset(Vector2Int(1, 2));
                 else if (!rd && ld && ru && lu)
-                    tile->spriteOffset = Vector2Int(2, 2);
+                    tile->SetSpriteOffset(Vector2Int(2, 2));
                 else if (rd && !ld && ru && lu)
-                    tile->spriteOffset = Vector2Int(3, 2);
+                    tile->SetSpriteOffset(Vector2Int(3, 2));
                 else if (rd && !ld && ru && !lu)
-                    tile->spriteOffset = Vector2Int(0, 1);
+                    tile->SetSpriteOffset(Vector2Int(0, 1));
                 else if (!rd && ld && !ru && lu)
-                    tile->spriteOffset = Vector2Int(1, 1);
+                    tile->SetSpriteOffset(Vector2Int(1, 1));
                 else if (rd && ld && !ru && !lu)
-                    tile->spriteOffset = Vector2Int(2, 1);
+                    tile->SetSpriteOffset(Vector2Int(2, 1));
                 else if (rd && ld && !ru && !lu)
-                    tile->spriteOffset = Vector2Int(3, 1);
+                    tile->SetSpriteOffset(Vector2Int(3, 1));
                 else
-                    tile->spriteOffset = Vector2Int(6, 1);
+                    tile->SetSpriteOffset(Vector2Int(6, 1));
             }
             else if (!right && left && down && up)
-                tile->spriteOffset = Vector2Int(7, 1);
+                tile->SetSpriteOffset(Vector2Int(7, 1));
             else if (right && !left && !down && up)
-                tile->spriteOffset = Vector2Int(5, 2);
+                tile->SetSpriteOffset(Vector2Int(5, 2));
             else if (right && left && !down && up)
-                tile->spriteOffset = Vector2Int(6, 2);
+                tile->SetSpriteOffset(Vector2Int(6, 2));
             else if (!right && left && !down && up)
-                tile->spriteOffset = Vector2Int(7, 2);
+                tile->SetSpriteOffset(Vector2Int(7, 2));
             else
-                tile->spriteOffset = Vector2Int(0, 0);
-            break;
+                tile->SetSpriteOffset(Vector2Int(0, 0));
         }
-
-        case Tile::ID::WALL:
+        else if (tileId == "WALL")
         {
             if (!right && !left && !down && !up)
-                tile->spriteOffset = Vector2Int(3, 4);
+                tile->SetSpriteOffset(Vector2Int(3, 4));
             else if (right && !left && !down && !up)
-                tile->spriteOffset = Vector2Int(0, 3);
+                tile->SetSpriteOffset(Vector2Int(0, 3));
             else if (!right && left && !down && !up)
-                tile->spriteOffset = Vector2Int(1, 3);
+                tile->SetSpriteOffset(Vector2Int(1, 3));
             else if (!right && !left && down && !up)
-                tile->spriteOffset = Vector2Int(2, 3);
+                tile->SetSpriteOffset(Vector2Int(2, 3));
             else if (!right && !left && !down && up)
-                tile->spriteOffset = Vector2Int(3, 3);
+                tile->SetSpriteOffset(Vector2Int(3, 3));
             else if (right && !left && down && !up)
             {
                 if (!uTile)
                 {
-                    tile->spriteOffset = Vector2Int(2, 4);
+                    tile->SetSpriteOffset(Vector2Int(2, 4));
                     auto dComp = tile->AddComponent<DecorativeComponent>(tile);
                     dComp->AddDecorativeTile(Vector2Int(0, -1), Vector2Int(5, 4));
                 }
                 else
-                    tile->spriteOffset = Vector2Int(5, 4);
+                    tile->SetSpriteOffset(Vector2Int(5, 4));
             }
             else if (right && left && down && !up)
-                tile->spriteOffset = Vector2Int(6, 4);
+                tile->SetSpriteOffset(Vector2Int(6, 4));
             else if (!right && left && down && !up)
             {
                 if (!uTile)
                 {
-                    tile->spriteOffset = Vector2Int(2, 4);
+                    tile->SetSpriteOffset(Vector2Int(2, 4));
                     auto dComp = tile->AddComponent<DecorativeComponent>(tile);
                     dComp->AddDecorativeTile(Vector2Int(0, -1), Vector2Int(7, 4));
                 }
                 else
-                    tile->spriteOffset = Vector2Int(7, 4);
+                    tile->SetSpriteOffset(Vector2Int(7, 4));
             }
             else if (right && left && !down && !up)
             {
                 if (!uTile)
                 {
-                    tile->spriteOffset = Vector2Int(4, 1);
+                    tile->SetSpriteOffset(Vector2Int(4, 1));
                     auto dComp = tile->AddComponent<DecorativeComponent>(tile);
                     dComp->AddDecorativeTile(Vector2Int(0, -1), Vector2Int(0, 4));
                 }
                 else
-                    tile->spriteOffset = Vector2Int(0, 4);
+                    tile->SetSpriteOffset(Vector2Int(0, 4));
             }
             else if (!right && !left && down && up)
             {
-                std::shared_ptr<Tile> rdTile = GetTileAtPosition(tile->position + Vector2Int(1, 1));
-                std::shared_ptr<Tile> ldTile = GetTileAtPosition(tile->position + Vector2Int(-1, 1));
-                std::shared_ptr<Tile> ddTile = GetTileAtPosition(tile->position + Vector2Int(0, 2));
+                std::shared_ptr<Tile> rdTile = GetTileAtPosition(tile->GetPosition() + Vector2Int(1, 1));
+                std::shared_ptr<Tile> ldTile = GetTileAtPosition(tile->GetPosition() + Vector2Int(-1, 1));
+                std::shared_ptr<Tile> ddTile = GetTileAtPosition(tile->GetPosition() + Vector2Int(0, 2));
 
-                if (ddTile && ddTile->id != tile->id)
+                if (ddTile && ddTile->GetTileDefinition()->GetId() != tileDef->GetId())
                 {
-                    if (rdTile && rdTile->id == tile->id && ldTile && ldTile->id == tile->id)
-                        tile->spriteOffset = Vector2Int(6, 6);
-                    else if (rdTile && rdTile->id == tile->id && (!ldTile || ldTile->id != tile->id))
-                        tile->spriteOffset = Vector2Int(5, 6);
-                    else if ((!rdTile || rdTile->id != tile->id) && ldTile && ldTile->id == tile->id)
-                        tile->spriteOffset = Vector2Int(7, 6);
+                    if (rdTile && rdTile->GetTileDefinition()->GetId() == tileDef->GetId() && ldTile && ldTile->GetTileDefinition()->GetId() == tileDef->GetId())
+                        tile->SetSpriteOffset(Vector2Int(6, 6));
+                    else if (rdTile && rdTile->GetTileDefinition()->GetId() == tileDef->GetId() && (!ldTile || ldTile->GetTileDefinition()->GetId() != tileDef->GetId()))
+                        tile->SetSpriteOffset(Vector2Int(5, 6));
+                    else if ((!rdTile || rdTile->GetTileDefinition()->GetId() != tileDef->GetId()) && ldTile && ldTile->GetTileDefinition()->GetId() == tileDef->GetId())
+                        tile->SetSpriteOffset(Vector2Int(7, 6));
                     else
-                        tile->spriteOffset = Vector2Int(2, 4);
+                        tile->SetSpriteOffset(Vector2Int(2, 4));
                 }
                 else
-                    tile->spriteOffset = Vector2Int(2, 4);
+                    tile->SetSpriteOffset(Vector2Int(2, 4));
             }
             else if (right && !left && down && up)
-                tile->spriteOffset = Vector2Int(5, 5);
+                tile->SetSpriteOffset(Vector2Int(5, 5));
             else if (right && left && down && up)
-                tile->spriteOffset = Vector2Int(6, 5);
+                tile->SetSpriteOffset(Vector2Int(6, 5));
             else if (!right && left && down && up)
-                tile->spriteOffset = Vector2Int(7, 5);
+                tile->SetSpriteOffset(Vector2Int(7, 5));
             else if (right && !left && !down && up)
             {
                 if (dTile)
-                    tile->spriteOffset = Vector2Int(4, 1);
+                    tile->SetSpriteOffset(Vector2Int(4, 1));
                 else
-                    tile->spriteOffset = Vector2Int(5, 6);
+                    tile->SetSpriteOffset(Vector2Int(5, 6));
             }
             else if (right && left && !down && up)
-                tile->spriteOffset = Vector2Int(6, 6);
+                tile->SetSpriteOffset(Vector2Int(6, 6));
             else if (!right && left && !down && up)
             {
                 if (dTile)
-                    tile->spriteOffset = Vector2Int(4, 1);
+                    tile->SetSpriteOffset(Vector2Int(4, 1));
                 else
-                    tile->spriteOffset = Vector2Int(7, 6);
+                    tile->SetSpriteOffset(Vector2Int(7, 6));
             }
 
             if (!dTile)
             {
                 auto dComp = tile->AddComponent<DecorativeComponent>(tile);
-                dComp->AddDecorativeTile(Vector2Int(0, 1), Vector2Int(Vector2IntToRandomInt(tile->position, 4, 5), 3));
-                dComp->AddDecorativeTile(Vector2Int(0, 2), Vector2Int(Vector2IntToRandomInt(tile->position, 6, 7), 3));
+                dComp->AddDecorativeTile(Vector2Int(0, 1), Vector2Int(Vector2IntToRandomInt(tile->GetPosition(), 4, 5), 3));
+                dComp->AddDecorativeTile(Vector2Int(0, 2), Vector2Int(Vector2IntToRandomInt(tile->GetPosition(), 6, 7), 3));
             }
-            break;
         }
-
-        case Tile::ID::OXYGEN_PRODUCER:
-            tile->spriteOffset = Vector2Int(6, 7);
-            break;
-
-        case Tile::ID::BATTERY:
-            tile->spriteOffset = Vector2Int(5, 7);
-            break;
-
-        case Tile::ID::SOLAR_PANEL:
-            tile->spriteOffset = Vector2Int(7, 7);
-            break;
-
-        case Tile::ID::FRAME:
-            tile->spriteOffset = Vector2Int(4, 4);
-            break;
-
-        default:
-            break;
+        else if (tileId == "OXYGEN_PRODUCER")
+        {
+            tile->SetSpriteOffset(Vector2Int(6, 7));
+        }
+        else if (tileId == "BATTERY")
+        {
+            tile->SetSpriteOffset(Vector2Int(5, 7));
+        }
+        else if (tileId == "SOLAR_PANEL")
+        {
+            tile->SetSpriteOffset(Vector2Int(7, 7));
+        }
+        else if (tileId == "FRAME")
+        {
+            tile->SetSpriteOffset(Vector2Int(4, 4));
         }
     }
 }
 
-std::shared_ptr<Tile> Station::GetTileAtPosition(const Vector2Int &pos, Tile::Height height) const
+std::shared_ptr<Tile> Station::GetTileAtPosition(const Vector2Int &pos, TileDef::Height height) const
 {
     auto posIt = tileMap.find(pos);
     if (posIt != tileMap.end())
     {
-        if (height == Tile::Height::NONE)
+        if (height == TileDef::Height::NONE)
         {
             if (!posIt->second.empty())
             {

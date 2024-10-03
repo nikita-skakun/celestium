@@ -1,28 +1,42 @@
 #include "tile.hpp"
+#include "station.hpp"
 
-template <>
-struct magic_enum::customize::enum_range<Tile::Height>
+Tile::Tile(const std::string &defName, const Vector2Int &position, std::shared_ptr<Station> station, std::shared_ptr<Room> room)
+    : position(position), room(room), station(station)
 {
-    static constexpr bool is_flags = true;
-};
-
-std::string Tile::GetName() const
-{
-    std::string name = magic_enum::enum_name(id).data();
-    std::replace(name.begin(), name.end(), '_', ' ');
-    return ToTitleCase(name);
+    tileDef = TileDefinitionRegistry::GetInstance().GetTileDefinition(defName);
 }
 
-bool Tile::IsWalkable() const
+std::shared_ptr<Tile> Tile::CreateTile(const std::string &defName, const Vector2Int &position, std::shared_ptr<Station> station, std::shared_ptr<Room> room)
 {
-    if (HasComponent<WalkableComponent>())
+    std::shared_ptr<Tile> tile = std::make_shared<Tile>(Tile(defName, position, station, room));
+
+    const auto &refComponents = tile->GetTileDefinition()->GetReferenceComponents();
+    tile->components.reserve(refComponents.size());
+
+    for (const auto &refComponent : refComponents)
     {
-        return true;
+        tile->components.insert(refComponent->Clone(tile));
     }
-    return false;
-}
 
-Tile::Height Tile::GetHeight() const
-{
-    return height;
+    if (station)
+    {
+        auto &heightMap = station->tileMap[position];
+        for (const auto &[existingHeight, existingTile] : heightMap)
+        {
+            if (magic_enum::enum_integer(existingHeight & tile->GetTileDefinition()->GetHeight()) > 0)
+            {
+                LogMessage(LogLevel::ERROR, std::format("A tile {} already exists at {} with overlapping height.", existingTile->GetName(), ToString(position)));
+                break;
+            }
+        }
+
+        station->tiles.push_back(tile);
+        heightMap[tile->GetTileDefinition()->GetHeight()] = tile;
+    }
+
+    if (room)
+        room->tiles.push_back(tile);
+
+    return tile;
 }

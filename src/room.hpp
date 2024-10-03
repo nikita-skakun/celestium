@@ -6,5 +6,9 @@ struct Room
     std::vector<std::weak_ptr<Tile>> tiles;
     std::weak_ptr<Station> station;
 
-    Room(const std::shared_ptr<Station> &s) : station(s) {}
+private:
+    Room(std::shared_ptr<Station> station) : station(station) {}
+
+public:
+    static std::shared_ptr<Room> CreateEmptyRoom(std::shared_ptr<Station> station);
 };

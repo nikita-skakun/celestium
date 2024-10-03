@@ -1,48 +1,56 @@
 #pragma once
-#include "component.hpp"
-#include <unordered_set>
+#include "tile_def_registry.hpp"
 
 struct Room;
 struct Station;
 
 struct Tile
 {
-    enum class ID : u_int16_t
-    {
-        BLUE_FLOOR,
-        WALL,
-        OXYGEN_PRODUCER,
-        BATTERY,
-        SOLAR_PANEL,
-        FRAME,
-    };
-
-    enum class Height : u_int8_t
-    {
-        NONE = 0,
-        FLOOR = 1 << 0,
-        WAIST = 1 << 1,
-        CEILING = 1 << 2,
-    };
-
-    ID id;
-    Height height;
+private:
+    std::shared_ptr<TileDef> tileDef;
     Vector2Int position;
     Vector2Int spriteOffset;
     std::unordered_set<std::shared_ptr<Component>> components;
     std::shared_ptr<Room> room;
     std::shared_ptr<Station> station;
 
-    Tile() {}
-    Tile(ID i, Height h, const Vector2Int &p, std::shared_ptr<Station> s, std::shared_ptr<Room> r = nullptr)
-        : id(i), height(h), position(p), room(r), station(s) {}
+    Tile(const std::string &defName, const Vector2Int &position, std::shared_ptr<Station> station, std::shared_ptr<Room> room = nullptr);
 
-    std::string GetName() const;
-    bool IsWalkable() const;
-    Height GetHeight() const;
+public:
+    static std::shared_ptr<Tile> CreateTile(const std::string &defName, const Vector2Int &position, std::shared_ptr<Station> station, std::shared_ptr<Room> room = nullptr);
+
+    constexpr const Vector2Int &GetPosition() const { return position; }
+    constexpr void SetPosition(const Vector2Int &newPos) { position = newPos; }
+
+    constexpr const Vector2Int &GetSpriteOffset() const { return spriteOffset; }
+    constexpr void SetSpriteOffset(const Vector2Int &newOffset) { spriteOffset = newOffset; }
+
+    std::shared_ptr<TileDef> GetTileDefinition() const { return tileDef; }
+    std::shared_ptr<Room> GetRoom() const { return room; }
+    std::shared_ptr<Station> GetStation() const { return station; }
+
+    constexpr std::string GetName() const
+    {
+        std::string name = tileDef->GetId();
+        std::replace(name.begin(), name.end(), '_', ' ');
+        return ToTitleCase(name);
+    }
 
     template <typename T>
-    bool HasComponent() const
+    constexpr std::shared_ptr<T> GetComponent() const
+    {
+        for (const auto &component : components)
+        {
+            if (auto castedComponent = std::dynamic_pointer_cast<T>(component))
+            {
+                return castedComponent;
+            }
+        }
+        return nullptr;
+    }
+
+    template <typename T>
+    constexpr bool HasComponent() const
     {
         for (const auto &component : components)
         {
@@ -54,21 +62,8 @@ struct Tile
         return false;
     }
 
-    template <typename T>
-    std::shared_ptr<T> GetComponent() const
-    {
-        for (const auto &component : components)
-        {
-            if (auto trueComponent = std::dynamic_pointer_cast<T>(component))
-            {
-                return trueComponent;
-            }
-        }
-        return nullptr;
-    }
-
     template <typename T, typename... Args>
-    std::shared_ptr<T> AddComponent(Args &&...args)
+    constexpr std::shared_ptr<T> AddComponent(Args &&...args)
     {
         if (auto existingComponent = GetComponent<T>())
         {
@@ -76,14 +71,12 @@ struct Tile
         }
 
         auto newComponent = std::make_shared<T>(std::forward<Args>(args)...);
-
         components.insert(newComponent);
-
         return newComponent;
     }
 
     template <typename T>
-    bool RemoveComponent()
+    constexpr bool RemoveComponent()
     {
         for (auto it = components.begin(); it != components.end(); ++it)
         {

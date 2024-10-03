@@ -28,16 +28,19 @@ void HandleMouseDragging(std::shared_ptr<Station> station, PlayerCam &camera)
         if (!camera.isDragging && Vector2DistanceSq(camera.dragStartPos, camera.GetWorldMousePos()) > DRAG_THRESHOLD * DRAG_THRESHOLD)
         {
             camera.dragType = PlayerCam::DragType::SELECT;
-            std::vector<std::shared_ptr<Tile>> tiles = station->GetTilesAtPosition(ToVector2Int(camera.dragStartPos));
-            if (camera.overlay == PlayerCam::Overlay::POWER)
+            if (station)
             {
-                for (std::shared_ptr<Tile> &tile : tiles)
+                std::vector<std::shared_ptr<Tile>> tiles = station->GetTilesAtPosition(ToVector2Int(camera.dragStartPos));
+                if (camera.overlay == PlayerCam::Overlay::POWER)
                 {
-                    if (tile->HasComponent<PowerConnectorComponent>())
+                    for (std::shared_ptr<Tile> &tile : tiles)
                     {
-                        camera.dragType = PlayerCam::DragType::POWER_CONNECT;
-                        camera.dragStartPos = Vector2Floor(camera.dragStartPos) + Vector2(.5f, .5f);
-                        break;
+                        if (tile->HasComponent<PowerConnectorComponent>())
+                        {
+                            camera.dragType = PlayerCam::DragType::POWER_CONNECT;
+                            camera.dragStartPos = Vector2Floor(camera.dragStartPos) + Vector2(.5f, .5f);
+                            break;
+                        }
                     }
                 }
             }
@@ -52,7 +55,7 @@ void HandleMouseDragging(std::shared_ptr<Station> station, PlayerCam &camera)
 
     if (IsMouseButtonReleased(MOUSE_LEFT_BUTTON))
     {
-        if (camera.isDragging && camera.dragType == PlayerCam::DragType::POWER_CONNECT)
+        if (camera.isDragging && station && camera.dragType == PlayerCam::DragType::POWER_CONNECT)
         {
             Vector2Int dragStart = ToVector2Int(camera.dragStartPos);
             Vector2Int dragEnd = ToVector2Int(camera.dragEndPos);
@@ -130,7 +133,7 @@ void AssignCrewTasks(std::vector<Crew> &crewList, const PlayerCam &camera)
         for (int crewId : camera.selectedCrewList)
         {
             Crew &crew = crewList[crewId];
-            if (crew.isAlive)
+            if (crew.isAlive && crew.currentTile)
             {
                 if (!IsKeyDown(KEY_LEFT_SHIFT))
                     crew.taskQueue.clear();
@@ -158,7 +161,7 @@ void HandleCrewTasks(std::vector<Crew> &crewList)
                 Vector2Int floorCrewPos = ToVector2Int(crew.position);
                 if (moveTask->path.empty())
                 {
-                    moveTask->path = AStar(floorCrewPos, moveTask->targetPosition, crew.currentTile->station);
+                    moveTask->path = AStar(floorCrewPos, moveTask->targetPosition, crew.currentTile->GetStation());
 
                     if (moveTask->path.size() <= 0)
                     {
@@ -190,7 +193,7 @@ void HandleCrewTasks(std::vector<Crew> &crewList)
                     }
 
                     // Check if there are any tiles are in the way, if yes, clear path for recalculation
-                    if (DoesPathHaveObstacles(moveTask->path, crew.currentTile->station, crew.CanPathInSpace()))
+                    if (DoesPathHaveObstacles(moveTask->path, crew.currentTile->GetStation(), crew.CanPathInSpace()))
                     {
                         moveTask->path = {};
                         continue;
@@ -241,15 +244,18 @@ void UpdateCrewCurrentTile(std::vector<Crew> &crewList, std::shared_ptr<Station>
 
         Vector2Int floorCrewPos = ToVector2Int(crew.position);
 
-        if (crew.currentTile && crew.currentTile->position == floorCrewPos)
+        if (crew.currentTile && crew.currentTile->GetPosition() == floorCrewPos)
             continue;
 
-        crew.currentTile = station->GetTileAtPosition(floorCrewPos, Tile::Height::FLOOR);
+        crew.currentTile = station->GetTileAtPosition(floorCrewPos, TileDef::Height::FLOOR);
     }
 }
 
 void UpdateTiles(std::shared_ptr<Station> station)
 {
+    if (!station)
+        return;
+
     for (auto &tile : station->tiles)
     {
         if (auto powerProducer = tile->GetComponent<PowerProducerComponent>())
@@ -275,15 +281,15 @@ void UpdateTiles(std::shared_ptr<Station> station)
         if (auto oxygen = tile->GetComponent<OxygenComponent>())
         {
             std::vector<Vector2Int> neighbors = {
-                tile->position + Vector2Int(1, 0),  // Right
-                tile->position + Vector2Int(-1, 0), // Left
-                tile->position + Vector2Int(0, 1),  // Down
-                tile->position + Vector2Int(0, -1), // Up
+                tile->GetPosition() + Vector2Int(1, 0),  // Right
+                tile->GetPosition() + Vector2Int(-1, 0), // Left
+                tile->GetPosition() + Vector2Int(0, 1),  // Down
+                tile->GetPosition() + Vector2Int(0, -1), // Up
             };
 
             for (int i = 0; i < 4; i++)
             {
-                std::shared_ptr<Tile> neighbor = station->GetTileAtPosition(neighbors[i], Tile::Height::FLOOR);
+                std::shared_ptr<Tile> neighbor = station->GetTileAtPosition(neighbors[i], TileDef::Height::FLOOR);
 
                 if (!neighbor)
                     continue;
@@ -323,8 +329,8 @@ void MouseDeleteExistingConnection(std::shared_ptr<Station> station, const Playe
                 {
                     if (auto conTileOther = conOther->_parent.lock())
                     {
-                        Vector2 start = camera.WorldToScreen(ToVector2(tile->position) + Vector2(.5f, .5f));
-                        Vector2 end = camera.WorldToScreen(ToVector2(conTileOther->position) + Vector2(.5f, .5f));
+                        Vector2 start = camera.WorldToScreen(ToVector2(tile->GetPosition()) + Vector2(.5f, .5f));
+                        Vector2 end = camera.WorldToScreen(ToVector2(conTileOther->GetPosition()) + Vector2(.5f, .5f));
 
                         if (DistanceSqFromPointToLine(start, end, mousePos) <= threshold * threshold)
                         {
