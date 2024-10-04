@@ -111,7 +111,7 @@ void Station::UpdateSpriteOffsets()
     for (std::shared_ptr<Tile> tile : tiles)
     {
         const Vector2Int &tilePos = tile->GetPosition();
-        const std::string &tileId = tile->GetTileDefinition()->GetId();
+        const std::string &tileId = tile->GetId();
 
         tile->RemoveComponent<DecorativeTile>();
 
@@ -288,6 +288,16 @@ void Station::UpdateSpriteOffsets()
             tile->SetSpriteOffset(Vector2Int(4, 4));
         }
     }
+}
+
+std::string Station::GetTileIdAtPosition(const Vector2Int &pos, TileDef::Height height) const
+{
+    std::shared_ptr<Tile> tile = GetTileAtPosition(pos, height);
+
+    if (!tile)
+        return "";
+
+    return tile->GetId();
 }
 
 std::shared_ptr<Tile> Station::GetTileAtPosition(const Vector2Int &pos, TileDef::Height height) const

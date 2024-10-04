@@ -15,32 +15,7 @@ public:
     std::vector<std::shared_ptr<Tile>> GetTilesAtPosition(const Vector2Int &pos) const;
     void UpdateSpriteOffsets();
 
-    std::string GetTileIdAtPosition(const Vector2Int &pos, TileDef::Height height = TileDef::Height::NONE) const
-    {
-        auto posIt = tileMap.find(pos);
-        if (posIt != tileMap.end())
-        {
-            if (height == TileDef::Height::NONE)
-            {
-                if (!posIt->second.empty())
-                {
-                    return posIt->second.begin()->second->GetTileDefinition()->GetId();
-                }
-            }
-            else
-            {
-                for (const auto &[tileHeight, tilePtr] : posIt->second)
-                {
-                    if ((magic_enum::enum_integer(tileHeight) & magic_enum::enum_integer(height)) != 0)
-                    {
-                        return tilePtr->GetTileDefinition()->GetId();
-                    }
-                }
-            }
-        }
-
-        return "";
-    }
+    std::string GetTileIdAtPosition(const Vector2Int &pos, TileDef::Height height = TileDef::Height::NONE) const;
 
     constexpr bool CheckAdjacentTile(const Vector2Int &tilePos, const std::string &tileId, Direction direction) const
     {

@@ -29,6 +29,11 @@ public:
     std::shared_ptr<Room> GetRoom() const { return room; }
     std::shared_ptr<Station> GetStation() const { return station; }
 
+    constexpr std::string GetId() const
+    {
+        return tileDef->GetId();
+    }
+
     constexpr std::string GetName() const
     {
         std::string name = tileDef->GetId();
