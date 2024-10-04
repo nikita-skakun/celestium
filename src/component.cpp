@@ -135,5 +135,5 @@ void OxygenProducerComponent::ProduceOxygen(float deltaTime) const
         return;
 
     auto oxygen = oxygenTile->GetComponent<OxygenComponent>();
-    oxygen->SetOxygenLevel(std::min(oxygen->GetOxygenLevel() + OXYGEN_PRODUCTION_RATE * deltaTime, TILE_OXYGEN_MAX));
+    oxygen->SetOxygenLevel(std::min(oxygen->GetOxygenLevel() + oxygenProduction * deltaTime, TILE_OXYGEN_MAX));
 }

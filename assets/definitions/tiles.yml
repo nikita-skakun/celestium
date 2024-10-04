@@ -1,0 +1,39 @@
+tiles:
+  - id: BLUE_FLOOR
+    height: FLOOR
+    components:
+      - type: WALKABLE
+      - type: OXYGEN
+        oxygenLevel: 100.0
+  - id: WALL
+    height: FLOOR | WAIST | CEILING
+    components:
+      - type: SOLID
+  - id: OXYGEN_PRODUCER
+    height: WAIST
+    components:
+      - type: POWER_CONNECTOR
+        io: INPUT
+      - type: POWER_CONSUMER
+        powerConsumption: 20.0
+      - type: OXYGEN_PRODUCER
+        oxygenProduction: 100.0
+  - id: BATTERY
+    height: WAIST
+    components:
+      - type: POWER_CONNECTOR
+        io: INPUT | OUTPUT
+      - type: BATTERY
+        maxCharge: 2000.0
+  - id: SOLAR_PANEL
+    height: WAIST
+    components:
+      - type: POWER_CONNECTOR
+        io: OUTPUT
+      - type: POWER_PRODUCER
+        powerProduction: 20.0
+      - type: SOLAR_PANEL
+  - id: FRAME
+    height: FLOOR
+    components:
+      - type: WALKABLE

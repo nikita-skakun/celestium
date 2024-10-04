@@ -16,13 +16,39 @@ struct DecorativeTile
 
 struct Component
 {
+    enum class Type : u_int8_t
+    {
+        NONE,
+        WALKABLE,
+        SOLID,
+        POWER_CONNECTOR,
+        BATTERY,
+        POWER_CONSUMER,
+        POWER_PRODUCER,
+        SOLAR_PANEL,
+        OXYGEN,
+        OXYGEN_PRODUCER,
+        DECORATIVE,
+    };
+
     std::weak_ptr<Tile> _parent;
 
     Component(std::shared_ptr<Tile> parent = nullptr) : _parent(parent) {}
 
     virtual std::shared_ptr<Component> Clone(std::shared_ptr<Tile> newParent) const = 0;
-    virtual std::string GetName() const = 0;
     virtual ~Component() = default;
+
+    constexpr virtual Type GetType() const
+    {
+        return Type::NONE;
+    }
+
+    constexpr std::string GetName() const
+    {
+        std::string name = std::string(magic_enum::enum_name<Type>(GetType()));
+        std::replace(name.begin(), name.end(), '_', ' ');
+        return ToTitleCase(name);
+    }
 
     bool operator==(const Component &other) const
     {
@@ -60,9 +86,9 @@ struct WalkableComponent : Component
         return std::make_shared<WalkableComponent>(newParent);
     }
 
-    std::string GetName() const override
+    constexpr Type GetType() const override
     {
-        return "Walkable";
+        return Type::WALKABLE;
     }
 };
 
@@ -75,9 +101,9 @@ struct SolidComponent : Component
         return std::make_shared<SolidComponent>(newParent);
     }
 
-    std::string GetName() const override
+    constexpr Type GetType() const override
     {
-        return "Solid";
+        return Type::SOLID;
     }
 };
 
@@ -176,9 +202,9 @@ public:
         return std::make_shared<PowerConnectorComponent>(io, newParent);
     }
 
-    std::string GetName() const override
+    constexpr Type GetType() const override
     {
-        return "Power Connector";
+        return Type::POWER_CONNECTOR;
     }
 };
 
@@ -218,9 +244,9 @@ public:
         return std::make_shared<BatteryComponent>(charge, newParent);
     }
 
-    std::string GetName() const override
+    constexpr Type GetType() const override
     {
-        return "Battery";
+        return Type::BATTERY;
     }
 };
 
@@ -262,9 +288,9 @@ public:
         return std::make_shared<PowerConsumerComponent>(powerConsumption, newParent);
     }
 
-    std::string GetName() const override
+    constexpr Type GetType() const override
     {
-        return "Power Consumer";
+        return Type::POWER_CONSUMER;
     }
 };
 
@@ -303,16 +329,14 @@ public:
         return std::make_shared<PowerProducerComponent>(powerProduction, newParent);
     }
 
-    std::string GetName() const override
+    constexpr Type GetType() const override
     {
-        return "Power Producer";
+        return Type::POWER_PRODUCER;
     }
 };
 
 struct SolarPanelComponent : Component
 {
-    static constexpr float SOLAR_PANEL_POWER_OUTPUT = 20.f;
-
     SolarPanelComponent(std::shared_ptr<Tile> parent = nullptr) : Component(parent) {}
 
     std::shared_ptr<Component> Clone(std::shared_ptr<Tile> newParent) const override
@@ -320,9 +344,9 @@ struct SolarPanelComponent : Component
         return std::make_shared<SolarPanelComponent>(newParent);
     }
 
-    std::string GetName() const override
+    constexpr Type GetType() const override
     {
-        return "Solar Panel";
+        return Type::SOLAR_PANEL;
     }
 };
 
@@ -350,28 +374,36 @@ public:
         return std::make_shared<OxygenComponent>(oxygenLevel, newParent);
     }
 
-    std::string GetName() const override
+    constexpr Type GetType() const override
     {
-        return "Oxygen";
+        return Type::OXYGEN;
     }
 };
 
 struct OxygenProducerComponent : Component
 {
-    static constexpr float POWER_CONSUMPTION = 20.f;
+private:
+    float oxygenProduction;
 
-    OxygenProducerComponent(std::shared_ptr<Tile> parent = nullptr) : Component(parent) {}
+public:
+    OxygenProducerComponent(float oxygenProduction, std::shared_ptr<Tile> parent = nullptr)
+        : Component(parent), oxygenProduction(oxygenProduction) {}
 
     void ProduceOxygen(float deltaTime) const;
 
-    std::shared_ptr<Component> Clone(std::shared_ptr<Tile> newParent) const override
+    constexpr float GetOxygenProduction() const
     {
-        return std::make_shared<OxygenProducerComponent>(newParent);
+        return oxygenProduction;
     }
 
-    std::string GetName() const override
+    std::shared_ptr<Component> Clone(std::shared_ptr<Tile> newParent) const override
     {
-        return "Oxygen Producer";
+        return std::make_shared<OxygenProducerComponent>(oxygenProduction, newParent);
+    }
+
+    constexpr Type GetType() const override
+    {
+        return Type::OXYGEN_PRODUCER;
     }
 };
 
@@ -403,8 +435,8 @@ public:
         return std::make_shared<DecorativeComponent>(newParent);
     }
 
-    std::string GetName() const override
+    constexpr Type GetType() const override
     {
-        return "Decorative";
+        return Type::DECORATIVE;
     }
 };

@@ -79,7 +79,8 @@
         "thread": "cpp",
         "typeindex": "cpp",
         "csetjmp": "cpp",
-        "stdfloat": "cpp"
+        "stdfloat": "cpp",
+        "filesystem": "cpp"
     },
     "cSpell.words": [
         "Celestium"
