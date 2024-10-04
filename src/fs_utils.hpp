@@ -14,19 +14,26 @@ constexpr CharContainer ReadFromFile(const std::filesystem::path &filepath)
     if (!std::filesystem::exists(filepath))
         LogMessage(LogLevel::ERROR, std::format("File does not exist: {}", filepath.string()));
 
-    auto fileSize = std::filesystem::file_size(filepath);
+    std::uintmax_t fileSize = std::filesystem::file_size(filepath);
     if (fileSize > MAX_FILE_SIZE)
         LogMessage(LogLevel::ERROR, std::format("File size exceeds maximum allowed size: {}", filepath.string()));
 
     std::ifstream file(filepath, std::ios::binary);
-    if (!file)
+    if (!file.is_open())
         LogMessage(LogLevel::ERROR, std::format("Unable to open file: {}", filepath.string()));
+
+    file.exceptions(std::ifstream::failbit | std::ifstream::badbit);
 
     CharContainer cc(fileSize);
 
-    file.read(reinterpret_cast<char *>(cc.data()), fileSize);
-    if (!file)
-        LogMessage(LogLevel::ERROR, std::format("Error reading file: {}", filepath.string()));
+    try
+    {
+        file.read(cc.data(), fileSize);
+    }
+    catch (const std::ifstream::failure &e)
+    {
+        LogMessage(LogLevel::ERROR, std::format("Error reading file {}: {}", filepath.string(), e.what()));
+    }
 
     return cc;
 }
