@@ -168,18 +168,16 @@ struct Vector2Int
         return Vector2Int(x - a.x, y - a.y);
     }
 
-    constexpr Vector2Int &operator+=(Vector2Int &a) noexcept
+    constexpr void operator+=(const Vector2Int &a) noexcept
     {
         x += a.x;
         y += a.y;
-        return *this;
     }
 
-    constexpr Vector2Int &operator-=(Vector2Int &a) noexcept
+    constexpr void operator-=(const Vector2Int &a) noexcept
     {
         x -= a.x;
         y -= a.y;
-        return *this;
     }
 
     constexpr bool operator==(const Vector2Int &a) const noexcept

@@ -110,20 +110,20 @@ void Station::UpdateSpriteOffsets()
 {
     for (std::shared_ptr<Tile> tile : tiles)
     {
-        const std::shared_ptr<TileDef> &tileDef = tile->GetTileDefinition();
+        const Vector2Int &tilePos = tile->GetPosition();
+        const std::string &tileId = tile->GetTileDefinition()->GetId();
 
         tile->RemoveComponent<DecorativeTile>();
 
-        std::shared_ptr<Tile> rTile = GetTileAtPosition(tile->GetPosition() + Vector2Int(1, 0));
-        bool right = rTile && rTile->GetTileDefinition()->GetId() == tileDef->GetId();
-        std::shared_ptr<Tile> lTile = GetTileAtPosition(tile->GetPosition() + Vector2Int(-1, 0));
-        bool left = lTile && lTile->GetTileDefinition()->GetId() == tileDef->GetId();
-        std::shared_ptr<Tile> dTile = GetTileAtPosition(tile->GetPosition() + Vector2Int(0, 1));
-        bool down = dTile && dTile->GetTileDefinition()->GetId() == tileDef->GetId();
-        std::shared_ptr<Tile> uTile = GetTileAtPosition(tile->GetPosition() + Vector2Int(0, -1));
-        bool up = uTile && uTile->GetTileDefinition()->GetId() == tileDef->GetId();
+        std::shared_ptr<Tile> rTile = GetTileAtPosition(tilePos + Vector2Int(1, 0));
+        bool right = rTile && rTile->GetTileDefinition()->GetId() == tileId;
+        std::shared_ptr<Tile> lTile = GetTileAtPosition(tilePos + Vector2Int(-1, 0));
+        bool left = lTile && lTile->GetTileDefinition()->GetId() == tileId;
+        std::shared_ptr<Tile> dTile = GetTileAtPosition(tilePos + Vector2Int(0, 1));
+        bool down = dTile && dTile->GetTileDefinition()->GetId() == tileId;
+        std::shared_ptr<Tile> uTile = GetTileAtPosition(tilePos + Vector2Int(0, -1));
+        bool up = uTile && uTile->GetTileDefinition()->GetId() == tileId;
 
-        const std::string &tileId = tile->GetTileDefinition()->GetId();
         if (tileId == "BLUE_FLOOR")
         {
             if (right && left && !down && !up)
@@ -140,14 +140,14 @@ void Station::UpdateSpriteOffsets()
                 tile->SetSpriteOffset(Vector2Int(5, 1));
             else if (right && left && down && up)
             {
-                std::shared_ptr<Tile> rdTile = GetTileAtPosition(tile->GetPosition() + Vector2Int(1, 1));
-                bool rd = rdTile && rdTile->GetTileDefinition()->GetId() == tileDef->GetId();
-                std::shared_ptr<Tile> ldTile = GetTileAtPosition(tile->GetPosition() + Vector2Int(-1, 1));
-                bool ld = ldTile && ldTile->GetTileDefinition()->GetId() == tileDef->GetId();
-                std::shared_ptr<Tile> ruTile = GetTileAtPosition(tile->GetPosition() + Vector2Int(1, -1));
-                bool ru = ruTile && ruTile->GetTileDefinition()->GetId() == tileDef->GetId();
-                std::shared_ptr<Tile> luTile = GetTileAtPosition(tile->GetPosition() + Vector2Int(-1, -1));
-                bool lu = luTile && luTile->GetTileDefinition()->GetId() == tileDef->GetId();
+                std::shared_ptr<Tile> rdTile = GetTileAtPosition(tilePos + Vector2Int(1, 1));
+                bool rd = rdTile && rdTile->GetTileDefinition()->GetId() == tileId;
+                std::shared_ptr<Tile> ldTile = GetTileAtPosition(tilePos + Vector2Int(-1, 1));
+                bool ld = ldTile && ldTile->GetTileDefinition()->GetId() == tileId;
+                std::shared_ptr<Tile> ruTile = GetTileAtPosition(tilePos + Vector2Int(1, -1));
+                bool ru = ruTile && ruTile->GetTileDefinition()->GetId() == tileId;
+                std::shared_ptr<Tile> luTile = GetTileAtPosition(tilePos + Vector2Int(-1, -1));
+                bool lu = luTile && luTile->GetTileDefinition()->GetId() == tileId;
 
                 if (rd && ld && !ru && lu)
                     tile->SetSpriteOffset(Vector2Int(0, 2));
@@ -228,17 +228,17 @@ void Station::UpdateSpriteOffsets()
             }
             else if (!right && !left && down && up)
             {
-                std::shared_ptr<Tile> rdTile = GetTileAtPosition(tile->GetPosition() + Vector2Int(1, 1));
-                std::shared_ptr<Tile> ldTile = GetTileAtPosition(tile->GetPosition() + Vector2Int(-1, 1));
-                std::shared_ptr<Tile> ddTile = GetTileAtPosition(tile->GetPosition() + Vector2Int(0, 2));
+                std::shared_ptr<Tile> rdTile = GetTileAtPosition(tilePos + Vector2Int(1, 1));
+                std::shared_ptr<Tile> ldTile = GetTileAtPosition(tilePos + Vector2Int(-1, 1));
+                std::shared_ptr<Tile> ddTile = GetTileAtPosition(tilePos + Vector2Int(0, 2));
 
-                if (ddTile && ddTile->GetTileDefinition()->GetId() != tileDef->GetId())
+                if (ddTile && ddTile->GetTileDefinition()->GetId() != tileId)
                 {
-                    if (rdTile && rdTile->GetTileDefinition()->GetId() == tileDef->GetId() && ldTile && ldTile->GetTileDefinition()->GetId() == tileDef->GetId())
+                    if (rdTile && rdTile->GetTileDefinition()->GetId() == tileId && ldTile && ldTile->GetTileDefinition()->GetId() == tileId)
                         tile->SetSpriteOffset(Vector2Int(6, 6));
-                    else if (rdTile && rdTile->GetTileDefinition()->GetId() == tileDef->GetId() && (!ldTile || ldTile->GetTileDefinition()->GetId() != tileDef->GetId()))
+                    else if (rdTile && rdTile->GetTileDefinition()->GetId() == tileId && (!ldTile || ldTile->GetTileDefinition()->GetId() != tileId))
                         tile->SetSpriteOffset(Vector2Int(5, 6));
-                    else if ((!rdTile || rdTile->GetTileDefinition()->GetId() != tileDef->GetId()) && ldTile && ldTile->GetTileDefinition()->GetId() == tileDef->GetId())
+                    else if ((!rdTile || rdTile->GetTileDefinition()->GetId() != tileId) && ldTile && ldTile->GetTileDefinition()->GetId() == tileId)
                         tile->SetSpriteOffset(Vector2Int(7, 6));
                     else
                         tile->SetSpriteOffset(Vector2Int(2, 4));
@@ -272,8 +272,8 @@ void Station::UpdateSpriteOffsets()
             if (!dTile)
             {
                 auto dComp = tile->AddComponent<DecorativeComponent>(tile);
-                dComp->AddDecorativeTile(Vector2Int(0, 1), Vector2Int(Vector2IntToRandomInt(tile->GetPosition(), 4, 5), 3));
-                dComp->AddDecorativeTile(Vector2Int(0, 2), Vector2Int(Vector2IntToRandomInt(tile->GetPosition(), 6, 7), 3));
+                dComp->AddDecorativeTile(Vector2Int(0, 1), Vector2Int(Vector2IntToRandomInt(tilePos, 4, 5), 3));
+                dComp->AddDecorativeTile(Vector2Int(0, 2), Vector2Int(Vector2IntToRandomInt(tilePos, 6, 7), 3));
             }
         }
         else if (tileId == "OXYGEN_PRODUCER")
