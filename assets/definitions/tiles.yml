@@ -37,3 +37,7 @@ tiles:
     height: FLOOR
     components:
       - type: WALKABLE
+  - id: DOOR
+    height: WAIST | CEILING
+    components:
+      - type: DOOR

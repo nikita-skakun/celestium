@@ -29,6 +29,7 @@ struct Component
         OXYGEN,
         OXYGEN_PRODUCER,
         DECORATIVE,
+        DOOR,
     };
 
     std::weak_ptr<Tile> _parent;
@@ -438,5 +439,35 @@ public:
     constexpr Type GetType() const override
     {
         return Type::DECORATIVE;
+    }
+};
+
+struct DoorComponent : Component
+{
+private:
+    bool isOpen;
+
+public:
+    DoorComponent(bool state = false, std::shared_ptr<Tile> parent = nullptr)
+        : Component(parent), isOpen(!state)
+    {
+        SetState(state);
+    }
+
+    constexpr bool GetState() const
+    {
+        return isOpen;
+    }
+
+    void SetState(bool state);
+
+    std::shared_ptr<Component> Clone(std::shared_ptr<Tile> newParent) const override
+    {
+        return std::make_shared<DoorComponent>(isOpen, newParent);
+    }
+
+    constexpr Type GetType() const override
+    {
+        return Type::DOOR;
     }
 };

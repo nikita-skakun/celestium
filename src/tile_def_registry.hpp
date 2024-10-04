@@ -77,6 +77,9 @@ private:
         case Component::Type::DECORATIVE:
             return std::make_shared<DecorativeComponent>();
 
+        case Component::Type::DOOR:
+            return std::make_shared<DoorComponent>();
+
         default:
             throw std::runtime_error(std::format("Parsing of component type failed: {}", magic_enum::enum_name(type)));
             return nullptr;

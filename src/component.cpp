@@ -137,3 +137,31 @@ void OxygenProducerComponent::ProduceOxygen(float deltaTime) const
     auto oxygen = oxygenTile->GetComponent<OxygenComponent>();
     oxygen->SetOxygenLevel(std::min(oxygen->GetOxygenLevel() + oxygenProduction * deltaTime, TILE_OXYGEN_MAX));
 }
+
+void DoorComponent::SetState(bool state)
+{
+    if (state == isOpen)
+        return;
+
+    auto parent = _parent.lock();
+    if (!parent)
+        return;
+
+    // auto decorative = parent->AddComponent<DecorativeComponent>(parent);
+    // decorative->ClearDecorativeTiles();
+    if (state)
+    {
+        // TODO: Continue once open door texture is added
+        //     decorative->AddDecorativeTile(Vector2Int(0, -1), Vector2Int(0, 5));
+
+        parent->RemoveComponent<SolidComponent>();
+        parent->AddComponent<WalkableComponent>();
+    }
+    else
+    {
+        parent->RemoveComponent<WalkableComponent>();
+        parent->AddComponent<SolidComponent>();
+    }
+
+    isOpen = state;
+}
