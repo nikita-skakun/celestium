@@ -1,4 +1,4 @@
-# **Celestium** [![CodeFactor](https://www.codefactor.io/repository/github/nikita-skakun/celestium/badge)](https://www.codefactor.io/repository/github/nikita-skakun/celestium)
+# **Celestium** [![CodeFactor](https://www.codefactor.io/repository/github/nikita-skakun/celestium/badge)](https://www.codefactor.io/repository/github/nikita-skakun/celestium) [![Codacy](https://app.codacy.com/project/badge/Grade/27c30d00a98d42678bd8c30600178499)](https://app.codacy.com/gh/nikita-skakun/celestium/dashboard?utm_source=gh&utm_medium=referral&utm_content=&utm_campaign=Badge_grade)
 
 ## What is this?
 
