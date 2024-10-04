@@ -34,7 +34,7 @@ private:
 
         auto io = magic_enum::enum_flags_cast<PowerConnectorComponent::IO>(ioStr);
         if (!io.has_value())
-            LogMessage(LogLevel::ERROR, std::format("Parsing of IO string failed: {}", ioStr));
+            throw std::runtime_error(std::format("Parsing of IO string failed: {}", ioStr));
         return io;
     }
 
@@ -78,7 +78,7 @@ private:
             return std::make_shared<DecorativeComponent>();
 
         default:
-            LogMessage(LogLevel::ERROR, std::format("Parsing of component type failed: {}", magic_enum::enum_name(type)));
+            throw std::runtime_error(std::format("Parsing of component type failed: {}", magic_enum::enum_name(type)));
             return nullptr;
         }
     }
@@ -101,7 +101,7 @@ public:
         ryml::Tree tree = ryml::parse_in_place(ryml::to_substr(contents));
 
         if (tree.empty())
-            LogMessage(LogLevel::ERROR, std::format("The tile definition file is empty or unreadable: {}", filename));
+            throw std::runtime_error(std::format("The tile definition file is empty or unreadable: {}", filename));
 
         for (ryml::ConstNodeRef tileNode : tree["tiles"])
         {
@@ -111,7 +111,7 @@ public:
             StringRemoveSpaces(tileId);
 
             if (tileId.empty())
-                LogMessage(LogLevel::ERROR, std::format("Parsing of tile ID string failed: {}", tileId));
+                throw std::runtime_error(std::format("Parsing of tile ID string failed: {}", tileId));
 
             // Retrieve the height string
             std::string heightStr;
@@ -121,7 +121,7 @@ public:
             // Parse Height
             auto height = magic_enum::enum_flags_cast<TileDef::Height>(heightStr);
             if (!height.has_value())
-                LogMessage(LogLevel::ERROR, std::format("Parsing of height string failed: {}", heightStr));
+                throw std::runtime_error(std::format("Parsing of height string failed: {}", heightStr));
 
             // Parse Components
             std::unordered_set<std::shared_ptr<Component>> refComponents;
@@ -133,7 +133,7 @@ public:
 
                 auto type = magic_enum::enum_cast<Component::Type>(typeStr);
                 if (!type.has_value())
-                    LogMessage(LogLevel::ERROR, std::format("Parsing of component type string failed: {}", typeStr));
+                    throw std::runtime_error(std::format("Parsing of component type string failed: {}", typeStr));
 
                 auto component = CreateComponent(type.value(), componentNode);
                 refComponents.insert(component);

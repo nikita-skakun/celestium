@@ -13,12 +13,12 @@ enum class LogLevel : u_int8_t
 };
 
 /**
- * Logs a message to the console or throws an exception depending on log level.
+ * Logs a message to the console an exception depending on log level.
  *
  * @param level The severity level of the log message (DEBUG, INFO, WARNING, ERROR).
  * @param message The message to be logged.
  */
-constexpr void LogMessage(LogLevel level, const std::string &message)
+constexpr void LogMessage(LogLevel level, const std::string &message) noexcept
 {
     if (message.empty())
         return;
@@ -35,8 +35,7 @@ constexpr void LogMessage(LogLevel level, const std::string &message)
         std::cout << termcolor::yellow << "[WARNING] " << termcolor::reset << message << std::endl;
         break;
     case LogLevel::ERROR:
-        throw std::runtime_error(std::format("[ERROR] {}", message));
-        // std::cout << termcolor::red << "[ERROR] " << termcolor::reset;
+        std::cout << termcolor::red << "[ERROR] " << termcolor::reset << message << std::endl;
         break;
     }
 }

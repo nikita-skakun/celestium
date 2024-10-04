@@ -26,7 +26,7 @@ std::shared_ptr<Tile> Tile::CreateTile(const std::string &defName, const Vector2
         {
             if (magic_enum::enum_integer(existingHeight & tile->GetTileDefinition()->GetHeight()) > 0)
             {
-                LogMessage(LogLevel::ERROR, std::format("A tile {} already exists at {} with overlapping height.", existingTile->GetName(), ToString(position)));
+                throw std::runtime_error(std::format("A tile {} already exists at {} with overlapping height.", existingTile->GetName(), ToString(position)));
                 break;
             }
         }

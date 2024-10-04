@@ -1,5 +1,4 @@
 #pragma once
-#include "logging.hpp"
 #include <filesystem>
 #include <format>
 #include <fstream>
@@ -12,15 +11,15 @@ template <class CharContainer>
 constexpr CharContainer ReadFromFile(const std::filesystem::path &filepath)
 {
     if (!std::filesystem::exists(filepath))
-        LogMessage(LogLevel::ERROR, std::format("File does not exist: {}", filepath.string()));
+        throw std::runtime_error(std::format("File does not exist: {}", filepath.string()));
 
-    std::uintmax_t fileSize = std::filesystem::file_size(filepath);
+    auto fileSize = std::filesystem::file_size(filepath);
     if (fileSize > MAX_FILE_SIZE)
-        LogMessage(LogLevel::ERROR, std::format("File size exceeds maximum allowed size: {}", filepath.string()));
+        throw std::runtime_error(std::format("File size exceeds maximum allowed size: {}", filepath.string()));
 
     std::ifstream file(filepath, std::ios::binary);
     if (!file.is_open())
-        LogMessage(LogLevel::ERROR, std::format("Unable to open file: {}", filepath.string()));
+        throw std::runtime_error(std::format("Unable to open file: {}", filepath.string()));
 
     file.exceptions(std::ifstream::failbit | std::ifstream::badbit);
 
@@ -32,7 +31,7 @@ constexpr CharContainer ReadFromFile(const std::filesystem::path &filepath)
     }
     catch (const std::ifstream::failure &e)
     {
-        LogMessage(LogLevel::ERROR, std::format("Error reading file {}: {}", filepath.string(), e.what()));
+        throw std::runtime_error(std::format("Error reading file {}: {}", filepath.string(), e.what()));
     }
 
     return cc;
