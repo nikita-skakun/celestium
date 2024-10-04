@@ -32,7 +32,7 @@ private:
         componentNode["io"] >> ioStr;
         StringRemoveSpaces(ioStr);
 
-        auto io = magic_enum::enum_flags_cast<PowerConnectorComponent::IO>(ioStr);
+        auto io = magic_enum::enum_flags_cast<PowerConnectorComponent::IO>(ioStr, magic_enum::case_insensitive);
         if (!io.has_value())
             throw std::runtime_error(std::format("Parsing of IO string failed: {}", ioStr));
         return io;
@@ -119,7 +119,7 @@ public:
             StringRemoveSpaces(heightStr);
 
             // Parse Height
-            auto height = magic_enum::enum_flags_cast<TileDef::Height>(heightStr);
+            auto height = magic_enum::enum_flags_cast<TileDef::Height>(heightStr, magic_enum::case_insensitive);
             if (!height.has_value())
                 throw std::runtime_error(std::format("Parsing of height string failed: {}", heightStr));
 
@@ -131,7 +131,7 @@ public:
                 componentNode["type"] >> typeStr;
                 StringRemoveSpaces(typeStr);
 
-                auto type = magic_enum::enum_cast<Component::Type>(typeStr);
+                auto type = magic_enum::enum_cast<Component::Type>(typeStr, magic_enum::case_insensitive);
                 if (!type.has_value())
                     throw std::runtime_error(std::format("Parsing of component type string failed: {}", typeStr));
 
