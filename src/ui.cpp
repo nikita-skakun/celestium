@@ -258,7 +258,7 @@ void DrawFpsCounter(float deltaTime, int padding, int fontSize, const Font &font
  */
 void DrawOverlay(const PlayerCam &camera, int padding, int fontSize, const Font &font)
 {
-    std::string overlayText = std::format("Overlay: {:}", ToTitleCase(std::string(magic_enum::enum_name(camera.overlay))));
+    std::string overlayText = std::format("Overlay: {:}", StringToTitleCase(std::string(magic_enum::enum_name(camera.overlay))));
     const char *text = overlayText.c_str();
     DrawTextEx(font, text, Vector2(padding, padding), fontSize, 1, UI_TEXT_COLOR);
 }

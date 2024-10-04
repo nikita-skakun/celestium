@@ -47,7 +47,7 @@ struct Component
     {
         std::string name = std::string(magic_enum::enum_name<Type>(GetType()));
         std::replace(name.begin(), name.end(), '_', ' ');
-        return ToTitleCase(name);
+        return StringToTitleCase(name);
     }
 
     bool operator==(const Component &other) const

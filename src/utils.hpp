@@ -4,7 +4,6 @@
 #include <cctype>
 #include <cmath>
 #include <format>
-#include <iostream>
 #include <magic_enum_flags.hpp>
 #include <magic_enum.hpp>
 #include <memory>
@@ -279,7 +278,7 @@ constexpr bool Contains(const Container &container, const T &value) noexcept
 }
 
 // Utility functions for std::string
-constexpr std::string ToTitleCase(const std::string &a) noexcept
+constexpr std::string StringToTitleCase(const std::string &a) noexcept
 {
     std::string result = a;
     bool capitalizeNext = true;
@@ -303,4 +302,8 @@ constexpr std::string ToTitleCase(const std::string &a) noexcept
     }
 
     return result;
+}
+
+constexpr void StringRemoveSpaces(std::string &s) noexcept {
+    s.erase(std::remove_if(s.begin(), s.end(), ::isspace), s.end());
 }

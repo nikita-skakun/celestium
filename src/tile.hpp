@@ -33,7 +33,7 @@ public:
     {
         std::string name = tileDef->GetId();
         std::replace(name.begin(), name.end(), '_', ' ');
-        return ToTitleCase(name);
+        return StringToTitleCase(name);
     }
 
     template <typename T>
