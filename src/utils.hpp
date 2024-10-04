@@ -283,19 +283,17 @@ constexpr std::string StringToTitleCase(const std::string &a) noexcept
     std::string result = a;
     bool capitalizeNext = true;
 
-    for (size_t i = 0; i < result.length(); ++i)
+    for (char &c : result)
     {
-        if (std::isalpha(result[i]))
+        if (std::isalpha(c))
         {
             if (capitalizeNext)
             {
-                result[i] = std::toupper(result[i]);
+                c = std::toupper(c);
                 capitalizeNext = false;
             }
             else
-            {
-                result[i] = std::tolower(result[i]);
-            }
+                c = std::tolower(c);
         }
         else
             capitalizeNext = true;
@@ -304,6 +302,7 @@ constexpr std::string StringToTitleCase(const std::string &a) noexcept
     return result;
 }
 
-constexpr void StringRemoveSpaces(std::string &s) noexcept {
+constexpr void StringRemoveSpaces(std::string &s) noexcept
+{
     s.erase(std::remove_if(s.begin(), s.end(), ::isspace), s.end());
 }
