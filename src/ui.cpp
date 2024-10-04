@@ -359,6 +359,10 @@ void DrawMainTooltip(const std::vector<Crew> &crewList, const PlayerCam &camera,
                 hoverText += "\n";
             hoverText += " - " + tile->GetName();
 
+            if (auto door = tile->GetComponent<DoorComponent>())
+            {
+                hoverText += std::format("\n   + State: {}", door->GetState() ? "Closed" : "Open");
+            }
             if (auto oxygenComp = tile->GetComponent<OxygenComponent>())
             {
                 hoverText += std::format("\n   + Tile Ox: {:.2f}", oxygenComp->GetOxygenLevel());

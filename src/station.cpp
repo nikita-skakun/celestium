@@ -80,7 +80,7 @@ std::shared_ptr<Station> CreateStation()
     std::shared_ptr<Station> station = std::make_shared<Station>();
     std::shared_ptr<Room> room1 = CreateRectRoom(Vector2Int(-4, -4), Vector2Int(9, 9), station);
     std::shared_ptr<Room> room2 = CreateRectRoom(Vector2Int(10, -4), Vector2Int(9, 9), station);
-    std::shared_ptr<Room> room3 = CreateHorizontalCorridor(Vector2Int(4, 0), 7, 3, station);
+    std::shared_ptr<Room> room3 = CreateHorizontalCorridor(Vector2Int(4, 0), 7, 1, station);
 
     Tile::CreateTile("DOOR", Vector2Int(4, 0), station, room1);
 
