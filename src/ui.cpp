@@ -123,7 +123,7 @@ void DrawStationOverlays(std::shared_ptr<Station> station, const Texture2D &tile
                     Vector2 startScreenPos = camera.WorldToScreen(ToVector2(tile->GetPosition()) + Vector2(.66f, 0.f));
 
                     Rectangle destRect = Vector2ToRect(startScreenPos, startScreenPos + sizeScreenPos / 3.f);
-                    Rectangle sourceRec = Rectangle(0, 7, 1, 1) * TILE_SIZE;
+                    Rectangle sourceRec = Rectangle(4, 7, 1, 1) * TILE_SIZE;
 
                     DrawTexturePro(tileset, sourceRec, destRect, Vector2(), 0, Fade(YELLOW, .8f));
                 }
