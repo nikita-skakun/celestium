@@ -502,7 +502,7 @@ public:
         SetProgress(progress + direction * movingSpeed * deltaTime);
         if (progress >= 1.f)
             SetOpenState(false);
-        if (progress <= 0.f && movingState != MovingState::FORCED_OPEN)
+        if (progress <= 0.f)
             SetOpenState(true);
     }
 

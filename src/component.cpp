@@ -150,5 +150,7 @@ void DoorComponent::SetOpenState(bool openState)
         parent->AddComponent<SolidComponent>();
 
     isOpen = openState;
-    movingState = MovingState::IDLE;
+
+    if (movingState != MovingState::FORCED_OPEN)
+        movingState = MovingState::IDLE;
 }
