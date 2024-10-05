@@ -34,7 +34,7 @@ std::deque<Vector2Int> AStar(const Vector2Int &start, const Vector2Int &end,
     // Initialize costs for the start node
     costMap[start] = Vector2(0.f, heuristic(start, end));
     // Add start to the queue of open nodes
-    openQueue.push(start);
+    openQueue.emplace(start);
 
     const Vector2Int neighborOffsets[] = {{1, 0}, {-1, 0}, {0, 1}, {0, -1}, {1, 1}, {-1, 1}, {1, -1}, {-1, -1}};
 
@@ -48,17 +48,12 @@ std::deque<Vector2Int> AStar(const Vector2Int &start, const Vector2Int &end,
         // If we reach the end node, reconstruct the path
         if (current == end)
         {
-            // The path backwards
-            std::deque<Vector2Int> backPath;
-            for (Vector2Int step = end; step != start; step = cameFrom[step])
+            std::deque<Vector2Int> path;
+            for (auto [step, prev] = std::tuple{end, cameFrom[end]}; step != start; std::tie(step, prev) = std::tuple{prev, cameFrom[prev]})
             {
-                // Backtrack to get the path
-                backPath.push_back(step);
+                path.push_front(step);
             }
-            // Reverse to get the correct order
-            std::reverse(backPath.begin(), backPath.end());
-
-            return backPath;
+            return path;
         }
 
         // Mark the current node as evaluated
@@ -106,7 +101,7 @@ std::deque<Vector2Int> AStar(const Vector2Int &start, const Vector2Int &end,
                     cameFrom[neighborPos] = current;
 
                     // Add neighbor to the open list
-                    openQueue.push(neighborPos);
+                    openQueue.emplace(neighborPos);
                 }
             }
         }
