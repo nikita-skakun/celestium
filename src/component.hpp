@@ -500,10 +500,7 @@ public:
 
         SetProgress(progress + direction * movingSpeed * deltaTime);
         if ((isOpen && progress >= 1.f) || (!isOpen && progress <= 0.f))
-        {
-            isOpen = !isOpen;
-            movingState = MovingState::IDLE;
-        }
+            SetOpenState(!isOpen);
     }
 
     constexpr void PingPong()

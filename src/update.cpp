@@ -175,7 +175,7 @@ void HandleCrewTasks(std::vector<Crew> &crewList)
                     }
 
                     // Check if there are any tiles are in the way, if yes, clear path for recalculation
-                    if (DoesPathHaveObstacles(moveTask->path, crew.currentTile->GetStation(), crew.CanPathInSpace()))
+                    if (DoesPathHaveObstacles(moveTask->path, crew.currentTile->GetStation()))
                     {
                         moveTask->path = {};
                         continue;

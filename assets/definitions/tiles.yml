@@ -41,4 +41,4 @@ tiles:
     height: WAIST | CEILING
     components:
       - type: DOOR
-        movingSpeed: 1.0
+        movingSpeed: 0.75

@@ -144,19 +144,11 @@ void DoorComponent::SetOpenState(bool openState)
     if (!parent)
         return;
 
-    // auto decorative = parent->AddComponent<DecorativeComponent>(parent);
-    // decorative->ClearDecorativeTiles();
     if (openState)
-    {
-        // TODO: Continue once open door texture is added
-        //     decorative->AddDecorativeTile(Vector2Int(0, -1), Vector2Int(0, 5));
-
         parent->RemoveComponent<SolidComponent>();
-    }
     else
-    {
         parent->AddComponent<SolidComponent>();
-    }
 
     isOpen = openState;
+    movingState = MovingState::IDLE;
 }

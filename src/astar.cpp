@@ -64,8 +64,6 @@ std::deque<Vector2Int> AStar(const Vector2Int &start, const Vector2Int &end,
         {
             // Calculate neighbor position
             Vector2Int neighborPos = current + offset;
-            // Get the neighbor tile
-            std::shared_ptr<Tile> neighborTile = station->GetTileAtPosition(neighborPos);
 
             // Check if the move is diagonal
             bool isDiagonal = (offset.x != 0 && offset.y != 0);
@@ -82,8 +80,10 @@ std::deque<Vector2Int> AStar(const Vector2Int &start, const Vector2Int &end,
                     continue; // Skip to the next neighbor
             }
 
-            // Evaluate the neighbor if it is walkable and not in the closed set
-            if (neighborTile && neighborTile->HasComponent<WalkableComponent>() && !Contains(closedSet, neighborPos))
+            // Check if neighbor is not solid, walkable and not in the closed set
+            if (!station->GetTileWithComponentAtPosition<SolidComponent>(neighborPos) &&
+                station->GetTileWithComponentAtPosition<WalkableComponent>(neighborPos) &&
+                !Contains(closedSet, neighborPos))
             {
                 // Calculate tentative G cost
                 float tentativeGCost = costMap[current].x + heuristic(current, neighborPos);
@@ -116,28 +116,20 @@ std::deque<Vector2Int> AStar(const Vector2Int &start, const Vector2Int &end,
  *
  * @param path            The queue of Vector2Int positions representing the path.
  * @param station         Shared pointer to the Station containing the tiles.
- * @param canPathInSpace  If true, allows pathing through empty space (no tiles).
  *
  * @return                True if an obstacle is found or station is null, false otherwise.
  */
-bool DoesPathHaveObstacles(const std::deque<Vector2Int> &path, std::shared_ptr<Station> station, bool canPathInSpace)
+bool DoesPathHaveObstacles(const std::deque<Vector2Int> &path, std::shared_ptr<Station> station)
 {
     // Return that obstacle is found if station is null
     if (!station)
         return true;
 
-    // Traverse the path directly using a range-based loop
-    for (const auto &step : path)
+    for (const Vector2Int &step : path)
     {
-        // Get tile at current step
-        std::shared_ptr<Tile> tile = station->GetTileAtPosition(step);
-
-        // Return that an obstacle is found if the tile is missing and pathing in space is not allowed
-        if (!tile && !canPathInSpace)
-            return true;
-
-        // Return that an obstacle is found if the tile is not walkable
-        if (tile && !tile->HasComponent<WalkableComponent>())
+        // Return that an obstacle is found if the tile is solid or not walkable
+        if (station->GetTileWithComponentAtPosition<SolidComponent>(step) ||
+            !station->GetTileWithComponentAtPosition<WalkableComponent>(step))
             return true;
     }
 
