@@ -139,11 +139,12 @@ void HandleCrewTasks(std::vector<Crew> &crewList)
             case Task::Type::MOVE:
             {
                 std::shared_ptr<MoveTask> moveTask = std::dynamic_pointer_cast<MoveTask>(task);
+                std::shared_ptr<Station> station = crew.currentTile->GetStation();
 
                 Vector2Int floorCrewPos = ToVector2Int(crew.position);
                 if (moveTask->path.empty())
                 {
-                    moveTask->path = AStar(floorCrewPos, moveTask->targetPosition, crew.currentTile->GetStation());
+                    moveTask->path = AStar(floorCrewPos, moveTask->targetPosition, station);
 
                     if (moveTask->path.size() <= 0)
                     {
@@ -162,10 +163,18 @@ void HandleCrewTasks(std::vector<Crew> &crewList)
                 }
 
                 constexpr float moveDelta = CREW_MOVE_SPEED * FIXED_DELTA_TIME;
-                const float distanceLeftSq = Vector2DistanceSq(crew.position, ToVector2(moveTask->path.front())) - moveDelta * moveDelta;
+                const Vector2 stepPos = ToVector2(moveTask->path.front());
+                const float distanceLeftSq = Vector2DistanceSq(crew.position, stepPos) - moveDelta * moveDelta;
                 if (distanceLeftSq <= 0)
                 {
-                    crew.position = ToVector2(moveTask->path.front());
+
+                    if (auto doorTile = station->GetTileWithComponentAtPosition<DoorComponent>(floorCrewPos))
+                    {
+                        auto door = doorTile->GetComponent<DoorComponent>();
+                        door->SetMovingState(DoorComponent::MovingState::CLOSING);
+                    }
+
+                    crew.position = stepPos;
                     moveTask->path.pop_front();
 
                     if (moveTask->path.empty())
@@ -175,17 +184,26 @@ void HandleCrewTasks(std::vector<Crew> &crewList)
                     }
 
                     // Check if there are any tiles are in the way, if yes, clear path for recalculation
-                    if (DoesPathHaveObstacles(moveTask->path, crew.currentTile->GetStation()))
+                    if (DoesPathHaveObstacles(moveTask->path, station))
                     {
                         moveTask->path = {};
                         continue;
                     }
 
-                    crew.position += Vector2Normalize(ToVector2(moveTask->path.front()) - crew.position) * sqrtf(-distanceLeftSq);
+                    crew.position += Vector2Normalize(stepPos - crew.position) * sqrtf(-distanceLeftSq);
                 }
                 else
                 {
-                    crew.position += Vector2Normalize(ToVector2(moveTask->path.front()) - crew.position) * moveDelta;
+                    if (auto doorTile = station->GetTileWithComponentAtPosition<DoorComponent>(moveTask->path.front()))
+                    {
+                        auto door = doorTile->GetComponent<DoorComponent>();
+                        door->SetMovingState(DoorComponent::MovingState::FORCED_OPEN);
+
+                        if (door->GetProgress() > 0.f)
+                            continue;
+                    }
+
+                    crew.position += Vector2Normalize(stepPos - crew.position) * moveDelta;
                 }
                 break;
             }

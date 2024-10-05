@@ -215,7 +215,22 @@ void DrawCrew(double timeSinceFixedUpdate, const std::vector<Crew> &crewList, co
                     }
                 }
                 else
-                    drawPosition += Vector2Normalize(nextPosition - crew.position) * moveDelta;
+                {
+                    bool canPath = true;
+                    std::shared_ptr<Station> station = crew.currentTile->GetStation();
+                    if (station)
+                    {
+                        if (auto doorTile = station->GetTileWithComponentAtPosition<DoorComponent>(moveTask->path.front()))
+                        {
+                            auto door = doorTile->GetComponent<DoorComponent>();
+                            if (door->GetProgress() > 0.f)
+                                canPath = false;
+                        }
+                    }
+
+                    if (canPath)
+                        drawPosition += Vector2Normalize(nextPosition - crew.position) * moveDelta;
+                }
             }
         }
 
@@ -382,7 +397,8 @@ void DrawMainTooltip(const std::vector<Crew> &crewList, const PlayerCam &camera,
 
             if (auto door = tile->GetComponent<DoorComponent>())
             {
-                hoverText += std::format("\n   + {} ({:.0f}%)", door->GetMovementName(), door->GetProgress() * 100.f);
+                hoverText += std::format("\n   + {}", door->IsOpen() ? "Open" : "Closed");
+                hoverText += std::format("\n   + State: {} ({:.0f}%)", door->GetMovementName(), door->GetProgress() * 100.f);
             }
             if (auto oxygenComp = tile->GetComponent<OxygenComponent>())
             {

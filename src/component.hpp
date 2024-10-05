@@ -449,6 +449,7 @@ struct DoorComponent : Component
         IDLE,
         OPENING,
         CLOSING,
+        FORCED_OPEN,
     };
 
 private:
@@ -499,8 +500,10 @@ public:
         float direction = movingState == MovingState::CLOSING ? 1.f : -1.f;
 
         SetProgress(progress + direction * movingSpeed * deltaTime);
-        if ((isOpen && progress >= 1.f) || (!isOpen && progress <= 0.f))
-            SetOpenState(!isOpen);
+        if (progress >= 1.f)
+            SetOpenState(false);
+        if (progress <= 0.f && movingState != MovingState::FORCED_OPEN)
+            SetOpenState(true);
     }
 
     constexpr void PingPong()
