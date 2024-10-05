@@ -15,24 +15,23 @@ std::deque<Vector2Int> AStar(const Vector2Int &start, const Vector2Int &end, std
     if (start == end || !station)
         return {};
 
-    // Cost maps for tracking the cost to reach each node
-    std::unordered_map<Vector2Int, float, Vector2Int::Hash> gCost, fCost;
+    // Combined cost map for tracking both g and f costs
+    std::unordered_map<Vector2Int, Vector2, Vector2Int::Hash> costMap;
     // Map to reconstruct the path
     std::unordered_map<Vector2Int, Vector2Int, Vector2Int::Hash> cameFrom;
     // Map of nodes already evaluated
     std::unordered_set<Vector2Int, Vector2Int::Hash> closedSet;
 
     // Comparator for the priority queue
-    auto compare = [&fCost](const Vector2Int &a, const Vector2Int &b)
+    auto compare = [&costMap](const Vector2Int &a, const Vector2Int &b)
     {
-        return fCost[a] > fCost[b];
+        return costMap[a].y > costMap[b].y;
     };
     // Sorted queue of open nodes
     std::priority_queue<Vector2Int, std::vector<Vector2Int>, decltype(compare)> openQueue(compare);
 
     // Initialize costs for the start node
-    gCost[start] = 0;
-    fCost[start] = Vector2IntDistanceSq(start, end);
+    costMap[start] = Vector2(0.f, Vector2IntDistanceSq(start, end));
     // Add start to the queue of open nodes
     openQueue.push(start);
 
@@ -88,20 +87,20 @@ std::deque<Vector2Int> AStar(const Vector2Int &start, const Vector2Int &end, std
             }
 
             // Evaluate the neighbor if it is walkable and not in the closed set
-            if (neighborTile && neighborTile->HasComponent<WalkableComponent>() && closedSet.find(neighborPos) == closedSet.end())
+            if (neighborTile && neighborTile->HasComponent<WalkableComponent>() && !Contains(closedSet, neighborPos))
             {
                 // Calculate tentative G cost
-                float tentativeGCost = gCost[current] + Vector2IntDistanceSq(current, neighborPos);
+                float tentativeGCost = costMap[current].x + Vector2IntDistanceSq(current, neighborPos);
                 // Insert or get existing cost
-                auto [iter, inserted] = gCost.try_emplace(neighborPos, std::numeric_limits<float>::infinity());
+                auto [iter, inserted] = costMap.try_emplace(neighborPos, Vector2(std::numeric_limits<float>::infinity(), std::numeric_limits<float>::infinity()));
 
                 // If the new cost is lower, update costs and path tracking
-                if (tentativeGCost < iter->second)
+                if (tentativeGCost < iter->second.x)
                 {
                     // Update G cost
-                    iter->second = tentativeGCost;
+                    iter->second.x = tentativeGCost;
                     // Update F cost
-                    fCost[neighborPos] = tentativeGCost + Vector2IntDistanceSq(neighborPos, end);
+                    iter->second.y = tentativeGCost + Vector2IntDistanceSq(neighborPos, end);
                     // Track the path
                     cameFrom[neighborPos] = current;
 
