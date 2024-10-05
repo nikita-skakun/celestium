@@ -242,7 +242,6 @@ void UpdateTiles(std::shared_ptr<Station> station)
     {
         if (auto door = tile->GetComponent<DoorComponent>())
         {
-
             if (door->GetState())
             {
                 door->SetProgress(door->GetProgress() + .25f * FIXED_DELTA_TIME);

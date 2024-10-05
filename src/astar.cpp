@@ -7,10 +7,11 @@
  * @param start    The starting position as a Vector2Int.
  * @param end      The target position as a Vector2Int.
  * @param station  A shared pointer to the Station.
- * @return         A queue of Vector2Int positions representing the path,
- *                 or an empty queue if no path is found.
+ * @param heuristic A function that estimates the cost between two points.
+ * @return         A queue of Vector2Int positions representing the path.
  */
-std::deque<Vector2Int> AStar(const Vector2Int &start, const Vector2Int &end, std::shared_ptr<Station> station)
+std::deque<Vector2Int> AStar(const Vector2Int &start, const Vector2Int &end,
+                             std::shared_ptr<Station> station, HeuristicFunction heuristic)
 {
     if (start == end || !station)
         return {};
@@ -31,7 +32,7 @@ std::deque<Vector2Int> AStar(const Vector2Int &start, const Vector2Int &end, std
     std::priority_queue<Vector2Int, std::vector<Vector2Int>, decltype(compare)> openQueue(compare);
 
     // Initialize costs for the start node
-    costMap[start] = Vector2(0.f, Vector2IntDistanceSq(start, end));
+    costMap[start] = Vector2(0.f, heuristic(start, end));
     // Add start to the queue of open nodes
     openQueue.push(start);
 
@@ -90,7 +91,7 @@ std::deque<Vector2Int> AStar(const Vector2Int &start, const Vector2Int &end, std
             if (neighborTile && neighborTile->HasComponent<WalkableComponent>() && !Contains(closedSet, neighborPos))
             {
                 // Calculate tentative G cost
-                float tentativeGCost = costMap[current].x + Vector2IntDistanceSq(current, neighborPos);
+                float tentativeGCost = costMap[current].x + heuristic(current, neighborPos);
                 // Insert or get existing cost
                 auto [iter, inserted] = costMap.try_emplace(neighborPos, Vector2(std::numeric_limits<float>::infinity(), std::numeric_limits<float>::infinity()));
 
@@ -100,7 +101,7 @@ std::deque<Vector2Int> AStar(const Vector2Int &start, const Vector2Int &end, std
                     // Update G cost
                     iter->second.x = tentativeGCost;
                     // Update F cost
-                    iter->second.y = tentativeGCost + Vector2IntDistanceSq(neighborPos, end);
+                    iter->second.y = tentativeGCost + heuristic(neighborPos, end);
                     // Track the path
                     cameFrom[neighborPos] = current;
 
