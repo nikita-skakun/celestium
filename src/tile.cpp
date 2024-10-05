@@ -35,7 +35,7 @@ std::shared_ptr<Tile> Tile::CreateTile(const std::string &tileId, const Vector2I
         heightMap[tile->GetTileDefinition()->GetHeight()] = tile;
 
         if (auto door = tile->GetComponent<DoorComponent>())
-            door->SetState(door->GetState());
+            door->SetOpenState(door->IsOpen());
     }
 
     if (room)

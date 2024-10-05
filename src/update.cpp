@@ -242,22 +242,8 @@ void UpdateTiles(std::shared_ptr<Station> station)
     {
         if (auto door = tile->GetComponent<DoorComponent>())
         {
-            if (door->GetState())
-            {
-                door->SetProgress(door->GetProgress() + .25f * FIXED_DELTA_TIME);
-                if (door->GetProgress() >= 1.f)
-                {
-                    door->SetState(false);
-                }
-            }
-            else
-            {
-                door->SetProgress(door->GetProgress() - .25f * FIXED_DELTA_TIME);
-                if (door->GetProgress() <= 0.f)
-                {
-                    door->SetState(true);
-                }
-            }
+            door->PingPong();
+            door->Animate(FIXED_DELTA_TIME);
         }
 
         if (auto powerProducer = tile->GetComponent<PowerProducerComponent>())

@@ -57,28 +57,28 @@ private:
         }
 
         case Component::Type::BATTERY:
-            return std::make_shared<BatteryComponent>(GetValueOrDefault(componentNode, "maxCharge", 0.0f));
+            return std::make_shared<BatteryComponent>(GetValueOrDefault(componentNode, "maxCharge", 0.f));
 
         case Component::Type::POWER_CONSUMER:
-            return std::make_shared<PowerConsumerComponent>(GetValueOrDefault(componentNode, "powerConsumption", 0.0f));
+            return std::make_shared<PowerConsumerComponent>(GetValueOrDefault(componentNode, "powerConsumption", 0.f));
 
         case Component::Type::POWER_PRODUCER:
-            return std::make_shared<PowerProducerComponent>(GetValueOrDefault(componentNode, "powerProduction", 0.0f));
+            return std::make_shared<PowerProducerComponent>(GetValueOrDefault(componentNode, "powerProduction", 0.f));
 
         case Component::Type::SOLAR_PANEL:
             return std::make_shared<SolarPanelComponent>();
 
         case Component::Type::OXYGEN:
-            return std::make_shared<OxygenComponent>(GetValueOrDefault(componentNode, "oxygenLevel", 100.0f));
+            return std::make_shared<OxygenComponent>(GetValueOrDefault(componentNode, "oxygenLevel", 100.f));
 
         case Component::Type::OXYGEN_PRODUCER:
-            return std::make_shared<OxygenProducerComponent>(GetValueOrDefault(componentNode, "oxygenProduction", 0.0f));
+            return std::make_shared<OxygenProducerComponent>(GetValueOrDefault(componentNode, "oxygenProduction", 0.f));
 
         case Component::Type::DECORATIVE:
             return std::make_shared<DecorativeComponent>();
 
         case Component::Type::DOOR:
-            return std::make_shared<DoorComponent>();
+            return std::make_shared<DoorComponent>(GetValueOrDefault(componentNode, "movingSpeed", 0.f));
 
         default:
             throw std::runtime_error(std::format("Parsing of component type failed: {}", magic_enum::enum_name(type)));
