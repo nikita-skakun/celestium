@@ -240,6 +240,27 @@ void UpdateTiles(std::shared_ptr<Station> station)
 
     for (auto &tile : station->tiles)
     {
+        if (auto door = tile->GetComponent<DoorComponent>())
+        {
+
+            if (door->GetState())
+            {
+                door->SetProgress(door->GetProgress() + .25f * FIXED_DELTA_TIME);
+                if (door->GetProgress() >= 1.f)
+                {
+                    door->SetState(false);
+                }
+            }
+            else
+            {
+                door->SetProgress(door->GetProgress() - .25f * FIXED_DELTA_TIME);
+                if (door->GetProgress() <= 0.f)
+                {
+                    door->SetState(true);
+                }
+            }
+        }
+
         if (auto powerProducer = tile->GetComponent<PowerProducerComponent>())
         {
             powerProducer->ProducePower(FIXED_DELTA_TIME);

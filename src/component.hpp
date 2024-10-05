@@ -446,15 +446,15 @@ struct DoorComponent : Component
 {
 private:
     bool isOpen;
+    float progress;
 
 public:
     DoorComponent(bool state = true, std::shared_ptr<Tile> parent = nullptr)
-        : Component(parent), isOpen(state) {}
+        : Component(parent), isOpen(state), progress(state ? 0.f : 1.f) {}
 
-    constexpr bool GetState() const
-    {
-        return isOpen;
-    }
+    constexpr bool GetState() const { return isOpen; }
+    constexpr float GetProgress() const { return progress; }
+    constexpr void SetProgress(float newProgress) { progress = std::clamp(newProgress, 0.f, 1.f); }
 
     void SetState(bool state);
 
