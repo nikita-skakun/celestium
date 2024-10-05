@@ -131,85 +131,81 @@ void HandleCrewTasks(std::vector<Crew> &crewList)
 {
     for (Crew &crew : crewList)
     {
-        if (!crew.taskQueue.empty() && crew.isAlive)
+        if (crew.taskQueue.empty() || !crew.isAlive)
+            continue;
+
+        std::shared_ptr<Task> task = crew.taskQueue[0];
+        switch (task->GetType())
         {
-            std::shared_ptr<Task> task = crew.taskQueue[0];
-            switch (task->GetType())
+        case Task::Type::MOVE:
+        {
+            std::shared_ptr<MoveTask> moveTask = std::dynamic_pointer_cast<MoveTask>(task);
+            std::shared_ptr<Station> station = crew.currentTile->GetStation();
+
+            Vector2Int floorCrewPos = ToVector2Int(crew.position);
+            if (moveTask->path.empty())
             {
-            case Task::Type::MOVE:
-            {
-                std::shared_ptr<MoveTask> moveTask = std::dynamic_pointer_cast<MoveTask>(task);
-                std::shared_ptr<Station> station = crew.currentTile->GetStation();
+                moveTask->path = AStar(floorCrewPos, moveTask->targetPosition, station);
 
-                Vector2Int floorCrewPos = ToVector2Int(crew.position);
-                if (moveTask->path.empty())
+                if (moveTask->path.size() <= 0)
                 {
-                    moveTask->path = AStar(floorCrewPos, moveTask->targetPosition, station);
-
-                    if (moveTask->path.size() <= 0)
+                    if (ToVector2(moveTask->targetPosition) != crew.position)
                     {
-                        if (ToVector2(moveTask->targetPosition) != crew.position)
-                        {
-                            moveTask->targetPosition = floorCrewPos;
-                            moveTask->path = {};
-                            moveTask->path.push_back(floorCrewPos);
-                        }
-                        else
-                        {
-                            crew.taskQueue.erase(crew.taskQueue.begin());
-                            continue;
-                        }
+                        moveTask->targetPosition = floorCrewPos;
+                        moveTask->path = {};
+                        moveTask->path.push_back(floorCrewPos);
                     }
-                }
-
-                constexpr float moveDelta = CREW_MOVE_SPEED * FIXED_DELTA_TIME;
-                const Vector2 stepPos = ToVector2(moveTask->path.front());
-                const float distanceLeftSq = Vector2DistanceSq(crew.position, stepPos) - moveDelta * moveDelta;
-                if (distanceLeftSq <= 0)
-                {
-
-                    if (auto doorTile = station->GetTileWithComponentAtPosition<DoorComponent>(floorCrewPos))
-                    {
-                        auto door = doorTile->GetComponent<DoorComponent>();
-                        door->SetMovingState(DoorComponent::MovingState::CLOSING);
-                    }
-
-                    crew.position = stepPos;
-                    moveTask->path.pop_front();
-
-                    if (moveTask->path.empty())
+                    else
                     {
                         crew.taskQueue.erase(crew.taskQueue.begin());
                         continue;
                     }
-
-                    // Check if there are any tiles are in the way, if yes, clear path for recalculation
-                    if (DoesPathHaveObstacles(moveTask->path, station))
-                    {
-                        moveTask->path = {};
-                        continue;
-                    }
-
-                    crew.position += Vector2Normalize(stepPos - crew.position) * sqrtf(-distanceLeftSq);
                 }
-                else
+            }
+
+            constexpr float moveDelta = CREW_MOVE_SPEED * FIXED_DELTA_TIME;
+            const Vector2 stepPos = ToVector2(moveTask->path.front());
+            const float distanceLeftSq = Vector2DistanceSq(crew.position, stepPos) - moveDelta * moveDelta;
+            if (distanceLeftSq <= 0)
+            {
+                if (auto doorTile = station->GetTileWithComponentAtPosition<DoorComponent>(floorCrewPos))
+                    doorTile->GetComponent<DoorComponent>()->SetMovingState(DoorComponent::MovingState::IDLE);
+
+                crew.position = stepPos;
+                moveTask->path.pop_front();
+
+                if (moveTask->path.empty())
                 {
-                    if (auto doorTile = station->GetTileWithComponentAtPosition<DoorComponent>(moveTask->path.front()))
-                    {
-                        auto door = doorTile->GetComponent<DoorComponent>();
-                        door->SetMovingState(DoorComponent::MovingState::FORCED_OPEN);
-
-                        if (door->GetProgress() > 0.f)
-                            continue;
-                    }
-
-                    crew.position += Vector2Normalize(stepPos - crew.position) * moveDelta;
+                    crew.taskQueue.erase(crew.taskQueue.begin());
+                    continue;
                 }
-                break;
+
+                // Check if there are any tiles are in the way, if yes, clear path for recalculation
+                if (DoesPathHaveObstacles(moveTask->path, station))
+                {
+                    moveTask->path = {};
+                    continue;
+                }
+
+                crew.position += Vector2Normalize(stepPos - crew.position) * sqrtf(-distanceLeftSq);
             }
-            default:
-                break;
+            else
+            {
+                if (auto doorTile = station->GetTileWithComponentAtPosition<DoorComponent>(moveTask->path.front()))
+                {
+                    auto door = doorTile->GetComponent<DoorComponent>();
+                    door->SetMovingState(DoorComponent::MovingState::FORCED_OPEN);
+
+                    if (door->GetProgress() > 0.f)
+                        continue;
+                }
+
+                crew.position += Vector2Normalize(stepPos - crew.position) * moveDelta;
             }
+            break;
+        }
+        default:
+            break;
         }
     }
 }
