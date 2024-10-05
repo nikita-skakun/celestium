@@ -11,7 +11,7 @@
  * @return         A queue of Vector2Int positions representing the path.
  */
 std::deque<Vector2Int> AStar(const Vector2Int &start, const Vector2Int &end,
-                             std::shared_ptr<Station> station, HeuristicFunction heuristic)
+                             std::shared_ptr<Station> station, const HeuristicFunction &heuristic)
 {
     if (start == end || !station)
         return {};
