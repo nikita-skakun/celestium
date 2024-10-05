@@ -66,25 +66,25 @@ void DrawStationTiles(std::shared_ptr<Station> station, const Texture2D &tileset
 
     for (std::shared_ptr<Tile> tile : station->tiles)
     {
-        Vector2 startScreenPos = camera.WorldToScreen(ToVector2(tile->GetPosition()));
+        Vector2 startPos = camera.WorldToScreen(ToVector2(tile->GetPosition()));
 
-        Rectangle destRect = Vector2ToRect(startScreenPos, startScreenPos + sizeScreenPos);
-        Rectangle sourceRec = Rectangle(tile->GetSpriteOffset().x, tile->GetSpriteOffset().y, 1, 1) * TILE_SIZE;
+        Rectangle destRect = Vector2ToRect(startPos, startPos + sizeScreenPos);
+        Rectangle sourceRect = Rectangle(tile->GetSpriteOffset().x, tile->GetSpriteOffset().y, 1, 1) * TILE_SIZE;
 
-        DrawTexturePro(tileset, sourceRec, destRect, Vector2(), 0, WHITE);
+        DrawTexturePro(tileset, sourceRect, destRect, Vector2(), 0, WHITE);
 
         if (camera.overlay == PlayerCam::Overlay::OXYGEN)
         {
             if (auto oxygenComp = tile->GetComponent<OxygenComponent>())
             {
                 Color color = Color(50, 150, 255, oxygenComp->GetOxygenLevel() / TILE_OXYGEN_MAX * 255 * .8f);
-                DrawRectangleV(startScreenPos, sizeScreenPos, color);
+                DrawRectangleV(startPos, sizeScreenPos, color);
             }
         }
 
         if (camera.overlay == PlayerCam::Overlay::WALL && tile->HasComponent<SolidComponent>())
         {
-            DrawRectangleV(startScreenPos, sizeScreenPos, Color(255, 0, 0, 64));
+            DrawRectangleV(startPos, sizeScreenPos, Color(255, 0, 0, 64));
         }
     }
 }
@@ -106,12 +106,33 @@ void DrawStationOverlays(std::shared_ptr<Station> station, const Texture2D &tile
         {
             for (const DecorativeTile &dTile : decorative->GetDecorativeTiles())
             {
-                Rectangle sourceRec = Rectangle(dTile.spriteOffset.x, dTile.spriteOffset.y, 1, 1) * TILE_SIZE;
+                Rectangle sourceRect = Rectangle(dTile.spriteOffset.x, dTile.spriteOffset.y, 1, 1) * TILE_SIZE;
                 Vector2 startPos = camera.WorldToScreen(ToVector2(tile->GetPosition() + dTile.offset));
                 Rectangle destRect = Rectangle(startPos.x, startPos.y, sizeScreenPos.x, sizeScreenPos.y);
 
-                DrawTexturePro(tileset, sourceRec, destRect, Vector2(), 0, WHITE);
+                DrawTexturePro(tileset, sourceRect, destRect, Vector2(), 0, WHITE);
             }
+        }
+
+        if (auto door = tile->GetComponent<DoorComponent>())
+        {
+            Vector2 startPos = camera.WorldToScreen(ToVector2(tile->GetPosition()));
+            Rectangle destRect = Vector2ToRect(startPos, startPos + sizeScreenPos);
+            Rectangle doorSourceRect = Rectangle(0, 7, 1, 1) * TILE_SIZE;
+            doorSourceRect.height = std::max(19.f * door->GetProgress(), 1.f);
+
+            Rectangle doorDest1 = destRect;
+            doorDest1.height = std::max(19.f * door->GetProgress(), 1.f) * camera.zoom;
+            doorDest1.y += 19.f * camera.zoom - doorDest1.height;
+
+            DrawTexturePro(tileset, doorSourceRect, doorDest1, Vector2(), 0, WHITE);
+
+            Rectangle doorDest2 = destRect;
+            doorDest2.width = -doorDest2.width;
+            doorDest2.height = -doorDest1.height;
+            doorDest2.y -= 19.f * camera.zoom + doorDest2.height;
+
+            DrawTexturePro(tileset, doorSourceRect, doorDest2, Vector2(-doorDest2.width, 0.f), 180.f, WHITE);
         }
 
         if (camera.overlay == PlayerCam::Overlay::POWER)
@@ -123,9 +144,9 @@ void DrawStationOverlays(std::shared_ptr<Station> station, const Texture2D &tile
                     Vector2 startScreenPos = camera.WorldToScreen(ToVector2(tile->GetPosition()) + Vector2(.66f, 0.f));
 
                     Rectangle destRect = Vector2ToRect(startScreenPos, startScreenPos + sizeScreenPos / 3.f);
-                    Rectangle sourceRec = Rectangle(0, 7, 1, 1) * TILE_SIZE;
+                    Rectangle sourceRect = Rectangle(4, 7, 1, 1) * TILE_SIZE;
 
-                    DrawTexturePro(tileset, sourceRec, destRect, Vector2(), 0, Fade(YELLOW, .8f));
+                    DrawTexturePro(tileset, sourceRect, destRect, Vector2(), 0, Fade(YELLOW, .8f));
                 }
             }
 
@@ -194,7 +215,22 @@ void DrawCrew(double timeSinceFixedUpdate, const std::vector<Crew> &crewList, co
                     }
                 }
                 else
-                    drawPosition += Vector2Normalize(nextPosition - crew.position) * moveDelta;
+                {
+                    bool canPath = true;
+                    std::shared_ptr<Station> station = crew.currentTile->GetStation();
+                    if (station)
+                    {
+                        if (auto doorTile = station->GetTileWithComponentAtPosition<DoorComponent>(moveTask->path.front()))
+                        {
+                            auto door = doorTile->GetComponent<DoorComponent>();
+                            if (door->GetProgress() > 0.f)
+                                canPath = false;
+                        }
+                    }
+
+                    if (canPath)
+                        drawPosition += Vector2Normalize(nextPosition - crew.position) * moveDelta;
+                }
             }
         }
 
@@ -359,6 +395,11 @@ void DrawMainTooltip(const std::vector<Crew> &crewList, const PlayerCam &camera,
                 hoverText += "\n";
             hoverText += " - " + tile->GetName();
 
+            if (auto door = tile->GetComponent<DoorComponent>())
+            {
+                hoverText += std::format("\n   + {}", door->IsOpen() ? "Open" : "Closed");
+                hoverText += std::format("\n   + State: {} ({:.0f}%)", door->GetMovementName(), door->GetProgress() * 100.f);
+            }
             if (auto oxygenComp = tile->GetComponent<OxygenComponent>())
             {
                 hoverText += std::format("\n   + Tile Ox: {:.2f}", oxygenComp->GetOxygenLevel());

@@ -55,6 +55,17 @@ public:
 
         return result;
     }
+
+    bool CanPath(const Vector2Int &pos) const
+    {
+        if (!GetTileWithComponentAtPosition<WalkableComponent>(pos))
+            return false;
+
+        if (GetTileWithComponentAtPosition<SolidComponent>(pos) && !GetTileWithComponentAtPosition<DoorComponent>(pos))
+            return false;
+
+        return true;
+    }
 };
 
 std::shared_ptr<Room> CreateRectRoom(const Vector2Int &pos, const Vector2Int &size, std::shared_ptr<Station> station);

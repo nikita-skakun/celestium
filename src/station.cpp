@@ -65,10 +65,13 @@ std::shared_ptr<Room> CreateHorizontalCorridor(const Vector2Int &startPos, int l
             if (isWall && oldTile)
                 continue;
 
-            if (oldTile && !isWall)
+            if (!isWall && oldTile)
                 DeleteTile(oldTile);
 
             Tile::CreateTile(isWall ? "WALL" : "BLUE_FLOOR", pos, station, room);
+
+            if (i == 0 || i == absLength - 1)
+                Tile::CreateTile("DOOR", pos, station, room);
         }
     }
 
@@ -80,7 +83,7 @@ std::shared_ptr<Station> CreateStation()
     std::shared_ptr<Station> station = std::make_shared<Station>();
     std::shared_ptr<Room> room1 = CreateRectRoom(Vector2Int(-4, -4), Vector2Int(9, 9), station);
     std::shared_ptr<Room> room2 = CreateRectRoom(Vector2Int(10, -4), Vector2Int(9, 9), station);
-    CreateHorizontalCorridor(Vector2Int(4, 0), 7, 3, station);
+    std::shared_ptr<Room> room3 = CreateHorizontalCorridor(Vector2Int(4, 0), 7, 1, station);
 
     auto oxygenProducer1 = Tile::CreateTile("OXYGEN_PRODUCER", Vector2Int(0, 0), station, room1);
     auto oxygenProducer2 = Tile::CreateTile("OXYGEN_PRODUCER", Vector2Int(14, 0), station, room2);
@@ -286,6 +289,12 @@ void Station::UpdateSpriteOffsets()
         else if (tileId == "FRAME")
         {
             tile->SetSpriteOffset(Vector2Int(4, 4));
+        }
+        else if (tileId == "DOOR")
+        {
+            tile->SetSpriteOffset(Vector2Int(0, 6));
+            auto decorative = tile->AddComponent<DecorativeComponent>(tile);
+            decorative->AddDecorativeTile(Vector2Int(0, -1), Vector2Int(0, 5));
         }
     }
 }

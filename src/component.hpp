@@ -29,6 +29,7 @@ struct Component
         OXYGEN,
         OXYGEN_PRODUCER,
         DECORATIVE,
+        DOOR,
     };
 
     std::weak_ptr<Tile> _parent;
@@ -438,5 +439,96 @@ public:
     constexpr Type GetType() const override
     {
         return Type::DECORATIVE;
+    }
+};
+
+struct DoorComponent : Component
+{
+    enum class MovingState : u_int8_t
+    {
+        IDLE,
+        OPENING,
+        CLOSING,
+        FORCED_OPEN,
+    };
+
+private:
+    float movingSpeed;
+    bool isOpen;
+    MovingState movingState;
+    float progress;
+
+public:
+    DoorComponent(float movingSpeed = 1.f, bool openState = false, std::shared_ptr<Tile> parent = nullptr)
+        : Component(parent), movingSpeed(std::max(movingSpeed, 0.f)), isOpen(openState),
+          movingState(MovingState::IDLE), progress(openState ? 0.f : 1.f) {}
+
+    constexpr bool IsOpen() const { return isOpen; }
+    constexpr MovingState GetMovingState() const { return movingState; }
+    constexpr float GetProgress() const { return progress; }
+    constexpr void SetProgress(float newProgress) { progress = std::clamp(newProgress, 0.f, 1.f); }
+
+    void SetOpenState(bool openState);
+
+    constexpr std::string GetMovementName() const
+    {
+        std::string name = std::string(magic_enum::enum_name<MovingState>(movingState));
+        std::replace(name.begin(), name.end(), '_', ' ');
+        return StringToTitleCase(name);
+    }
+
+    constexpr void SetMovingState(MovingState newMovingState)
+    {
+        if (newMovingState == movingState)
+            return;
+
+        if ((progress >= 1.f && newMovingState == MovingState::CLOSING) ||
+            (progress <= 0.f && newMovingState == MovingState::OPENING))
+        {
+            movingState = MovingState::IDLE;
+            return;
+        }
+
+        movingState = newMovingState;
+    }
+
+    constexpr void Animate(float deltaTime)
+    {
+        if (movingState == MovingState::IDLE)
+            return;
+
+        float direction = movingState == MovingState::CLOSING ? 1.f : -1.f;
+
+        SetProgress(progress + direction * movingSpeed * deltaTime);
+        if (progress >= 1.f)
+            SetOpenState(false);
+        if (progress <= 0.f)
+            SetOpenState(true);
+    }
+
+    constexpr void PingPong()
+    {
+        if (movingState != MovingState::IDLE)
+            return;
+
+        movingState = isOpen ? MovingState::CLOSING : MovingState::OPENING;
+    }
+
+    constexpr void KeepClosed()
+    {
+        if (movingState != MovingState::IDLE)
+            return;
+
+        movingState = MovingState::CLOSING;
+    }
+
+    std::shared_ptr<Component> Clone(std::shared_ptr<Tile> newParent) const override
+    {
+        return std::make_shared<DoorComponent>(movingSpeed, isOpen, newParent);
+    }
+
+    constexpr Type GetType() const override
+    {
+        return Type::DOOR;
     }
 };

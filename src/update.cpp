@@ -131,67 +131,80 @@ void HandleCrewTasks(std::vector<Crew> &crewList)
 {
     for (Crew &crew : crewList)
     {
-        if (!crew.taskQueue.empty() && crew.isAlive)
+        if (crew.taskQueue.empty() || !crew.isAlive)
+            continue;
+
+        std::shared_ptr<Task> task = crew.taskQueue[0];
+        switch (task->GetType())
         {
-            std::shared_ptr<Task> task = crew.taskQueue[0];
-            switch (task->GetType())
+        case Task::Type::MOVE:
+        {
+            std::shared_ptr<MoveTask> moveTask = std::dynamic_pointer_cast<MoveTask>(task);
+            std::shared_ptr<Station> station = crew.currentTile->GetStation();
+
+            Vector2Int floorCrewPos = ToVector2Int(crew.position);
+            if (moveTask->path.empty())
             {
-            case Task::Type::MOVE:
-            {
-                std::shared_ptr<MoveTask> moveTask = std::dynamic_pointer_cast<MoveTask>(task);
+                moveTask->path = AStar(floorCrewPos, moveTask->targetPosition, station);
 
-                Vector2Int floorCrewPos = ToVector2Int(crew.position);
-                if (moveTask->path.empty())
+                if (moveTask->path.size() <= 0)
                 {
-                    moveTask->path = AStar(floorCrewPos, moveTask->targetPosition, crew.currentTile->GetStation());
-
-                    if (moveTask->path.size() <= 0)
-                    {
-                        if (ToVector2(moveTask->targetPosition) != crew.position)
-                        {
-                            moveTask->targetPosition = floorCrewPos;
-                            moveTask->path = {};
-                            moveTask->path.push_back(floorCrewPos);
-                        }
-                        else
-                        {
-                            crew.taskQueue.erase(crew.taskQueue.begin());
-                            continue;
-                        }
-                    }
-                }
-
-                constexpr float moveDelta = CREW_MOVE_SPEED * FIXED_DELTA_TIME;
-                const float distanceLeftSq = Vector2DistanceSq(crew.position, ToVector2(moveTask->path.front())) - moveDelta * moveDelta;
-                if (distanceLeftSq <= 0)
-                {
-                    crew.position = ToVector2(moveTask->path.front());
-                    moveTask->path.pop_front();
-
-                    if (moveTask->path.empty())
+                    if (ToVector2(moveTask->targetPosition) == crew.position)
                     {
                         crew.taskQueue.erase(crew.taskQueue.begin());
                         continue;
                     }
 
-                    // Check if there are any tiles are in the way, if yes, clear path for recalculation
-                    if (DoesPathHaveObstacles(moveTask->path, crew.currentTile->GetStation(), crew.CanPathInSpace()))
-                    {
-                        moveTask->path = {};
-                        continue;
-                    }
+                    moveTask->targetPosition = floorCrewPos;
+                    moveTask->path.clear();
+                    moveTask->path.push_back(floorCrewPos);
+                }
+            }
 
-                    crew.position += Vector2Normalize(ToVector2(moveTask->path.front()) - crew.position) * sqrtf(-distanceLeftSq);
-                }
-                else
+            constexpr float moveDelta = CREW_MOVE_SPEED * FIXED_DELTA_TIME;
+            const Vector2 stepPos = ToVector2(moveTask->path.front());
+            const float distanceLeftSq = Vector2DistanceSq(crew.position, stepPos) - moveDelta * moveDelta;
+            float distanceToTravel = moveDelta;
+            if (distanceLeftSq <= 0)
+            {
+                if (auto doorTile = station->GetTileWithComponentAtPosition<DoorComponent>(floorCrewPos))
+                    doorTile->GetComponent<DoorComponent>()->SetMovingState(DoorComponent::MovingState::IDLE);
+
+                crew.position = stepPos;
+                moveTask->path.pop_front();
+
+                if (moveTask->path.empty())
                 {
-                    crew.position += Vector2Normalize(ToVector2(moveTask->path.front()) - crew.position) * moveDelta;
+                    crew.taskQueue.erase(crew.taskQueue.begin());
+                    continue;
                 }
-                break;
+
+                // Check if there are any tiles are in the way, if yes, clear path for recalculation
+                if (DoesPathHaveObstacles(moveTask->path, station))
+                {
+                    moveTask->path = {};
+                    continue;
+                }
+
+                distanceToTravel = sqrtf(-distanceLeftSq);
             }
-            default:
-                break;
+            else
+            {
+                if (auto doorTile = station->GetTileWithComponentAtPosition<DoorComponent>(moveTask->path.front()))
+                {
+                    auto door = doorTile->GetComponent<DoorComponent>();
+                    door->SetMovingState(DoorComponent::MovingState::FORCED_OPEN);
+
+                    if (door->GetProgress() > 0.f)
+                        continue;
+                }
             }
+
+            crew.position += Vector2Normalize(stepPos - crew.position) * distanceToTravel;
+            break;
+        }
+        default:
+            break;
         }
     }
 }
@@ -240,6 +253,12 @@ void UpdateTiles(std::shared_ptr<Station> station)
 
     for (auto &tile : station->tiles)
     {
+        if (auto door = tile->GetComponent<DoorComponent>())
+        {
+            door->KeepClosed();
+            door->Animate(FIXED_DELTA_TIME);
+        }
+
         if (auto powerProducer = tile->GetComponent<PowerProducerComponent>())
         {
             powerProducer->ProducePower(FIXED_DELTA_TIME);
@@ -269,24 +288,24 @@ void UpdateTiles(std::shared_ptr<Station> station)
                 tile->GetPosition() + Vector2Int(0, -1), // Up
             };
 
-            for (int i = 0; i < 4; i++)
+            for (int i = 0; i < (int)neighbors.size(); i++)
             {
-                std::shared_ptr<Tile> neighbor = station->GetTileAtPosition(neighbors[i], TileDef::Height::FLOOR);
-
+                std::shared_ptr<Tile> neighbor = station->GetTileWithComponentAtPosition<OxygenComponent>(neighbors[i]);
                 if (!neighbor)
                     continue;
 
-                if (auto neighborOxygen = neighbor->GetComponent<OxygenComponent>())
-                {
-                    float oxygenDiff = oxygen->GetOxygenLevel() - neighborOxygen->GetOxygenLevel();
+                if (station->GetTileWithComponentAtPosition<SolidComponent>(neighbors[i]))
+                    continue;
 
-                    if (oxygenDiff > 0)
-                    {
-                        float oxygenTransfer = std::min(oxygenDiff * OXYGEN_DIFFUSION_RATE * FIXED_DELTA_TIME, oxygenDiff);
-                        oxygen->SetOxygenLevel(oxygen->GetOxygenLevel() - oxygenTransfer);
-                        neighborOxygen->SetOxygenLevel(neighborOxygen->GetOxygenLevel() + oxygenTransfer);
-                    }
-                }
+                auto neighborOxygen = neighbor->GetComponent<OxygenComponent>();
+                float oxygenDiff = oxygen->GetOxygenLevel() - neighborOxygen->GetOxygenLevel();
+
+                if (oxygenDiff <= 0)
+                    continue;
+
+                float oxygenTransfer = std::min(oxygenDiff * OXYGEN_DIFFUSION_RATE * FIXED_DELTA_TIME, oxygenDiff);
+                oxygen->SetOxygenLevel(oxygen->GetOxygenLevel() - oxygenTransfer);
+                neighborOxygen->SetOxygenLevel(neighborOxygen->GetOxygenLevel() + oxygenTransfer);
             }
         }
     }

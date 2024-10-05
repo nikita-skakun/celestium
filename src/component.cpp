@@ -137,3 +137,20 @@ void OxygenProducerComponent::ProduceOxygen(float deltaTime) const
     auto oxygen = oxygenTile->GetComponent<OxygenComponent>();
     oxygen->SetOxygenLevel(std::min(oxygen->GetOxygenLevel() + oxygenProduction * deltaTime, TILE_OXYGEN_MAX));
 }
+
+void DoorComponent::SetOpenState(bool openState)
+{
+    auto parent = _parent.lock();
+    if (!parent)
+        return;
+
+    if (openState)
+        parent->RemoveComponent<SolidComponent>();
+    else
+        parent->AddComponent<SolidComponent>();
+
+    isOpen = openState;
+
+    if (movingState != MovingState::FORCED_OPEN)
+        movingState = MovingState::IDLE;
+}
