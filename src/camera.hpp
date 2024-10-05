@@ -37,7 +37,7 @@ struct PlayerCam
     Vector2 ScreenToWorld(const Vector2 &screenPos) const;
     Vector2Int ScreenToTile(const Vector2 &screenPos) const;
     Vector2 WorldToScreen(const Vector2 &worldPos) const;
-};
 
-void HandleCameraMovement(PlayerCam &camera);
-void HandleCameraOverlays(PlayerCam &camera);
+    void HandleCameraMovement();
+    void HandleCameraOverlays();
+};

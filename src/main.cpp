@@ -73,8 +73,8 @@ int main()
         deltaTime = GetFrameTime();
 
         // Handle all real-time input and camera logic in the main thread
-        HandleCameraMovement(camera);
-        HandleCameraOverlays(camera);
+        camera.HandleCameraMovement();
+        camera.HandleCameraOverlays();
         HandleCrewHover(crewList, camera);
         HandleCrewSelection(crewList, camera);
         AssignCrewTasks(crewList, camera);

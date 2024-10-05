@@ -45,49 +45,45 @@ Vector2 PlayerCam::WorldToScreen(const Vector2 &worldPos) const
 
 /**
  * Handles camera movement and zoom based on user input.
- *
- * @param camera The PlayerCam object containing the camera's properties.
  */
-void HandleCameraMovement(PlayerCam &camera)
+void PlayerCam::HandleCameraMovement()
 {
     // Update zoom based on mouse wheel input, clamping to min and max values
-    camera.zoom = std::clamp(camera.zoom + GetMouseWheelMove() * ZOOM_SPEED * camera.zoom, MIN_ZOOM, MAX_ZOOM);
+    zoom = std::clamp(zoom + GetMouseWheelMove() * ZOOM_SPEED * zoom, MIN_ZOOM, MAX_ZOOM);
 
     // Move camera position if the middle mouse button is pressed
     if (IsMouseButtonDown(MOUSE_MIDDLE_BUTTON))
     {
-        camera.position -= (GetMouseDelta() / camera.zoom / TILE_SIZE);
+        position -= (GetMouseDelta() / zoom / TILE_SIZE);
     }
 }
 
 /**
  * Toggles camera overlays based on user key input.
- *
- * @param camera The PlayerCam object containing the camera's properties.
  */
-void HandleCameraOverlays(PlayerCam &camera)
+void PlayerCam::HandleCameraOverlays()
 {
     // Toggle oxygen overlay when 'O' is pressed
     if (IsKeyPressed(KEY_O))
     {
-        camera.overlay = (camera.overlay != PlayerCam::Overlay::OXYGEN)
-                             ? PlayerCam::Overlay::OXYGEN
-                             : PlayerCam::Overlay::NONE;
+        overlay = (overlay != PlayerCam::Overlay::OXYGEN)
+                      ? PlayerCam::Overlay::OXYGEN
+                      : PlayerCam::Overlay::NONE;
     }
 
     // Toggle wall overlay when 'W' is pressed
     if (IsKeyPressed(KEY_W))
     {
-        camera.overlay = (camera.overlay != PlayerCam::Overlay::WALL)
-                             ? PlayerCam::Overlay::WALL
-                             : PlayerCam::Overlay::NONE;
+        overlay = (overlay != PlayerCam::Overlay::WALL)
+                      ? PlayerCam::Overlay::WALL
+                      : PlayerCam::Overlay::NONE;
     }
 
     // Toggle power overlay when 'P' is pressed
     if (IsKeyPressed(KEY_P))
     {
-        camera.overlay = (camera.overlay != PlayerCam::Overlay::POWER)
-                             ? PlayerCam::Overlay::POWER
-                             : PlayerCam::Overlay::NONE;
+        overlay = (overlay != PlayerCam::Overlay::POWER)
+                      ? PlayerCam::Overlay::POWER
+                      : PlayerCam::Overlay::NONE;
     }
 }
