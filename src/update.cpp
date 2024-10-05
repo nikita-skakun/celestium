@@ -149,23 +149,22 @@ void HandleCrewTasks(std::vector<Crew> &crewList)
 
                 if (moveTask->path.size() <= 0)
                 {
-                    if (ToVector2(moveTask->targetPosition) != crew.position)
-                    {
-                        moveTask->targetPosition = floorCrewPos;
-                        moveTask->path = {};
-                        moveTask->path.push_back(floorCrewPos);
-                    }
-                    else
+                    if (ToVector2(moveTask->targetPosition) == crew.position)
                     {
                         crew.taskQueue.erase(crew.taskQueue.begin());
                         continue;
                     }
+
+                    moveTask->targetPosition = floorCrewPos;
+                    moveTask->path.clear();
+                    moveTask->path.push_back(floorCrewPos);
                 }
             }
 
             constexpr float moveDelta = CREW_MOVE_SPEED * FIXED_DELTA_TIME;
             const Vector2 stepPos = ToVector2(moveTask->path.front());
             const float distanceLeftSq = Vector2DistanceSq(crew.position, stepPos) - moveDelta * moveDelta;
+            float distanceToTravel = moveDelta;
             if (distanceLeftSq <= 0)
             {
                 if (auto doorTile = station->GetTileWithComponentAtPosition<DoorComponent>(floorCrewPos))
@@ -187,7 +186,7 @@ void HandleCrewTasks(std::vector<Crew> &crewList)
                     continue;
                 }
 
-                crew.position += Vector2Normalize(stepPos - crew.position) * sqrtf(-distanceLeftSq);
+                distanceToTravel = sqrtf(-distanceLeftSq);
             }
             else
             {
@@ -199,9 +198,9 @@ void HandleCrewTasks(std::vector<Crew> &crewList)
                     if (door->GetProgress() > 0.f)
                         continue;
                 }
-
-                crew.position += Vector2Normalize(stepPos - crew.position) * moveDelta;
             }
+
+            crew.position += Vector2Normalize(stepPos - crew.position) * distanceToTravel;
             break;
         }
         default:
