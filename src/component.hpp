@@ -511,6 +511,14 @@ public:
         movingState = isOpen ? MovingState::CLOSING : MovingState::OPENING;
     }
 
+    constexpr void KeepClosed()
+    {
+        if (movingState != MovingState::IDLE)
+            return;
+
+        movingState = MovingState::CLOSING;
+    }
+
     std::shared_ptr<Component> Clone(std::shared_ptr<Tile> newParent) const override
     {
         return std::make_shared<DoorComponent>(movingSpeed, isOpen, newParent);

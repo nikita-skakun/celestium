@@ -66,24 +66,16 @@ std::deque<Vector2Int> AStar(const Vector2Int &start, const Vector2Int &end,
             Vector2Int neighborPos = current + offset;
 
             // Check if the move is diagonal
-            bool isDiagonal = (offset.x != 0 && offset.y != 0);
-            if (isDiagonal)
+            if (offset.x != 0.f && offset.y != 0.f)
             {
-                // Check adjacent tiles for diagonal movement
-                Vector2Int side1Pos = {current.x + offset.x, current.y};
-                Vector2Int side2Pos = {current.x, current.y + offset.y};
-                std::shared_ptr<Tile> side1Tile = station->GetTileAtPosition(side1Pos);
-                std::shared_ptr<Tile> side2Tile = station->GetTileAtPosition(side2Pos);
-
                 // Ensure both adjacent sides are walkable for diagonals
-                if (!side1Tile || !side2Tile || !side1Tile->HasComponent<WalkableComponent>() || !side2Tile->HasComponent<WalkableComponent>())
+                if (!station->CanPath(Vector2Int(current.x + offset.x, current.y)) ||
+                    !station->CanPath(Vector2Int(current.x, current.y + offset.y)))
                     continue; // Skip to the next neighbor
             }
 
-            // Check if neighbor is not solid, walkable and not in the closed set
-            if (!station->GetTileWithComponentAtPosition<SolidComponent>(neighborPos) &&
-                station->GetTileWithComponentAtPosition<WalkableComponent>(neighborPos) &&
-                !Contains(closedSet, neighborPos))
+            // Check if neighbor is pathable and not in the closed set
+            if (station->CanPath(neighborPos) && !Contains(closedSet, neighborPos))
             {
                 // Calculate tentative G cost
                 float tentativeGCost = costMap[current].x + heuristic(current, neighborPos);
@@ -128,8 +120,7 @@ bool DoesPathHaveObstacles(const std::deque<Vector2Int> &path, std::shared_ptr<S
     for (const Vector2Int &step : path)
     {
         // Return that an obstacle is found if the tile is solid or not walkable
-        if (station->GetTileWithComponentAtPosition<SolidComponent>(step) ||
-            !station->GetTileWithComponentAtPosition<WalkableComponent>(step))
+        if (!station->CanPath(step))
             return true;
     }
 

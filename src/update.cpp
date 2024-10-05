@@ -242,7 +242,7 @@ void UpdateTiles(std::shared_ptr<Station> station)
     {
         if (auto door = tile->GetComponent<DoorComponent>())
         {
-            door->PingPong();
+            door->KeepClosed();
             door->Animate(FIXED_DELTA_TIME);
         }
 
