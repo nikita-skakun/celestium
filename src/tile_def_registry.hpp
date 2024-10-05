@@ -93,9 +93,9 @@ public:
         return instance;
     }
 
-    std::shared_ptr<TileDef> GetTileDefinition(const std::string &name) const
+    std::shared_ptr<TileDef> GetTileDefinition(const std::string &tileId) const
     {
-        return tileDefinitions.at(name);
+        return tileDefinitions.at(tileId);
     }
 
     void ParseTilesFromFile(const std::string &filename)

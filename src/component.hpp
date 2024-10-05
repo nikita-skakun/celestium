@@ -448,11 +448,8 @@ private:
     bool isOpen;
 
 public:
-    DoorComponent(bool state = false, std::shared_ptr<Tile> parent = nullptr)
-        : Component(parent), isOpen(!state)
-    {
-        SetState(state);
-    }
+    DoorComponent(bool state = true, std::shared_ptr<Tile> parent = nullptr)
+        : Component(parent), isOpen(state) {}
 
     constexpr bool GetState() const
     {

@@ -1,15 +1,15 @@
 #include "tile.hpp"
 #include "station.hpp"
 
-Tile::Tile(const std::string &defName, const Vector2Int &position, std::shared_ptr<Station> station, std::shared_ptr<Room> room)
+Tile::Tile(const std::string &tileId, const Vector2Int &position, std::shared_ptr<Station> station, std::shared_ptr<Room> room)
     : position(position), room(room), station(station)
 {
-    tileDef = TileDefinitionRegistry::GetInstance().GetTileDefinition(defName);
+    tileDef = TileDefinitionRegistry::GetInstance().GetTileDefinition(tileId);
 }
 
-std::shared_ptr<Tile> Tile::CreateTile(const std::string &defName, const Vector2Int &position, std::shared_ptr<Station> station, std::shared_ptr<Room> room)
+std::shared_ptr<Tile> Tile::CreateTile(const std::string &tileId, const Vector2Int &position, std::shared_ptr<Station> station, std::shared_ptr<Room> room)
 {
-    std::shared_ptr<Tile> tile = std::make_shared<Tile>(Tile(defName, position, station, room));
+    std::shared_ptr<Tile> tile = std::make_shared<Tile>(Tile(tileId, position, station, room));
 
     const auto &refComponents = tile->GetTileDefinition()->GetReferenceComponents();
     tile->components.reserve(refComponents.size());
@@ -33,6 +33,9 @@ std::shared_ptr<Tile> Tile::CreateTile(const std::string &defName, const Vector2
 
         station->tiles.push_back(tile);
         heightMap[tile->GetTileDefinition()->GetHeight()] = tile;
+
+        if (auto door = tile->GetComponent<DoorComponent>())
+            door->SetState(door->GetState());
     }
 
     if (room)

@@ -140,9 +140,6 @@ void OxygenProducerComponent::ProduceOxygen(float deltaTime) const
 
 void DoorComponent::SetState(bool state)
 {
-    if (state == isOpen)
-        return;
-
     auto parent = _parent.lock();
     if (!parent)
         return;
@@ -155,11 +152,9 @@ void DoorComponent::SetState(bool state)
         //     decorative->AddDecorativeTile(Vector2Int(0, -1), Vector2Int(0, 5));
 
         parent->RemoveComponent<SolidComponent>();
-        parent->AddComponent<WalkableComponent>();
     }
     else
     {
-        parent->RemoveComponent<WalkableComponent>();
         parent->AddComponent<SolidComponent>();
     }
 
