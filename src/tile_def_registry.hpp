@@ -15,7 +15,7 @@ private:
     TileDefinitionRegistry &operator=(const TileDefinitionRegistry &) = delete;
 
     template <typename T>
-    T GetValueOrDefault(const ryml::ConstNodeRef &node, const ryml::csubstr &key, T defaultValue)
+    T GetValue(const ryml::ConstNodeRef &node, const ryml::csubstr &key, T defaultValue)
     {
         if (node.has_child(key) && !node[key].val_is_null())
         {
@@ -26,10 +26,10 @@ private:
         return defaultValue;
     }
 
-    std::optional<PowerConnectorComponent::IO> ParseIO(const ryml::ConstNodeRef &componentNode)
+    std::optional<PowerConnectorComponent::IO> ParseIO(const ryml::ConstNodeRef &node)
     {
         std::string ioStr;
-        componentNode["io"] >> ioStr;
+        node["io"] >> ioStr;
         StringRemoveSpaces(ioStr);
 
         auto io = magic_enum::enum_flags_cast<PowerConnectorComponent::IO>(ioStr, magic_enum::case_insensitive);
@@ -38,7 +38,7 @@ private:
         return io;
     }
 
-    std::shared_ptr<Component> CreateComponent(Component::Type type, const ryml::ConstNodeRef &componentNode)
+    std::shared_ptr<Component> CreateComponent(Component::Type type, const ryml::ConstNodeRef &node)
     {
         switch (type)
         {
@@ -50,35 +50,35 @@ private:
 
         case Component::Type::POWER_CONNECTOR:
         {
-            auto io = ParseIO(componentNode);
+            auto io = ParseIO(node);
             if (!io.has_value())
                 return nullptr;
             return std::make_shared<PowerConnectorComponent>(io.value());
         }
 
         case Component::Type::BATTERY:
-            return std::make_shared<BatteryComponent>(GetValueOrDefault(componentNode, "maxCharge", 0.f));
+            return std::make_shared<BatteryComponent>(GetValue(node, "maxCharge", 0.f));
 
         case Component::Type::POWER_CONSUMER:
-            return std::make_shared<PowerConsumerComponent>(GetValueOrDefault(componentNode, "powerConsumption", 0.f));
+            return std::make_shared<PowerConsumerComponent>(GetValue(node, "powerConsumption", 0.f));
 
         case Component::Type::POWER_PRODUCER:
-            return std::make_shared<PowerProducerComponent>(GetValueOrDefault(componentNode, "powerProduction", 0.f));
+            return std::make_shared<PowerProducerComponent>(GetValue(node, "powerProduction", 0.f));
 
         case Component::Type::SOLAR_PANEL:
             return std::make_shared<SolarPanelComponent>();
 
         case Component::Type::OXYGEN:
-            return std::make_shared<OxygenComponent>(GetValueOrDefault(componentNode, "oxygenLevel", 100.f));
+            return std::make_shared<OxygenComponent>(GetValue(node, "oxygenLevel", 100.f));
 
         case Component::Type::OXYGEN_PRODUCER:
-            return std::make_shared<OxygenProducerComponent>(GetValueOrDefault(componentNode, "oxygenProduction", 0.f));
+            return std::make_shared<OxygenProducerComponent>(GetValue(node, "oxygenProduction", 0.f));
 
         case Component::Type::DECORATIVE:
             return std::make_shared<DecorativeComponent>();
 
         case Component::Type::DOOR:
-            return std::make_shared<DoorComponent>(GetValueOrDefault(componentNode, "movingSpeed", 0.f));
+            return std::make_shared<DoorComponent>(GetValue(node, "movingSpeed", 0.f));
 
         default:
             throw std::runtime_error(std::format("Parsing of component type failed: {}", magic_enum::enum_name(type)));
@@ -128,17 +128,19 @@ public:
 
             // Parse Components
             std::unordered_set<std::shared_ptr<Component>> refComponents;
-            for (ryml::ConstNodeRef componentNode : tileNode["components"])
+            for (ryml::ConstNodeRef node : tileNode["components"])
             {
                 std::string typeStr;
-                componentNode["type"] >> typeStr;
+                node["type"] >> typeStr;
                 StringRemoveSpaces(typeStr);
 
                 auto type = magic_enum::enum_cast<Component::Type>(typeStr, magic_enum::case_insensitive);
                 if (!type.has_value())
                     throw std::runtime_error(std::format("Parsing of component type string failed: {}", typeStr));
 
-                auto component = CreateComponent(type.value(), componentNode);
+                auto component = CreateComponent(type.value(), node);
+                if (!component)
+                    throw std::runtime_error(std::format("Parsing of component string failed: {}", ryml::emitrs_yaml<std::string>(node)));
                 refComponents.insert(component);
             }
 
