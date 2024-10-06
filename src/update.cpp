@@ -5,12 +5,12 @@ void HandleCrewHover(const std::vector<Crew> &crewList, PlayerCam &camera)
     const Vector2 worldMousePos = camera.GetWorldMousePos() - Vector2(.5f, .5f);
     const float crewSizeSq = CREW_RADIUS / TILE_SIZE * CREW_RADIUS / TILE_SIZE;
 
-    camera.crewHoverIndex = -1;
+    camera.SetCrewHoverIndex(-1);
     for (int i = crewList.size() - 1; i >= 0; --i)
     {
         if (Vector2DistanceSq(worldMousePos, crewList[i].position) <= crewSizeSq)
         {
-            camera.crewHoverIndex = i;
+            camera.SetCrewHoverIndex(i);
             break;
         }
     }
@@ -19,40 +19,35 @@ void HandleCrewHover(const std::vector<Crew> &crewList, PlayerCam &camera)
 void HandleMouseDragging(std::shared_ptr<Station> station, PlayerCam &camera)
 {
     if (IsMouseButtonPressed(MOUSE_LEFT_BUTTON))
-    {
-        camera.dragStartPos = camera.GetWorldMousePos();
-    }
+        camera.SetDragStart(camera.GetWorldMousePos());
 
     if (IsMouseButtonDown(MOUSE_LEFT_BUTTON))
     {
-        if (!camera.isDragging && Vector2DistanceSq(camera.dragStartPos, camera.GetWorldMousePos()) > DRAG_THRESHOLD * DRAG_THRESHOLD)
+        if (!camera.IsDragging() && Vector2DistanceSq(camera.GetDragStart(), camera.GetWorldMousePos()) > DRAG_THRESHOLD * DRAG_THRESHOLD)
         {
-            camera.dragType = PlayerCam::DragType::SELECT;
+            camera.SetDragType(PlayerCam::DragType::SELECT);
             if (station)
             {
-                if (camera.overlay == PlayerCam::Overlay::POWER &&
-                    station->GetTileWithComponentAtPosition<PowerConnectorComponent>(ToVector2Int(camera.dragStartPos)))
+                if (camera.GetOverlay() == PlayerCam::Overlay::POWER &&
+                    station->GetTileWithComponentAtPosition<PowerConnectorComponent>(ToVector2Int(camera.GetDragStart())))
                 {
-                    camera.dragType = PlayerCam::DragType::POWER_CONNECT;
-                    camera.dragStartPos = Vector2Floor(camera.dragStartPos) + Vector2(.5f, .5f);
+                    camera.SetDragType(PlayerCam::DragType::POWER_CONNECT);
+                    camera.SetDragStart(Vector2Floor(camera.GetDragStart()) + Vector2(.5f, .5f));
                 }
             }
-
-            camera.isDragging = true;
         }
-        if (camera.isDragging)
-            camera.dragEndPos = camera.GetWorldMousePos();
+        if (camera.IsDragging())
+            camera.SetDragEnd(camera.GetWorldMousePos());
     }
 
     if (IsMouseButtonReleased(MOUSE_LEFT_BUTTON))
     {
-        if (camera.isDragging)
+        if (camera.IsDragging())
         {
-            camera.isDragging = false;
-            if (camera.dragType == PlayerCam::DragType::POWER_CONNECT && station)
+            if (camera.GetDragType() == PlayerCam::DragType::POWER_CONNECT && station)
             {
-                Vector2Int dragStart = ToVector2Int(camera.dragStartPos);
-                Vector2Int dragEnd = ToVector2Int(camera.dragEndPos);
+                Vector2Int dragStart = ToVector2Int(camera.GetDragStart());
+                Vector2Int dragEnd = ToVector2Int(camera.GetDragEnd());
 
                 if (dragStart == dragEnd)
                     return;
@@ -69,6 +64,8 @@ void HandleMouseDragging(std::shared_ptr<Station> station, PlayerCam &camera)
                         LogMessage(LogLevel::DEBUG, std::format("{} connected to {}!", startTile->GetName(), endTile->GetName()));
                 }
             }
+
+            camera.SetDragType(PlayerCam::DragType::NONE);
         }
     }
 }
@@ -77,42 +74,36 @@ void HandleCrewSelection(const std::vector<Crew> &crewList, PlayerCam &camera)
 {
     if (IsMouseButtonReleased(MOUSE_LEFT_BUTTON))
     {
-        if (camera.isDragging && camera.dragType != PlayerCam::DragType::SELECT)
+        if (camera.IsDragging() && camera.GetDragType() != PlayerCam::DragType::SELECT)
             return;
 
         if (!IsKeyDown(KEY_LEFT_SHIFT))
-            camera.selectedCrewList.clear();
-        if (camera.isDragging)
+            camera.ClearSelectedCrew();
+        if (camera.GetDragType() == PlayerCam::DragType::SELECT)
         {
             for (std::size_t i = 0; i < crewList.size(); i++)
             {
                 Vector2 crewPos = crewList[i].position + Vector2(.5f, .5f);
-                if (IsVector2WithinBounds(crewPos, camera.dragStartPos, camera.dragEndPos))
+                if (IsVector2WithinBounds(crewPos, camera.GetDragStart(), camera.GetDragEnd()))
                 {
-                    camera.selectedCrewList.insert(i);
+                    camera.AddSelectedCrew(i);
                 }
             }
         }
         else
         {
-            if (camera.crewHoverIndex >= 0)
-            {
-                const auto selectedCrewListIter = camera.selectedCrewList.find(camera.crewHoverIndex);
-                if (selectedCrewListIter != camera.selectedCrewList.end())
-                    camera.selectedCrewList.erase(selectedCrewListIter);
-                else
-                    camera.selectedCrewList.insert(camera.crewHoverIndex);
-            }
+            if (camera.GetCrewHoverIndex() >= 0)
+                camera.ToggleSelectedCrew(camera.GetCrewHoverIndex());
         }
     }
 }
 
 void AssignCrewTasks(std::vector<Crew> &crewList, const PlayerCam &camera)
 {
-    if (IsMouseButtonPressed(MOUSE_RIGHT_BUTTON) && camera.selectedCrewList.size() > 0)
+    if (IsMouseButtonPressed(MOUSE_RIGHT_BUTTON) && camera.GetSelectedCrew().size() > 0)
     {
         Vector2Int worldPos = camera.ScreenToTile(GetMousePosition());
-        for (int crewId : camera.selectedCrewList)
+        for (int crewId : camera.GetSelectedCrew())
         {
             Crew &crew = crewList[crewId];
             if (crew.isAlive && crew.currentTile)
@@ -313,12 +304,12 @@ void UpdateTiles(std::shared_ptr<Station> station)
 
 void MouseDeleteExistingConnection(std::shared_ptr<Station> station, const PlayerCam &camera)
 {
-    if (!station || !IsMouseButtonPressed(MOUSE_BUTTON_RIGHT) || camera.overlay != PlayerCam::Overlay::POWER)
+    if (!station || !IsMouseButtonPressed(MOUSE_BUTTON_RIGHT) || camera.GetOverlay() != PlayerCam::Overlay::POWER)
         return;
 
     Vector2 mousePos = GetMousePosition();
 
-    const float threshold = std::max(POWER_CONNECTION_WIDTH * camera.zoom, 2.f);
+    const float threshold = std::max(POWER_CONNECTION_WIDTH * camera.GetZoom(), 2.f);
 
     for (std::shared_ptr<Tile> tile : station->tiles)
     {

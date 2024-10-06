@@ -63,27 +63,12 @@ void PlayerCam::HandleCameraMovement()
  */
 void PlayerCam::HandleCameraOverlays()
 {
-    // Toggle oxygen overlay when 'O' is pressed
     if (IsKeyPressed(KEY_O))
-    {
-        overlay = (overlay != PlayerCam::Overlay::OXYGEN)
-                      ? PlayerCam::Overlay::OXYGEN
-                      : PlayerCam::Overlay::NONE;
-    }
+        ToggleOverlay(Overlay::OXYGEN);
 
-    // Toggle wall overlay when 'W' is pressed
     if (IsKeyPressed(KEY_W))
-    {
-        overlay = (overlay != PlayerCam::Overlay::WALL)
-                      ? PlayerCam::Overlay::WALL
-                      : PlayerCam::Overlay::NONE;
-    }
+        ToggleOverlay(Overlay::WALL);
 
-    // Toggle power overlay when 'P' is pressed
     if (IsKeyPressed(KEY_P))
-    {
-        overlay = (overlay != PlayerCam::Overlay::POWER)
-                      ? PlayerCam::Overlay::POWER
-                      : PlayerCam::Overlay::NONE;
-    }
+        ToggleOverlay(Overlay::POWER);
 }

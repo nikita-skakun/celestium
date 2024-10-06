@@ -11,19 +11,19 @@ void DrawTileGrid(const PlayerCam &camera)
     float screenHeight = GetScreenHeight();
 
     // Calculate the top-left corner in world coordinates
-    Vector2 topLeft = camera.position * TILE_SIZE - Vector2(screenWidth, screenHeight) / 2.0f / camera.zoom;
+    Vector2 topLeft = camera.GetPosition() * TILE_SIZE - Vector2(screenWidth, screenHeight) / 2.0f / camera.GetZoom();
 
     // Draw vertical lines
-    for (float x = floor(topLeft.x / TILE_SIZE) * TILE_SIZE; x <= ceil((topLeft.x + screenWidth / camera.zoom) / TILE_SIZE) * TILE_SIZE; x += TILE_SIZE)
+    for (float x = floor(topLeft.x / TILE_SIZE) * TILE_SIZE; x <= ceil((topLeft.x + screenWidth / camera.GetZoom()) / TILE_SIZE) * TILE_SIZE; x += TILE_SIZE)
     {
-        float screenX = (x - camera.position.x * TILE_SIZE) * camera.zoom + screenWidth / 2.0f;
+        float screenX = (x - camera.GetPosition().x * TILE_SIZE) * camera.GetZoom() + screenWidth / 2.0f;
         DrawLineV({screenX, 0}, {screenX, (float)screenHeight}, GRID_COLOR);
     }
 
     // Draw horizontal lines
-    for (float y = floor(topLeft.y / TILE_SIZE) * TILE_SIZE; y <= ceil((topLeft.y + screenHeight / camera.zoom) / TILE_SIZE) * TILE_SIZE; y += TILE_SIZE)
+    for (float y = floor(topLeft.y / TILE_SIZE) * TILE_SIZE; y <= ceil((topLeft.y + screenHeight / camera.GetZoom()) / TILE_SIZE) * TILE_SIZE; y += TILE_SIZE)
     {
-        float screenY = (y - camera.position.y * TILE_SIZE) * camera.zoom + screenHeight / 2.0f;
+        float screenY = (y - camera.GetPosition().y * TILE_SIZE) * camera.GetZoom() + screenHeight / 2.0f;
         DrawLineV({0, screenY}, {(float)screenWidth, screenY}, GRID_COLOR);
     }
 }
@@ -62,7 +62,7 @@ void DrawStationTiles(std::shared_ptr<Station> station, const Texture2D &tileset
     if (!station)
         return;
 
-    Vector2 sizeScreenPos = Vector2(1.f, 1.f) * TILE_SIZE * camera.zoom;
+    Vector2 sizeScreenPos = Vector2(1.f, 1.f) * TILE_SIZE * camera.GetZoom();
 
     for (std::shared_ptr<Tile> tile : station->tiles)
     {
@@ -73,7 +73,7 @@ void DrawStationTiles(std::shared_ptr<Station> station, const Texture2D &tileset
 
         DrawTexturePro(tileset, sourceRect, destRect, Vector2(), 0, WHITE);
 
-        if (camera.overlay == PlayerCam::Overlay::OXYGEN)
+        if (camera.GetOverlay() == PlayerCam::Overlay::OXYGEN)
         {
             if (auto oxygenComp = tile->GetComponent<OxygenComponent>())
             {
@@ -82,7 +82,7 @@ void DrawStationTiles(std::shared_ptr<Station> station, const Texture2D &tileset
             }
         }
 
-        if (camera.overlay == PlayerCam::Overlay::WALL && tile->HasComponent<SolidComponent>())
+        if (camera.GetOverlay() == PlayerCam::Overlay::WALL && tile->HasComponent<SolidComponent>())
         {
             DrawRectangleV(startPos, sizeScreenPos, Color(255, 0, 0, 64));
         }
@@ -98,7 +98,7 @@ void DrawStationTiles(std::shared_ptr<Station> station, const Texture2D &tileset
  */
 void DrawStationOverlays(std::shared_ptr<Station> station, const Texture2D &tileset, const PlayerCam &camera)
 {
-    Vector2 sizeScreenPos = Vector2(1.f, 1.f) * TILE_SIZE * camera.zoom;
+    Vector2 sizeScreenPos = Vector2(1.f, 1.f) * TILE_SIZE * camera.GetZoom();
 
     for (std::shared_ptr<Tile> tile : station->tiles)
     {
@@ -122,20 +122,20 @@ void DrawStationOverlays(std::shared_ptr<Station> station, const Texture2D &tile
             doorSourceRect.height = std::max(19.f * door->GetProgress(), 1.f);
 
             Rectangle doorDest1 = destRect;
-            doorDest1.height = std::max(19.f * door->GetProgress(), 1.f) * camera.zoom;
-            doorDest1.y += 19.f * camera.zoom - doorDest1.height;
+            doorDest1.height = std::max(19.f * door->GetProgress(), 1.f) * camera.GetZoom();
+            doorDest1.y += 19.f * camera.GetZoom() - doorDest1.height;
 
             DrawTexturePro(tileset, doorSourceRect, doorDest1, Vector2(), 0, WHITE);
 
             Rectangle doorDest2 = destRect;
             doorDest2.width = -doorDest2.width;
             doorDest2.height = -doorDest1.height;
-            doorDest2.y -= 19.f * camera.zoom + doorDest2.height;
+            doorDest2.y -= 19.f * camera.GetZoom() + doorDest2.height;
 
             DrawTexturePro(tileset, doorSourceRect, doorDest2, Vector2(-doorDest2.width, 0.f), 180.f, WHITE);
         }
 
-        if (camera.overlay == PlayerCam::Overlay::POWER)
+        if (camera.GetOverlay() == PlayerCam::Overlay::POWER)
         {
             if (auto powerConsumer = tile->GetComponent<PowerConsumerComponent>())
             {
@@ -156,8 +156,8 @@ void DrawStationOverlays(std::shared_ptr<Station> station, const Texture2D &tile
                 Vector2 topLeftPos = camera.WorldToScreen(ToVector2(tile->GetPosition()) + Vector2(1.f / 16.f, 0.f));
                 Vector2 barStartPos = camera.WorldToScreen(ToVector2(tile->GetPosition()) + Vector2(1.f / 16.f, 1.f - barProgress));
 
-                Vector2 totalSize = Vector2(1.f / 8.f, 1.f) * TILE_SIZE * camera.zoom;
-                Vector2 barSize = Vector2(1.f / 8.f, barProgress) * TILE_SIZE * camera.zoom;
+                Vector2 totalSize = Vector2(1.f / 8.f, 1.f) * TILE_SIZE * camera.GetZoom();
+                Vector2 barSize = Vector2(1.f / 8.f, barProgress) * TILE_SIZE * camera.GetZoom();
 
                 DrawRectangleV(topLeftPos, totalSize, Color(25, 25, 25, 200));
                 DrawRectangleV(barStartPos, barSize, Fade(YELLOW, .8f));
@@ -172,7 +172,7 @@ void DrawStationOverlays(std::shared_ptr<Station> station, const Texture2D &tile
                     {
                         DrawLineEx(camera.WorldToScreen(ToVector2(tile->GetPosition()) + Vector2(.5f, .5f)),
                                    camera.WorldToScreen(ToVector2(connectionTile->GetPosition()) + Vector2(.5f, .5f)),
-                                   POWER_CONNECTION_WIDTH * std::max(camera.zoom, 1.f), POWER_CONNECTION_COLOR);
+                                   POWER_CONNECTION_WIDTH * std::max(camera.GetZoom(), 1.f), POWER_CONNECTION_COLOR);
                     }
                 }
             }
@@ -236,10 +236,10 @@ void DrawCrew(double timeSinceFixedUpdate, const std::vector<Crew> &crewList, co
 
         Vector2 crewScreenPos = camera.WorldToScreen(drawPosition + Vector2(.5f, .5f));
 
-        if (camera.selectedCrewList.contains(&crew - &crewList[0]))
-            DrawCircleV(crewScreenPos, (CREW_RADIUS + OUTLINE_SIZE) * camera.zoom, OUTLINE_COLOR);
+        if (camera.GetSelectedCrew().contains(&crew - &crewList[0]))
+            DrawCircleV(crewScreenPos, (CREW_RADIUS + OUTLINE_SIZE) * camera.GetZoom(), OUTLINE_COLOR);
 
-        DrawCircleV(crewScreenPos, CREW_RADIUS * camera.zoom, crew.isAlive ? crew.color : GRAY);
+        DrawCircleV(crewScreenPos, CREW_RADIUS * camera.GetZoom(), crew.isAlive ? crew.color : GRAY);
     }
 }
 
@@ -250,18 +250,20 @@ void DrawCrew(double timeSinceFixedUpdate, const std::vector<Crew> &crewList, co
  */
 void DrawDragSelectBox(const PlayerCam &camera)
 {
-    if (!camera.isDragging)
+    if (!camera.IsDragging())
         return;
 
-    switch (camera.dragType)
+    Vector2 dragStart = camera.WorldToScreen(camera.GetDragStart());
+    Vector2 dragEnd = camera.WorldToScreen(camera.GetDragEnd());
+
+    switch (camera.GetDragType())
     {
     case PlayerCam::DragType::SELECT:
-        DrawRectangleLinesEx(Vector2ToRect(camera.WorldToScreen(camera.dragStartPos), camera.WorldToScreen(camera.dragEndPos)), 1.f, BLUE);
+        DrawRectangleLinesEx(Vector2ToRect(dragStart, dragEnd), 1.f, BLUE);
         break;
 
     case PlayerCam::DragType::POWER_CONNECT:
-        DrawLineEx(camera.WorldToScreen(camera.dragStartPos), camera.WorldToScreen(camera.dragEndPos),
-                   POWER_CONNECTION_WIDTH * std::max(camera.zoom, 1.f), POWER_CONNECTION_COLOR);
+        DrawLineEx(dragStart, dragEnd, POWER_CONNECTION_WIDTH * std::max(camera.GetZoom(), 1.f), POWER_CONNECTION_COLOR);
         break;
 
     default:
@@ -294,7 +296,7 @@ void DrawFpsCounter(float deltaTime, int padding, int fontSize, const Font &font
  */
 void DrawOverlay(const PlayerCam &camera, int padding, int fontSize, const Font &font)
 {
-    std::string overlayText = std::format("Overlay: {:}", StringToTitleCase(std::string(magic_enum::enum_name(camera.overlay))));
+    std::string overlayText = std::format("Overlay: {:}", StringToTitleCase(std::string(magic_enum::enum_name(camera.GetOverlay()))));
     const char *text = overlayText.c_str();
     DrawTextEx(font, text, Vector2(padding, padding), fontSize, 1, UI_TEXT_COLOR);
 }
@@ -369,9 +371,9 @@ void DrawMainTooltip(const std::vector<Crew> &crewList, const PlayerCam &camera,
     const Vector2 mousePos = GetMousePosition();
 
     // Add crew info we are hovering over
-    if (camera.crewHoverIndex >= 0)
+    if (camera.GetCrewHoverIndex() >= 0)
     {
-        const Crew &crew = crewList[camera.crewHoverIndex];
+        const Crew &crew = crewList[camera.GetCrewHoverIndex()];
         hoverText += "Name: " + crew.name;
         if (crew.isAlive)
         {
