@@ -77,9 +77,9 @@ void DrawStationTiles(std::shared_ptr<Station> station, const Texture2D &tileset
 
         if (camera.GetOverlay() == PlayerCam::Overlay::OXYGEN)
         {
-            if (auto oxygenComp = tile->GetComponent<OxygenComponent>())
+            if (auto oxygen = tile->GetComponent<OxygenComponent>())
             {
-                Color color = Color(50, 150, 255, oxygenComp->GetOxygenLevel() / TILE_OXYGEN_MAX * 255 * .8f);
+                Color color = Color(50, 150, 255, oxygen->GetOxygenLevel() / TILE_OXYGEN_MAX * 255 * .8f);
                 DrawRectangleV(startPos, sizeScreenPos, color);
             }
         }
@@ -404,13 +404,13 @@ void DrawMainTooltip(const std::vector<Crew> &crewList, const PlayerCam &camera,
                 hoverText += std::format("\n   + {}", door->IsOpen() ? "Open" : "Closed");
                 hoverText += std::format("\n   + State: {} ({:.0f}%)", door->GetMovementName(), door->GetProgress() * 100.f);
             }
-            if (auto oxygenComp = tile->GetComponent<OxygenComponent>())
+            if (auto oxygen = tile->GetComponent<OxygenComponent>())
             {
-                hoverText += std::format("\n   + Tile Ox: {:.2f}", oxygenComp->GetOxygenLevel());
+                hoverText += std::format("\n   + Tile Ox: {:.2f}", oxygen->GetOxygenLevel());
             }
-            if (auto batteryComp = tile->GetComponent<BatteryComponent>())
+            if (auto battery = tile->GetComponent<BatteryComponent>())
             {
-                hoverText += std::format("\n   + Energy: {:.2f}", batteryComp->GetChargeLevel());
+                hoverText += std::format("\n   + Energy: {:.0f} / {:.0f}", battery->GetChargeLevel(), battery->GetMaxChargeLevel());
             }
             if (auto powerConnector = tile->GetComponent<PowerConnectorComponent>())
             {
