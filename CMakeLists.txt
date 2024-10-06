@@ -35,6 +35,7 @@ set(USE_EXTERNAL_GLFW ON CACHE BOOL "" FORCE)
 set(USE_WAYLAND ON CACHE BOOL "" FORCE)
 # Disable examples to speed up build
 set(BUILD_EXAMPLES OFF CACHE BOOL "" FORCE)
+set(BUILD_RAYGUI_EXAMPLES OFF CACHE BOOL "" FORCE)
 
 # Automatically find all source files in the src directory
 file(GLOB SOURCES "src/*.cpp")
@@ -73,4 +74,23 @@ endfunction()
 fetch_and_link_dependency(raylib https://github.com/raysan5/raylib.git master)
 fetch_and_link_dependency(termcolor https://github.com/ikalnytskyi/termcolor.git master)
 fetch_and_link_dependency(magic_enum https://github.com/Neargye/magic_enum.git master)
-fetch_and_link_dependency(ryml https://github.com/biojppm/rapidyaml master)
+fetch_and_link_dependency(ryml https://github.com/biojppm/rapidyaml.git master)
+
+FetchContent_Declare(
+    raygui
+    GIT_REPOSITORY https://github.com/raysan5/raygui.git
+    GIT_TAG master
+    GIT_SHALLOW OFF
+    GIT_PROGRESS TRUE
+)
+
+FetchContent_GetProperties(raygui)
+if(NOT raygui_POPULATED)
+    FetchContent_Populate(raygui)
+    add_subdirectory(${raygui_SOURCE_DIR}/projects/CMake ${raygui_BINARY_DIR})
+endif()
+
+target_link_libraries(celestium PRIVATE raygui)
+
+# Disable warnings for raygui, as they are harmless
+target_include_directories(celestium SYSTEM PRIVATE ${raygui_SOURCE_DIR}/src)

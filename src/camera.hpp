@@ -36,9 +36,18 @@ private:
     Overlay overlay;
     UiState uiState;
 
+    void HandleMovement();
+    void HandleOverlays();
+    void HandleUiStates();
+
     constexpr void ToggleOverlay(Overlay targetOverlay)
     {
         overlay = (overlay != targetOverlay) ? targetOverlay : Overlay::NONE;
+    }
+
+    constexpr void ToggleUiState(UiState targetUiState)
+    {
+        uiState = (uiState != targetUiState) ? targetUiState : UiState::NONE;
     }
 
 public:
@@ -80,8 +89,15 @@ public:
 
     constexpr float GetZoom() const { return zoom; }
     constexpr Overlay GetOverlay() const { return overlay; }
-    constexpr UiState GetUiState() const { return uiState; }
 
-    void HandleCameraMovement();
-    void HandleCameraOverlays();
+    constexpr UiState GetUiState() const { return uiState; }
+    constexpr void SetUiState(UiState newUiState) { uiState = newUiState; }
+    constexpr bool IsUiClear() const { return uiState == UiState::NONE; }
+
+    constexpr void HandleCamera()
+    {
+        HandleMovement();
+        HandleOverlays();
+        HandleUiStates();
+    }
 };

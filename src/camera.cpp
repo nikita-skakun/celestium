@@ -46,8 +46,11 @@ Vector2 PlayerCam::WorldToScreen(const Vector2 &worldPos) const
 /**
  * Handles camera movement and zoom based on user input.
  */
-void PlayerCam::HandleCameraMovement()
+void PlayerCam::HandleMovement()
 {
+    if (uiState != UiState::NONE)
+        return;
+
     // Update zoom based on mouse wheel input, clamping to min and max values
     zoom = std::clamp(zoom + GetMouseWheelMove() * ZOOM_SPEED * zoom, MIN_ZOOM, MAX_ZOOM);
 
@@ -61,8 +64,11 @@ void PlayerCam::HandleCameraMovement()
 /**
  * Toggles camera overlays based on user key input.
  */
-void PlayerCam::HandleCameraOverlays()
+void PlayerCam::HandleOverlays()
 {
+    if (uiState != UiState::NONE)
+        return;
+
     if (IsKeyPressed(KEY_O))
         ToggleOverlay(Overlay::OXYGEN);
 
@@ -71,4 +77,10 @@ void PlayerCam::HandleCameraOverlays()
 
     if (IsKeyPressed(KEY_P))
         ToggleOverlay(Overlay::POWER);
+}
+
+void PlayerCam::HandleUiStates()
+{
+    if (IsKeyPressed(KEY_ESCAPE))
+        ToggleUiState(UiState::ESC_MENU);
 }

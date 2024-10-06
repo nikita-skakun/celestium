@@ -9,7 +9,7 @@ This is a passion project, created as a way to explore advanced programming conc
 
 Exciting new features have been added to **Celestium**! Here's a quick look at the latest developments:
 
-- **A\* Pathfinding**: Crew members can now navigate the station using A* pathfinding, ensuring efficient movement and intelligent routing around obstacles, bringing crew interactions to life.
+- **A\* Pathfinding**: Crew members can now navigate the station using A\* pathfinding, ensuring efficient movement and intelligent routing around obstacles, bringing crew interactions to life.
 
 - **Air Diffusion Simulation**: Oxygen management has become a key aspect of station life. Oxygen production systems can now be installed, and crew members consume oxygen as they go about their tasks. Maintaining a steady supply of breathable air is critical to keeping your crew alive and the station functional.
 
@@ -25,10 +25,12 @@ Celestium is an open-source project. The code is free to use and modify, but cer
 
 - [raylib](https://github.com/raysan5/raylib) library, licensed under the [Zlib License](https://github.com/raysan5/raylib/blob/master/LICENSE).
 
+- [raygui-cpp](https://github.com/scastd/raygui-cpp) library, licensed under the [Zlib License](https://github.com/scastd/raygui-cpp/blob/main/LICENSE.txt).
+
 - [Termcolor](https://github.com/ikalnytskyi/termcolor) library, licensed under the [BSD (3-clause) License](https://github.com/ikalnytskyi/termcolor/blob/master/LICENSE).
 
 - [Magic Enum C++](https://github.com/Neargye/magic_enum) library, licensed under the [MIT License](https://github.com/Neargye/magic_enum/blob/master/LICENSE).
 
 - Visual assets inspired by [Jonik9i's Space Station Game Asset](https://jonik9i.itch.io/free-space-station-game-asset), licensed under the [Creative Commons Zero v1.0 Universal (CC0)](https://creativecommons.org/publicdomain/zero/1.0/).
 
-- [Inconsolata](https://github.com/googlefonts/Inconsolata) font, licensed under the [SIL Open Font License, Version 1.1](assets/fonts/OFL.txt).
+- [Jersey25](https://github.com/scfried/soft-type-jersey) font, licensed under the [SIL Open Font License, Version 1.1](assets/fonts/OFL.txt).

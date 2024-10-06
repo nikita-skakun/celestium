@@ -47,7 +47,7 @@ int main()
     SetExitKey(0);
 
     Texture2D tileset = LoadTexture("../assets/tilesets/station.png");
-    Font font = LoadFontEx("../assets/fonts/Inconsolata-Bold.ttf", DEFAULT_FONT_SIZE, NULL, 0);
+    Font font = LoadFontEx("../assets/fonts/Jersey25.ttf", DEFAULT_FONT_SIZE, NULL, 0);
 
     TileDefinitionRegistry::GetInstance().ParseTilesFromFile("../assets/definitions/tiles.yml");
 
@@ -70,18 +70,21 @@ int main()
 
     while (isGameRunning)
     {
+        isGameRunning = !WindowShouldClose();
         deltaTime = GetFrameTime();
 
         // Handle all real-time input and camera logic in the main thread
-        camera.HandleCameraMovement();
-        camera.HandleCameraOverlays();
-        HandleCrewHover(crewList, camera);
-        HandleCrewSelection(crewList, camera);
-        AssignCrewTasks(crewList, camera);
-        HandleMouseDragStart(camera);
-        HandleMouseDrag(station, camera);
-        HandleMouseDragEnd(station, camera);
-        MouseDeleteExistingConnection(station, camera);
+        camera.HandleCamera();
+        if (camera.IsUiClear())
+        {
+            HandleCrewHover(crewList, camera);
+            HandleCrewSelection(crewList, camera);
+            AssignCrewTasks(crewList, camera);
+            HandleMouseDragStart(camera);
+            HandleMouseDrag(station, camera);
+            HandleMouseDragEnd(station, camera);
+            MouseDeleteExistingConnection(station, camera);
+        }
 
         // Render logic
         BeginDrawing();
@@ -91,14 +94,19 @@ int main()
         DrawStationTiles(station, tileset, camera);
         DrawStationOverlays(station, tileset, camera);
         DrawCrew(timeSinceFixedUpdate, crewList, camera);
-        DrawDragSelectBox(camera);
-        DrawMainTooltip(crewList, camera, station, font);
-        DrawFpsCounter(deltaTime, 12, DEFAULT_FONT_SIZE, font);
-        DrawOverlay(camera, 12, DEFAULT_FONT_SIZE, font);
+
+        if (camera.IsUiClear())
+        {
+            DrawDragSelectBox(camera);
+            DrawMainTooltip(crewList, camera, station, font);
+            DrawFpsCounter(deltaTime, 12, DEFAULT_FONT_SIZE, font);
+            DrawOverlay(camera, 12, DEFAULT_FONT_SIZE, font);
+        }
+
+        if (camera.GetUiState() == PlayerCam::UiState::ESC_MENU)
+            DrawEscapeMenu(isGameRunning, camera, font);
 
         EndDrawing();
-
-        isGameRunning = !WindowShouldClose();
     }
 
     updateThread.join();

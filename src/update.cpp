@@ -306,7 +306,7 @@ void UpdateTiles(std::shared_ptr<Station> station)
 
 void MouseDeleteExistingConnection(std::shared_ptr<Station> station, const PlayerCam &camera)
 {
-    if (!station || !IsMouseButtonPressed(MOUSE_BUTTON_RIGHT) || camera.GetOverlay() != PlayerCam::Overlay::POWER)
+    if (!station || !IsMouseButtonPressed(MOUSE_BUTTON_RIGHT) || camera.GetOverlay() != PlayerCam::Overlay::POWER || !camera.IsUiClear())
         return;
 
     Vector2 mousePos = GetMousePosition();

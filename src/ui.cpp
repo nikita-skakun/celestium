@@ -1,3 +1,5 @@
+#define RAYGUI_IMPLEMENTATION
+#include "raygui.h"
 #include "ui.hpp"
 
 /**
@@ -14,14 +16,14 @@ void DrawTileGrid(const PlayerCam &camera)
     Vector2 topLeft = camera.GetPosition() * TILE_SIZE - Vector2(screenWidth, screenHeight) / 2.0f / camera.GetZoom();
 
     // Draw vertical lines
-    for (float x = floor(topLeft.x / TILE_SIZE) * TILE_SIZE; x <= ceil((topLeft.x + screenWidth / camera.GetZoom()) / TILE_SIZE) * TILE_SIZE; x += TILE_SIZE)
+    for (int x = (int)(floor(topLeft.x / TILE_SIZE) * TILE_SIZE); x <= (int)(ceil((topLeft.x + screenWidth / camera.GetZoom()) / TILE_SIZE) * TILE_SIZE); x += (int)TILE_SIZE)
     {
         float screenX = (x - camera.GetPosition().x * TILE_SIZE) * camera.GetZoom() + screenWidth / 2.0f;
         DrawLineV({screenX, 0}, {screenX, (float)screenHeight}, GRID_COLOR);
     }
 
     // Draw horizontal lines
-    for (float y = floor(topLeft.y / TILE_SIZE) * TILE_SIZE; y <= ceil((topLeft.y + screenHeight / camera.GetZoom()) / TILE_SIZE) * TILE_SIZE; y += TILE_SIZE)
+    for (int y = (int)(floor(topLeft.y / TILE_SIZE) * TILE_SIZE); y <= (int)(ceil((topLeft.y + screenHeight / camera.GetZoom()) / TILE_SIZE) * TILE_SIZE); y += (int)TILE_SIZE)
     {
         float screenY = (y - camera.GetPosition().y * TILE_SIZE) * camera.GetZoom() + screenHeight / 2.0f;
         DrawLineV({0, screenY}, {(float)screenWidth, screenY}, GRID_COLOR);
@@ -353,7 +355,7 @@ void DrawTooltip(const std::string &tooltip, const Vector2 &pos, const Font &fon
     // Draw the tooltip with the calculated position and padding
     for (int i = 0; i < lineCount; i++)
     {
-        DrawTextEx(font, lines[i], tooltipPos + Vector2(padding, padding + (i * fontSize)), fontSize, 1, BLACK);
+        DrawTextEx(font, lines[i], tooltipPos + Vector2(padding, padding + (i * fontSize)), fontSize, 1, DARKGRAY);
     }
 }
 
@@ -421,4 +423,56 @@ void DrawMainTooltip(const std::vector<Crew> &crewList, const PlayerCam &camera,
         return;
 
     DrawTooltip(hoverText, mousePos, font);
+}
+
+void DrawEscapeMenu(bool &isGameRunning, PlayerCam &camera, const Font &font)
+{
+    const int buttonCount = 3;
+    const float buttonWidth = 120.f;
+    const float buttonSpacing = 20.f;
+    const float buttonHeight = DEFAULT_FONT_SIZE + buttonSpacing;
+
+    GuiSetStyle(DEFAULT, TEXT_SIZE, DEFAULT_FONT_SIZE);
+    GuiSetFont(font);
+
+    int screenWidth = GetScreenWidth();
+    int screenHeight = GetScreenHeight();
+
+    float totalButtonHeight = buttonCount * buttonHeight + (buttonCount - 1) * buttonSpacing;
+
+    // Calculate menu dimensions
+    float menuWidth = buttonWidth + buttonSpacing * 2.f;
+    float menuHeight = totalButtonHeight + buttonSpacing * 2.f;
+
+    // Calculate the position of the menu
+    float menuPosX = screenWidth / 2.f - menuWidth / 2.f;
+    float menuPosY = screenHeight / 2.f - menuHeight / 2.f;
+
+    // Darken the background to draw focus to the UI
+    DrawRectangle(0.f, 0.f, screenWidth, screenHeight, Fade(BLACK, 0.2f));
+
+    // Draw a rectangle for the menu background
+    DrawRectangle(menuPosX, menuPosY, menuWidth, menuHeight, Fade(BLACK, 0.4f));
+
+    // Dynamically position buttons in the center of the menu
+    float firstButtonPosY = menuPosY + (menuHeight - totalButtonHeight) / 2.f;
+    float buttonPosX = screenWidth / 2 - buttonWidth / 2;
+
+    // Resume Button
+    if (GuiButton(Rectangle(buttonPosX, firstButtonPosY, buttonWidth, buttonHeight), "Resume"))
+    {
+        camera.SetUiState(PlayerCam::UiState::NONE);
+    }
+
+    // Settings Button
+    if (GuiButton(Rectangle(buttonPosX, firstButtonPosY + (buttonHeight + buttonSpacing), buttonWidth, buttonHeight), "Settings"))
+    {
+        // TODO: settings button
+    }
+
+    // Exit Button
+    if (GuiButton(Rectangle(buttonPosX, firstButtonPosY + 2 * (buttonHeight + buttonSpacing), buttonWidth, buttonHeight), "Exit"))
+    {
+        isGameRunning = false;
+    }
 }
