@@ -23,6 +23,7 @@ struct PlayerCam
     {
         NONE,
         ESC_MENU,
+        SETTINGS_MENU,
     };
 
 private:

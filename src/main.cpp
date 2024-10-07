@@ -105,6 +105,8 @@ int main()
 
         if (camera.GetUiState() == PlayerCam::UiState::ESC_MENU)
             DrawEscapeMenu(isGameRunning, camera, font);
+        else if (camera.GetUiState() == PlayerCam::UiState::SETTINGS_MENU)
+            DrawSettingsMenu(font);
 
         EndDrawing();
     }

@@ -82,5 +82,5 @@ void PlayerCam::HandleOverlays()
 void PlayerCam::HandleUiStates()
 {
     if (IsKeyPressed(KEY_ESCAPE))
-        ToggleUiState(UiState::ESC_MENU);
+        uiState = uiState == UiState::NONE ? UiState::ESC_MENU : UiState::NONE;
 }

@@ -13,3 +13,4 @@ void DrawOverlay(const PlayerCam &camera, int padding, int fontSize = DEFAULT_FO
 void DrawTooltip(const std::string &tooltip, const Vector2 &pos, const Font &font = GetFontDefault(), float padding = 10.f, int fontSize = DEFAULT_FONT_SIZE);
 void DrawMainTooltip(const std::vector<Crew> &crewList, const PlayerCam &camera, std::shared_ptr<Station> station, const Font &font = GetFontDefault());
 void DrawEscapeMenu(bool &isGameRunning, PlayerCam &camera, const Font &font = GetFontDefault());
+void DrawSettingsMenu(const Font &font = GetFontDefault());

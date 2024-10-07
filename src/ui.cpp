@@ -427,22 +427,21 @@ void DrawMainTooltip(const std::vector<Crew> &crewList, const PlayerCam &camera,
 
 void DrawEscapeMenu(bool &isGameRunning, PlayerCam &camera, const Font &font)
 {
-    const int buttonCount = 3;
-    const float buttonWidth = 120.f;
-    const float buttonSpacing = 20.f;
-    const float buttonHeight = DEFAULT_FONT_SIZE + buttonSpacing;
+    constexpr int buttonCount = 3;
+    constexpr float buttonWidth = 120.f;
+    constexpr float buttonSpacing = 20.f;
+    constexpr float buttonHeight = DEFAULT_FONT_SIZE + buttonSpacing;
+    constexpr float totalButtonHeight = buttonCount * buttonHeight + (buttonCount - 1) * buttonSpacing;
+
+    // Calculate menu dimensions
+    constexpr float menuWidth = buttonWidth + buttonSpacing * 2.f;
+    constexpr float menuHeight = totalButtonHeight + buttonSpacing * 2.f;
 
     GuiSetStyle(DEFAULT, TEXT_SIZE, DEFAULT_FONT_SIZE);
     GuiSetFont(font);
 
     int screenWidth = GetScreenWidth();
     int screenHeight = GetScreenHeight();
-
-    float totalButtonHeight = buttonCount * buttonHeight + (buttonCount - 1) * buttonSpacing;
-
-    // Calculate menu dimensions
-    float menuWidth = buttonWidth + buttonSpacing * 2.f;
-    float menuHeight = totalButtonHeight + buttonSpacing * 2.f;
 
     // Calculate the position of the menu
     float menuPosX = screenWidth / 2.f - menuWidth / 2.f;
@@ -460,19 +459,36 @@ void DrawEscapeMenu(bool &isGameRunning, PlayerCam &camera, const Font &font)
 
     // Resume Button
     if (GuiButton(Rectangle(buttonPosX, firstButtonPosY, buttonWidth, buttonHeight), "Resume"))
-    {
         camera.SetUiState(PlayerCam::UiState::NONE);
-    }
 
     // Settings Button
     if (GuiButton(Rectangle(buttonPosX, firstButtonPosY + (buttonHeight + buttonSpacing), buttonWidth, buttonHeight), "Settings"))
-    {
-        // TODO: settings button
-    }
+        camera.SetUiState(PlayerCam::UiState::SETTINGS_MENU);
 
     // Exit Button
     if (GuiButton(Rectangle(buttonPosX, firstButtonPosY + 2 * (buttonHeight + buttonSpacing), buttonWidth, buttonHeight), "Exit"))
-    {
         isGameRunning = false;
-    }
+}
+
+void DrawSettingsMenu(const Font &font)
+{
+    GuiSetStyle(DEFAULT, TEXT_SIZE, DEFAULT_FONT_SIZE);
+    GuiSetFont(font);
+
+    int screenWidth = GetScreenWidth();
+    int screenHeight = GetScreenHeight();
+
+    // Calculate menu dimensions
+    float menuWidth = screenWidth * 2.f / 3.f;
+    float menuHeight = screenHeight * 2.f / 3.f;
+
+    // Calculate the position of the menu
+    float menuPosX = screenWidth / 2.f - menuWidth / 2.f;
+    float menuPosY = screenHeight / 2.f - menuHeight / 2.f;
+
+    // Darken the background to draw focus to the UI
+    DrawRectangle(0.f, 0.f, screenWidth, screenHeight, Fade(BLACK, 0.2f));
+
+    // Draw a rectangle for the menu background
+    DrawRectangle(menuPosX, menuPosY, menuWidth, menuHeight, Fade(BLACK, 0.4f));
 }
