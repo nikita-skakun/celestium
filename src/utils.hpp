@@ -184,15 +184,19 @@ struct Vector2Int
     {
         return x == a.x && y == a.y;
     }
+};
 
-    struct Hash
+namespace std
+{
+    template <>
+    struct hash<Vector2Int>
     {
         constexpr std::size_t operator()(const Vector2Int &v) const noexcept
         {
             return std::hash<int>()(v.x) ^ (std::hash<int>()(v.y) << 1);
         }
     };
-};
+}
 
 constexpr float Vector2IntDistanceSq(const Vector2Int &a, const Vector2Int &b) noexcept
 {
@@ -201,7 +205,7 @@ constexpr float Vector2IntDistanceSq(const Vector2Int &a, const Vector2Int &b) n
 
 inline int Vector2IntToRandomInt(const Vector2Int &a, int min, int max) noexcept
 {
-    Vector2Int::Hash hash;
+    std::hash<Vector2Int> hash;
     std::size_t seed = hash(a);
     std::mt19937 generator(seed);
     std::uniform_int_distribution<int> distribution(min, max);

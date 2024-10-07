@@ -8,7 +8,7 @@ struct Station
 {
     std::vector<std::shared_ptr<Tile>> tiles;
     std::vector<std::shared_ptr<Room>> rooms;
-    std::unordered_map<Vector2Int, std::map<TileDef::Height, std::shared_ptr<Tile>>, Vector2Int::Hash> tileMap;
+    std::unordered_map<Vector2Int, std::map<TileDef::Height, std::shared_ptr<Tile>>> tileMap;
 
 public:
     std::shared_ptr<Tile> GetTileAtPosition(const Vector2Int &pos, TileDef::Height height = TileDef::Height::NONE) const;

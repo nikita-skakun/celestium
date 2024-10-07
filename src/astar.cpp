@@ -17,11 +17,11 @@ std::deque<Vector2Int> AStar(const Vector2Int &start, const Vector2Int &end,
         return {};
 
     // Combined cost map for tracking both g and f costs
-    std::unordered_map<Vector2Int, Vector2, Vector2Int::Hash> costMap;
+    std::unordered_map<Vector2Int, Vector2> costMap;
     // Map to reconstruct the path
-    std::unordered_map<Vector2Int, Vector2Int, Vector2Int::Hash> cameFrom;
+    std::unordered_map<Vector2Int, Vector2Int> cameFrom;
     // Map of nodes already evaluated
-    std::unordered_set<Vector2Int, Vector2Int::Hash> closedSet;
+    std::unordered_set<Vector2Int> closedSet;
 
     // Comparator for the priority queue
     auto compare = [&costMap](const Vector2Int &a, const Vector2Int &b)

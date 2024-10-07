@@ -359,6 +359,31 @@ void DrawTooltip(const std::string &tooltip, const Vector2 &pos, const Font &fon
     }
 }
 
+std::string GetTileInfo(std::shared_ptr<Tile> tile)
+{
+    std::string tileInfo = " - " + tile->GetName();
+
+    if (auto door = tile->GetComponent<DoorComponent>())
+    {
+        tileInfo += std::format("\n   + {}", door->IsOpen() ? "Open" : "Closed");
+        tileInfo += std::format("\n   + State: {} ({:.0f}%)", door->GetMovementName(), door->GetProgress() * 100.f);
+    }
+    if (auto oxygen = tile->GetComponent<OxygenComponent>())
+    {
+        tileInfo += std::format("\n   + Tile Ox: {:.2f}", oxygen->GetOxygenLevel());
+    }
+    if (auto battery = tile->GetComponent<BatteryComponent>())
+    {
+        tileInfo += std::format("\n   + Energy: {:.0f} / {:.0f}", battery->GetChargeLevel(), battery->GetMaxChargeLevel());
+    }
+    if (auto powerConnector = tile->GetComponent<PowerConnectorComponent>())
+    {
+        tileInfo += std::format("\n   + Power Connector: {}", magic_enum::enum_flags_name(powerConnector->GetIO()));
+    }
+
+    return tileInfo;
+}
+
 /**
  * Draws a tooltip about the crew member or station tile under the mouse cursor.
  *
@@ -397,25 +422,8 @@ void DrawMainTooltip(const std::vector<Crew> &crewList, const PlayerCam &camera,
         {
             if (!hoverText.empty())
                 hoverText += "\n";
-            hoverText += " - " + tile->GetName();
 
-            if (auto door = tile->GetComponent<DoorComponent>())
-            {
-                hoverText += std::format("\n   + {}", door->IsOpen() ? "Open" : "Closed");
-                hoverText += std::format("\n   + State: {} ({:.0f}%)", door->GetMovementName(), door->GetProgress() * 100.f);
-            }
-            if (auto oxygen = tile->GetComponent<OxygenComponent>())
-            {
-                hoverText += std::format("\n   + Tile Ox: {:.2f}", oxygen->GetOxygenLevel());
-            }
-            if (auto battery = tile->GetComponent<BatteryComponent>())
-            {
-                hoverText += std::format("\n   + Energy: {:.0f} / {:.0f}", battery->GetChargeLevel(), battery->GetMaxChargeLevel());
-            }
-            if (auto powerConnector = tile->GetComponent<PowerConnectorComponent>())
-            {
-                hoverText += std::format("\n   + Power Connector: {}", magic_enum::enum_flags_name(powerConnector->GetIO()));
-            }
+            hoverText += GetTileInfo(tile);
         }
     }
 
