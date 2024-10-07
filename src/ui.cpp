@@ -492,3 +492,19 @@ void DrawSettingsMenu(const Font &font)
     // Draw a rectangle for the menu background
     DrawRectangle(menuPosX, menuPosY, menuWidth, menuHeight, Fade(BLACK, 0.4f));
 }
+
+void DrawUi(bool &isGameRunning, PlayerCam &camera, const Font &font)
+{
+    switch (camera.GetUiState())
+    {
+    case PlayerCam::UiState::ESC_MENU:
+        DrawEscapeMenu(isGameRunning, camera, font);
+        break;
+
+    case PlayerCam::UiState::SETTINGS_MENU:
+        DrawSettingsMenu(font);
+
+    default:
+        break;
+    }
+}

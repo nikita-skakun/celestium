@@ -103,10 +103,7 @@ int main()
             DrawOverlay(camera, 12, DEFAULT_FONT_SIZE, font);
         }
 
-        if (camera.GetUiState() == PlayerCam::UiState::ESC_MENU)
-            DrawEscapeMenu(isGameRunning, camera, font);
-        else if (camera.GetUiState() == PlayerCam::UiState::SETTINGS_MENU)
-            DrawSettingsMenu(font);
+        DrawUi(isGameRunning, camera, font);
 
         EndDrawing();
     }
