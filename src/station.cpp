@@ -1,30 +1,5 @@
 #include "station.hpp"
 
-void DeleteTile(std::shared_ptr<Tile> tile)
-{
-    if (!tile)
-        return;
-
-    if (tile->GetStation())
-    {
-        auto &stationTiles = tile->GetStation()->tiles;
-        stationTiles.erase(std::remove(stationTiles.begin(), stationTiles.end(), tile), stationTiles.end());
-        tile->GetStation()->tileMap.erase(tile->GetPosition());
-    }
-
-    if (tile->GetRoom())
-    {
-        auto &roomTiles = tile->GetRoom()->tiles;
-        roomTiles.erase(std::remove_if(roomTiles.begin(), roomTiles.end(),
-                                       [&tile](const std::weak_ptr<Tile> &weakTile)
-                                       {
-                                           if (auto sharedTile = weakTile.lock())
-                                               return sharedTile == tile;
-                                           return true; }),
-                        roomTiles.end());
-    }
-}
-
 std::shared_ptr<Room> CreateRectRoom(const Vector2Int &pos, const Vector2Int &size, std::shared_ptr<Station> station)
 {
     std::shared_ptr<Room> room = Room::CreateEmptyRoom(station);
@@ -66,7 +41,7 @@ std::shared_ptr<Room> CreateHorizontalCorridor(const Vector2Int &startPos, int l
                 continue;
 
             if (!isWall && oldTile)
-                DeleteTile(oldTile);
+                oldTile->DeleteTile();
 
             Tile::CreateTile(isWall ? "WALL" : "BLUE_FLOOR", pos, station, room);
 

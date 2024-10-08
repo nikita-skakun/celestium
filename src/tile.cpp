@@ -27,7 +27,7 @@ std::shared_ptr<Tile> Tile::CreateTile(const std::string &tileId, const Vector2I
             if (magic_enum::enum_integer(existingHeight & tile->GetTileDefinition()->GetHeight()) > 0)
             {
                 throw std::runtime_error(std::format("A tile {} already exists at {} with overlapping height.", existingTile->GetName(), ToString(position)));
-                break;
+                return nullptr;
             }
         }
 
@@ -42,4 +42,28 @@ std::shared_ptr<Tile> Tile::CreateTile(const std::string &tileId, const Vector2I
         room->tiles.push_back(tile);
 
     return tile;
+}
+
+void Tile::DeleteTile()
+{
+    if (station)
+    {
+        auto &stationTiles = station->tiles;
+        stationTiles.erase(std::remove(stationTiles.begin(), stationTiles.end(), shared_from_this()), stationTiles.end());
+        station->tileMap.erase(position);
+    }
+
+    if (room)
+    {
+        auto &roomTiles = room->tiles;
+        roomTiles.erase(std::remove_if(roomTiles.begin(), roomTiles.end(),
+                                       [self = shared_from_this()](const std::weak_ptr<Tile> &weakTile)
+                                       {
+                                           if (auto sharedTile = weakTile.lock())
+                                               return sharedTile == self;
+                                           return true; }),
+                        roomTiles.end());
+    }
+
+    components.clear();
 }

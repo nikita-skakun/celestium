@@ -4,7 +4,7 @@
 struct Room;
 struct Station;
 
-struct Tile
+struct Tile : public std::enable_shared_from_this<Tile>
 {
 private:
     std::shared_ptr<TileDef> tileDef;
@@ -18,6 +18,7 @@ private:
 
 public:
     static std::shared_ptr<Tile> CreateTile(const std::string &defName, const Vector2Int &position, std::shared_ptr<Station> station, std::shared_ptr<Room> room = nullptr);
+    void DeleteTile();
 
     constexpr const Vector2Int &GetPosition() const { return position; }
     constexpr void SetPosition(const Vector2Int &newPos) { position = newPos; }
