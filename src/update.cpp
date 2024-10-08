@@ -244,61 +244,66 @@ void UpdateTiles(std::shared_ptr<Station> station)
     if (!station)
         return;
 
-    for (auto &tile : station->tiles)
+    for (const auto &heightMap : station->tileMap)
     {
-        if (auto door = tile->GetComponent<DoorComponent>())
+        for (const auto &tilePair : heightMap.second)
         {
-            door->KeepClosed();
-            door->Animate(FIXED_DELTA_TIME);
-        }
+            std::shared_ptr<Tile> tile = tilePair.second;
 
-        if (auto powerProducer = tile->GetComponent<PowerProducerComponent>())
-        {
-            powerProducer->ProducePower(FIXED_DELTA_TIME);
-        }
-
-        if (auto powerConsumer = tile->GetComponent<PowerConsumerComponent>())
-        {
-            powerConsumer->ConsumePower(FIXED_DELTA_TIME);
-        }
-
-        if (auto battery = tile->GetComponent<BatteryComponent>())
-        {
-            battery->Charge();
-        }
-
-        if (auto oxygenProducer = tile->GetComponent<OxygenProducerComponent>())
-        {
-            oxygenProducer->ProduceOxygen(FIXED_DELTA_TIME);
-        }
-
-        if (auto oxygen = tile->GetComponent<OxygenComponent>())
-        {
-            std::vector<Vector2Int> neighbors = {
-                tile->GetPosition() + Vector2Int(1, 0),  // Right
-                tile->GetPosition() + Vector2Int(-1, 0), // Left
-                tile->GetPosition() + Vector2Int(0, 1),  // Down
-                tile->GetPosition() + Vector2Int(0, -1), // Up
-            };
-
-            for (int i = 0; i < (int)neighbors.size(); i++)
+            if (auto door = tile->GetComponent<DoorComponent>())
             {
-                std::shared_ptr<Tile> neighbor = station->GetTileWithComponentAtPosition<OxygenComponent>(neighbors[i]);
-                if (!neighbor)
-                    continue;
+                door->KeepClosed();
+                door->Animate(FIXED_DELTA_TIME);
+            }
 
-                if (station->GetTileWithComponentAtPosition<SolidComponent>(neighbors[i]))
-                    continue;
+            if (auto powerProducer = tile->GetComponent<PowerProducerComponent>())
+            {
+                powerProducer->ProducePower(FIXED_DELTA_TIME);
+            }
 
-                auto neighborOxygen = neighbor->GetComponent<OxygenComponent>();
-                float oxygenDiff = oxygen->GetOxygenLevel() - neighborOxygen->GetOxygenLevel();
+            if (auto powerConsumer = tile->GetComponent<PowerConsumerComponent>())
+            {
+                powerConsumer->ConsumePower(FIXED_DELTA_TIME);
+            }
 
-                if (oxygenDiff <= 0)
-                    continue;
+            if (auto battery = tile->GetComponent<BatteryComponent>())
+            {
+                battery->Charge();
+            }
 
-                float oxygenTransfer = std::min(oxygenDiff * OXYGEN_DIFFUSION_RATE * FIXED_DELTA_TIME, oxygenDiff);
-                oxygen->SetOxygenLevel(oxygen->GetOxygenLevel() - oxygenTransfer);
-                neighborOxygen->SetOxygenLevel(neighborOxygen->GetOxygenLevel() + oxygenTransfer);
+            if (auto oxygenProducer = tile->GetComponent<OxygenProducerComponent>())
+            {
+                oxygenProducer->ProduceOxygen(FIXED_DELTA_TIME);
+            }
+
+            if (auto oxygen = tile->GetComponent<OxygenComponent>())
+            {
+                std::vector<Vector2Int> neighbors = {
+                    tile->GetPosition() + Vector2Int(1, 0),  // Right
+                    tile->GetPosition() + Vector2Int(-1, 0), // Left
+                    tile->GetPosition() + Vector2Int(0, 1),  // Down
+                    tile->GetPosition() + Vector2Int(0, -1), // Up
+                };
+
+                for (int i = 0; i < (int)neighbors.size(); i++)
+                {
+                    std::shared_ptr<Tile> neighbor = station->GetTileWithComponentAtPosition<OxygenComponent>(neighbors[i]);
+                    if (!neighbor)
+                        continue;
+
+                    if (station->GetTileWithComponentAtPosition<SolidComponent>(neighbors[i]))
+                        continue;
+
+                    auto neighborOxygen = neighbor->GetComponent<OxygenComponent>();
+                    float oxygenDiff = oxygen->GetOxygenLevel() - neighborOxygen->GetOxygenLevel();
+
+                    if (oxygenDiff <= 0)
+                        continue;
+
+                    float oxygenTransfer = std::min(oxygenDiff * OXYGEN_DIFFUSION_RATE * FIXED_DELTA_TIME, oxygenDiff);
+                    oxygen->SetOxygenLevel(oxygen->GetOxygenLevel() - oxygenTransfer);
+                    neighborOxygen->SetOxygenLevel(neighborOxygen->GetOxygenLevel() + oxygenTransfer);
+                }
             }
         }
     }
@@ -313,27 +318,35 @@ void MouseDeleteExistingConnection(std::shared_ptr<Station> station, const Playe
 
     const float threshold = std::max(POWER_CONNECTION_WIDTH * camera.GetZoom(), 2.f);
 
-    for (std::shared_ptr<Tile> tile : station->tiles)
+    for (const auto &heightMap : station->tileMap)
     {
-        if (auto powerConComp = tile->GetComponent<PowerConnectorComponent>())
+        for (const auto &tilePair : heightMap.second)
         {
-            for (auto &&connection : powerConComp->_connections)
-            {
-                if (auto conOther = connection.lock())
-                {
-                    if (auto conTileOther = conOther->_parent.lock())
-                    {
-                        Vector2 start = camera.WorldToScreen(ToVector2(tile->GetPosition()) + Vector2(.5f, .5f));
-                        Vector2 end = camera.WorldToScreen(ToVector2(conTileOther->GetPosition()) + Vector2(.5f, .5f));
+            std::shared_ptr<Tile> tile = tilePair.second;
 
-                        if (DistanceSqFromPointToLine(start, end, mousePos) <= threshold * threshold)
-                        {
-                            LogMessage(LogLevel::DEBUG, std::format("Deleting connection between {} and {}!", tile->GetName(), conTileOther->GetName()));
-                            PowerConnectorComponent::DeleteConnection(powerConComp, conOther);
-                            return;
-                        }
-                    }
-                }
+            auto powerConnector = tile->GetComponent<PowerConnectorComponent>();
+            if (!powerConnector)
+                continue;
+
+            for (const auto &connection : powerConnector->_connections)
+            {
+                auto otherConnector = connection.lock();
+                if (!otherConnector)
+                    continue;
+
+                auto otherConnectorTile = otherConnector->_parent.lock();
+                if (!otherConnectorTile)
+                    continue;
+
+                Vector2 start = camera.WorldToScreen(ToVector2(tile->GetPosition()) + Vector2(.5f, .5f));
+                Vector2 end = camera.WorldToScreen(ToVector2(otherConnectorTile->GetPosition()) + Vector2(.5f, .5f));
+
+                if (DistanceSqFromPointToLine(start, end, mousePos) > threshold * threshold)
+                    continue;
+
+                LogMessage(LogLevel::DEBUG, std::format("Deleting connection between {} and {}!", tile->GetName(), otherConnectorTile->GetName()));
+                PowerConnectorComponent::DeleteConnection(powerConnector, otherConnector);
+                return;
             }
         }
     }

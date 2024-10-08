@@ -66,27 +66,31 @@ void DrawStationTiles(std::shared_ptr<Station> station, const Texture2D &tileset
 
     Vector2 sizeScreenPos = Vector2(1.f, 1.f) * TILE_SIZE * camera.GetZoom();
 
-    for (std::shared_ptr<Tile> tile : station->tiles)
+    for (const auto &heightMap : station->tileMap)
     {
-        Vector2 startPos = camera.WorldToScreen(ToVector2(tile->GetPosition()));
-
-        Rectangle destRect = Vector2ToRect(startPos, startPos + sizeScreenPos);
-        Rectangle sourceRect = Rectangle(tile->GetSpriteOffset().x, tile->GetSpriteOffset().y, 1, 1) * TILE_SIZE;
-
-        DrawTexturePro(tileset, sourceRect, destRect, Vector2(), 0, WHITE);
-
-        if (camera.GetOverlay() == PlayerCam::Overlay::OXYGEN)
+        for (const auto &tilePair : heightMap.second)
         {
-            if (auto oxygen = tile->GetComponent<OxygenComponent>())
+            std::shared_ptr<Tile> tile = tilePair.second;
+            Vector2 startPos = camera.WorldToScreen(ToVector2(tile->GetPosition()));
+
+            Rectangle destRect = Vector2ToRect(startPos, startPos + sizeScreenPos);
+            Rectangle sourceRect = Rectangle(tile->GetSpriteOffset().x, tile->GetSpriteOffset().y, 1, 1) * TILE_SIZE;
+
+            DrawTexturePro(tileset, sourceRect, destRect, Vector2(), 0, WHITE);
+
+            if (camera.GetOverlay() == PlayerCam::Overlay::OXYGEN)
             {
-                Color color = Color(50, 150, 255, oxygen->GetOxygenLevel() / TILE_OXYGEN_MAX * 255 * .8f);
-                DrawRectangleV(startPos, sizeScreenPos, color);
+                if (auto oxygen = tile->GetComponent<OxygenComponent>())
+                {
+                    Color color = Color(50, 150, 255, oxygen->GetOxygenLevel() / TILE_OXYGEN_MAX * 255 * .8f);
+                    DrawRectangleV(startPos, sizeScreenPos, color);
+                }
             }
-        }
 
-        if (camera.GetOverlay() == PlayerCam::Overlay::WALL && tile->HasComponent<SolidComponent>())
-        {
-            DrawRectangleV(startPos, sizeScreenPos, Color(255, 0, 0, 64));
+            if (camera.GetOverlay() == PlayerCam::Overlay::WALL && tile->HasComponent<SolidComponent>())
+            {
+                DrawRectangleV(startPos, sizeScreenPos, Color(255, 0, 0, 64));
+            }
         }
     }
 }
@@ -102,79 +106,84 @@ void DrawStationOverlays(std::shared_ptr<Station> station, const Texture2D &tile
 {
     Vector2 sizeScreenPos = Vector2(1.f, 1.f) * TILE_SIZE * camera.GetZoom();
 
-    for (std::shared_ptr<Tile> tile : station->tiles)
+    for (const auto &heightMap : station->tileMap)
     {
-        if (auto decorative = tile->GetComponent<DecorativeComponent>())
+        for (const auto &tilePair : heightMap.second)
         {
-            for (const DecorativeTile &dTile : decorative->GetDecorativeTiles())
+            std::shared_ptr<Tile> tile = tilePair.second;
+
+            if (auto decorative = tile->GetComponent<DecorativeComponent>())
             {
-                Rectangle sourceRect = Rectangle(dTile.spriteOffset.x, dTile.spriteOffset.y, 1, 1) * TILE_SIZE;
-                Vector2 startPos = camera.WorldToScreen(ToVector2(tile->GetPosition() + dTile.offset));
-                Rectangle destRect = Rectangle(startPos.x, startPos.y, sizeScreenPos.x, sizeScreenPos.y);
-
-                DrawTexturePro(tileset, sourceRect, destRect, Vector2(), 0, WHITE);
-            }
-        }
-
-        if (auto door = tile->GetComponent<DoorComponent>())
-        {
-            Vector2 startPos = camera.WorldToScreen(ToVector2(tile->GetPosition()));
-            Rectangle destRect = Vector2ToRect(startPos, startPos + sizeScreenPos);
-            Rectangle doorSourceRect = Rectangle(0, 7, 1, 1) * TILE_SIZE;
-            doorSourceRect.height = std::max(19.f * door->GetProgress(), 1.f);
-
-            Rectangle doorDest1 = destRect;
-            doorDest1.height = std::max(19.f * door->GetProgress(), 1.f) * camera.GetZoom();
-            doorDest1.y += 19.f * camera.GetZoom() - doorDest1.height;
-
-            DrawTexturePro(tileset, doorSourceRect, doorDest1, Vector2(), 0, WHITE);
-
-            Rectangle doorDest2 = destRect;
-            doorDest2.width = -doorDest2.width;
-            doorDest2.height = -doorDest1.height;
-            doorDest2.y -= 19.f * camera.GetZoom() + doorDest2.height;
-
-            DrawTexturePro(tileset, doorSourceRect, doorDest2, Vector2(-doorDest2.width, 0.f), 180.f, WHITE);
-        }
-
-        if (camera.GetOverlay() == PlayerCam::Overlay::POWER)
-        {
-            if (auto powerConsumer = tile->GetComponent<PowerConsumerComponent>())
-            {
-                if (!powerConsumer->IsActive())
+                for (const DecorativeTile &dTile : decorative->GetDecorativeTiles())
                 {
-                    Vector2 startScreenPos = camera.WorldToScreen(ToVector2(tile->GetPosition()) + Vector2(.66f, 0.f));
+                    Rectangle sourceRect = Rectangle(dTile.spriteOffset.x, dTile.spriteOffset.y, 1, 1) * TILE_SIZE;
+                    Vector2 startPos = camera.WorldToScreen(ToVector2(tile->GetPosition() + dTile.offset));
+                    Rectangle destRect = Rectangle(startPos.x, startPos.y, sizeScreenPos.x, sizeScreenPos.y);
 
-                    Rectangle destRect = Vector2ToRect(startScreenPos, startScreenPos + sizeScreenPos / 3.f);
-                    Rectangle sourceRect = Rectangle(4, 7, 1, 1) * TILE_SIZE;
-
-                    DrawTexturePro(tileset, sourceRect, destRect, Vector2(), 0, Fade(YELLOW, .8f));
+                    DrawTexturePro(tileset, sourceRect, destRect, Vector2(), 0, WHITE);
                 }
             }
 
-            if (auto battery = tile->GetComponent<BatteryComponent>())
+            if (auto door = tile->GetComponent<DoorComponent>())
             {
-                float barProgress = battery->GetChargeLevel() / battery->GetMaxChargeLevel();
-                Vector2 topLeftPos = camera.WorldToScreen(ToVector2(tile->GetPosition()) + Vector2(1.f / 16.f, 0.f));
-                Vector2 barStartPos = camera.WorldToScreen(ToVector2(tile->GetPosition()) + Vector2(1.f / 16.f, 1.f - barProgress));
+                Vector2 startPos = camera.WorldToScreen(ToVector2(tile->GetPosition()));
+                Rectangle destRect = Vector2ToRect(startPos, startPos + sizeScreenPos);
+                Rectangle doorSourceRect = Rectangle(0, 7, 1, 1) * TILE_SIZE;
+                doorSourceRect.height = std::max(19.f * door->GetProgress(), 1.f);
 
-                Vector2 totalSize = Vector2(1.f / 8.f, 1.f) * TILE_SIZE * camera.GetZoom();
-                Vector2 barSize = Vector2(1.f / 8.f, barProgress) * TILE_SIZE * camera.GetZoom();
+                Rectangle doorDest1 = destRect;
+                doorDest1.height = std::max(19.f * door->GetProgress(), 1.f) * camera.GetZoom();
+                doorDest1.y += 19.f * camera.GetZoom() - doorDest1.height;
 
-                DrawRectangleV(topLeftPos, totalSize, Color(25, 25, 25, 200));
-                DrawRectangleV(barStartPos, barSize, Fade(YELLOW, .8f));
+                DrawTexturePro(tileset, doorSourceRect, doorDest1, Vector2(), 0, WHITE);
+
+                Rectangle doorDest2 = destRect;
+                doorDest2.width = -doorDest2.width;
+                doorDest2.height = -doorDest1.height;
+                doorDest2.y -= 19.f * camera.GetZoom() + doorDest2.height;
+
+                DrawTexturePro(tileset, doorSourceRect, doorDest2, Vector2(-doorDest2.width, 0.f), 180.f, WHITE);
             }
 
-            if (auto powerConnector = tile->GetComponent<PowerConnectorComponent>())
+            if (camera.GetOverlay() == PlayerCam::Overlay::POWER)
             {
-                auto connections = powerConnector->GetConnections();
-                for (auto &&connection : connections)
+                if (auto powerConsumer = tile->GetComponent<PowerConsumerComponent>())
                 {
-                    if (auto connectionTile = connection->_parent.lock())
+                    if (!powerConsumer->IsActive())
                     {
-                        DrawLineEx(camera.WorldToScreen(ToVector2(tile->GetPosition()) + Vector2(.5f, .5f)),
-                                   camera.WorldToScreen(ToVector2(connectionTile->GetPosition()) + Vector2(.5f, .5f)),
-                                   POWER_CONNECTION_WIDTH * std::max(camera.GetZoom(), 1.f), POWER_CONNECTION_COLOR);
+                        Vector2 startScreenPos = camera.WorldToScreen(ToVector2(tile->GetPosition()) + Vector2(.66f, 0.f));
+
+                        Rectangle destRect = Vector2ToRect(startScreenPos, startScreenPos + sizeScreenPos / 3.f);
+                        Rectangle sourceRect = Rectangle(4, 7, 1, 1) * TILE_SIZE;
+
+                        DrawTexturePro(tileset, sourceRect, destRect, Vector2(), 0, Fade(YELLOW, .8f));
+                    }
+                }
+
+                if (auto battery = tile->GetComponent<BatteryComponent>())
+                {
+                    float barProgress = battery->GetChargeLevel() / battery->GetMaxChargeLevel();
+                    Vector2 topLeftPos = camera.WorldToScreen(ToVector2(tile->GetPosition()) + Vector2(1.f / 16.f, 0.f));
+                    Vector2 barStartPos = camera.WorldToScreen(ToVector2(tile->GetPosition()) + Vector2(1.f / 16.f, 1.f - barProgress));
+
+                    Vector2 totalSize = Vector2(1.f / 8.f, 1.f) * TILE_SIZE * camera.GetZoom();
+                    Vector2 barSize = Vector2(1.f / 8.f, barProgress) * TILE_SIZE * camera.GetZoom();
+
+                    DrawRectangleV(topLeftPos, totalSize, Color(25, 25, 25, 200));
+                    DrawRectangleV(barStartPos, barSize, Fade(YELLOW, .8f));
+                }
+
+                if (auto powerConnector = tile->GetComponent<PowerConnectorComponent>())
+                {
+                    auto connections = powerConnector->GetConnections();
+                    for (auto &&connection : connections)
+                    {
+                        if (auto connectionTile = connection->_parent.lock())
+                        {
+                            DrawLineEx(camera.WorldToScreen(ToVector2(tile->GetPosition()) + Vector2(.5f, .5f)),
+                                       camera.WorldToScreen(ToVector2(connectionTile->GetPosition()) + Vector2(.5f, .5f)),
+                                       POWER_CONNECTION_WIDTH * std::max(camera.GetZoom(), 1.f), POWER_CONNECTION_COLOR);
+                        }
                     }
                 }
             }

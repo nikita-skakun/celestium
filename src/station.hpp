@@ -6,16 +6,15 @@
 
 struct Station
 {
-    std::vector<std::shared_ptr<Tile>> tiles;
     std::vector<std::shared_ptr<Room>> rooms;
     std::unordered_map<Vector2Int, std::map<TileDef::Height, std::shared_ptr<Tile>>> tileMap;
 
 public:
     std::shared_ptr<Tile> GetTileAtPosition(const Vector2Int &pos, TileDef::Height height = TileDef::Height::NONE) const;
     std::vector<std::shared_ptr<Tile>> GetTilesAtPosition(const Vector2Int &pos) const;
-    void UpdateSpriteOffsets();
-
     std::string GetTileIdAtPosition(const Vector2Int &pos, TileDef::Height height = TileDef::Height::NONE) const;
+    void UpdateSpriteOffsets() const;
+    bool CanPath(const Vector2Int &pos) const;
 
     constexpr bool CheckAdjacentTile(const Vector2Int &tilePos, const std::string &tileId, Direction direction) const
     {
@@ -54,17 +53,6 @@ public:
         }
 
         return result;
-    }
-
-    bool CanPath(const Vector2Int &pos) const
-    {
-        if (!GetTileWithComponentAtPosition<WalkableComponent>(pos))
-            return false;
-
-        if (GetTileWithComponentAtPosition<SolidComponent>(pos) && !GetTileWithComponentAtPosition<DoorComponent>(pos))
-            return false;
-
-        return true;
     }
 };
 

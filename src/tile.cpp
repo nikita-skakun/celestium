@@ -24,15 +24,14 @@ std::shared_ptr<Tile> Tile::CreateTile(const std::string &tileId, const Vector2I
         auto &heightMap = station->tileMap[position];
         for (const auto &[existingHeight, existingTile] : heightMap)
         {
-            if (magic_enum::enum_integer(existingHeight & tile->GetTileDefinition()->GetHeight()) > 0)
+            if (magic_enum::enum_integer(existingHeight & tile->GetHeight()) > 0)
             {
                 throw std::runtime_error(std::format("A tile {} already exists at {} with overlapping height.", existingTile->GetName(), ToString(position)));
                 return nullptr;
             }
         }
 
-        station->tiles.push_back(tile);
-        heightMap[tile->GetTileDefinition()->GetHeight()] = tile;
+        heightMap[tile->GetHeight()] = tile;
 
         if (auto door = tile->GetComponent<DoorComponent>())
             door->SetOpenState(door->IsOpen());
@@ -48,9 +47,7 @@ void Tile::DeleteTile()
 {
     if (station)
     {
-        auto &stationTiles = station->tiles;
-        stationTiles.erase(std::remove(stationTiles.begin(), stationTiles.end(), shared_from_this()), stationTiles.end());
-        station->tileMap.erase(position);
+        station->tileMap[position].erase(GetHeight());
     }
 
     if (room)

@@ -23,6 +23,8 @@ public:
     constexpr const Vector2Int &GetPosition() const { return position; }
     constexpr void SetPosition(const Vector2Int &newPos) { position = newPos; }
 
+    constexpr TileDef::Height GetHeight() const { return tileDef->GetHeight(); }
+
     constexpr const Vector2Int &GetSpriteOffset() const { return spriteOffset; }
     constexpr void SetSpriteOffset(const Vector2Int &newOffset) { spriteOffset = newOffset; }
 
