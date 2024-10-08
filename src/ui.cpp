@@ -68,9 +68,8 @@ void DrawStationTiles(std::shared_ptr<Station> station, const Texture2D &tileset
 
     for (const auto &heightMap : station->tileMap)
     {
-        for (const auto &tilePair : heightMap.second)
+        for (const std::shared_ptr<Tile> &tile : heightMap.second)
         {
-            std::shared_ptr<Tile> tile = tilePair.second;
             Vector2 startPos = camera.WorldToScreen(ToVector2(tile->GetPosition()));
 
             Rectangle destRect = Vector2ToRect(startPos, startPos + sizeScreenPos);
@@ -108,10 +107,8 @@ void DrawStationOverlays(std::shared_ptr<Station> station, const Texture2D &tile
 
     for (const auto &heightMap : station->tileMap)
     {
-        for (const auto &tilePair : heightMap.second)
+        for (const std::shared_ptr<Tile> &tile : heightMap.second)
         {
-            std::shared_ptr<Tile> tile = tilePair.second;
-
             if (auto decorative = tile->GetComponent<DecorativeComponent>())
             {
                 for (const DecorativeTile &dTile : decorative->GetDecorativeTiles())

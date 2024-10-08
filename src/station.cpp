@@ -88,10 +88,8 @@ void Station::UpdateSpriteOffsets() const
 {
     for (const auto &heightMap : tileMap)
     {
-        for (const auto &tilePair : heightMap.second)
+        for (const auto &tile : heightMap.second)
         {
-            std::shared_ptr<Tile> tile = tilePair.second;
-
             const Vector2Int &tilePos = tile->GetPosition();
             const std::string &tileId = tile->GetId();
 
@@ -307,19 +305,19 @@ std::shared_ptr<Tile> Station::GetTileAtPosition(const Vector2Int &pos, TileDef:
     {
         if (height == TileDef::Height::NONE)
         {
-            if (!posIt->second.empty())
-            {
-                return posIt->second.begin()->second;
-            }
+            if (posIt->second.empty())
+                return nullptr;
+
+            return posIt->second[0];
         }
         else
         {
-            for (const auto &[tileHeight, tilePtr] : posIt->second)
+            for (const std::shared_ptr<Tile> &tile : posIt->second)
             {
-                if ((magic_enum::enum_integer(tileHeight) & magic_enum::enum_integer(height)) != 0)
-                {
-                    return tilePtr;
-                }
+                if ((magic_enum::enum_integer(tile->GetHeight()) & magic_enum::enum_integer(height)) == 0)
+                    continue;
+
+                return tile;
             }
         }
     }
@@ -327,18 +325,12 @@ std::shared_ptr<Tile> Station::GetTileAtPosition(const Vector2Int &pos, TileDef:
     return nullptr;
 }
 
-std::vector<std::shared_ptr<Tile>> Station::GetTilesAtPosition(const Vector2Int &pos) const
+const std::vector<std::shared_ptr<Tile>> &Station::GetTilesAtPosition(const Vector2Int &pos) const
 {
-    std::vector<std::shared_ptr<Tile>> result;
-
+    static const std::vector<std::shared_ptr<Tile>> empty;
     auto posIt = tileMap.find(pos);
-    if (posIt != tileMap.end())
-    {
-        for (const auto &pair : posIt->second)
-        {
-            result.push_back(pair.second);
-        }
-    }
+    if (posIt == tileMap.end())
+        return empty;
 
-    return result;
+    return posIt->second;
 }

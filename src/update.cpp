@@ -246,10 +246,8 @@ void UpdateTiles(std::shared_ptr<Station> station)
 
     for (const auto &heightMap : station->tileMap)
     {
-        for (const auto &tilePair : heightMap.second)
+        for (const std::shared_ptr<Tile> &tile : heightMap.second)
         {
-            std::shared_ptr<Tile> tile = tilePair.second;
-
             if (auto door = tile->GetComponent<DoorComponent>())
             {
                 door->KeepClosed();
@@ -320,10 +318,8 @@ void MouseDeleteExistingConnection(std::shared_ptr<Station> station, const Playe
 
     for (const auto &heightMap : station->tileMap)
     {
-        for (const auto &tilePair : heightMap.second)
+        for (const std::shared_ptr<Tile> &tile : heightMap.second)
         {
-            std::shared_ptr<Tile> tile = tilePair.second;
-
             auto powerConnector = tile->GetComponent<PowerConnectorComponent>();
             if (!powerConnector)
                 continue;

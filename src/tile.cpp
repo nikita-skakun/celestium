@@ -21,17 +21,20 @@ std::shared_ptr<Tile> Tile::CreateTile(const std::string &tileId, const Vector2I
 
     if (station)
     {
-        auto &heightMap = station->tileMap[position];
-        for (const auto &[existingHeight, existingTile] : heightMap)
+        auto &tilesAtPos = station->tileMap[position];
+        for (const std::shared_ptr<Tile> &existingTile : tilesAtPos)
         {
-            if (magic_enum::enum_integer(existingHeight & tile->GetHeight()) > 0)
+            if (!existingTile)
+                continue;
+            if (magic_enum::enum_integer(existingTile->GetHeight() & tile->GetHeight()) > 0)
             {
                 throw std::runtime_error(std::format("A tile {} already exists at {} with overlapping height.", existingTile->GetName(), ToString(position)));
                 return nullptr;
             }
         }
 
-        heightMap[tile->GetHeight()] = tile;
+        tilesAtPos.push_back(tile);
+        std::sort(tilesAtPos.begin(), tilesAtPos.end(), Tile::CompareByHeight);
 
         if (auto door = tile->GetComponent<DoorComponent>())
             door->SetOpenState(door->IsOpen());
@@ -47,7 +50,11 @@ void Tile::DeleteTile()
 {
     if (station)
     {
-        station->tileMap[position].erase(GetHeight());
+        auto &tilesAtPos = station->tileMap[position];
+        tilesAtPos.erase(std::remove_if(tilesAtPos.begin(), tilesAtPos.end(),
+                                        [self = shared_from_this()](const std::shared_ptr<Tile> &tile)
+                                        { return tile == self; }),
+                         tilesAtPos.end());
     }
 
     if (room)
@@ -55,8 +62,7 @@ void Tile::DeleteTile()
         auto &roomTiles = room->tiles;
         roomTiles.erase(std::remove_if(roomTiles.begin(), roomTiles.end(),
                                        [self = shared_from_this()](const std::weak_ptr<Tile> &weakTile)
-                                       {
-                                           if (auto sharedTile = weakTile.lock())
+                                       { if (auto sharedTile = weakTile.lock())
                                                return sharedTile == self;
                                            return true; }),
                         roomTiles.end());

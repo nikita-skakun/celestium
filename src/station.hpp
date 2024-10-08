@@ -7,11 +7,11 @@
 struct Station
 {
     std::vector<std::shared_ptr<Room>> rooms;
-    std::unordered_map<Vector2Int, std::map<TileDef::Height, std::shared_ptr<Tile>>> tileMap;
+    std::unordered_map<Vector2Int, std::vector<std::shared_ptr<Tile>>> tileMap;
 
 public:
     std::shared_ptr<Tile> GetTileAtPosition(const Vector2Int &pos, TileDef::Height height = TileDef::Height::NONE) const;
-    std::vector<std::shared_ptr<Tile>> GetTilesAtPosition(const Vector2Int &pos) const;
+    const std::vector<std::shared_ptr<Tile>> &GetTilesAtPosition(const Vector2Int &pos) const;
     std::string GetTileIdAtPosition(const Vector2Int &pos, TileDef::Height height = TileDef::Height::NONE) const;
     void UpdateSpriteOffsets() const;
     bool CanPath(const Vector2Int &pos) const;
@@ -28,10 +28,10 @@ public:
         if (posIt == tileMap.end())
             return nullptr;
 
-        for (const auto &pair : posIt->second)
+        for (const std::shared_ptr<Tile> &tile : posIt->second)
         {
-            if (pair.second->HasComponent<T>())
-                return pair.second;
+            if (tile->HasComponent<T>())
+                return tile;
         }
 
         return nullptr;
@@ -46,10 +46,10 @@ public:
         if (posIt == tileMap.end())
             return result;
 
-        for (const auto &pair : posIt->second)
+        for (const std::shared_ptr<Tile> &tile : posIt->second)
         {
-            if (pair.second->HasComponent<T>())
-                result.push_back(pair.second);
+            if (tile->HasComponent<T>())
+                result.push_back(tile);
         }
 
         return result;

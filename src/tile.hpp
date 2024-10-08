@@ -96,4 +96,9 @@ public:
         }
         return false;
     }
+
+    static constexpr bool CompareByHeight(const std::shared_ptr<Tile> &a, const std::shared_ptr<Tile> &b)
+    {
+        return magic_enum::enum_underlying(a->GetHeight()) < magic_enum::enum_underlying(b->GetHeight());
+    }
 };
