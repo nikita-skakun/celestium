@@ -422,9 +422,11 @@ void DrawMainTooltip(const std::vector<Crew> &crewList, const PlayerCam &camera,
     if (station)
     {
         Vector2Int tileHoverPos = camera.ScreenToTile(mousePos);
-        std::vector<std::shared_ptr<Tile>> tiles = station->GetTilesAtPosition(tileHoverPos);
+        std::vector<std::shared_ptr<Tile>> decorativeTiles = station->GetDecorativeTilesAtPosition(tileHoverPos);
+        const auto &tiles = station->GetTilesAtPosition(tileHoverPos);
+        decorativeTiles.insert(decorativeTiles.begin(), tiles.begin(), tiles.end());
 
-        for (const std::shared_ptr<Tile> &tile : tiles)
+        for (const std::shared_ptr<Tile> &tile : decorativeTiles)
         {
             if (!hoverText.empty())
                 hoverText += "\n";
