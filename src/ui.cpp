@@ -416,6 +416,18 @@ std::string GetTileInfo(std::shared_ptr<Tile> tile)
     return tileInfo;
 }
 
+std::string GetHazardInfo(std::shared_ptr<Hazard> hazard)
+{
+    std::string hazardInfo = " - " + hazard->GetName();
+
+    if (auto fire = std::dynamic_pointer_cast<const FireHazard>(hazard))
+    {
+        hazardInfo += std::format("\n   + Size: {:.0f}", fire->GetRoundedSize() / FireHazard::SIZE_INCREMENT);
+    }
+
+    return hazardInfo;
+}
+
 /**
  * Draws a tooltip about the crew member or station tile under the mouse cursor.
  *
@@ -448,16 +460,25 @@ void DrawMainTooltip(const std::vector<Crew> &crewList, const PlayerCam &camera,
     if (station)
     {
         Vector2Int tileHoverPos = camera.ScreenToTile(mousePos);
-        std::vector<std::shared_ptr<Tile>> decorativeTiles = station->GetDecorativeTilesAtPosition(tileHoverPos);
+        auto decorativeTiles = station->GetDecorativeTilesAtPosition(tileHoverPos);
         const auto &tiles = station->GetTilesAtPosition(tileHoverPos);
         decorativeTiles.insert(decorativeTiles.begin(), tiles.begin(), tiles.end());
 
-        for (const std::shared_ptr<Tile> &tile : decorativeTiles)
+        for (const auto &tile : decorativeTiles)
         {
             if (!hoverText.empty())
                 hoverText += "\n";
 
             hoverText += GetTileInfo(tile);
+        }
+
+        auto hazards = station->GetHazardsAtPosition(tileHoverPos);
+        for (auto &&hazard : hazards)
+        {
+            if (!hoverText.empty())
+                hoverText += "\n";
+
+            hoverText += GetHazardInfo(hazard);
         }
     }
 

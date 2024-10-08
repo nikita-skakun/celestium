@@ -16,6 +16,7 @@ public:
 
     constexpr const float &GetSize() const { return size; }
     constexpr void SetSize(float newSize) { size = std::clamp(newSize, 0.f, 1.f); }
+    constexpr virtual std::string GetName() const = 0;
 };
 
 struct FireHazard : public Hazard
@@ -28,4 +29,5 @@ struct FireHazard : public Hazard
 
     constexpr float GetRoundedSize() const { return std::ceil(size / SIZE_INCREMENT) * SIZE_INCREMENT; }
     constexpr float GetOxygenConsumption() const { return OXYGEN_CONSUMPTION * GetRoundedSize(); }
+    constexpr std::string GetName() const { return "Fire"; }
 };

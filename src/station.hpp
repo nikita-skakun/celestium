@@ -24,6 +24,8 @@ public:
         return GetTileIdAtPosition(tilePos + DirectionToVector2Int(direction)) == tileId;
     }
 
+    std::vector<std::shared_ptr<Hazard>> GetHazardsAtPosition(const Vector2Int &pos) const;
+
     template <typename T>
     std::shared_ptr<Tile> GetTileWithComponentAtPosition(const Vector2Int &pos) const
     {

@@ -301,6 +301,19 @@ bool Station::CanPath(const Vector2Int &pos) const
     return true;
 }
 
+std::vector<std::shared_ptr<Hazard>> Station::GetHazardsAtPosition(const Vector2Int &pos) const
+{
+    std::vector<std::shared_ptr<Hazard>> foundHazards;
+
+    for (const auto &hazard : hazards)
+    {
+        if (hazard->GetPosition() == pos)
+            foundHazards.push_back(hazard);
+    }
+
+    return foundHazards;
+}
+
 std::shared_ptr<Tile> Station::GetTileAtPosition(const Vector2Int &pos, TileDef::Height height) const
 {
     auto posIt = tileMap.find(pos);
