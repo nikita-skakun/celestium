@@ -12,6 +12,12 @@
 
 using namespace magic_enum::bitwise_operators;
 
+// Utility functions for double
+constexpr int GetEvenlySpacedIndex(double value, int index) noexcept
+{
+    return static_cast<int>((value - std::floor(value)) * index);
+}
+
 // Vector2 operator overloads
 constexpr Vector2 operator+(const Vector2 &a, const Vector2 &b) noexcept
 {
@@ -244,11 +250,16 @@ constexpr Rectangle &operator*=(Rectangle &a, float b) noexcept
 }
 
 // Utility functions for Rectangle
-constexpr Rectangle Vector2ToRect(const Vector2 &a, const Vector2 &b) noexcept
+constexpr Rectangle Vector2ToBoundingBox(const Vector2 &a, const Vector2 &b) noexcept
 {
     float startX = std::min(a.x, b.x);
     float startY = std::min(a.y, b.y);
     return Rectangle(startX, startY, std::max(a.x, b.x) - startX, std::max(a.y, b.y) - startY);
+}
+
+constexpr Rectangle Vector2ToRect(const Vector2 &pos, const Vector2 &size) noexcept
+{
+    return Rectangle(pos.x, pos.y, size.x, size.y);
 }
 
 // Utility functions for Line

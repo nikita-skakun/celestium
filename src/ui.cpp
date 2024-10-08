@@ -64,31 +64,29 @@ void DrawStationTiles(std::shared_ptr<Station> station, const Texture2D &tileset
     if (!station)
         return;
 
-    Vector2 sizeScreenPos = Vector2(1.f, 1.f) * TILE_SIZE * camera.GetZoom();
+    Vector2 tileSize = Vector2(1.f, 1.f) * TILE_SIZE * camera.GetZoom();
 
     for (const auto &heightMap : station->tileMap)
     {
         for (const std::shared_ptr<Tile> &tile : heightMap.second)
         {
             Vector2 startPos = camera.WorldToScreen(ToVector2(tile->GetPosition()));
-
-            Rectangle destRect = Vector2ToRect(startPos, startPos + sizeScreenPos);
             Rectangle sourceRect = Rectangle(tile->GetSpriteOffset().x, tile->GetSpriteOffset().y, 1, 1) * TILE_SIZE;
 
-            DrawTexturePro(tileset, sourceRect, destRect, Vector2(), 0, WHITE);
+            DrawTexturePro(tileset, sourceRect, Vector2ToRect(startPos, tileSize), Vector2(), 0, WHITE);
 
             if (camera.GetOverlay() == PlayerCam::Overlay::OXYGEN)
             {
                 if (auto oxygen = tile->GetComponent<OxygenComponent>())
                 {
                     Color color = Color(50, 150, 255, oxygen->GetOxygenLevel() / TILE_OXYGEN_MAX * 255 * .8f);
-                    DrawRectangleV(startPos, sizeScreenPos, color);
+                    DrawRectangleV(startPos, tileSize, color);
                 }
             }
 
             if (camera.GetOverlay() == PlayerCam::Overlay::WALL && tile->HasComponent<SolidComponent>())
             {
-                DrawRectangleV(startPos, sizeScreenPos, Color(255, 0, 0, 64));
+                DrawRectangleV(startPos, tileSize, Color(255, 0, 0, 64));
             }
         }
     }
@@ -103,7 +101,10 @@ void DrawStationTiles(std::shared_ptr<Station> station, const Texture2D &tileset
  */
 void DrawStationOverlays(std::shared_ptr<Station> station, const Texture2D &tileset, const PlayerCam &camera)
 {
-    Vector2 sizeScreenPos = Vector2(1.f, 1.f) * TILE_SIZE * camera.GetZoom();
+    if (!station)
+        return;
+
+    const Vector2 tileSize = Vector2(1.f, 1.f) * TILE_SIZE * camera.GetZoom();
 
     for (const auto &heightMap : station->tileMap)
     {
@@ -115,7 +116,7 @@ void DrawStationOverlays(std::shared_ptr<Station> station, const Texture2D &tile
                 {
                     Rectangle sourceRect = Rectangle(dTile.spriteOffset.x, dTile.spriteOffset.y, 1, 1) * TILE_SIZE;
                     Vector2 startPos = camera.WorldToScreen(ToVector2(tile->GetPosition() + dTile.offset));
-                    Rectangle destRect = Rectangle(startPos.x, startPos.y, sizeScreenPos.x, sizeScreenPos.y);
+                    Rectangle destRect = Rectangle(startPos.x, startPos.y, tileSize.x, tileSize.y);
 
                     DrawTexturePro(tileset, sourceRect, destRect, Vector2(), 0, WHITE);
                 }
@@ -124,7 +125,7 @@ void DrawStationOverlays(std::shared_ptr<Station> station, const Texture2D &tile
             if (auto door = tile->GetComponent<DoorComponent>())
             {
                 Vector2 startPos = camera.WorldToScreen(ToVector2(tile->GetPosition()));
-                Rectangle destRect = Vector2ToRect(startPos, startPos + sizeScreenPos);
+                Rectangle destRect = Vector2ToRect(startPos, tileSize);
                 Rectangle doorSourceRect = Rectangle(0, 7, 1, 1) * TILE_SIZE;
                 doorSourceRect.height = std::max(19.f * door->GetProgress(), 1.f);
 
@@ -149,8 +150,7 @@ void DrawStationOverlays(std::shared_ptr<Station> station, const Texture2D &tile
                     if (!powerConsumer->IsActive())
                     {
                         Vector2 startScreenPos = camera.WorldToScreen(ToVector2(tile->GetPosition()) + Vector2(.66f, 0.f));
-
-                        Rectangle destRect = Vector2ToRect(startScreenPos, startScreenPos + sizeScreenPos / 3.f);
+                        Rectangle destRect = Vector2ToRect(startScreenPos, tileSize / 3.f);
                         Rectangle sourceRect = Rectangle(4, 7, 1, 1) * TILE_SIZE;
 
                         DrawTexturePro(tileset, sourceRect, destRect, Vector2(), 0, Fade(YELLOW, .8f));
@@ -184,6 +184,32 @@ void DrawStationOverlays(std::shared_ptr<Station> station, const Texture2D &tile
                     }
                 }
             }
+        }
+    }
+}
+
+/**
+ * Draws the station's environmental hazards (such as fire).
+ *
+ * @param station         The station to draw the overlays of.
+ * @param fireSpritesheet A texture containing the fire animation spritesheet.
+ * @param camera          The PlayerCam used for converting coordinates.
+ */
+void DrawEnvironmentalHazards(std::shared_ptr<Station> station, const Texture2D &fireSpritesheet, const PlayerCam &camera)
+{
+    if (!station)
+        return;
+
+    const Vector2 tileSize = Vector2(1.f, 1.f) * TILE_SIZE * camera.GetZoom();
+
+    for (const auto &hazard : station->hazards)
+    {
+        if (const auto fire = std::dynamic_pointer_cast<const FireHazard>(hazard))
+        {
+            Vector2 startPos = camera.WorldToScreen(ToVector2(fire->position));
+            Rectangle sourceRect = Rectangle(GetEvenlySpacedIndex(GetTime(), 8), 0, 1, 1) * TILE_SIZE;
+
+            DrawTexturePro(fireSpritesheet, sourceRect, Vector2ToRect(startPos, tileSize), Vector2(), 0, WHITE);
         }
     }
 }
@@ -267,7 +293,7 @@ void DrawDragSelectBox(const PlayerCam &camera)
     switch (camera.GetDragType())
     {
     case PlayerCam::DragType::SELECT:
-        DrawRectangleLinesEx(Vector2ToRect(dragStart, dragEnd), 1.f, BLUE);
+        DrawRectangleLinesEx(Vector2ToBoundingBox(dragStart, dragEnd), 1.f, BLUE);
         break;
 
     case PlayerCam::DragType::POWER_CONNECT:
@@ -355,8 +381,7 @@ void DrawTooltip(const std::string &tooltip, const Vector2 &pos, const Font &fon
         tooltipPos.y = 0;
     }
 
-    Rectangle backgroundRect = Vector2ToRect(tooltipPos, tooltipPos + size);
-    DrawRectangleRec(backgroundRect, Fade(LIGHTGRAY, 0.7f));
+    DrawRectangleRec(Vector2ToRect(tooltipPos, size), Fade(LIGHTGRAY, 0.7f));
 
     // Draw the tooltip with the calculated position and padding
     for (int i = 0; i < lineCount; i++)

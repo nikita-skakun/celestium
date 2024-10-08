@@ -47,6 +47,7 @@ int main()
     SetExitKey(0);
 
     Texture2D tileset = LoadTexture("../assets/tilesets/station.png");
+    Texture2D fireSpritesheet = LoadTexture("../assets/tilesets/fire.png");
     Font font = LoadFontEx("../assets/fonts/Jersey25.ttf", DEFAULT_FONT_SIZE, NULL, 0);
 
     TileDefinitionRegistry::GetInstance().ParseTilesFromFile("../assets/definitions/tiles.yml");
@@ -93,6 +94,7 @@ int main()
         DrawTileGrid(camera);
         DrawStationTiles(station, tileset, camera);
         DrawStationOverlays(station, tileset, camera);
+        DrawEnvironmentalHazards(station, fireSpritesheet, camera);
         DrawCrew(timeSinceFixedUpdate, crewList, camera);
 
         if (camera.IsUiClear())
@@ -113,6 +115,7 @@ int main()
     CloseWindow();
 
     UnloadTexture(tileset);
+    UnloadTexture(fireSpritesheet);
     UnloadFont(font);
 
     LogMessage(LogLevel::INFO, "Clean-up Complete");

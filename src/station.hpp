@@ -1,5 +1,6 @@
 #pragma once
 #include "direction.hpp"
+#include "env_hazard.hpp"
 #include "room.hpp"
 #include <map>
 #include <unordered_map>
@@ -8,6 +9,7 @@ struct Station
 {
     std::unordered_map<Vector2Int, std::vector<std::shared_ptr<Tile>>> tileMap;
     std::vector<std::shared_ptr<Room>> rooms;
+    std::vector<std::shared_ptr<Hazard>> hazards;
 
 public:
     std::shared_ptr<Tile> GetTileAtPosition(const Vector2Int &pos, TileDef::Height height = TileDef::Height::NONE) const;

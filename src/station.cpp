@@ -81,6 +81,9 @@ std::shared_ptr<Station> CreateStation()
     PowerConnectorComponent::AddConnection(battery->GetComponent<PowerConnectorComponent>(), oxygenProducer2->GetComponent<PowerConnectorComponent>());
 
     station->UpdateSpriteOffsets();
+
+    station->hazards.push_back(std::make_shared<FireHazard>(Vector2Int(16, 0)));
+
     return station;
 }
 
