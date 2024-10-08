@@ -342,18 +342,19 @@ std::vector<std::shared_ptr<Tile>> Station::GetDecorativeTilesAtPosition(const V
     {
         for (const auto &tile : tilesAtPos.second)
         {
-            if (auto decorative = tile->GetComponent<DecorativeComponent>()) {
+            if (auto decorative = tile->GetComponent<DecorativeComponent>())
+            {
                 for (const auto &dTiles : decorative->GetDecorativeTiles())
                 {
-                    if (pos == tile->GetPosition() + dTiles.offset) {
+                    if (pos == tile->GetPosition() + dTiles.offset)
+                    {
                         decorativeTiles.push_back(tile);
                         continue;
-                    }                    
+                    }
                 }
-                
             }
         }
     }
-    
+
     return decorativeTiles;
 }
