@@ -66,9 +66,9 @@ void DrawStationTiles(std::shared_ptr<Station> station, const Texture2D &tileset
 
     Vector2 tileSize = Vector2(1.f, 1.f) * TILE_SIZE * camera.GetZoom();
 
-    for (const auto &heightMap : station->tileMap)
+    for (const auto &tilesAtPos : station->tileMap)
     {
-        for (const std::shared_ptr<Tile> &tile : heightMap.second)
+        for (const auto &tile : tilesAtPos.second)
         {
             Vector2 startPos = camera.WorldToScreen(ToVector2(tile->GetPosition()));
             Rectangle sourceRect = Rectangle(tile->GetSpriteOffset().x, tile->GetSpriteOffset().y, 1, 1) * TILE_SIZE;
@@ -106,9 +106,9 @@ void DrawStationOverlays(std::shared_ptr<Station> station, const Texture2D &tile
 
     const Vector2 tileSize = Vector2(1.f, 1.f) * TILE_SIZE * camera.GetZoom();
 
-    for (const auto &heightMap : station->tileMap)
+    for (const auto &tilesAtPos : station->tileMap)
     {
-        for (const std::shared_ptr<Tile> &tile : heightMap.second)
+        for (const auto &tile : tilesAtPos.second)
         {
             if (auto decorative = tile->GetComponent<DecorativeComponent>())
             {
@@ -206,10 +206,11 @@ void DrawEnvironmentalHazards(std::shared_ptr<Station> station, const Texture2D 
     {
         if (const auto fire = std::dynamic_pointer_cast<const FireHazard>(hazard))
         {
-            Vector2 startPos = camera.WorldToScreen(ToVector2(fire->position));
+            Vector2 fireSize = tileSize * fire->GetRoundedSize();
+            Vector2 startPos = camera.WorldToScreen(ToVector2(fire->GetPosition()) + Vector2(1.f, 1.f) * ((1.f - fire->GetRoundedSize()) / 2.f));
             Rectangle sourceRect = Rectangle(GetEvenlySpacedIndex(GetTime(), 8), 0, 1, 1) * TILE_SIZE;
 
-            DrawTexturePro(fireSpritesheet, sourceRect, Vector2ToRect(startPos, tileSize), Vector2(), 0, WHITE);
+            DrawTexturePro(fireSpritesheet, sourceRect, Vector2ToRect(startPos, fireSize), Vector2(), 0, WHITE);
         }
     }
 }

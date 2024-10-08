@@ -28,6 +28,7 @@ void FixedUpdate(std::shared_ptr<Station> station, std::vector<Crew> &crewList, 
             HandleCrewTasks(crewList);
             HandleCrewEnvironment(crewList);
             UpdateCrewCurrentTile(crewList, station);
+            UpdateEnvironmentalHazards(station);
             UpdateTiles(station);
 
             timeSinceFixedUpdate -= FIXED_DELTA_TIME;

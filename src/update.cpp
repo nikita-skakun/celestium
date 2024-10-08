@@ -244,9 +244,9 @@ void UpdateTiles(std::shared_ptr<Station> station)
     if (!station)
         return;
 
-    for (const auto &heightMap : station->tileMap)
+    for (const auto &tilesAtPos : station->tileMap)
     {
-        for (const std::shared_ptr<Tile> &tile : heightMap.second)
+        for (const auto &tile : tilesAtPos.second)
         {
             if (auto door = tile->GetComponent<DoorComponent>())
             {
@@ -307,18 +307,50 @@ void UpdateTiles(std::shared_ptr<Station> station)
     }
 }
 
+void UpdateEnvironmentalHazards(std::shared_ptr<Station> station)
+{
+    if (!station)
+        return;
+
+    for (int i = station->hazards.size() - 1; i >= 0; --i)
+    {
+        auto hazard = station->hazards.at(i);
+        if (auto fire = std::dynamic_pointer_cast<FireHazard>(hazard))
+        {
+            auto tile = station->GetTileWithComponentAtPosition<OxygenComponent>(fire->GetPosition());
+            if (!tile)
+            {
+                station->hazards.erase(station->hazards.begin() + i);
+                continue;
+            }
+
+            float oxygenToConsume = fire->GetOxygenConsumption() * FIXED_DELTA_TIME;
+            auto oxygen = tile->GetComponent<OxygenComponent>();
+            if (oxygen->GetOxygenLevel() < oxygenToConsume)
+            {
+                oxygen->SetOxygenLevel(0.f);
+                station->hazards.erase(station->hazards.begin() + i);
+                continue;
+            }
+
+            oxygen->SetOxygenLevel(oxygen->GetOxygenLevel() - oxygenToConsume);
+            fire->SetSize(fire->GetSize() + FireHazard::GROWTH_IF_FED * FIXED_DELTA_TIME);
+        }
+    }
+}
+
 void MouseDeleteExistingConnection(std::shared_ptr<Station> station, const PlayerCam &camera)
 {
-    if (!station || !IsMouseButtonPressed(MOUSE_BUTTON_RIGHT) || camera.GetOverlay() != PlayerCam::Overlay::POWER || !camera.IsUiClear())
+    if (!station || !IsMouseButtonPressed(MOUSE_BUTTON_RIGHT) || camera.GetOverlay() != PlayerCam::Overlay::POWER)
         return;
 
     Vector2 mousePos = GetMousePosition();
 
     const float threshold = std::max(POWER_CONNECTION_WIDTH * camera.GetZoom(), 2.f);
 
-    for (const auto &heightMap : station->tileMap)
+    for (const auto &tilesAtPos : station->tileMap)
     {
-        for (const std::shared_ptr<Tile> &tile : heightMap.second)
+        for (const auto &tile : tilesAtPos.second)
         {
             auto powerConnector = tile->GetComponent<PowerConnectorComponent>();
             if (!powerConnector)

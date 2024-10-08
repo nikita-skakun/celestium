@@ -82,16 +82,16 @@ std::shared_ptr<Station> CreateStation()
 
     station->UpdateSpriteOffsets();
 
-    station->hazards.push_back(std::make_shared<FireHazard>(Vector2Int(16, 0)));
+    station->hazards.push_back(std::make_shared<FireHazard>(Vector2Int(16, 0), FireHazard::SIZE_INCREMENT));
 
     return station;
 }
 
 void Station::UpdateSpriteOffsets() const
 {
-    for (const auto &heightMap : tileMap)
+    for (const auto &tilesAtPos : tileMap)
     {
-        for (const auto &tile : heightMap.second)
+        for (const auto &tile : tilesAtPos.second)
         {
             const Vector2Int &tilePos = tile->GetPosition();
             const std::string &tileId = tile->GetId();

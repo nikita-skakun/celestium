@@ -13,4 +13,5 @@ void HandleCrewTasks(std::vector<Crew> &crewList);
 void HandleCrewEnvironment(std::vector<Crew> &crewList);
 void UpdateCrewCurrentTile(std::vector<Crew> &crewList, std::shared_ptr<Station> station);
 void UpdateTiles(std::shared_ptr<Station> station);
+void UpdateEnvironmentalHazards(std::shared_ptr<Station> station);
 void MouseDeleteExistingConnection(std::shared_ptr<Station> station, const PlayerCam &camera);
