@@ -344,19 +344,18 @@ void UpdateEnvironmentalHazards(std::shared_ptr<Station> station)
                 std::vector<Direction> neighborDirections = {Direction::N, Direction::E, Direction::S, Direction::W};
                 for (int i = (int)neighborDirections.size() - 1; i >= 0; --i)
                 {
-                    Vector2Int neighborPos = hazard->GetPosition() + DirectionToVector2Int(neighborDirections[i]);
-                    bool neighborHasOxygen = station->GetTileWithComponentAtPosition<OxygenComponent>(neighborPos) != nullptr;
-                    bool neighborHasFire = station->GetTypeHazardsAtPosition<FireHazard>(neighborPos).size() > 0;
-                    if (!neighborHasOxygen || neighborHasFire)
+                    Vector2Int neighborPos = fire->GetPosition() + DirectionToVector2Int(neighborDirections[i]);
+                    if (!station->GetTileWithComponentAtPosition<OxygenComponent>(neighborPos))
                         neighborDirections.erase(neighborDirections.begin() + i);
                 }
 
                 if (neighborDirections.size() <= 0)
                     continue;
 
-                int directionSelected = RandomIntWithRange(0, (int)neighborDirections.size());
+                int directionSelected = RandomIntWithRange(0, (int)neighborDirections.size() - 1);
                 Vector2Int newFirePos = fire->GetPosition() + DirectionToVector2Int(neighborDirections[directionSelected]);
-                station->hazards.push_back(std::make_shared<FireHazard>(newFirePos, FireHazard::SIZE_INCREMENT));
+                if (station->GetTypeHazardsAtPosition<FireHazard>(newFirePos).empty())
+                    station->hazards.push_back(std::make_shared<FireHazard>(newFirePos, FireHazard::SIZE_INCREMENT));
             }
         }
     }

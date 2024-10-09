@@ -35,9 +35,9 @@ public:
 struct FireHazard : public Hazard
 {
     static constexpr float SIZE_INCREMENT = 1.f / 8.f;
-    static constexpr float OXYGEN_CONSUMPTION = 100.f;
+    static constexpr float OXYGEN_CONSUMPTION = 20.f;
     static constexpr float GROWTH_IF_FED = 1.f / 12.f;
-    static constexpr float SPREAD_CHANCE_PER_SECOND = .1f;
+    static constexpr float SPREAD_CHANCE_PER_SECOND = .2f;
 
     constexpr FireHazard(const Vector2Int &position, float size) : Hazard(position, size) {}
 
