@@ -29,3 +29,4 @@ constexpr float CREW_MOVE_SPEED = 2.f;
 constexpr float CREW_OXYGEN_MAX = 100.f;
 constexpr float CREW_OXYGEN_USE = 10.f;
 constexpr float CREW_OXYGEN_REFILL = 50.0f;
+constexpr float CREW_HEALTH_MAX = 10.f;

@@ -226,19 +226,20 @@ void DrawCrew(double timeSinceFixedUpdate, const std::vector<Crew> &crewList, co
 {
     for (const Crew &crew : crewList)
     {
-        Vector2 drawPosition = crew.position;
+        Vector2 drawPosition = crew.GetPosition();
+        auto &taskQueue = crew.GetReadOnlyTaskQueue();
 
-        if (!crew.taskQueue.empty() && crew.taskQueue.front()->GetType() == Task::Type::MOVE)
+        if (!taskQueue.empty() && taskQueue.front()->GetType() == Task::Type::MOVE)
         {
-            const std::shared_ptr<MoveTask> moveTask = std::dynamic_pointer_cast<MoveTask>(crew.taskQueue.front());
+            const std::shared_ptr<MoveTask> moveTask = std::dynamic_pointer_cast<MoveTask>(taskQueue.front());
 
             if (!moveTask->path.empty())
             {
-                DrawPath(moveTask->path, crew.position, camera);
+                DrawPath(moveTask->path, crew.GetPosition(), camera);
                 Vector2 nextPosition = ToVector2(moveTask->path.front());
 
                 const float moveDelta = timeSinceFixedUpdate * CREW_MOVE_SPEED;
-                const float distanceLeftSq = Vector2DistanceSq(crew.position, nextPosition) - moveDelta * moveDelta;
+                const float distanceLeftSq = Vector2DistanceSq(crew.GetPosition(), nextPosition) - moveDelta * moveDelta;
                 if (distanceLeftSq <= 0)
                 {
                     drawPosition = nextPosition;
@@ -252,7 +253,7 @@ void DrawCrew(double timeSinceFixedUpdate, const std::vector<Crew> &crewList, co
                 else
                 {
                     bool canPath = true;
-                    std::shared_ptr<Station> station = crew.currentTile->GetStation();
+                    std::shared_ptr<Station> station = crew.GetCurrentTile()->GetStation();
                     if (station)
                     {
                         if (auto doorTile = station->GetTileWithComponentAtPosition<DoorComponent>(moveTask->path.front()))
@@ -264,7 +265,7 @@ void DrawCrew(double timeSinceFixedUpdate, const std::vector<Crew> &crewList, co
                     }
 
                     if (canPath)
-                        drawPosition += Vector2Normalize(nextPosition - crew.position) * moveDelta;
+                        drawPosition += Vector2Normalize(nextPosition - crew.GetPosition()) * moveDelta;
                 }
             }
         }
@@ -274,7 +275,7 @@ void DrawCrew(double timeSinceFixedUpdate, const std::vector<Crew> &crewList, co
         if (camera.GetSelectedCrew().contains(&crew - &crewList[0]))
             DrawCircleV(crewScreenPos, (CREW_RADIUS + OUTLINE_SIZE) * camera.GetZoom(), OUTLINE_COLOR);
 
-        DrawCircleV(crewScreenPos, CREW_RADIUS * camera.GetZoom(), crew.isAlive ? crew.color : GRAY);
+        DrawCircleV(crewScreenPos, CREW_RADIUS * camera.GetZoom(), crew.IsAlive() ? crew.GetColor() : GRAY);
     }
 }
 
@@ -445,10 +446,10 @@ void DrawMainTooltip(const std::vector<Crew> &crewList, const PlayerCam &camera,
     if (camera.GetCrewHoverIndex() >= 0)
     {
         const Crew &crew = crewList[camera.GetCrewHoverIndex()];
-        hoverText += "Name: " + crew.name;
-        if (crew.isAlive)
+        hoverText += "Name: " + crew.GetName();
+        if (crew.IsAlive())
         {
-            hoverText += std::format("\nOxygen: {:.2f}", crew.oxygen);
+            hoverText += std::format("\nOxygen: {:.2f}", crew.GetOxygen());
         }
         else
         {

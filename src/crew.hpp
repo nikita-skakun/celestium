@@ -4,15 +4,31 @@
 
 struct Crew
 {
+protected:
     std::string name;
     Vector2 position;
     Color color;
     std::vector<std::shared_ptr<Task>> taskQueue;
     float oxygen;
+    float health;
     bool isAlive;
     std::shared_ptr<Tile> currentTile;
 
-    constexpr Crew(const std::string &n, const Vector2 &p, const Color &c) : name(n), position(p), color(c), oxygen(CREW_OXYGEN_MAX), isAlive(true) {}
+public:
+    constexpr Crew(const std::string &n, const Vector2 &p, const Color &c)
+        : name(n), position(p), color(c), oxygen(CREW_OXYGEN_MAX), health(CREW_HEALTH_MAX), isAlive(true) {}
+
+    constexpr const std::string &GetName() const { return name; }
+    constexpr const Vector2 &GetPosition() const { return position; }
+    constexpr void SetPosition(const Vector2 &newPosition) { position = newPosition; }
+    constexpr Color GetColor() const { return color; }
+    constexpr const std::vector<std::shared_ptr<Task>> &GetReadOnlyTaskQueue() const { return taskQueue; }
+    constexpr std::vector<std::shared_ptr<Task>> &GetTaskQueue() { return taskQueue; }    
+    constexpr float GetOxygen() const { return oxygen; }
+    constexpr float GetHealth() const { return health; }
+    constexpr bool IsAlive() const { return isAlive; }
+    std::shared_ptr<Tile> GetCurrentTile() const { return currentTile; }
+    constexpr void SetCurrentTile(const std::shared_ptr<Tile> &tile) { currentTile = tile; }
 
     constexpr void ConsumeOxygen(float deltaTime)
     {
@@ -36,10 +52,12 @@ struct Crew
         }
     }
 
-    constexpr bool CanPathInSpace() const
+    constexpr void SetHealth(float newHealth)
     {
-        // Later could be true if they are wearing a spacesuit
-        return false;
+        health = std::clamp(newHealth, 0.f, CREW_HEALTH_MAX);
+
+        if (health <= 0)
+            Die();
     }
 
     constexpr void Die()
@@ -47,5 +65,6 @@ struct Crew
         isAlive = false;
         taskQueue.clear();
         oxygen = 0;
+        health = 0;
     }
 };
