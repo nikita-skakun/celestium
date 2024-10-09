@@ -81,14 +81,17 @@ std::shared_ptr<Station> CreateStation()
     PowerConnectorComponent::AddConnection(battery->GetComponent<PowerConnectorComponent>(), oxygenProducer2->GetComponent<PowerConnectorComponent>());
 
     station->UpdateSpriteOffsets();
+
+    station->hazards.push_back(std::make_shared<FireHazard>(Vector2Int(12, 0), FireHazard::SIZE_INCREMENT));
+
     return station;
 }
 
 void Station::UpdateSpriteOffsets() const
 {
-    for (const auto &heightMap : tileMap)
+    for (const auto &tilesAtPos : tileMap)
     {
-        for (const auto &tile : heightMap.second)
+        for (const auto &tile : tilesAtPos.second)
         {
             const Vector2Int &tilePos = tile->GetPosition();
             const std::string &tileId = tile->GetId();
@@ -298,6 +301,19 @@ bool Station::CanPath(const Vector2Int &pos) const
     return true;
 }
 
+std::vector<std::shared_ptr<Hazard>> Station::GetHazardsAtPosition(const Vector2Int &pos) const
+{
+    std::vector<std::shared_ptr<Hazard>> foundHazards;
+
+    for (const auto &hazard : hazards)
+    {
+        if (hazard->GetPosition() == pos)
+            foundHazards.push_back(hazard);
+    }
+
+    return foundHazards;
+}
+
 std::shared_ptr<Tile> Station::GetTileAtPosition(const Vector2Int &pos, TileDef::Height height) const
 {
     auto posIt = tileMap.find(pos);
@@ -342,18 +358,19 @@ std::vector<std::shared_ptr<Tile>> Station::GetDecorativeTilesAtPosition(const V
     {
         for (const auto &tile : tilesAtPos.second)
         {
-            if (auto decorative = tile->GetComponent<DecorativeComponent>()) {
+            if (auto decorative = tile->GetComponent<DecorativeComponent>())
+            {
                 for (const auto &dTiles : decorative->GetDecorativeTiles())
                 {
-                    if (pos == tile->GetPosition() + dTiles.offset) {
+                    if (pos == tile->GetPosition() + dTiles.offset)
+                    {
                         decorativeTiles.push_back(tile);
                         continue;
-                    }                    
+                    }
                 }
-                
             }
         }
     }
-    
+
     return decorativeTiles;
 }

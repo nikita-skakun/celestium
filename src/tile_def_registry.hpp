@@ -80,6 +80,9 @@ private:
         case Component::Type::DOOR:
             return std::make_shared<DoorComponent>(GetValue(node, "movingSpeed", 0.f));
 
+        case Component::Type::DURABILITY:
+            return std::make_shared<DurabilityComponent>(GetValue(node, "hitpoints", 1.f));
+
         default:
             throw std::runtime_error(std::format("Parsing of component type failed: {}", magic_enum::enum_name(type)));
             return nullptr;

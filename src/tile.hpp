@@ -50,9 +50,7 @@ public:
         for (const auto &component : components)
         {
             if (auto castedComponent = std::dynamic_pointer_cast<T>(component))
-            {
                 return castedComponent;
-            }
         }
         return nullptr;
     }
@@ -63,9 +61,7 @@ public:
         for (const auto &component : components)
         {
             if (std::dynamic_pointer_cast<T>(component))
-            {
                 return true;
-            }
         }
         return false;
     }
@@ -74,9 +70,7 @@ public:
     constexpr std::shared_ptr<T> AddComponent(Args &&...args)
     {
         if (auto existingComponent = GetComponent<T>())
-        {
             return existingComponent;
-        }
 
         auto newComponent = std::make_shared<T>(std::forward<Args>(args)...);
         components.insert(newComponent);

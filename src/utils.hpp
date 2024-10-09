@@ -12,6 +12,40 @@
 
 using namespace magic_enum::bitwise_operators;
 
+// Utility functions for numbers
+constexpr int GetEvenlySpacedIndex(double value, int index) noexcept
+{
+    return static_cast<int>((value - std::floor(value)) * index);
+}
+
+inline int RandomIntWithRange(int min, int max) noexcept
+{
+    if (max <= min)
+        return min;
+
+    static std::random_device rd; // TODO: Switch to shared seed for multiplayer
+    static std::mt19937 generator(rd());
+    std::uniform_int_distribution<int> distribution(min, max);
+
+    return distribution(generator);
+}
+
+/**
+ * @brief Determines if an event occurs based on a chance per second and delta time.
+ *
+ * @param chancePerSecond The probability of the event occurring per second. (Must be less than 1)
+ * @param deltaTime The time elapsed since the last check, in seconds.
+ * @return true if the event occurs, false otherwise.
+ */
+inline bool CheckIfEventHappens(double chancePerSecond, double deltaTime) noexcept
+{
+    static std::random_device rd; // TODO: Switch to shared seed for multiplayer
+    static std::mt19937 gen(rd());
+    static std::uniform_real_distribution<> dis(0.0, 1.0);
+
+    return dis(gen) < 1 - std::pow(1 - chancePerSecond, deltaTime);
+}
+
 // Vector2 operator overloads
 constexpr Vector2 operator+(const Vector2 &a, const Vector2 &b) noexcept
 {
@@ -244,11 +278,16 @@ constexpr Rectangle &operator*=(Rectangle &a, float b) noexcept
 }
 
 // Utility functions for Rectangle
-constexpr Rectangle Vector2ToRect(const Vector2 &a, const Vector2 &b) noexcept
+constexpr Rectangle Vector2ToBoundingBox(const Vector2 &a, const Vector2 &b) noexcept
 {
     float startX = std::min(a.x, b.x);
     float startY = std::min(a.y, b.y);
     return Rectangle(startX, startY, std::max(a.x, b.x) - startX, std::max(a.y, b.y) - startY);
+}
+
+constexpr Rectangle Vector2ToRect(const Vector2 &pos, const Vector2 &size) noexcept
+{
+    return Rectangle(pos.x, pos.y, size.x, size.y);
 }
 
 // Utility functions for Line

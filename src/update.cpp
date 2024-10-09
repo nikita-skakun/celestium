@@ -8,7 +8,7 @@ void HandleCrewHover(const std::vector<Crew> &crewList, PlayerCam &camera)
     camera.SetCrewHoverIndex(-1);
     for (int i = crewList.size() - 1; i >= 0; --i)
     {
-        if (Vector2DistanceSq(worldMousePos, crewList[i].position) <= crewSizeSq)
+        if (Vector2DistanceSq(worldMousePos, crewList[i].GetPosition()) <= crewSizeSq)
         {
             camera.SetCrewHoverIndex(i);
             break;
@@ -85,7 +85,7 @@ void HandleCrewSelection(const std::vector<Crew> &crewList, PlayerCam &camera)
         {
             for (std::size_t i = 0; i < crewList.size(); i++)
             {
-                Vector2 crewPos = crewList[i].position + Vector2(.5f, .5f);
+                Vector2 crewPos = crewList[i].GetPosition() + Vector2(.5f, .5f);
                 if (IsVector2WithinBounds(crewPos, camera.GetDragStart(), camera.GetDragEnd()))
                 {
                     camera.AddSelectedCrew(i);
@@ -108,13 +108,13 @@ void AssignCrewTasks(std::vector<Crew> &crewList, const PlayerCam &camera)
         for (int crewId : camera.GetSelectedCrew())
         {
             Crew &crew = crewList[crewId];
-            if (crew.isAlive && crew.currentTile)
+            if (crew.IsAlive() && crew.GetCurrentTile())
             {
                 if (!IsKeyDown(KEY_LEFT_SHIFT))
-                    crew.taskQueue.clear();
+                    crew.GetTaskQueue().clear();
 
                 // Modify this to be adaptive to the selected tile (ie. move, operate, build)
-                crew.taskQueue.push_back(std::make_shared<MoveTask>(MoveTask(worldPos)));
+                crew.GetTaskQueue().push_back(std::make_shared<MoveTask>(MoveTask(worldPos)));
             }
         }
     }
@@ -124,27 +124,27 @@ void HandleCrewTasks(std::vector<Crew> &crewList)
 {
     for (Crew &crew : crewList)
     {
-        if (crew.taskQueue.empty() || !crew.isAlive)
+        if (crew.GetTaskQueue().empty() || !crew.IsAlive())
             continue;
 
-        std::shared_ptr<Task> task = crew.taskQueue[0];
+        std::shared_ptr<Task> task = crew.GetTaskQueue()[0];
         switch (task->GetType())
         {
         case Task::Type::MOVE:
         {
             std::shared_ptr<MoveTask> moveTask = std::dynamic_pointer_cast<MoveTask>(task);
-            std::shared_ptr<Station> station = crew.currentTile->GetStation();
+            std::shared_ptr<Station> station = crew.GetCurrentTile()->GetStation();
 
-            Vector2Int floorCrewPos = ToVector2Int(crew.position);
+            Vector2Int floorCrewPos = ToVector2Int(crew.GetPosition());
             if (moveTask->path.empty())
             {
                 moveTask->path = AStar(floorCrewPos, moveTask->targetPosition, station);
 
                 if (moveTask->path.size() <= 0)
                 {
-                    if (ToVector2(moveTask->targetPosition) == crew.position)
+                    if (ToVector2(moveTask->targetPosition) == crew.GetPosition())
                     {
-                        crew.taskQueue.erase(crew.taskQueue.begin());
+                        crew.GetTaskQueue().erase(crew.GetTaskQueue().begin());
                         continue;
                     }
 
@@ -156,19 +156,19 @@ void HandleCrewTasks(std::vector<Crew> &crewList)
 
             constexpr float moveDelta = CREW_MOVE_SPEED * FIXED_DELTA_TIME;
             const Vector2 stepPos = ToVector2(moveTask->path.front());
-            const float distanceLeftSq = Vector2DistanceSq(crew.position, stepPos) - moveDelta * moveDelta;
+            const float distanceLeftSq = Vector2DistanceSq(crew.GetPosition(), stepPos) - moveDelta * moveDelta;
             float distanceToTravel = moveDelta;
             if (distanceLeftSq <= 0)
             {
                 if (auto doorTile = station->GetTileWithComponentAtPosition<DoorComponent>(floorCrewPos))
                     doorTile->GetComponent<DoorComponent>()->SetMovingState(DoorComponent::MovingState::IDLE);
 
-                crew.position = stepPos;
+                crew.SetPosition(stepPos);
                 moveTask->path.pop_front();
 
                 if (moveTask->path.empty())
                 {
-                    crew.taskQueue.erase(crew.taskQueue.begin());
+                    crew.GetTaskQueue().erase(crew.GetTaskQueue().begin());
                     continue;
                 }
 
@@ -193,7 +193,7 @@ void HandleCrewTasks(std::vector<Crew> &crewList)
                 }
             }
 
-            crew.position += Vector2Normalize(stepPos - crew.position) * distanceToTravel;
+            crew.SetPosition(crew.GetPosition() + Vector2Normalize(stepPos - crew.GetPosition()) * distanceToTravel);
             break;
         }
         default:
@@ -206,15 +206,19 @@ void HandleCrewEnvironment(std::vector<Crew> &crewList)
 {
     for (Crew &crew : crewList)
     {
-        if (crew.isAlive)
+        if (!crew.IsAlive())
+            continue;
+
+        crew.ConsumeOxygen(FIXED_DELTA_TIME);
+        if (auto tile = crew.GetCurrentTile())
         {
-            crew.ConsumeOxygen(FIXED_DELTA_TIME);
-            if (crew.currentTile)
+            if (auto oxygen = tile->GetComponent<OxygenComponent>())
+                crew.RefillOxygen(FIXED_DELTA_TIME, oxygen->GetOxygenLevel());
+
+            auto hazards = tile->GetStation()->GetHazardsAtPosition(tile->GetPosition());
+            for (const auto &hazard : hazards)
             {
-                if (auto oxygen = crew.currentTile->GetComponent<OxygenComponent>())
-                {
-                    crew.RefillOxygen(FIXED_DELTA_TIME, oxygen->GetOxygenLevel());
-                }
+                hazard->EffectCrew(crew, FIXED_DELTA_TIME);
             }
         }
     }
@@ -227,15 +231,15 @@ void UpdateCrewCurrentTile(std::vector<Crew> &crewList, std::shared_ptr<Station>
 
     for (Crew &crew : crewList)
     {
-        if (!crew.isAlive)
+        if (!crew.IsAlive())
             continue;
 
-        Vector2Int floorCrewPos = ToVector2Int(crew.position);
+        Vector2Int floorCrewPos = ToVector2Int(crew.GetPosition());
 
-        if (crew.currentTile && crew.currentTile->GetPosition() == floorCrewPos)
+        if (crew.GetCurrentTile() && crew.GetCurrentTile()->GetPosition() == floorCrewPos)
             continue;
 
-        crew.currentTile = station->GetTileAtPosition(floorCrewPos, TileDef::Height::FLOOR);
+        crew.SetCurrentTile(station->GetTileAtPosition(floorCrewPos, TileDef::Height::FLOOR));
     }
 }
 
@@ -244,9 +248,9 @@ void UpdateTiles(std::shared_ptr<Station> station)
     if (!station)
         return;
 
-    for (const auto &heightMap : station->tileMap)
+    for (const auto &tilesAtPos : station->tileMap)
     {
-        for (const std::shared_ptr<Tile> &tile : heightMap.second)
+        for (const auto &tile : tilesAtPos.second)
         {
             if (auto door = tile->GetComponent<DoorComponent>())
             {
@@ -307,18 +311,85 @@ void UpdateTiles(std::shared_ptr<Station> station)
     }
 }
 
+void UpdateEnvironmentalHazards(std::shared_ptr<Station> station)
+{
+    if (!station)
+        return;
+
+    for (int i = station->hazards.size() - 1; i >= 0; --i)
+    {
+        auto hazard = station->hazards.at(i);
+        if (auto fire = std::dynamic_pointer_cast<FireHazard>(hazard))
+        {
+            auto tileWithOxygen = station->GetTileWithComponentAtPosition<OxygenComponent>(fire->GetPosition());
+            if (!tileWithOxygen)
+            {
+                station->hazards.erase(station->hazards.begin() + i);
+                continue;
+            }
+
+            auto tilesWithDurability = station->GetTilesWithComponentAtPosition<DurabilityComponent>(fire->GetPosition());
+            if (!tilesWithDurability.empty())
+            {
+                for (auto &tileWithDurability : tilesWithDurability)
+                {
+                    auto durability = tileWithDurability->GetComponent<DurabilityComponent>();
+                    durability->SetHitpoints(durability->GetHitpoints() - FireHazard::DAMAGE_PER_SECOND * FIXED_DELTA_TIME);
+                }
+            }
+
+            auto oxygen = tileWithOxygen->GetComponent<OxygenComponent>();
+            if (oxygen->GetOxygenLevel() < fire->GetOxygenConsumption() * FIXED_DELTA_TIME * 2.f)
+                fire->SetSize(fire->GetSize() / 3.f * 2.f);
+
+            float oxygenToConsume = fire->GetOxygenConsumption() * FIXED_DELTA_TIME;
+            if (oxygen->GetOxygenLevel() < oxygenToConsume)
+            {
+                oxygen->SetOxygenLevel(0.f);
+                station->hazards.erase(station->hazards.begin() + i);
+                continue;
+            }
+
+            oxygen->SetOxygenLevel(oxygen->GetOxygenLevel() - oxygenToConsume);
+            fire->SetSize(fire->GetSize() + FireHazard::GROWTH_IF_FED_PER_SECOND * FIXED_DELTA_TIME);
+
+            bool tileIsSolid = station->GetTileWithComponentAtPosition<SolidComponent>(fire->GetPosition()) != nullptr;
+            if (!tileIsSolid && CheckIfEventHappens(fire->SPREAD_CHANCE_PER_SECOND, FIXED_DELTA_TIME))
+            {
+                std::vector<Direction> neighborDirections = {Direction::N, Direction::E, Direction::S, Direction::W};
+                std::vector<Vector2Int> possibleOffsets;
+                for (const auto &direction : neighborDirections)
+                {
+                    Vector2Int offset = DirectionToVector2Int(direction);
+                    Vector2Int neighborPos = fire->GetPosition() + offset;
+                    if (station->GetTileWithComponentAtPosition<OxygenComponent>(neighborPos) != nullptr &&
+                        station->GetTypeHazardsAtPosition<FireHazard>(neighborPos).empty())
+                        possibleOffsets.push_back(offset);
+                }
+
+                if (possibleOffsets.empty())
+                    continue;
+
+                int directionSelected = RandomIntWithRange(0, (int)possibleOffsets.size() - 1);
+                Vector2Int newFirePos = fire->GetPosition() + possibleOffsets[directionSelected];
+                station->hazards.push_back(std::make_shared<FireHazard>(newFirePos, FireHazard::SIZE_INCREMENT));
+            }
+        }
+    }
+}
+
 void MouseDeleteExistingConnection(std::shared_ptr<Station> station, const PlayerCam &camera)
 {
-    if (!station || !IsMouseButtonPressed(MOUSE_BUTTON_RIGHT) || camera.GetOverlay() != PlayerCam::Overlay::POWER || !camera.IsUiClear())
+    if (!station || !IsMouseButtonPressed(MOUSE_BUTTON_RIGHT) || camera.GetOverlay() != PlayerCam::Overlay::POWER)
         return;
 
     Vector2 mousePos = GetMousePosition();
 
     const float threshold = std::max(POWER_CONNECTION_WIDTH * camera.GetZoom(), 2.f);
 
-    for (const auto &heightMap : station->tileMap)
+    for (const auto &tilesAtPos : station->tileMap)
     {
-        for (const std::shared_ptr<Tile> &tile : heightMap.second)
+        for (const auto &tile : tilesAtPos.second)
         {
             auto powerConnector = tile->GetComponent<PowerConnectorComponent>();
             if (!powerConnector)

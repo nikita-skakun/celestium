@@ -1,5 +1,6 @@
 #pragma once
 #include "direction.hpp"
+#include "env_hazard.hpp"
 #include "room.hpp"
 #include <map>
 #include <unordered_map>
@@ -8,6 +9,7 @@ struct Station
 {
     std::unordered_map<Vector2Int, std::vector<std::shared_ptr<Tile>>> tileMap;
     std::vector<std::shared_ptr<Room>> rooms;
+    std::vector<std::shared_ptr<Hazard>> hazards;
 
 public:
     std::shared_ptr<Tile> GetTileAtPosition(const Vector2Int &pos, TileDef::Height height = TileDef::Height::NONE) const;
@@ -20,6 +22,21 @@ public:
     constexpr bool CheckAdjacentTile(const Vector2Int &tilePos, const std::string &tileId, Direction direction) const
     {
         return GetTileIdAtPosition(tilePos + DirectionToVector2Int(direction)) == tileId;
+    }
+
+    std::vector<std::shared_ptr<Hazard>> GetHazardsAtPosition(const Vector2Int &pos) const;
+
+    template <typename T>
+    std::vector<std::shared_ptr<Hazard>> GetTypeHazardsAtPosition(const Vector2Int &pos) const
+    {
+        auto hazardsAtPos = GetHazardsAtPosition(pos);
+        std::vector<std::shared_ptr<Hazard>> foundHazards;
+        for (const auto &hazard : hazardsAtPos)
+        {
+            if (std::dynamic_pointer_cast<T>(hazard))
+                foundHazards.push_back(hazard);
+        }
+        return foundHazards;
     }
 
     template <typename T>

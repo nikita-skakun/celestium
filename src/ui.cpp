@@ -64,31 +64,29 @@ void DrawStationTiles(std::shared_ptr<Station> station, const Texture2D &tileset
     if (!station)
         return;
 
-    Vector2 sizeScreenPos = Vector2(1.f, 1.f) * TILE_SIZE * camera.GetZoom();
+    Vector2 tileSize = Vector2(1.f, 1.f) * TILE_SIZE * camera.GetZoom();
 
-    for (const auto &heightMap : station->tileMap)
+    for (const auto &tilesAtPos : station->tileMap)
     {
-        for (const std::shared_ptr<Tile> &tile : heightMap.second)
+        for (const auto &tile : tilesAtPos.second)
         {
             Vector2 startPos = camera.WorldToScreen(ToVector2(tile->GetPosition()));
-
-            Rectangle destRect = Vector2ToRect(startPos, startPos + sizeScreenPos);
             Rectangle sourceRect = Rectangle(tile->GetSpriteOffset().x, tile->GetSpriteOffset().y, 1, 1) * TILE_SIZE;
 
-            DrawTexturePro(tileset, sourceRect, destRect, Vector2(), 0, WHITE);
+            DrawTexturePro(tileset, sourceRect, Vector2ToRect(startPos, tileSize), Vector2(), 0, WHITE);
 
             if (camera.GetOverlay() == PlayerCam::Overlay::OXYGEN)
             {
                 if (auto oxygen = tile->GetComponent<OxygenComponent>())
                 {
                     Color color = Color(50, 150, 255, oxygen->GetOxygenLevel() / TILE_OXYGEN_MAX * 255 * .8f);
-                    DrawRectangleV(startPos, sizeScreenPos, color);
+                    DrawRectangleV(startPos, tileSize, color);
                 }
             }
 
             if (camera.GetOverlay() == PlayerCam::Overlay::WALL && tile->HasComponent<SolidComponent>())
             {
-                DrawRectangleV(startPos, sizeScreenPos, Color(255, 0, 0, 64));
+                DrawRectangleV(startPos, tileSize, Color(255, 0, 0, 64));
             }
         }
     }
@@ -103,11 +101,14 @@ void DrawStationTiles(std::shared_ptr<Station> station, const Texture2D &tileset
  */
 void DrawStationOverlays(std::shared_ptr<Station> station, const Texture2D &tileset, const PlayerCam &camera)
 {
-    Vector2 sizeScreenPos = Vector2(1.f, 1.f) * TILE_SIZE * camera.GetZoom();
+    if (!station)
+        return;
 
-    for (const auto &heightMap : station->tileMap)
+    const Vector2 tileSize = Vector2(1.f, 1.f) * TILE_SIZE * camera.GetZoom();
+
+    for (const auto &tilesAtPos : station->tileMap)
     {
-        for (const std::shared_ptr<Tile> &tile : heightMap.second)
+        for (const auto &tile : tilesAtPos.second)
         {
             if (auto decorative = tile->GetComponent<DecorativeComponent>())
             {
@@ -115,7 +116,7 @@ void DrawStationOverlays(std::shared_ptr<Station> station, const Texture2D &tile
                 {
                     Rectangle sourceRect = Rectangle(dTile.spriteOffset.x, dTile.spriteOffset.y, 1, 1) * TILE_SIZE;
                     Vector2 startPos = camera.WorldToScreen(ToVector2(tile->GetPosition() + dTile.offset));
-                    Rectangle destRect = Rectangle(startPos.x, startPos.y, sizeScreenPos.x, sizeScreenPos.y);
+                    Rectangle destRect = Rectangle(startPos.x, startPos.y, tileSize.x, tileSize.y);
 
                     DrawTexturePro(tileset, sourceRect, destRect, Vector2(), 0, WHITE);
                 }
@@ -124,7 +125,7 @@ void DrawStationOverlays(std::shared_ptr<Station> station, const Texture2D &tile
             if (auto door = tile->GetComponent<DoorComponent>())
             {
                 Vector2 startPos = camera.WorldToScreen(ToVector2(tile->GetPosition()));
-                Rectangle destRect = Vector2ToRect(startPos, startPos + sizeScreenPos);
+                Rectangle destRect = Vector2ToRect(startPos, tileSize);
                 Rectangle doorSourceRect = Rectangle(0, 7, 1, 1) * TILE_SIZE;
                 doorSourceRect.height = std::max(19.f * door->GetProgress(), 1.f);
 
@@ -149,8 +150,7 @@ void DrawStationOverlays(std::shared_ptr<Station> station, const Texture2D &tile
                     if (!powerConsumer->IsActive())
                     {
                         Vector2 startScreenPos = camera.WorldToScreen(ToVector2(tile->GetPosition()) + Vector2(.66f, 0.f));
-
-                        Rectangle destRect = Vector2ToRect(startScreenPos, startScreenPos + sizeScreenPos / 3.f);
+                        Rectangle destRect = Vector2ToRect(startScreenPos, tileSize / 3.f);
                         Rectangle sourceRect = Rectangle(4, 7, 1, 1) * TILE_SIZE;
 
                         DrawTexturePro(tileset, sourceRect, destRect, Vector2(), 0, Fade(YELLOW, .8f));
@@ -189,6 +189,33 @@ void DrawStationOverlays(std::shared_ptr<Station> station, const Texture2D &tile
 }
 
 /**
+ * Draws the station's environmental hazards (such as fire).
+ *
+ * @param station         The station to draw the overlays of.
+ * @param fireSpritesheet A texture containing the fire animation spritesheet.
+ * @param camera          The PlayerCam used for converting coordinates.
+ */
+void DrawEnvironmentalHazards(std::shared_ptr<Station> station, const Texture2D &fireSpritesheet, const PlayerCam &camera)
+{
+    if (!station)
+        return;
+
+    const Vector2 tileSize = Vector2(1.f, 1.f) * TILE_SIZE * camera.GetZoom();
+
+    for (const auto &hazard : station->hazards)
+    {
+        if (const auto fire = std::dynamic_pointer_cast<const FireHazard>(hazard))
+        {
+            Vector2 fireSize = tileSize * fire->GetRoundedSize();
+            Vector2 startPos = camera.WorldToScreen(ToVector2(fire->GetPosition()) + Vector2(1.f, 1.f) * ((1.f - fire->GetRoundedSize()) / 2.f));
+            Rectangle sourceRect = Rectangle(GetEvenlySpacedIndex(GetTime(), 8), 0, 1, 1) * TILE_SIZE;
+
+            DrawTexturePro(fireSpritesheet, sourceRect, Vector2ToRect(startPos, fireSize), Vector2(), 0, WHITE);
+        }
+    }
+}
+
+/**
  * Draws the crew members on the screen, accounting for their movement.
  *
  * @param timeSinceFixedUpdate The elapsed time since the last fixed update.
@@ -199,19 +226,20 @@ void DrawCrew(double timeSinceFixedUpdate, const std::vector<Crew> &crewList, co
 {
     for (const Crew &crew : crewList)
     {
-        Vector2 drawPosition = crew.position;
+        Vector2 drawPosition = crew.GetPosition();
+        auto &taskQueue = crew.GetReadOnlyTaskQueue();
 
-        if (!crew.taskQueue.empty() && crew.taskQueue.front()->GetType() == Task::Type::MOVE)
+        if (!taskQueue.empty() && taskQueue.front()->GetType() == Task::Type::MOVE)
         {
-            const std::shared_ptr<MoveTask> moveTask = std::dynamic_pointer_cast<MoveTask>(crew.taskQueue.front());
+            const std::shared_ptr<MoveTask> moveTask = std::dynamic_pointer_cast<MoveTask>(taskQueue.front());
 
             if (!moveTask->path.empty())
             {
-                DrawPath(moveTask->path, crew.position, camera);
+                DrawPath(moveTask->path, crew.GetPosition(), camera);
                 Vector2 nextPosition = ToVector2(moveTask->path.front());
 
                 const float moveDelta = timeSinceFixedUpdate * CREW_MOVE_SPEED;
-                const float distanceLeftSq = Vector2DistanceSq(crew.position, nextPosition) - moveDelta * moveDelta;
+                const float distanceLeftSq = Vector2DistanceSq(crew.GetPosition(), nextPosition) - moveDelta * moveDelta;
                 if (distanceLeftSq <= 0)
                 {
                     drawPosition = nextPosition;
@@ -225,7 +253,7 @@ void DrawCrew(double timeSinceFixedUpdate, const std::vector<Crew> &crewList, co
                 else
                 {
                     bool canPath = true;
-                    std::shared_ptr<Station> station = crew.currentTile->GetStation();
+                    std::shared_ptr<Station> station = crew.GetCurrentTile()->GetStation();
                     if (station)
                     {
                         if (auto doorTile = station->GetTileWithComponentAtPosition<DoorComponent>(moveTask->path.front()))
@@ -237,7 +265,7 @@ void DrawCrew(double timeSinceFixedUpdate, const std::vector<Crew> &crewList, co
                     }
 
                     if (canPath)
-                        drawPosition += Vector2Normalize(nextPosition - crew.position) * moveDelta;
+                        drawPosition += Vector2Normalize(nextPosition - crew.GetPosition()) * moveDelta;
                 }
             }
         }
@@ -247,7 +275,7 @@ void DrawCrew(double timeSinceFixedUpdate, const std::vector<Crew> &crewList, co
         if (camera.GetSelectedCrew().contains(&crew - &crewList[0]))
             DrawCircleV(crewScreenPos, (CREW_RADIUS + OUTLINE_SIZE) * camera.GetZoom(), OUTLINE_COLOR);
 
-        DrawCircleV(crewScreenPos, CREW_RADIUS * camera.GetZoom(), crew.isAlive ? crew.color : GRAY);
+        DrawCircleV(crewScreenPos, CREW_RADIUS * camera.GetZoom(), crew.IsAlive() ? crew.GetColor() : GRAY);
     }
 }
 
@@ -267,7 +295,7 @@ void DrawDragSelectBox(const PlayerCam &camera)
     switch (camera.GetDragType())
     {
     case PlayerCam::DragType::SELECT:
-        DrawRectangleLinesEx(Vector2ToRect(dragStart, dragEnd), 1.f, BLUE);
+        DrawRectangleLinesEx(Vector2ToBoundingBox(dragStart, dragEnd), 1.f, BLUE);
         break;
 
     case PlayerCam::DragType::POWER_CONNECT:
@@ -355,8 +383,7 @@ void DrawTooltip(const std::string &tooltip, const Vector2 &pos, const Font &fon
         tooltipPos.y = 0;
     }
 
-    Rectangle backgroundRect = Vector2ToRect(tooltipPos, tooltipPos + size);
-    DrawRectangleRec(backgroundRect, Fade(LIGHTGRAY, 0.7f));
+    DrawRectangleRec(Vector2ToRect(tooltipPos, size), Fade(LIGHTGRAY, 0.7f));
 
     // Draw the tooltip with the calculated position and padding
     for (int i = 0; i < lineCount; i++)
@@ -369,6 +396,10 @@ std::string GetTileInfo(std::shared_ptr<Tile> tile)
 {
     std::string tileInfo = " - " + tile->GetName();
 
+    if (auto durability = tile->GetComponent<DurabilityComponent>())
+    {
+        tileInfo += std::format("\n   + HP: {:.1f} / {:.1f}", durability->GetHitpoints(), durability->GetMaxHitpoints());
+    }
     if (auto door = tile->GetComponent<DoorComponent>())
     {
         tileInfo += std::format("\n   + {}", door->IsOpen() ? "Open" : "Closed");
@@ -390,6 +421,18 @@ std::string GetTileInfo(std::shared_ptr<Tile> tile)
     return tileInfo;
 }
 
+std::string GetHazardInfo(std::shared_ptr<Hazard> hazard)
+{
+    std::string hazardInfo = " - " + hazard->GetName();
+
+    if (auto fire = std::dynamic_pointer_cast<const FireHazard>(hazard))
+    {
+        hazardInfo += std::format("\n   + Size: {:.0f}", fire->GetRoundedSize() / FireHazard::SIZE_INCREMENT);
+    }
+
+    return hazardInfo;
+}
+
 /**
  * Draws a tooltip about the crew member or station tile under the mouse cursor.
  *
@@ -407,14 +450,15 @@ void DrawMainTooltip(const std::vector<Crew> &crewList, const PlayerCam &camera,
     if (camera.GetCrewHoverIndex() >= 0)
     {
         const Crew &crew = crewList[camera.GetCrewHoverIndex()];
-        hoverText += "Name: " + crew.name;
-        if (crew.isAlive)
+        hoverText += " - " + crew.GetName();
+        if (crew.IsAlive())
         {
-            hoverText += std::format("\nOxygen: {:.2f}", crew.oxygen);
+            hoverText += std::format("\n   + Health: {:.1f}", crew.GetHealth());
+            hoverText += std::format("\n   + Oxygen: {:.0f}", crew.GetOxygen());
         }
         else
         {
-            hoverText += "\nDEAD";
+            hoverText += "\n   + DEAD";
         }
     }
 
@@ -422,16 +466,25 @@ void DrawMainTooltip(const std::vector<Crew> &crewList, const PlayerCam &camera,
     if (station)
     {
         Vector2Int tileHoverPos = camera.ScreenToTile(mousePos);
-        std::vector<std::shared_ptr<Tile>> decorativeTiles = station->GetDecorativeTilesAtPosition(tileHoverPos);
+        auto decorativeTiles = station->GetDecorativeTilesAtPosition(tileHoverPos);
         const auto &tiles = station->GetTilesAtPosition(tileHoverPos);
         decorativeTiles.insert(decorativeTiles.begin(), tiles.begin(), tiles.end());
 
-        for (const std::shared_ptr<Tile> &tile : decorativeTiles)
+        for (const auto &tile : decorativeTiles)
         {
             if (!hoverText.empty())
                 hoverText += "\n";
 
             hoverText += GetTileInfo(tile);
+        }
+
+        auto hazards = station->GetHazardsAtPosition(tileHoverPos);
+        for (auto &&hazard : hazards)
+        {
+            if (!hoverText.empty())
+                hoverText += "\n";
+
+            hoverText += GetHazardInfo(hazard);
         }
     }
 
