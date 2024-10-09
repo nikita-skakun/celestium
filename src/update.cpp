@@ -206,15 +206,19 @@ void HandleCrewEnvironment(std::vector<Crew> &crewList)
 {
     for (Crew &crew : crewList)
     {
-        if (crew.IsAlive())
+        if (!crew.IsAlive())
+            continue;
+
+        crew.ConsumeOxygen(FIXED_DELTA_TIME);
+        if (auto tile = crew.GetCurrentTile())
         {
-            crew.ConsumeOxygen(FIXED_DELTA_TIME);
-            if (crew.GetCurrentTile())
+            if (auto oxygen = tile->GetComponent<OxygenComponent>())
+                crew.RefillOxygen(FIXED_DELTA_TIME, oxygen->GetOxygenLevel());
+
+            auto hazards = tile->GetStation()->GetHazardsAtPosition(tile->GetPosition());
+            for (const auto &hazard : hazards)
             {
-                if (auto oxygen = crew.GetCurrentTile()->GetComponent<OxygenComponent>())
-                {
-                    crew.RefillOxygen(FIXED_DELTA_TIME, oxygen->GetOxygenLevel());
-                }
+                hazard->EffectCrew(crew, FIXED_DELTA_TIME);
             }
         }
     }
