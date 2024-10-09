@@ -324,8 +324,11 @@ void UpdateEnvironmentalHazards(std::shared_ptr<Station> station)
                 continue;
             }
 
-            float oxygenToConsume = fire->GetOxygenConsumption() * FIXED_DELTA_TIME;
             auto oxygen = tile->GetComponent<OxygenComponent>();
+            if (oxygen->GetOxygenLevel() < fire->GetOxygenConsumption() * FIXED_DELTA_TIME * 2.f)
+                fire->SetSize(fire->GetSize() / 3.f * 2.f);
+
+            float oxygenToConsume = fire->GetOxygenConsumption() * FIXED_DELTA_TIME;
             if (oxygen->GetOxygenLevel() < oxygenToConsume)
             {
                 oxygen->SetOxygenLevel(0.f);
