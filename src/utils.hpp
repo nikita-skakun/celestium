@@ -12,10 +12,28 @@
 
 using namespace magic_enum::bitwise_operators;
 
-// Utility functions for double
+// Utility functions for numbers
 constexpr int GetEvenlySpacedIndex(double value, int index) noexcept
 {
     return static_cast<int>((value - std::floor(value)) * index);
+}
+
+inline int RandomIntWithRange(int min, int max) noexcept
+{
+    static std::random_device rd; // TODO: Switch to shared seed for multiplayer
+    static std::mt19937 generator(rd());
+    static std::uniform_int_distribution<int> distribution(min, max);
+
+    return distribution(generator);
+}
+
+inline bool CheckIfEventHappens(double chancePerSecond, double deltaTime) noexcept
+{
+    static std::random_device rd; // TODO: Switch to shared seed for multiplayer
+    static std::mt19937 gen(rd());
+    static std::uniform_real_distribution<> dis(0.0, 1.0);
+
+    return dis(gen) < 1 - std::pow(1 - chancePerSecond, deltaTime);
 }
 
 // Vector2 operator overloads

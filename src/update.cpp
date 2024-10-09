@@ -338,6 +338,26 @@ void UpdateEnvironmentalHazards(std::shared_ptr<Station> station)
 
             oxygen->SetOxygenLevel(oxygen->GetOxygenLevel() - oxygenToConsume);
             fire->SetSize(fire->GetSize() + FireHazard::GROWTH_IF_FED * FIXED_DELTA_TIME);
+
+            if (CheckIfEventHappens(fire->SPREAD_CHANCE_PER_SECOND, FIXED_DELTA_TIME))
+            {
+                std::vector<Direction> neighborDirections = {Direction::N, Direction::E, Direction::S, Direction::W};
+                for (int i = (int)neighborDirections.size() - 1; i >= 0; --i)
+                {
+                    Vector2Int neighborPos = hazard->GetPosition() + DirectionToVector2Int(neighborDirections[i]);
+                    bool neighborHasOxygen = station->GetTileWithComponentAtPosition<OxygenComponent>(neighborPos) != nullptr;
+                    bool neighborHasFire = station->GetTypeHazardsAtPosition<FireHazard>(neighborPos).size() > 0;
+                    if (!neighborHasOxygen || neighborHasFire)
+                        neighborDirections.erase(neighborDirections.begin() + i);
+                }
+
+                if (neighborDirections.size() <= 0)
+                    continue;
+
+                int directionSelected = RandomIntWithRange(0, (int)neighborDirections.size());
+                Vector2Int newFirePos = fire->GetPosition() + DirectionToVector2Int(neighborDirections[directionSelected]);
+                station->hazards.push_back(std::make_shared<FireHazard>(newFirePos, FireHazard::SIZE_INCREMENT));
+            }
         }
     }
 }

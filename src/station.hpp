@@ -27,6 +27,19 @@ public:
     std::vector<std::shared_ptr<Hazard>> GetHazardsAtPosition(const Vector2Int &pos) const;
 
     template <typename T>
+    std::vector<std::shared_ptr<Hazard>> GetTypeHazardsAtPosition(const Vector2Int &pos) const
+    {
+        auto hazardsAtPos = GetHazardsAtPosition(pos);
+        std::vector<std::shared_ptr<Hazard>> foundHazards;
+        for (const auto &hazard : hazardsAtPos)
+        {
+            if (std::dynamic_pointer_cast<T>(hazard))
+                foundHazards.push_back(hazard);
+        }
+        return foundHazards;
+    }
+
+    template <typename T>
     std::shared_ptr<Tile> GetTileWithComponentAtPosition(const Vector2Int &pos) const
     {
         auto posIt = tileMap.find(pos);
