@@ -396,6 +396,10 @@ std::string GetTileInfo(std::shared_ptr<Tile> tile)
 {
     std::string tileInfo = " - " + tile->GetName();
 
+    if (auto durability = tile->GetComponent<DurabilityComponent>())
+    {
+        tileInfo += std::format("\n   + HP: {:.1f} / {:.1f}", durability->GetHitpoints(), durability->GetMaxHitpoints());
+    }
     if (auto door = tile->GetComponent<DoorComponent>())
     {
         tileInfo += std::format("\n   + {}", door->IsOpen() ? "Open" : "Closed");

@@ -18,6 +18,8 @@ tiles:
         powerConsumption: 20.0
       - type: OXYGEN_PRODUCER
         oxygenProduction: 100.0
+      - type: DURABILITY
+        hitpoints: 10.0
   - id: BATTERY
     height: WAIST
     components:
@@ -33,6 +35,8 @@ tiles:
       - type: POWER_PRODUCER
         powerProduction: 20.0
       - type: SOLAR_PANEL
+      - type: DURABILITY
+        hitpoints: 5.0
   - id: FRAME
     height: FLOOR
     components:
@@ -42,3 +46,5 @@ tiles:
     components:
       - type: DOOR
         movingSpeed: 0.75
+      - type: DURABILITY
+        hitpoints: 15.0
