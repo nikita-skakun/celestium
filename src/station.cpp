@@ -82,7 +82,7 @@ std::shared_ptr<Station> CreateStation()
 
     station->UpdateSpriteOffsets();
 
-    station->hazards.push_back(std::make_shared<FireHazard>(Vector2Int(16, 0), FireHazard::SIZE_INCREMENT));
+    station->hazards.push_back(std::make_shared<FireHazard>(Vector2Int(12, 0), FireHazard::SIZE_INCREMENT));
 
     return station;
 }

@@ -20,16 +20,19 @@ constexpr int GetEvenlySpacedIndex(double value, int index) noexcept
 
 inline int RandomIntWithRange(int min, int max) noexcept
 {
+    if (max <= min)
+        return min;
+
     static std::random_device rd; // TODO: Switch to shared seed for multiplayer
     static std::mt19937 generator(rd());
-    static std::uniform_int_distribution<int> distribution(min, max);
+    std::uniform_int_distribution<int> distribution(min, max);
 
     return distribution(generator);
 }
 
 /**
  * @brief Determines if an event occurs based on a chance per second and delta time.
- * 
+ *
  * @param chancePerSecond The probability of the event occurring per second. (Must be less than 1)
  * @param deltaTime The time elapsed since the last check, in seconds.
  * @return true if the event occurs, false otherwise.

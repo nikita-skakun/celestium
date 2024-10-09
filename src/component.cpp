@@ -154,3 +154,12 @@ void DoorComponent::SetOpenState(bool openState)
     if (movingState != MovingState::FORCED_OPEN)
         movingState = MovingState::IDLE;
 }
+
+void DurabilityComponent::SetHitpoints(float newHitpoints)
+{
+    hitpoints = std::max(newHitpoints, 0.f);
+    if (hitpoints > 0.f || _parent.expired())
+        return;
+
+    _parent.lock()->DeleteTile();
+}

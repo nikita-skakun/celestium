@@ -366,10 +366,7 @@ public:
 
     void ProduceOxygen(float deltaTime) const;
 
-    constexpr float GetOxygenProduction() const
-    {
-        return oxygenProduction;
-    }
+    constexpr float GetOxygenProduction() const { return oxygenProduction; }
 
     std::shared_ptr<Component> Clone(std::shared_ptr<Tile> newParent) const override
     {
@@ -510,6 +507,8 @@ public:
 
     constexpr float GetMaxHitpoints() const { return maxHitpoints; }
     constexpr float GetHitpoints() const { return hitpoints; }
+
+    void SetHitpoints(float newHitpoints);
 
     std::shared_ptr<Component> Clone(std::shared_ptr<Tile> newParent) const override
     {
