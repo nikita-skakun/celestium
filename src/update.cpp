@@ -337,7 +337,7 @@ void UpdateEnvironmentalHazards(std::shared_ptr<Station> station)
             }
 
             oxygen->SetOxygenLevel(oxygen->GetOxygenLevel() - oxygenToConsume);
-            fire->SetSize(fire->GetSize() + FireHazard::GROWTH_IF_FED * FIXED_DELTA_TIME);
+            fire->SetSize(fire->GetSize() + FireHazard::GROWTH_IF_FED_PER_SECOND * FIXED_DELTA_TIME);
 
             if (CheckIfEventHappens(fire->SPREAD_CHANCE_PER_SECOND, FIXED_DELTA_TIME))
             {

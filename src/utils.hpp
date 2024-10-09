@@ -27,6 +27,13 @@ inline int RandomIntWithRange(int min, int max) noexcept
     return distribution(generator);
 }
 
+/**
+ * @brief Determines if an event occurs based on a chance per second and delta time.
+ * 
+ * @param chancePerSecond The probability of the event occurring per second. (Must be less than 1)
+ * @param deltaTime The time elapsed since the last check, in seconds.
+ * @return true if the event occurs, false otherwise.
+ */
 inline bool CheckIfEventHappens(double chancePerSecond, double deltaTime) noexcept
 {
     static std::random_device rd; // TODO: Switch to shared seed for multiplayer

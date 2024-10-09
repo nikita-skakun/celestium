@@ -446,14 +446,15 @@ void DrawMainTooltip(const std::vector<Crew> &crewList, const PlayerCam &camera,
     if (camera.GetCrewHoverIndex() >= 0)
     {
         const Crew &crew = crewList[camera.GetCrewHoverIndex()];
-        hoverText += "Name: " + crew.GetName();
+        hoverText += " - " + crew.GetName();
         if (crew.IsAlive())
         {
-            hoverText += std::format("\nOxygen: {:.2f}", crew.GetOxygen());
+            hoverText += std::format("\n   + Health: {:.1f}", crew.GetHealth());
+            hoverText += std::format("\n   + Oxygen: {:.0f}", crew.GetOxygen());
         }
         else
         {
-            hoverText += "\nDEAD";
+            hoverText += "\n   + DEAD";
         }
     }
 
