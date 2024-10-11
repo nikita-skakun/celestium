@@ -38,11 +38,11 @@ cmake .. && make -j$(nproc) && ./celestium
 
 ## License
 
-Celestium is an open-source project. The code is free to use and modify, but certain assets are inspired by external resources. Please respect the following attributions:
+Celestium is an source available project licensed under the [CC BY-NC 4.0 License](LICENSE). You are free to use and modify the code for personal and educational purposes. However, certain assets within the project are inspired by external resources. Please ensure you adhere to the following attribution requirements and respect the rights of the original creators:
 
 - [raylib](https://github.com/raysan5/raylib) library, licensed under the [Zlib License](https://github.com/raysan5/raylib/blob/master/LICENSE).
 
-- [raygui-cpp](https://github.com/scastd/raygui-cpp) library, licensed under the [Zlib License](https://github.com/scastd/raygui-cpp/blob/main/LICENSE.txt).
+- [raygui](https://github.com/raysan5/raygui) library, licensed under the [Zlib License](https://github.com/raysan5/raygui/blob/master/LICENSE).
 
 - [Termcolor](https://github.com/ikalnytskyi/termcolor) library, licensed under the [BSD (3-clause) License](https://github.com/ikalnytskyi/termcolor/blob/master/LICENSE).
 
