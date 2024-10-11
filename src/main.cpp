@@ -41,9 +41,9 @@ void FixedUpdate(std::shared_ptr<Station> station, std::vector<Crew> &crewList, 
 
 int main()
 {
+    SetConfigFlags(FLAG_FULLSCREEN_MODE);
     InitWindow(0, 0, "Celestium");
 
-    ToggleFullscreen();
     SetTargetFPS(GetMonitorRefreshRate(GetCurrentMonitor()));
     SetExitKey(0);
 

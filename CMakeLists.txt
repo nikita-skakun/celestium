@@ -30,9 +30,11 @@ set(FETCHCONTENT_BASE_DIR ${CMAKE_SOURCE_DIR}/external)
 # Enable verbose output for FetchContent
 set(FETCHCONTENT_QUIET OFF)
 
-# Enable Wayland
+# Enable Wayland and build raylib as a shared library
 set(USE_EXTERNAL_GLFW ON CACHE BOOL "" FORCE)
 set(USE_WAYLAND ON CACHE BOOL "" FORCE)
+set(DBUILD_SHARED_LIBS ON CACHE BOOL "" FORCE)
+
 # Disable examples to speed up build
 set(BUILD_EXAMPLES OFF CACHE BOOL "" FORCE)
 set(BUILD_RAYGUI_EXAMPLES OFF CACHE BOOL "" FORCE)
