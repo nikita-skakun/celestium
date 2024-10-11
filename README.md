@@ -19,6 +19,23 @@ These features bring the station to life and enhance player interaction, setting
 
 [progress-update-2024-09-29.webm](https://github.com/user-attachments/assets/4367d366-b55f-4bcb-a2c6-ae5160bae2b7)
 
+## Build Instructions
+
+Before you can start building Celestium, you will need to have Nix installed. If you don't already have it, please follow the [installation instructions](https://nixos.org/download/) for your operating system.
+
+Once you have Nix installed, navigate to the root directory of this project and run:
+```
+nix-shell
+```
+This will create a new shell environment, and download all necessary dependencies. Then, create a new build directory by running:
+```
+mkdir build && cd build
+```
+Now, you should be in the newly created `build` directory. To configure and build Celestium, run:
+```
+cmake .. && make -j$(nproc) && ./celestium
+```
+
 ## License
 
 Celestium is an open-source project. The code is free to use and modify, but certain assets are inspired by external resources. Please respect the following attributions:
