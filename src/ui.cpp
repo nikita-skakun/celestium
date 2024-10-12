@@ -9,24 +9,23 @@
  */
 void DrawTileGrid(const PlayerCam &camera)
 {
-    float screenWidth = GetScreenWidth();
-    float screenHeight = GetScreenHeight();
+    Vector2 screenSize = GetScreenSize();
 
     // Calculate the top-left corner in world coordinates
-    Vector2 topLeft = camera.GetPosition() * TILE_SIZE - Vector2(screenWidth, screenHeight) / 2.0f / camera.GetZoom();
+    Vector2 topLeft = camera.GetPosition() * TILE_SIZE - screenSize / 2.f / camera.GetZoom();
 
     // Draw vertical lines
-    for (int x = (int)(floor(topLeft.x / TILE_SIZE) * TILE_SIZE); x <= (int)(ceil((topLeft.x + screenWidth / camera.GetZoom()) / TILE_SIZE) * TILE_SIZE); x += (int)TILE_SIZE)
+    for (int x = (int)(floor(topLeft.x / TILE_SIZE) * TILE_SIZE); x <= (int)(ceil((topLeft.x + screenSize.x / camera.GetZoom()) / TILE_SIZE) * TILE_SIZE); x += (int)TILE_SIZE)
     {
-        float screenX = (x - camera.GetPosition().x * TILE_SIZE) * camera.GetZoom() + screenWidth / 2.0f;
-        DrawLineV({screenX, 0}, {screenX, (float)screenHeight}, GRID_COLOR);
+        float screenX = (x - camera.GetPosition().x * TILE_SIZE) * camera.GetZoom() + screenSize.x / 2.f;
+        DrawLineV(Vector2(screenX, 0), Vector2(screenX, screenSize.y), GRID_COLOR);
     }
 
     // Draw horizontal lines
-    for (int y = (int)(floor(topLeft.y / TILE_SIZE) * TILE_SIZE); y <= (int)(ceil((topLeft.y + screenHeight / camera.GetZoom()) / TILE_SIZE) * TILE_SIZE); y += (int)TILE_SIZE)
+    for (int y = (int)(floor(topLeft.y / TILE_SIZE) * TILE_SIZE); y <= (int)(ceil((topLeft.y + screenSize.y / camera.GetZoom()) / TILE_SIZE) * TILE_SIZE); y += (int)TILE_SIZE)
     {
-        float screenY = (y - camera.GetPosition().y * TILE_SIZE) * camera.GetZoom() + screenHeight / 2.0f;
-        DrawLineV({0, screenY}, {(float)screenWidth, screenY}, GRID_COLOR);
+        float screenY = (y - camera.GetPosition().y * TILE_SIZE) * camera.GetZoom() + screenSize.y / 2.f;
+        DrawLineV(Vector2(0, screenY), Vector2(screenSize.x, screenY), GRID_COLOR);
     }
 }
 
@@ -317,7 +316,7 @@ void DrawFpsCounter(float deltaTime, float padding, int fontSize, const Font &fo
 {
     std::string fpsText = std::format("FPS: {:} ({:.2f}ms)", GetFPS(), deltaTime * 1000.f);
     const char *text = fpsText.c_str();
-    DrawTextEx(font, text, Vector2(GetScreenWidth() - MeasureTextEx(font, text, fontSize, 1).x - padding, padding), fontSize, 1, UI_TEXT_COLOR);
+    DrawTextEx(font, text, Vector2(GetMonitorWidth(GetCurrentMonitor()) - MeasureTextEx(font, text, fontSize, 1).x - padding, padding), fontSize, 1, UI_TEXT_COLOR);
 }
 
 /**
@@ -346,6 +345,7 @@ void DrawOverlay(const PlayerCam &camera, float padding, int fontSize, const Fon
  */
 void DrawTooltip(const std::string &tooltip, const Vector2 &pos, const Font &font, float padding, int fontSize)
 {
+    Vector2 screenSize = GetScreenSize();
     int lineCount = 0;
     const char **lines = TextSplit(tooltip.c_str(), '\n', &lineCount);
 
@@ -355,35 +355,22 @@ void DrawTooltip(const std::string &tooltip, const Vector2 &pos, const Font &fon
         textWidth = std::max(textWidth, MeasureTextEx(font, lines[i], fontSize, 1).x);
     }
 
-    Vector2 size = {textWidth + 2.f * padding, lineCount * fontSize + 2.f * padding};
+    Vector2 size = Vector2(textWidth + 2.f * padding, lineCount * fontSize + 2.f * padding);
     Vector2 tooltipPos = pos;
 
-    // Check if the tooltip goes beyond the screen's right edge (considering padding)
-    if (tooltipPos.x + size.x > GetScreenWidth())
-    {
-        // Slide the tooltip back to fit within the screen's right edge
-        tooltipPos.x = GetScreenWidth() - size.x;
-    }
+    if (tooltipPos.x + size.x > screenSize.x)
+        tooltipPos.x = screenSize.x - size.x;
 
-    // Ensure the tooltip doesn't go beyond the left edge of the screen
     if (tooltipPos.x < 0)
-    {
         tooltipPos.x = 0;
-    }
 
-    // Ensure the tooltip doesn't go beyond the bottom or top of the screen
-    if (tooltipPos.y + size.y > GetScreenHeight())
-    {
-        tooltipPos.y = GetScreenHeight() - size.y;
-    }
+    if (tooltipPos.y + size.y > screenSize.y)
+        tooltipPos.y = screenSize.y - size.y;
     else if (tooltipPos.y < 0)
-    {
         tooltipPos.y = 0;
-    }
 
     DrawRectangleRec(Vector2ToRect(tooltipPos, size), Fade(LIGHTGRAY, 0.7f));
 
-    // Draw the tooltip with the calculated position and padding
     for (int i = 0; i < lineCount; i++)
     {
         DrawTextEx(font, lines[i], tooltipPos + Vector2(padding, padding + (i * fontSize)), fontSize, 1, DARKGRAY);
@@ -494,17 +481,18 @@ void DrawMainTooltip(const std::vector<Crew> &crewList, const PlayerCam &camera,
 
 void DrawUiButtons(const Texture2D &iconTileset, PlayerCam &camera)
 {
+    Vector2 screenSize = GetScreenSize();
     constexpr float largeButtonSize = 64.f;
     constexpr float smallButtonSize = 32.f;
 
-    Rectangle buildButtonRect = Rectangle(DEFAULT_PADDING, (GetScreenHeight() - largeButtonSize) / 2.f, largeButtonSize, largeButtonSize);
+    Rectangle buildButtonRect = Rectangle(DEFAULT_PADDING, (screenSize.y - largeButtonSize) / 2.f, largeButtonSize, largeButtonSize);
     if (GuiButton(buildButtonRect, ""))
         camera.ToggleUiGameState(PlayerCam::UiGameState::BUILD_MODE);
 
     Rectangle buildIconRect = Rectangle(buildButtonRect.x + 8.f, buildButtonRect.y + 8.f, 48.f, 48.f);
     DrawTexturePro(iconTileset, Rectangle(4, 0, 1, 1) * TILE_SIZE, buildIconRect, Vector2(), 0, Fade(DARKGRAY, .8f));
 
-    Rectangle oxygenButtonRect = Rectangle(DEFAULT_PADDING, (GetScreenHeight() + largeButtonSize) / 2.f + DEFAULT_PADDING, smallButtonSize, smallButtonSize);
+    Rectangle oxygenButtonRect = Rectangle(DEFAULT_PADDING, (screenSize.y + largeButtonSize) / 2.f + DEFAULT_PADDING, smallButtonSize, smallButtonSize);
     if (GuiButton(oxygenButtonRect, ""))
         camera.ToggleOverlay(PlayerCam::Overlay::OXYGEN);
 
@@ -535,28 +523,23 @@ void DrawEscapeMenu(GameState &state, PlayerCam &camera, const Font &font)
     constexpr float totalButtonHeight = buttonCount * buttonHeight + (buttonCount - 1) * buttonSpacing;
 
     // Calculate menu dimensions
-    constexpr float menuWidth = buttonWidth + buttonSpacing * 2.f;
-    constexpr float menuHeight = totalButtonHeight + buttonSpacing * 2.f;
+    constexpr Vector2 menuSize = Vector2(buttonWidth + buttonSpacing * 2.f, totalButtonHeight + buttonSpacing * 2.f);
 
     GuiSetStyle(DEFAULT, TEXT_SIZE, DEFAULT_FONT_SIZE);
     GuiSetFont(font);
 
-    int screenWidth = GetScreenWidth();
-    int screenHeight = GetScreenHeight();
-
-    // Calculate the position of the menu
-    float menuPosX = screenWidth / 2.f - menuWidth / 2.f;
-    float menuPosY = screenHeight / 2.f - menuHeight / 2.f;
+    Vector2 screenSize = GetScreenSize();
+    Vector2 menuPos = screenSize / 2.f - menuSize / 2.f;
 
     // Darken the background to draw focus to the UI
-    DrawRectangle(0.f, 0.f, screenWidth, screenHeight, Fade(BLACK, 0.2f));
+    DrawRectangleV(Vector2(0.f, 0.f), screenSize, Fade(BLACK, 0.2f));
 
     // Draw a rectangle for the menu background
-    DrawRectangle(menuPosX, menuPosY, menuWidth, menuHeight, Fade(BLACK, 0.4f));
+    DrawRectangleV(menuPos, menuSize, Fade(BLACK, 0.4f));
 
     // Dynamically position buttons in the center of the menu
-    float firstButtonPosY = menuPosY + (menuHeight - totalButtonHeight) / 2.f;
-    float buttonPosX = screenWidth / 2 - buttonWidth / 2;
+    float firstButtonPosY = menuPos.y + (menuSize.y - totalButtonHeight) / 2.f;
+    float buttonPosX = screenSize.x / 2 - buttonWidth / 2;
 
     // Resume Button
     if (GuiButton(Rectangle(buttonPosX, firstButtonPosY, buttonWidth, buttonHeight), "Resume"))
@@ -576,22 +559,19 @@ void DrawSettingsMenu(const Font &font)
     GuiSetStyle(DEFAULT, TEXT_SIZE, DEFAULT_FONT_SIZE);
     GuiSetFont(font);
 
-    int screenWidth = GetScreenWidth();
-    int screenHeight = GetScreenHeight();
+    Vector2 screenSize = GetScreenSize();
 
     // Calculate menu dimensions
-    float menuWidth = screenWidth * 2.f / 3.f;
-    float menuHeight = screenHeight * 2.f / 3.f;
+    Vector2 menuSize = screenSize * 2.f / 3.f;
 
     // Calculate the position of the menu
-    float menuPosX = screenWidth / 2.f - menuWidth / 2.f;
-    float menuPosY = screenHeight / 2.f - menuHeight / 2.f;
+    Vector2 menuPos = screenSize / 2.f - menuSize / 2.f;
 
     // Darken the background to draw focus to the UI
-    DrawRectangle(0.f, 0.f, screenWidth, screenHeight, Fade(BLACK, 0.2f));
+    DrawRectangleV(Vector2(0.f, 0.f), screenSize, Fade(BLACK, 0.2f));
 
     // Draw a rectangle for the menu background
-    DrawRectangle(menuPosX, menuPosY, menuWidth, menuHeight, Fade(BLACK, 0.4f));
+    DrawRectangleV(menuPos, menuSize, Fade(BLACK, 0.4f));
 }
 
 void DrawUi(GameState &state, PlayerCam &camera, const Font &font)

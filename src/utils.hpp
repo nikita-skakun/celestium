@@ -262,6 +262,12 @@ constexpr Vector2 ToVector2(const Vector2Int &a) noexcept
     return Vector2((float)(a.x), (float)(a.y));
 }
 
+inline Vector2 GetScreenSize()
+{
+    int monitor = GetCurrentMonitor();
+    return Vector2((float)GetMonitorWidth(monitor), (float)GetMonitorHeight(monitor));
+}
+
 constexpr std::string ToString(const Vector2Int &a) noexcept
 {
     return std::format("({:}, {:})", a.x, a.y);

@@ -18,7 +18,7 @@ Vector2 PlayerCam::GetWorldMousePos() const
  */
 Vector2 PlayerCam::ScreenToWorld(const Vector2 &screenPos) const
 {
-    return (screenPos - (Vector2(GetScreenWidth(), GetScreenHeight()) / 2.f)) / zoom / TILE_SIZE + position;
+    return (screenPos - (GetScreenSize() / 2.f)) / zoom / TILE_SIZE + position;
 }
 
 /**
@@ -40,7 +40,7 @@ Vector2Int PlayerCam::ScreenToTile(const Vector2 &screenPos) const
  */
 Vector2 PlayerCam::WorldToScreen(const Vector2 &worldPos) const
 {
-    return (worldPos - position) * TILE_SIZE * zoom + (Vector2(GetScreenWidth(), GetScreenHeight()) / 2.f);
+    return (worldPos - position) * TILE_SIZE * zoom + (GetScreenSize() / 2.f);
 }
 
 /**
