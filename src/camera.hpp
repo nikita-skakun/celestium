@@ -1,5 +1,5 @@
 #pragma once
-#include "utils.hpp"
+#include "game_state.hpp"
 #include <unordered_set>
 
 struct PlayerCam
@@ -93,12 +93,11 @@ public:
 
     constexpr UiState GetUiState() const { return uiState; }
     constexpr void SetUiState(UiState newUiState) { uiState = newUiState; }
-    constexpr void ToggleUiState(UiState targetUiState) { uiState = (uiState != targetUiState) ? targetUiState : UiState::NONE; }
     constexpr bool IsUiClear() const { return uiState == UiState::NONE; }
 
     constexpr UiGameState GetUiGameState() const { return gameState; }
     constexpr void SetUiGameState(UiGameState newGameState) { gameState = newGameState; }
-    constexpr void ToggleUiGameState(UiGameState targetGameState) { gameState = (gameState != targetGameState) ? targetGameState : UiGameState::SIM_MODE; }
+    constexpr void ToggleUiGameState(UiGameState targetState) { gameState = (gameState != targetState) ? targetState : UiGameState::SIM_MODE; }
 
     constexpr void HandleCamera()
     {

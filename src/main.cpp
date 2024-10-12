@@ -81,11 +81,8 @@ int main()
 
     while (IsGameRunning(state))
     {
-        if (WindowShouldClose())
-            state &= ~GameState::RUNNING;
-
-        bool shouldBePaused = camera.GetUiState() != PlayerCam::UiState::NONE || camera.GetUiGameState() != PlayerCam::UiGameState::SIM_MODE;
-        ToggleBit(state, shouldBePaused, GameState::PAUSED);
+        bool forcePaused = camera.GetUiState() != PlayerCam::UiState::NONE || camera.GetUiGameState() != PlayerCam::UiGameState::SIM_MODE;
+        SetBit(state, forcePaused, GameState::FORCE_PAUSED);
 
         deltaTime = GetFrameTime();
 
@@ -106,7 +103,7 @@ int main()
         }
 
         if (IsKeyPressed(KEY_SPACE))
-            ToggleBit(state, !IsGamePaused(state), GameState::PAUSED);
+            ToggleBit(state, GameState::PAUSED);
 
         // Render logic
         BeginDrawing();
@@ -131,6 +128,9 @@ int main()
         DrawUi(state, camera, font);
 
         EndDrawing();
+
+        if (WindowShouldClose())
+            SetBit(state, false, GameState::RUNNING);
     }
 
     updateThread.join();

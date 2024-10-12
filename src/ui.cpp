@@ -568,7 +568,7 @@ void DrawEscapeMenu(GameState &state, PlayerCam &camera, const Font &font)
 
     // Exit Button
     if (GuiButton(Rectangle(buttonPosX, firstButtonPosY + 2 * (buttonHeight + buttonSpacing), buttonWidth, buttonHeight), "Exit"))
-        ToggleBit(state, false, GameState::RUNNING);
+        SetBit(state, false, GameState::RUNNING);
 }
 
 void DrawSettingsMenu(const Font &font)
