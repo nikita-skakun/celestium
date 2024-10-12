@@ -89,6 +89,7 @@ public:
 
     constexpr Overlay GetOverlay() const { return overlay; }
     constexpr void ToggleOverlay(Overlay targetOverlay) { overlay = (overlay != targetOverlay) ? targetOverlay : Overlay::NONE; }
+    constexpr std::string GetOverlayName() const { return EnumToName<Overlay>(overlay); }
 
     constexpr UiState GetUiState() const { return uiState; }
     constexpr void SetUiState(UiState newUiState) { uiState = newUiState; }

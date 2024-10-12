@@ -28,12 +28,7 @@ public:
 
     virtual void EffectCrew(Crew &crew, float deltaTime) const = 0;
 
-    constexpr std::string GetName() const
-    {
-        std::string name = std::string(magic_enum::enum_name<Type>(GetType()));
-        std::replace(name.begin(), name.end(), '_', ' ');
-        return StringToTitleCase(name);
-    }
+    constexpr std::string GetName() const { return EnumToName<Type>(GetType()); }
 };
 
 struct FireHazard : public Hazard

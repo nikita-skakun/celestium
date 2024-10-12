@@ -41,13 +41,7 @@ struct Component
     virtual ~Component() = default;
 
     constexpr virtual Type GetType() const { return Type::NONE; }
-
-    constexpr std::string GetName() const
-    {
-        std::string name = std::string(magic_enum::enum_name<Type>(GetType()));
-        std::replace(name.begin(), name.end(), '_', ' ');
-        return StringToTitleCase(name);
-    }
+    constexpr std::string GetName() const { return EnumToName<Type>(GetType()); }
 
     bool operator==(const Component &other) const
     {
@@ -435,12 +429,7 @@ public:
 
     void SetOpenState(bool openState);
 
-    constexpr std::string GetMovementName() const
-    {
-        std::string name = std::string(magic_enum::enum_name<MovingState>(movingState));
-        std::replace(name.begin(), name.end(), '_', ' ');
-        return StringToTitleCase(name);
-    }
+    constexpr std::string GetMovementName() const { return EnumToName<MovingState>(movingState); }
 
     constexpr void SetMovingState(MovingState newMovingState)
     {
