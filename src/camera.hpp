@@ -1,5 +1,5 @@
 #pragma once
-#include "game_state.hpp"
+#include "utils.hpp"
 #include <unordered_set>
 
 struct PlayerCam
