@@ -111,10 +111,10 @@ int main()
         DrawTileGrid(camera);
         DrawStationTiles(station, stationTileset, camera);
         DrawStationOverlays(station, stationTileset, iconTileset, camera);
-        DrawEnvironmentalHazards(station, fireSpritesheet, camera);
 
         if (!camera.IsInBuildMode())
         {
+            DrawEnvironmentalHazards(station, fireSpritesheet, camera);
             DrawCrew(timeSinceFixedUpdate, crewList, camera);
         }
         else

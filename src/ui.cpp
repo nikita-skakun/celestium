@@ -202,10 +202,26 @@ void DrawTileOutline(std::shared_ptr<Tile> tile, const PlayerCam &camera)
     }
 
     Vector2 tileSize = Vector2(1.f, 1.f) * TILE_SIZE * camera.GetZoom();
-    for (auto &pos : positions)
+    for (const auto &pos : positions)
     {
         Vector2 startPos = camera.WorldToScreen(ToVector2(pos));
-        DrawRectangleLinesEx(Vector2ToRect(startPos, tileSize), 2.f, MAGENTA);
+        Rectangle rect = Vector2ToRect(startPos, tileSize);
+
+        std::array<std::pair<Vector2, Vector2>, 4> lines = {
+            std::make_pair(Vector2{rect.x, rect.y}, Vector2{rect.x + rect.width, rect.y}),
+            std::make_pair(Vector2{rect.x + rect.width, rect.y}, Vector2{rect.x + rect.width, rect.y + rect.height}),
+            std::make_pair(Vector2{rect.x, rect.y + rect.height}, Vector2{rect.x + rect.width, rect.y + rect.height}),
+            std::make_pair(Vector2{rect.x, rect.y}, Vector2{rect.x, rect.y + rect.height})};
+
+        std::array<Direction, 4> directions = {Direction::N, Direction::E, Direction::S, Direction::W};
+
+        for (size_t i = 0; i < directions.size(); ++i)
+        {
+            Vector2Int neighborPos = pos + DirectionToVector2Int(directions[i]);
+
+            if (positions.count(neighborPos) == 0)
+                DrawLineEx(lines[i].first, lines[i].second, 2.f, MAGENTA);
+        }
     }
 }
 
