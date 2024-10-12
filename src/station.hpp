@@ -17,7 +17,8 @@ public:
     std::vector<std::shared_ptr<Tile>> GetDecorativeTilesAtPosition(const Vector2Int &pos) const;
     std::string GetTileIdAtPosition(const Vector2Int &pos, TileDef::Height height = TileDef::Height::NONE) const;
     void UpdateSpriteOffsets() const;
-    bool CanPath(const Vector2Int &pos) const;
+    bool IsPositionPathable(const Vector2Int &pos) const;
+    bool IsDoorFullyOpenAtPos(const Vector2Int &pos) const;
 
     constexpr bool CheckAdjacentTile(const Vector2Int &tilePos, const std::string &tileId, Direction direction) const
     {

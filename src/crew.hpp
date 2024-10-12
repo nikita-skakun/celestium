@@ -23,7 +23,7 @@ public:
     constexpr void SetPosition(const Vector2 &newPosition) { position = newPosition; }
     constexpr Color GetColor() const { return color; }
     constexpr const std::vector<std::shared_ptr<Task>> &GetReadOnlyTaskQueue() const { return taskQueue; }
-    constexpr std::vector<std::shared_ptr<Task>> &GetTaskQueue() { return taskQueue; }    
+    constexpr std::vector<std::shared_ptr<Task>> &GetTaskQueue() { return taskQueue; }
     constexpr float GetOxygen() const { return oxygen; }
     constexpr float GetHealth() const { return health; }
     constexpr bool IsAlive() const { return isAlive; }

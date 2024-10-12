@@ -290,7 +290,7 @@ std::string Station::GetTileIdAtPosition(const Vector2Int &pos, TileDef::Height 
     return tile->GetId();
 }
 
-bool Station::CanPath(const Vector2Int &pos) const
+bool Station::IsPositionPathable(const Vector2Int &pos) const
 {
     if (!GetTileWithComponentAtPosition<WalkableComponent>(pos))
         return false;
@@ -298,6 +298,17 @@ bool Station::CanPath(const Vector2Int &pos) const
     if (GetTileWithComponentAtPosition<SolidComponent>(pos) && !GetTileWithComponentAtPosition<DoorComponent>(pos))
         return false;
 
+    return true;
+}
+
+bool Station::IsDoorFullyOpenAtPos(const Vector2Int &pos) const
+{
+    if (auto doorTile = GetTileWithComponentAtPosition<DoorComponent>(pos))
+    {
+        auto door = doorTile->GetComponent<DoorComponent>();
+        if (door->GetProgress() > 0.f)
+            return false;
+    }
     return true;
 }
 

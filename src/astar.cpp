@@ -69,13 +69,13 @@ std::deque<Vector2Int> AStar(const Vector2Int &start, const Vector2Int &end,
             if (offset.x != 0.f && offset.y != 0.f)
             {
                 // Ensure both adjacent sides are walkable for diagonals
-                if (!station->CanPath(Vector2Int(current.x + offset.x, current.y)) ||
-                    !station->CanPath(Vector2Int(current.x, current.y + offset.y)))
+                if (!station->IsPositionPathable(Vector2Int(current.x + offset.x, current.y)) ||
+                    !station->IsPositionPathable(Vector2Int(current.x, current.y + offset.y)))
                     continue; // Skip to the next neighbor
             }
 
             // Check if neighbor is pathable and not in the closed set
-            if (station->CanPath(neighborPos) && !Contains(closedSet, neighborPos))
+            if (station->IsPositionPathable(neighborPos) && !Contains(closedSet, neighborPos))
             {
                 // Calculate tentative G cost
                 float tentativeGCost = costMap[current].x + heuristic(current, neighborPos);
@@ -120,7 +120,7 @@ bool DoesPathHaveObstacles(const std::deque<Vector2Int> &path, std::shared_ptr<S
     for (const Vector2Int &step : path)
     {
         // Return that an obstacle is found if the tile is solid or not walkable
-        if (!station->CanPath(step))
+        if (!station->IsPositionPathable(step))
             return true;
     }
 

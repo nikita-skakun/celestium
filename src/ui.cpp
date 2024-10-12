@@ -215,6 +215,16 @@ void DrawEnvironmentalHazards(std::shared_ptr<Station> station, const Texture2D 
     }
 }
 
+void DrawCrewCircle(const Crew &crew, const Vector2 &drawPosition, bool isSelected, const PlayerCam &camera)
+{
+    Vector2 crewScreenPos = camera.WorldToScreen(drawPosition + Vector2(.5f, .5f));
+
+    if (isSelected && camera.GetUiGameState() == PlayerCam::UiGameState::SIM_MODE)
+        DrawCircleV(crewScreenPos, (CREW_RADIUS + OUTLINE_SIZE) * camera.GetZoom(), OUTLINE_COLOR);
+
+    DrawCircleV(crewScreenPos, CREW_RADIUS * camera.GetZoom(), crew.IsAlive() ? crew.GetColor() : GRAY);
+}
+
 /**
  * Draws the crew members on the screen, accounting for their movement.
  *
@@ -253,16 +263,8 @@ void DrawCrew(double timeSinceFixedUpdate, const std::vector<Crew> &crewList, co
                 else
                 {
                     bool canPath = true;
-                    std::shared_ptr<Station> station = crew.GetCurrentTile()->GetStation();
-                    if (station)
-                    {
-                        if (auto doorTile = station->GetTileWithComponentAtPosition<DoorComponent>(moveTask->path.front()))
-                        {
-                            auto door = doorTile->GetComponent<DoorComponent>();
-                            if (door->GetProgress() > 0.f)
-                                canPath = false;
-                        }
-                    }
+                    if (std::shared_ptr<Station> station = crew.GetCurrentTile()->GetStation())
+                        canPath = station->IsDoorFullyOpenAtPos(moveTask->path.front());
 
                     if (canPath)
                         drawPosition += Vector2Normalize(nextPosition - crew.GetPosition()) * moveDelta;
@@ -270,12 +272,8 @@ void DrawCrew(double timeSinceFixedUpdate, const std::vector<Crew> &crewList, co
             }
         }
 
-        Vector2 crewScreenPos = camera.WorldToScreen(drawPosition + Vector2(.5f, .5f));
-
-        if (camera.GetUiGameState() == PlayerCam::UiGameState::SIM_MODE && camera.GetSelectedCrew().contains(&crew - &crewList[0]))
-            DrawCircleV(crewScreenPos, (CREW_RADIUS + OUTLINE_SIZE) * camera.GetZoom(), OUTLINE_COLOR);
-
-        DrawCircleV(crewScreenPos, CREW_RADIUS * camera.GetZoom(), crew.IsAlive() ? crew.GetColor() : GRAY);
+        bool isSelected = camera.GetUiGameState() == PlayerCam::UiGameState::SIM_MODE && camera.GetSelectedCrew().contains(&crew - &crewList[0]);
+        DrawCrewCircle(crew, drawPosition, isSelected, camera);
     }
 }
 
