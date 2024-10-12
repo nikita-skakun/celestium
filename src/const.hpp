@@ -8,6 +8,7 @@ constexpr float MAX_ZOOM = 5.f;
 constexpr float ZOOM_SPEED = .1f;
 
 constexpr int DEFAULT_FONT_SIZE = 20;
+constexpr float DEFAULT_PADDING = 10.f;
 constexpr Color UI_TEXT_COLOR = LIGHTGRAY;
 
 constexpr float TILE_SIZE = 32.f;

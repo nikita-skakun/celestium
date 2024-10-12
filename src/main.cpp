@@ -6,33 +6,39 @@
 
 std::mutex updateMutex;
 std::condition_variable fixedUpdateCondition;
-bool isGameRunning = true;
 
-void FixedUpdate(std::shared_ptr<Station> station, std::vector<Crew> &crewList, double &timeSinceFixedUpdate)
+void FixedUpdate(std::shared_ptr<Station> station, std::vector<Crew> &crewList, double &timeSinceFixedUpdate, GameState &state)
 {
     double previousTime = GetTime();
 
-    while (isGameRunning)
+    while (IsGameRunning(state))
     {
-        double currentTime = GetTime();
-        double deltaTime = currentTime - previousTime;
-        previousTime = currentTime;
-
-        timeSinceFixedUpdate += deltaTime;
-
-        while (timeSinceFixedUpdate >= FIXED_DELTA_TIME)
+        if (!IsGamePaused(state))
         {
-            std::unique_lock<std::mutex> lock(updateMutex);
+            double currentTime = GetTime();
+            double deltaTime = currentTime - previousTime;
+            previousTime = currentTime;
 
-            // Perform the fixed updates
-            HandleCrewTasks(crewList);
-            HandleCrewEnvironment(crewList);
-            UpdateCrewCurrentTile(crewList, station);
-            UpdateEnvironmentalHazards(station);
-            UpdateTiles(station);
+            timeSinceFixedUpdate += deltaTime;
 
-            timeSinceFixedUpdate -= FIXED_DELTA_TIME;
-            fixedUpdateCondition.notify_all();
+            while (timeSinceFixedUpdate >= FIXED_DELTA_TIME)
+            {
+                std::unique_lock<std::mutex> lock(updateMutex);
+
+                // Perform the fixed updates
+                HandleCrewTasks(crewList);
+                HandleCrewEnvironment(crewList);
+                UpdateCrewCurrentTile(crewList, station);
+                UpdateEnvironmentalHazards(station);
+                UpdateTiles(station);
+                fixedUpdateCondition.notify_all();
+
+                timeSinceFixedUpdate -= FIXED_DELTA_TIME;
+            }
+        }
+        else
+        {
+            previousTime = GetTime();
         }
 
         std::this_thread::sleep_for(std::chrono::milliseconds(1));
@@ -47,7 +53,10 @@ int main()
     SetTargetFPS(GetMonitorRefreshRate(GetCurrentMonitor()));
     SetExitKey(0);
 
-    Texture2D tileset = LoadTexture("../assets/tilesets/station.png");
+    GameState state = GameState::RUNNING;
+
+    Texture2D stationTileset = LoadTexture("../assets/tilesets/station.png");
+    Texture2D iconTileset = LoadTexture("../assets/tilesets/icons.png");
     Texture2D fireSpritesheet = LoadTexture("../assets/tilesets/fire.png");
     Font font = LoadFontEx("../assets/fonts/Jersey25.ttf", DEFAULT_FONT_SIZE, NULL, 0);
 
@@ -66,47 +75,60 @@ int main()
 
     double timeSinceFixedUpdate = 0;
     // Start the update thread
-    std::thread updateThread(FixedUpdate, station, std::ref(crewList), std::ref(timeSinceFixedUpdate));
+    std::thread updateThread(FixedUpdate, station, std::ref(crewList), std::ref(timeSinceFixedUpdate), std::ref(state));
 
     double deltaTime = 0;
 
-    while (isGameRunning)
+    while (IsGameRunning(state))
     {
-        isGameRunning = !WindowShouldClose();
+        if (WindowShouldClose())
+            state &= ~GameState::RUNNING;
+
+        bool shouldBePaused = camera.GetUiState() != PlayerCam::UiState::NONE || camera.GetUiGameState() != PlayerCam::UiGameState::SIM_MODE;
+        ToggleBit(state, shouldBePaused, GameState::PAUSED);
+
         deltaTime = GetFrameTime();
 
         // Handle all real-time input and camera logic in the main thread
         camera.HandleCamera();
-        if (camera.IsUiClear())
+        if (!IsGamePaused(state))
         {
             HandleCrewHover(crewList, camera);
-            HandleCrewSelection(crewList, camera);
-            AssignCrewTasks(crewList, camera);
+            if (camera.GetUiGameState() == PlayerCam::UiGameState::SIM_MODE)
+            {
+                HandleCrewSelection(crewList, camera);
+                AssignCrewTasks(crewList, camera);
+            }
             HandleMouseDragStart(camera);
             HandleMouseDrag(station, camera);
             HandleMouseDragEnd(station, camera);
             MouseDeleteExistingConnection(station, camera);
         }
 
+        if (IsKeyPressed(KEY_SPACE))
+            ToggleBit(state, !IsGamePaused(state), GameState::PAUSED);
+
         // Render logic
         BeginDrawing();
         ClearBackground(Color(31, 40, 45));
 
         DrawTileGrid(camera);
-        DrawStationTiles(station, tileset, camera);
-        DrawStationOverlays(station, tileset, camera);
+        DrawStationTiles(station, stationTileset, camera);
+        DrawStationOverlays(station, stationTileset, iconTileset, camera);
         DrawEnvironmentalHazards(station, fireSpritesheet, camera);
         DrawCrew(timeSinceFixedUpdate, crewList, camera);
 
         if (camera.IsUiClear())
         {
             DrawDragSelectBox(camera);
-            DrawMainTooltip(crewList, camera, station, font);
+            if (camera.GetUiGameState() == PlayerCam::UiGameState::SIM_MODE)
+                DrawMainTooltip(crewList, camera, station, font);
+            DrawUiButtons(iconTileset, camera);
             DrawFpsCounter(deltaTime, 12, DEFAULT_FONT_SIZE, font);
             DrawOverlay(camera, 12, DEFAULT_FONT_SIZE, font);
         }
 
-        DrawUi(isGameRunning, camera, font);
+        DrawUi(state, camera, font);
 
         EndDrawing();
     }
@@ -115,7 +137,8 @@ int main()
 
     CloseWindow();
 
-    UnloadTexture(tileset);
+    UnloadTexture(stationTileset);
+    UnloadTexture(iconTileset);
     UnloadTexture(fireSpritesheet);
     UnloadFont(font);
 

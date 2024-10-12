@@ -55,11 +55,11 @@ void DrawPath(const std::deque<Vector2Int> &path, const Vector2 &startPos, const
 /**
  * Draws the station tiles and direct overlays.
  *
- * @param station The station to draw the tiles of.
- * @param tileset A texture containing all tile assets.
- * @param camera  The PlayerCam used for handling overlays and converting coordinates.
+ * @param station        The station to draw the tiles of.
+ * @param stationTileset A texture containing all station tile assets.
+ * @param camera         The PlayerCam used for handling overlays and converting coordinates.
  */
-void DrawStationTiles(std::shared_ptr<Station> station, const Texture2D &tileset, const PlayerCam &camera)
+void DrawStationTiles(std::shared_ptr<Station> station, const Texture2D &stationTileset, const PlayerCam &camera)
 {
     if (!station)
         return;
@@ -73,7 +73,7 @@ void DrawStationTiles(std::shared_ptr<Station> station, const Texture2D &tileset
             Vector2 startPos = camera.WorldToScreen(ToVector2(tile->GetPosition()));
             Rectangle sourceRect = Rectangle(tile->GetSpriteOffset().x, tile->GetSpriteOffset().y, 1, 1) * TILE_SIZE;
 
-            DrawTexturePro(tileset, sourceRect, Vector2ToRect(startPos, tileSize), Vector2(), 0, WHITE);
+            DrawTexturePro(stationTileset, sourceRect, Vector2ToRect(startPos, tileSize), Vector2(), 0, WHITE);
 
             if (camera.GetOverlay() == PlayerCam::Overlay::OXYGEN)
             {
@@ -95,11 +95,11 @@ void DrawStationTiles(std::shared_ptr<Station> station, const Texture2D &tileset
 /**
  * Draws the indirect visual overlays.
  *
- * @param station The station to draw the overlays of.
- * @param tileset A texture containing all tile assets.
- * @param camera  The PlayerCam used for handling overlays and converting coordinates.
+ * @param station        The station to draw the overlays of.
+ * @param stationTileset A texture containing all station tile assets.
+ * @param camera         The PlayerCam used for handling overlays and converting coordinates.
  */
-void DrawStationOverlays(std::shared_ptr<Station> station, const Texture2D &tileset, const PlayerCam &camera)
+void DrawStationOverlays(std::shared_ptr<Station> station, const Texture2D &stationTileset, const Texture2D &iconTileset, const PlayerCam &camera)
 {
     if (!station)
         return;
@@ -118,7 +118,7 @@ void DrawStationOverlays(std::shared_ptr<Station> station, const Texture2D &tile
                     Vector2 startPos = camera.WorldToScreen(ToVector2(tile->GetPosition() + dTile.offset));
                     Rectangle destRect = Rectangle(startPos.x, startPos.y, tileSize.x, tileSize.y);
 
-                    DrawTexturePro(tileset, sourceRect, destRect, Vector2(), 0, WHITE);
+                    DrawTexturePro(stationTileset, sourceRect, destRect, Vector2(), 0, WHITE);
                 }
             }
 
@@ -133,14 +133,14 @@ void DrawStationOverlays(std::shared_ptr<Station> station, const Texture2D &tile
                 doorDest1.height = std::max(19.f * door->GetProgress(), 1.f) * camera.GetZoom();
                 doorDest1.y += 19.f * camera.GetZoom() - doorDest1.height;
 
-                DrawTexturePro(tileset, doorSourceRect, doorDest1, Vector2(), 0, WHITE);
+                DrawTexturePro(stationTileset, doorSourceRect, doorDest1, Vector2(), 0, WHITE);
 
                 Rectangle doorDest2 = destRect;
                 doorDest2.width = -doorDest2.width;
                 doorDest2.height = -doorDest1.height;
                 doorDest2.y -= 19.f * camera.GetZoom() + doorDest2.height;
 
-                DrawTexturePro(tileset, doorSourceRect, doorDest2, Vector2(-doorDest2.width, 0.f), 180.f, WHITE);
+                DrawTexturePro(stationTileset, doorSourceRect, doorDest2, Vector2(-doorDest2.width, 0.f), 180.f, WHITE);
             }
 
             if (camera.GetOverlay() == PlayerCam::Overlay::POWER)
@@ -151,9 +151,9 @@ void DrawStationOverlays(std::shared_ptr<Station> station, const Texture2D &tile
                     {
                         Vector2 startScreenPos = camera.WorldToScreen(ToVector2(tile->GetPosition()) + Vector2(.66f, 0.f));
                         Rectangle destRect = Vector2ToRect(startScreenPos, tileSize / 3.f);
-                        Rectangle sourceRect = Rectangle(4, 7, 1, 1) * TILE_SIZE;
+                        Rectangle sourceRect = Rectangle(0, 0, 1, 1) * TILE_SIZE;
 
-                        DrawTexturePro(tileset, sourceRect, destRect, Vector2(), 0, Fade(YELLOW, .8f));
+                        DrawTexturePro(iconTileset, sourceRect, destRect, Vector2(), 0, Fade(YELLOW, .8f));
                     }
                 }
 
@@ -233,7 +233,7 @@ void DrawCrew(double timeSinceFixedUpdate, const std::vector<Crew> &crewList, co
         {
             const std::shared_ptr<MoveTask> moveTask = std::dynamic_pointer_cast<MoveTask>(taskQueue.front());
 
-            if (!moveTask->path.empty())
+            if (camera.GetUiGameState() == PlayerCam::UiGameState::SIM_MODE && !moveTask->path.empty())
             {
                 DrawPath(moveTask->path, crew.GetPosition(), camera);
                 Vector2 nextPosition = ToVector2(moveTask->path.front());
@@ -272,7 +272,7 @@ void DrawCrew(double timeSinceFixedUpdate, const std::vector<Crew> &crewList, co
 
         Vector2 crewScreenPos = camera.WorldToScreen(drawPosition + Vector2(.5f, .5f));
 
-        if (camera.GetSelectedCrew().contains(&crew - &crewList[0]))
+        if (camera.GetUiGameState() == PlayerCam::UiGameState::SIM_MODE && camera.GetSelectedCrew().contains(&crew - &crewList[0]))
             DrawCircleV(crewScreenPos, (CREW_RADIUS + OUTLINE_SIZE) * camera.GetZoom(), OUTLINE_COLOR);
 
         DrawCircleV(crewScreenPos, CREW_RADIUS * camera.GetZoom(), crew.IsAlive() ? crew.GetColor() : GRAY);
@@ -313,9 +313,9 @@ void DrawDragSelectBox(const PlayerCam &camera)
  * @param deltaTime The time taken for the last frame, used to display in milliseconds.
  * @param padding   The padding from the screen edges for positioning the text.
  * @param fontSize  The size of the text to be drawn.
- * @param font      The font to use when drawing the FPS counter, defaults to RayLib's default.
+ * @param font      The font to use, defaults to RayLib's default.
  */
-void DrawFpsCounter(float deltaTime, int padding, int fontSize, const Font &font)
+void DrawFpsCounter(float deltaTime, float padding, int fontSize, const Font &font)
 {
     std::string fpsText = std::format("FPS: {:} ({:.2f}ms)", GetFPS(), deltaTime * 1000.f);
     const char *text = fpsText.c_str();
@@ -328,9 +328,9 @@ void DrawFpsCounter(float deltaTime, int padding, int fontSize, const Font &font
  * @param camera    The PlayerCam that stores the overlay information.
  * @param padding   The padding from the screen edges for positioning the text.
  * @param fontSize  The size of the text to be drawn.
- * @param font      The font to use when drawing the FPS counter, defaults to RayLib's default.
+ * @param font      The font to use, defaults to RayLib's default.
  */
-void DrawOverlay(const PlayerCam &camera, int padding, int fontSize, const Font &font)
+void DrawOverlay(const PlayerCam &camera, float padding, int fontSize, const Font &font)
 {
     std::string overlayText = std::format("Overlay: {:}", StringToTitleCase(std::string(magic_enum::enum_name(camera.GetOverlay()))));
     const char *text = overlayText.c_str();
@@ -407,7 +407,7 @@ std::string GetTileInfo(std::shared_ptr<Tile> tile)
     }
     if (auto oxygen = tile->GetComponent<OxygenComponent>())
     {
-        tileInfo += std::format("\n   + Tile Ox: {:.2f}", oxygen->GetOxygenLevel());
+        tileInfo += std::format("\n   + Oxygen: {:.0f}", oxygen->GetOxygenLevel());
     }
     if (auto battery = tile->GetComponent<BatteryComponent>())
     {
@@ -494,7 +494,41 @@ void DrawMainTooltip(const std::vector<Crew> &crewList, const PlayerCam &camera,
     DrawTooltip(hoverText, mousePos, font);
 }
 
-void DrawEscapeMenu(bool &isGameRunning, PlayerCam &camera, const Font &font)
+void DrawUiButtons(const Texture2D &iconTileset, PlayerCam &camera)
+{
+    constexpr float largeButtonSize = 64.f;
+    constexpr float smallButtonSize = 32.f;
+
+    Rectangle buildButtonRect = Rectangle(DEFAULT_PADDING, (GetScreenHeight() - largeButtonSize) / 2.f, largeButtonSize, largeButtonSize);
+    if (GuiButton(buildButtonRect, ""))
+        camera.ToggleUiGameState(PlayerCam::UiGameState::BUILD_MODE);
+
+    Rectangle buildIconRect = Rectangle(buildButtonRect.x + 8.f, buildButtonRect.y + 8.f, 48.f, 48.f);
+    DrawTexturePro(iconTileset, Rectangle(4, 0, 1, 1) * TILE_SIZE, buildIconRect, Vector2(), 0, Fade(DARKGRAY, .8f));
+
+    Rectangle oxygenButtonRect = Rectangle(DEFAULT_PADDING, (GetScreenHeight() + largeButtonSize) / 2.f + DEFAULT_PADDING, smallButtonSize, smallButtonSize);
+    if (GuiButton(oxygenButtonRect, ""))
+        camera.ToggleOverlay(PlayerCam::Overlay::OXYGEN);
+
+    Rectangle oxygenIconRect = Rectangle(oxygenButtonRect.x + 8.f, oxygenButtonRect.y + 8.f, 16.f, 16.f);
+    DrawTexturePro(iconTileset, Rectangle(2, 0, 1, 1) * TILE_SIZE, oxygenIconRect, Vector2(), 0, Fade(DARKGRAY, .8f));
+
+    Rectangle powerButtonRect = Rectangle(DEFAULT_PADDING, oxygenButtonRect.y + smallButtonSize + DEFAULT_PADDING, smallButtonSize, smallButtonSize);
+    if (GuiButton(powerButtonRect, ""))
+        camera.ToggleOverlay(PlayerCam::Overlay::POWER);
+
+    Rectangle powerIconRect = Rectangle(powerButtonRect.x + 8.f, powerButtonRect.y + 8.f, 16.f, 16.f);
+    DrawTexturePro(iconTileset, Rectangle(1, 0, 1, 1) * TILE_SIZE, powerIconRect, Vector2(), 0, Fade(DARKGRAY, .8f));
+
+    Rectangle wallButtonRect = Rectangle(DEFAULT_PADDING, powerButtonRect.y + smallButtonSize + DEFAULT_PADDING, smallButtonSize, smallButtonSize);
+    if (GuiButton(wallButtonRect, ""))
+        camera.ToggleOverlay(PlayerCam::Overlay::WALL);
+
+    Rectangle wallIconRect = Rectangle(wallButtonRect.x + 8.f, wallButtonRect.y + 8.f, 16.f, 16.f);
+    DrawTexturePro(iconTileset, Rectangle(3, 0, 1, 1) * TILE_SIZE, wallIconRect, Vector2(), 0, Fade(DARKGRAY, .8f));
+}
+
+void DrawEscapeMenu(GameState &state, PlayerCam &camera, const Font &font)
 {
     constexpr int buttonCount = 3;
     constexpr float buttonWidth = 120.f;
@@ -536,7 +570,7 @@ void DrawEscapeMenu(bool &isGameRunning, PlayerCam &camera, const Font &font)
 
     // Exit Button
     if (GuiButton(Rectangle(buttonPosX, firstButtonPosY + 2 * (buttonHeight + buttonSpacing), buttonWidth, buttonHeight), "Exit"))
-        isGameRunning = false;
+        ToggleBit(state, false, GameState::RUNNING);
 }
 
 void DrawSettingsMenu(const Font &font)
@@ -562,12 +596,14 @@ void DrawSettingsMenu(const Font &font)
     DrawRectangle(menuPosX, menuPosY, menuWidth, menuHeight, Fade(BLACK, 0.4f));
 }
 
-void DrawUi(bool &isGameRunning, PlayerCam &camera, const Font &font)
+void DrawUi(GameState &state, PlayerCam &camera, const Font &font)
 {
-    switch (camera.GetUiState())
+    PlayerCam::UiState uiState = camera.GetUiState();
+
+    switch (uiState)
     {
     case PlayerCam::UiState::ESC_MENU:
-        DrawEscapeMenu(isGameRunning, camera, font);
+        DrawEscapeMenu(state, camera, font);
         break;
 
     case PlayerCam::UiState::SETTINGS_MENU:

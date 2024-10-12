@@ -26,6 +26,12 @@ struct PlayerCam
         SETTINGS_MENU,
     };
 
+    enum class UiGameState : u_int8_t
+    {
+        SIM_MODE,
+        BUILD_MODE,
+    };
+
 private:
     Vector2 position;
     Vector2 dragStartPos;
@@ -36,25 +42,16 @@ private:
     float zoom;
     Overlay overlay;
     UiState uiState;
+    UiGameState gameState;
 
     void HandleMovement();
     void HandleOverlays();
     void HandleUiStates();
 
-    constexpr void ToggleOverlay(Overlay targetOverlay)
-    {
-        overlay = (overlay != targetOverlay) ? targetOverlay : Overlay::NONE;
-    }
-
-    constexpr void ToggleUiState(UiState targetUiState)
-    {
-        uiState = (uiState != targetUiState) ? targetUiState : UiState::NONE;
-    }
-
 public:
     PlayerCam()
         : position(Vector2(0, 0)), dragStartPos(Vector2(0, 0)), dragEndPos(Vector2(0, 0)), dragType(DragType::NONE),
-          crewHoverIndex(-1), zoom(1.f), overlay(Overlay::NONE), uiState(UiState::NONE) {}
+          crewHoverIndex(-1), zoom(1.f), overlay(Overlay::NONE), uiState(UiState::NONE), gameState(UiGameState::SIM_MODE) {}
 
     // Utility function for Screen to World space transformations
     Vector2 GetWorldMousePos() const;
@@ -89,11 +86,18 @@ public:
     constexpr void SetCrewHoverIndex(int newIndex) { crewHoverIndex = newIndex; }
 
     constexpr float GetZoom() const { return zoom; }
+
     constexpr Overlay GetOverlay() const { return overlay; }
+    constexpr void ToggleOverlay(Overlay targetOverlay) { overlay = (overlay != targetOverlay) ? targetOverlay : Overlay::NONE; }
 
     constexpr UiState GetUiState() const { return uiState; }
     constexpr void SetUiState(UiState newUiState) { uiState = newUiState; }
+    constexpr void ToggleUiState(UiState targetUiState) { uiState = (uiState != targetUiState) ? targetUiState : UiState::NONE; }
     constexpr bool IsUiClear() const { return uiState == UiState::NONE; }
+
+    constexpr UiGameState GetUiGameState() const { return gameState; }
+    constexpr void SetUiGameState(UiGameState newGameState) { gameState = newGameState; }
+    constexpr void ToggleUiGameState(UiGameState targetGameState) { gameState = (gameState != targetGameState) ? targetGameState : UiGameState::SIM_MODE; }
 
     constexpr void HandleCamera()
     {

@@ -29,7 +29,7 @@ void HandleMouseDrag(std::shared_ptr<Station> station, PlayerCam &camera)
 
     if (!camera.IsDragging() && Vector2DistanceSq(camera.GetDragStart(), camera.GetWorldMousePos()) > DRAG_THRESHOLD * DRAG_THRESHOLD)
     {
-        camera.SetDragType(PlayerCam::DragType::SELECT);
+        camera.SetDragType(camera.GetUiGameState() == PlayerCam::UiGameState::SIM_MODE ? PlayerCam::DragType::SELECT : PlayerCam::DragType::NONE);
 
         if (camera.GetOverlay() == PlayerCam::Overlay::POWER && station &&
             station->GetTileWithComponentAtPosition<PowerConnectorComponent>(ToVector2Int(camera.GetDragStart())))
