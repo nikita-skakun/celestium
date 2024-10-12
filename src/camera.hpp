@@ -26,12 +26,6 @@ struct PlayerCam
         SETTINGS_MENU,
     };
 
-    enum class UiGameState : u_int8_t
-    {
-        SIM_MODE,
-        BUILD_MODE,
-    };
-
 private:
     Vector2 position;
     Vector2 dragStartPos;
@@ -42,7 +36,7 @@ private:
     float zoom;
     Overlay overlay;
     UiState uiState;
-    UiGameState gameState;
+    bool buildMode;
 
     void HandleMovement();
     void HandleOverlays();
@@ -51,7 +45,7 @@ private:
 public:
     PlayerCam()
         : position(Vector2(0, 0)), dragStartPos(Vector2(0, 0)), dragEndPos(Vector2(0, 0)), dragType(DragType::NONE),
-          crewHoverIndex(-1), zoom(1.f), overlay(Overlay::NONE), uiState(UiState::NONE), gameState(UiGameState::SIM_MODE) {}
+          crewHoverIndex(-1), zoom(1.f), overlay(Overlay::NONE), uiState(UiState::NONE), buildMode(false) {}
 
     // Utility function for Screen to World space transformations
     Vector2 GetWorldMousePos() const;
@@ -88,6 +82,8 @@ public:
     constexpr float GetZoom() const { return zoom; }
 
     constexpr Overlay GetOverlay() const { return overlay; }
+    constexpr bool IsOverlay(Overlay other) const { return overlay == other; }
+    constexpr void SetOverlay(Overlay targetOverlay) { overlay = targetOverlay; }
     constexpr void ToggleOverlay(Overlay targetOverlay) { overlay = (overlay != targetOverlay) ? targetOverlay : Overlay::NONE; }
     constexpr std::string GetOverlayName() const { return EnumToName<Overlay>(overlay); }
 
@@ -95,9 +91,9 @@ public:
     constexpr void SetUiState(UiState newUiState) { uiState = newUiState; }
     constexpr bool IsUiClear() const { return uiState == UiState::NONE; }
 
-    constexpr UiGameState GetUiGameState() const { return gameState; }
-    constexpr void SetUiGameState(UiGameState newGameState) { gameState = newGameState; }
-    constexpr void ToggleUiGameState(UiGameState targetState) { gameState = (gameState != targetState) ? targetState : UiGameState::SIM_MODE; }
+    constexpr bool IsInBuildMode() const { return buildMode; }
+    constexpr void SetBuildModeState(bool newState) { buildMode = newState; }
+    constexpr void ToggleBuildGameState() { buildMode = !buildMode; }
 
     constexpr void HandleCamera()
     {

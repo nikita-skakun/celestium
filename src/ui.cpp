@@ -150,7 +150,7 @@ void DrawStationOverlays(std::shared_ptr<Station> station, const Texture2D &stat
                     {
                         Vector2 startScreenPos = camera.WorldToScreen(ToVector2(tile->GetPosition()) + Vector2(.66f, 0.f));
                         Rectangle destRect = Vector2ToRect(startScreenPos, tileSize / 3.f);
-                        Rectangle sourceRect = Rectangle(0, 0, 1, 1) * TILE_SIZE;
+                        Rectangle sourceRect = Rectangle(0, 1, 1, 1) * TILE_SIZE;
 
                         DrawTexturePro(iconTileset, sourceRect, destRect, Vector2(), 0, Fade(YELLOW, .8f));
                     }
@@ -218,7 +218,7 @@ void DrawCrewCircle(const Crew &crew, const Vector2 &drawPosition, bool isSelect
 {
     Vector2 crewScreenPos = camera.WorldToScreen(drawPosition + Vector2(.5f, .5f));
 
-    if (isSelected && camera.GetUiGameState() == PlayerCam::UiGameState::SIM_MODE)
+    if (isSelected)
         DrawCircleV(crewScreenPos, (CREW_RADIUS + OUTLINE_SIZE) * camera.GetZoom(), OUTLINE_COLOR);
 
     DrawCircleV(crewScreenPos, CREW_RADIUS * camera.GetZoom(), crew.IsAlive() ? crew.GetColor() : GRAY);
@@ -242,7 +242,7 @@ void DrawCrew(double timeSinceFixedUpdate, const std::vector<Crew> &crewList, co
         {
             const std::shared_ptr<MoveTask> moveTask = std::dynamic_pointer_cast<MoveTask>(taskQueue.front());
 
-            if (camera.GetUiGameState() == PlayerCam::UiGameState::SIM_MODE && !moveTask->path.empty())
+            if (!camera.IsInBuildMode() && !moveTask->path.empty())
             {
                 DrawPath(moveTask->path, crew.GetPosition(), camera);
                 Vector2 nextPosition = ToVector2(moveTask->path.front());
@@ -271,8 +271,7 @@ void DrawCrew(double timeSinceFixedUpdate, const std::vector<Crew> &crewList, co
             }
         }
 
-        bool isSelected = camera.GetUiGameState() == PlayerCam::UiGameState::SIM_MODE && camera.GetSelectedCrew().contains(&crew - &crewList[0]);
-        DrawCrewCircle(crew, drawPosition, isSelected, camera);
+        DrawCrewCircle(crew, drawPosition, camera.GetSelectedCrew().contains(&crew - &crewList[0]), camera);
     }
 }
 
@@ -317,21 +316,6 @@ void DrawFpsCounter(float deltaTime, float padding, int fontSize, const Font &fo
     std::string fpsText = std::format("FPS: {:} ({:.2f}ms)", GetFPS(), deltaTime * 1000.f);
     const char *text = fpsText.c_str();
     DrawTextEx(font, text, Vector2(GetMonitorWidth(GetCurrentMonitor()) - MeasureTextEx(font, text, fontSize, 1).x - padding, padding), fontSize, 1, UI_TEXT_COLOR);
-}
-
-/**
- * Displays the current overlay in the top-left corner.
- *
- * @param camera    The PlayerCam that stores the overlay information.
- * @param padding   The padding from the screen edges for positioning the text.
- * @param fontSize  The size of the text to be drawn.
- * @param font      The font to use, defaults to RayLib's default.
- */
-void DrawOverlay(const PlayerCam &camera, float padding, int fontSize, const Font &font)
-{
-    std::string overlayText = std::format("Overlay: {:}", camera.GetOverlayName());
-    const char *text = overlayText.c_str();
-    DrawTextEx(font, text, Vector2(padding, padding), fontSize, 1, UI_TEXT_COLOR);
 }
 
 /**
@@ -486,32 +470,32 @@ void DrawUiButtons(const Texture2D &iconTileset, PlayerCam &camera)
     constexpr float smallButtonSize = 32.f;
 
     Rectangle buildButtonRect = Rectangle(DEFAULT_PADDING, (screenSize.y - largeButtonSize) / 2.f, largeButtonSize, largeButtonSize);
-    if (GuiButton(buildButtonRect, ""))
-        camera.ToggleUiGameState(PlayerCam::UiGameState::BUILD_MODE);
+    bool isInBuildMode = camera.IsInBuildMode();
+    GuiToggle(buildButtonRect, "", &isInBuildMode);
+    camera.SetBuildModeState(isInBuildMode);
 
     Rectangle buildIconRect = Rectangle(buildButtonRect.x + 8.f, buildButtonRect.y + 8.f, 48.f, 48.f);
-    DrawTexturePro(iconTileset, Rectangle(4, 0, 1, 1) * TILE_SIZE, buildIconRect, Vector2(), 0, Fade(DARKGRAY, .8f));
+    DrawTexturePro(iconTileset, Rectangle(1, 1, 1, 1) * TILE_SIZE, buildIconRect, Vector2(), 0, Fade(DARKGRAY, .8f));
 
-    Rectangle oxygenButtonRect = Rectangle(DEFAULT_PADDING, (screenSize.y + largeButtonSize) / 2.f + DEFAULT_PADDING, smallButtonSize, smallButtonSize);
-    if (GuiButton(oxygenButtonRect, ""))
-        camera.ToggleOverlay(PlayerCam::Overlay::OXYGEN);
+    Rectangle currentButtonRect = Rectangle(DEFAULT_PADDING, (screenSize.y + largeButtonSize) / 2.f + DEFAULT_PADDING, smallButtonSize, smallButtonSize);
 
-    Rectangle oxygenIconRect = Rectangle(oxygenButtonRect.x + 8.f, oxygenButtonRect.y + 8.f, 16.f, 16.f);
-    DrawTexturePro(iconTileset, Rectangle(2, 0, 1, 1) * TILE_SIZE, oxygenIconRect, Vector2(), 0, Fade(DARKGRAY, .8f));
+    for (auto overlay : magic_enum::enum_values<PlayerCam::Overlay>())
+    {
+        if (overlay == PlayerCam::Overlay::NONE)
+            continue;
 
-    Rectangle powerButtonRect = Rectangle(DEFAULT_PADDING, oxygenButtonRect.y + smallButtonSize + DEFAULT_PADDING, smallButtonSize, smallButtonSize);
-    if (GuiButton(powerButtonRect, ""))
-        camera.ToggleOverlay(PlayerCam::Overlay::POWER);
+        bool isOverlayActive = camera.IsOverlay(overlay);
+        GuiToggle(currentButtonRect, "", &isOverlayActive);
 
-    Rectangle powerIconRect = Rectangle(powerButtonRect.x + 8.f, powerButtonRect.y + 8.f, 16.f, 16.f);
-    DrawTexturePro(iconTileset, Rectangle(1, 0, 1, 1) * TILE_SIZE, powerIconRect, Vector2(), 0, Fade(DARKGRAY, .8f));
+        if (isOverlayActive != camera.IsOverlay(overlay))
+            camera.ToggleOverlay(overlay);
 
-    Rectangle wallButtonRect = Rectangle(DEFAULT_PADDING, powerButtonRect.y + smallButtonSize + DEFAULT_PADDING, smallButtonSize, smallButtonSize);
-    if (GuiButton(wallButtonRect, ""))
-        camera.ToggleOverlay(PlayerCam::Overlay::WALL);
+        Rectangle iconRect = Rectangle(currentButtonRect.x + 8.f, currentButtonRect.y + 8.f, 16.f, 16.f);
+        float iconIndex = (float)(magic_enum::enum_underlying<PlayerCam::Overlay>(overlay) - 1);
+        DrawTexturePro(iconTileset, Rectangle(iconIndex, 0, 1, 1) * TILE_SIZE, iconRect, Vector2(), 0, Fade(DARKGRAY, .8f));
 
-    Rectangle wallIconRect = Rectangle(wallButtonRect.x + 8.f, wallButtonRect.y + 8.f, 16.f, 16.f);
-    DrawTexturePro(iconTileset, Rectangle(3, 0, 1, 1) * TILE_SIZE, wallIconRect, Vector2(), 0, Fade(DARKGRAY, .8f));
+        currentButtonRect.y += smallButtonSize + DEFAULT_PADDING;
+    }
 }
 
 void DrawEscapeMenu(GameState &state, PlayerCam &camera, const Font &font)

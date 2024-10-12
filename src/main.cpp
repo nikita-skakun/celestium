@@ -81,14 +81,14 @@ int main()
 
     while (IsGameRunning(state))
     {
-        bool forcePaused = camera.GetUiState() != PlayerCam::UiState::NONE || camera.GetUiGameState() != PlayerCam::UiGameState::SIM_MODE;
+        bool forcePaused = camera.GetUiState() != PlayerCam::UiState::NONE || camera.IsInBuildMode();
         SetBit(state, forcePaused, GameState::FORCE_PAUSED);
 
         deltaTime = GetFrameTime();
 
         // Handle all real-time input and camera logic in the main thread
         camera.HandleCamera();
-        if (camera.GetUiGameState() == PlayerCam::UiGameState::SIM_MODE)
+        if (!camera.IsInBuildMode())
         {
             HandleCrewHover(crewList, camera);
             HandleCrewSelection(crewList, camera);
@@ -112,16 +112,19 @@ int main()
         DrawStationTiles(station, stationTileset, camera);
         DrawStationOverlays(station, stationTileset, iconTileset, camera);
         DrawEnvironmentalHazards(station, fireSpritesheet, camera);
-        DrawCrew(timeSinceFixedUpdate, crewList, camera);
+
+        if (!camera.IsInBuildMode())
+        {
+            DrawCrew(timeSinceFixedUpdate, crewList, camera);
+        }
 
         if (camera.IsUiClear())
         {
             DrawDragSelectBox(camera);
-            if (camera.GetUiGameState() == PlayerCam::UiGameState::SIM_MODE)
+            if (!camera.IsInBuildMode())
                 DrawMainTooltip(crewList, camera, station, font);
             DrawUiButtons(iconTileset, camera);
             DrawFpsCounter(deltaTime, 12, DEFAULT_FONT_SIZE, font);
-            DrawOverlay(camera, 12, DEFAULT_FONT_SIZE, font);
         }
 
         DrawUi(state, camera, font);
