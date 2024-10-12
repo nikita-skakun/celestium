@@ -117,6 +117,18 @@ int main()
         {
             DrawCrew(timeSinceFixedUpdate, crewList, camera);
         }
+        else
+        {
+            Vector2Int cursorPos = ToVector2Int(camera.GetWorldMousePos());
+            if (station)
+            {
+                auto allTiles = station->GetAllTilesAtPosition(cursorPos);
+                if (!allTiles.empty())
+                {
+                    DrawTileOutline(allTiles.at(allTiles.size() - 1), camera);
+                }
+            }
+        }
 
         if (camera.IsUiClear())
         {

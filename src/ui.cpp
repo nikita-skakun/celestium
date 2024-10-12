@@ -187,6 +187,28 @@ void DrawStationOverlays(std::shared_ptr<Station> station, const Texture2D &stat
     }
 }
 
+void DrawTileOutline(std::shared_ptr<Tile> tile, const PlayerCam &camera)
+{
+    if (!tile)
+        return;
+
+    std::unordered_set<Vector2Int> positions = {tile->GetPosition()};
+    if (auto decorative = tile->GetComponent<DecorativeComponent>())
+    {
+        for (const auto &dTile : decorative->GetDecorativeTiles())
+        {
+            positions.insert(tile->GetPosition() + dTile.offset);
+        }
+    }
+
+    Vector2 tileSize = Vector2(1.f, 1.f) * TILE_SIZE * camera.GetZoom();
+    for (auto &pos : positions)
+    {
+        Vector2 startPos = camera.WorldToScreen(ToVector2(pos));
+        DrawRectangleLinesEx(Vector2ToRect(startPos, tileSize), 2.f, MAGENTA);
+    }
+}
+
 /**
  * Draws the station's environmental hazards (such as fire).
  *
