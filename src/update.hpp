@@ -4,9 +4,7 @@
 #include "crew.hpp"
 
 void HandleCrewHover(const std::vector<Crew> &crewList, PlayerCam &camera);
-void HandleMouseDragStart(PlayerCam &camera);
 void HandleMouseDrag(std::shared_ptr<Station> station, PlayerCam &camera);
-void HandleMouseDragEnd(std::shared_ptr<Station> station, PlayerCam &camera);
 void HandleCrewSelection(const std::vector<Crew> &crewList, PlayerCam &camera);
 void AssignCrewTasks(std::vector<Crew> &crewList, const PlayerCam &camera);
 void HandleCrewTasks(std::vector<Crew> &crewList);

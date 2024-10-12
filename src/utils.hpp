@@ -51,6 +51,22 @@ inline bool CheckIfEventHappens(double chancePerSecond, double deltaTime) noexce
     return dis(gen) < expectedEvents;
 }
 
+// Utility functions for booleans
+template<typename T>
+constexpr void SetBit(T &value, bool bitState, T mask) noexcept
+{
+    if (bitState)
+        value |= mask;
+    else
+        value &= ~mask;
+}
+
+template<typename T>
+constexpr void ToggleBit(T &value, T mask) noexcept
+{
+    value ^= mask;
+}
+
 // Vector2 operator overloads
 constexpr Vector2 operator+(const Vector2 &a, const Vector2 &b) noexcept
 {

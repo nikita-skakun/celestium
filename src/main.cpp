@@ -88,17 +88,16 @@ int main()
 
         // Handle all real-time input and camera logic in the main thread
         camera.HandleCamera();
-        if (!IsGamePaused(state))
+        if (camera.GetUiGameState() == PlayerCam::UiGameState::SIM_MODE)
         {
             HandleCrewHover(crewList, camera);
-            if (camera.GetUiGameState() == PlayerCam::UiGameState::SIM_MODE)
-            {
-                HandleCrewSelection(crewList, camera);
-                AssignCrewTasks(crewList, camera);
-            }
-            HandleMouseDragStart(camera);
+            HandleCrewSelection(crewList, camera);
+            AssignCrewTasks(crewList, camera);
             HandleMouseDrag(station, camera);
-            HandleMouseDragEnd(station, camera);
+        }
+
+        if (camera.IsUiClear())
+        {
             MouseDeleteExistingConnection(station, camera);
         }
 
