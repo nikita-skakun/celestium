@@ -454,7 +454,7 @@ void DrawMainTooltip(const std::vector<Crew> &crewList, const PlayerCam &camera,
     const Vector2 mousePos = GetMousePosition();
 
     // Add crew info we are hovering over
-    if (camera.GetCrewHoverIndex() >= 0)
+    if (!camera.IsInBuildMode() && camera.GetCrewHoverIndex() >= 0)
     {
         const Crew &crew = crewList[camera.GetCrewHoverIndex()];
         hoverText += " - " + crew.GetName();
@@ -483,13 +483,16 @@ void DrawMainTooltip(const std::vector<Crew> &crewList, const PlayerCam &camera,
             hoverText += GetTileInfo(tile);
         }
 
-        auto hazards = station->GetHazardsAtPosition(tileHoverPos);
-        for (auto &&hazard : hazards)
+        if (!camera.IsInBuildMode())
         {
-            if (!hoverText.empty())
-                hoverText += "\n";
+            auto hazards = station->GetHazardsAtPosition(tileHoverPos);
+            for (auto &&hazard : hazards)
+            {
+                if (!hoverText.empty())
+                    hoverText += "\n";
 
-            hoverText += GetHazardInfo(hazard);
+                hoverText += GetHazardInfo(hazard);
+            }
         }
     }
 
