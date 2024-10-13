@@ -577,6 +577,7 @@ void DrawEscapeMenu(GameState &state, PlayerCam &camera, const Font &font)
 void DrawSettingsMenu(const Font &font)
 {
     GuiSetStyle(DEFAULT, TEXT_SIZE, DEFAULT_FONT_SIZE);
+    GuiSetStyle(DEFAULT, TEXT_ALIGNMENT, TEXT_ALIGN_CENTER);
     GuiSetFont(font);
 
     Vector2 screenSize = GetScreenSize();
@@ -592,6 +593,28 @@ void DrawSettingsMenu(const Font &font)
 
     // Draw a rectangle for the menu background
     DrawRectangleV(menuPos, menuSize, Fade(BLACK, 0.4f));
+
+    float halfPanelSize = menuSize.x / 2.f - DEFAULT_PADDING * 1.5f;
+
+    Rectangle monitorTextRect = Rectangle(menuPos.x + DEFAULT_PADDING, menuPos.y + DEFAULT_PADDING, halfPanelSize, DEFAULT_FONT_SIZE + DEFAULT_PADDING);
+    GuiStatusBar(monitorTextRect, "Render Monitor: ");
+
+    std::string monitorNames;
+    for (int i = 0; i < GetMonitorCount(); i++)
+    {
+        if (i > 0)
+            monitorNames += ";";
+        monitorNames += GetMonitorName(i);
+    }
+
+    int selectedMonitor = GetCurrentMonitor();
+    Rectangle monitorNameRect = Rectangle(monitorTextRect.x + DEFAULT_PADDING + halfPanelSize, menuPos.y + DEFAULT_PADDING, halfPanelSize, DEFAULT_FONT_SIZE + DEFAULT_PADDING);
+    GuiComboBox(monitorNameRect, monitorNames.c_str(), &selectedMonitor);
+    if (selectedMonitor != GetCurrentMonitor())
+    {
+        SetWindowMonitor(selectedMonitor);
+        SetTargetFPS(GetMonitorRefreshRate(selectedMonitor));
+    }
 }
 
 void DrawUi(GameState &state, PlayerCam &camera, const Font &font)
