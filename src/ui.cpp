@@ -1,5 +1,3 @@
-#define RAYGUI_IMPLEMENTATION
-#include "raygui.h"
 #include "ui.hpp"
 
 /**
@@ -509,9 +507,11 @@ void DrawUiButtons(const Texture2D &iconTileset, PlayerCam &camera)
     constexpr float smallButtonSize = 32.f;
 
     Rectangle buildButtonRect = Rectangle(DEFAULT_PADDING, (screenSize.y - largeButtonSize) / 2.f, largeButtonSize, largeButtonSize);
+
     bool isInBuildMode = camera.IsInBuildMode();
-    GuiToggle(buildButtonRect, "", &isInBuildMode);
-    camera.SetBuildModeState(isInBuildMode);
+    UiToggle test = UiToggle(buildButtonRect, isInBuildMode, [&camera](bool state)
+                             { camera.SetBuildModeState(state); });
+    test.Render();
 
     Rectangle buildIconRect = Rectangle(buildButtonRect.x + 8.f, buildButtonRect.y + 8.f, 48.f, 48.f);
     DrawTexturePro(iconTileset, Rectangle(1, 1, 1, 1) * TILE_SIZE, buildIconRect, Vector2(), 0, Fade(DARKGRAY, .8f));
@@ -524,7 +524,7 @@ void DrawUiButtons(const Texture2D &iconTileset, PlayerCam &camera)
             continue;
 
         bool isOverlayActive = camera.IsOverlay(overlay);
-        GuiToggle(currentButtonRect, "", &isOverlayActive);
+        // GuiToggle(currentButtonRect, "", &isOverlayActive);
 
         if (isOverlayActive != camera.IsOverlay(overlay))
             camera.ToggleOverlay(overlay);
@@ -548,8 +548,8 @@ void DrawEscapeMenu(GameState &state, PlayerCam &camera, const Font &font)
     // Calculate menu dimensions
     constexpr Vector2 menuSize = Vector2(buttonWidth + buttonSpacing * 2.f, totalButtonHeight + buttonSpacing * 2.f);
 
-    GuiSetStyle(DEFAULT, TEXT_SIZE, DEFAULT_FONT_SIZE);
-    GuiSetFont(font);
+    // GuiSetStyle(DEFAULT, TEXT_SIZE, DEFAULT_FONT_SIZE);
+    // GuiSetFont(font);
 
     Vector2 screenSize = GetScreenSize();
     Vector2 menuPos = screenSize / 2.f - menuSize / 2.f;
@@ -564,24 +564,24 @@ void DrawEscapeMenu(GameState &state, PlayerCam &camera, const Font &font)
     float firstButtonPosY = menuPos.y + (menuSize.y - totalButtonHeight) / 2.f;
     float buttonPosX = screenSize.x / 2 - buttonWidth / 2;
 
-    // Resume Button
-    if (GuiButton(Rectangle(buttonPosX, firstButtonPosY, buttonWidth, buttonHeight), "Resume"))
-        camera.SetUiState(PlayerCam::UiState::NONE);
+    // // Resume Button
+    // if ( GuiButton(Rectangle(buttonPosX, firstButtonPosY, buttonWidth, buttonHeight), "Resume"))
+    //     camera.SetUiState(PlayerCam::UiState::NONE);
 
-    // Settings Button
-    if (GuiButton(Rectangle(buttonPosX, firstButtonPosY + (buttonHeight + buttonSpacing), buttonWidth, buttonHeight), "Settings"))
-        camera.SetUiState(PlayerCam::UiState::SETTINGS_MENU);
+    // // Settings Button
+    // if ( GuiButton(Rectangle(buttonPosX, firstButtonPosY + (buttonHeight + buttonSpacing), buttonWidth, buttonHeight), "Settings"))
+    //     camera.SetUiState(PlayerCam::UiState::SETTINGS_MENU);
 
-    // Exit Button
-    if (GuiButton(Rectangle(buttonPosX, firstButtonPosY + 2 * (buttonHeight + buttonSpacing), buttonWidth, buttonHeight), "Exit"))
-        SetBit(state, false, GameState::RUNNING);
+    // // Exit Button
+    // if ( GuiButton(Rectangle(buttonPosX, firstButtonPosY + 2 * (buttonHeight + buttonSpacing), buttonWidth, buttonHeight), "Exit"))
+    //     SetBit(state, false, GameState::RUNNING);
 }
 
 void DrawSettingsMenu(const Font &font)
 {
-    GuiSetStyle(DEFAULT, TEXT_SIZE, DEFAULT_FONT_SIZE);
-    GuiSetStyle(DEFAULT, TEXT_ALIGNMENT, TEXT_ALIGN_CENTER);
-    GuiSetFont(font);
+    // GuiSetStyle(DEFAULT, TEXT_SIZE, DEFAULT_FONT_SIZE);
+    // GuiSetStyle(DEFAULT, TEXT_ALIGNMENT, TEXT_ALIGN_CENTER);
+    // GuiSetFont(font);
 
     Vector2 screenSize = GetScreenSize();
 
@@ -600,7 +600,7 @@ void DrawSettingsMenu(const Font &font)
     float halfPanelSize = menuSize.x / 2.f - DEFAULT_PADDING * 1.5f;
 
     Rectangle monitorTextRect = Rectangle(menuPos.x + DEFAULT_PADDING, menuPos.y + DEFAULT_PADDING, halfPanelSize, DEFAULT_FONT_SIZE + DEFAULT_PADDING);
-    GuiStatusBar(monitorTextRect, "Render Monitor: ");
+    // GuiStatusBar(monitorTextRect, "Render Monitor: ");
 
     std::string monitorNames;
     for (int i = 0; i < GetMonitorCount(); i++)
@@ -612,7 +612,7 @@ void DrawSettingsMenu(const Font &font)
 
     int selectedMonitor = GetCurrentMonitor();
     Rectangle monitorNameRect = Rectangle(monitorTextRect.x + DEFAULT_PADDING + halfPanelSize, menuPos.y + DEFAULT_PADDING, halfPanelSize, DEFAULT_FONT_SIZE + DEFAULT_PADDING);
-    GuiComboBox(monitorNameRect, monitorNames.c_str(), &selectedMonitor);
+    // GuiComboBox(monitorNameRect, monitorNames.c_str(), &selectedMonitor);
     if (selectedMonitor != GetCurrentMonitor())
     {
         SetWindowMonitor(selectedMonitor);
