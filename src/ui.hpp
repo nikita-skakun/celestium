@@ -17,3 +17,4 @@ void DrawTooltip(const std::string &tooltip, const Vector2 &pos, const Font &fon
 void DrawMainTooltip(const std::vector<Crew> &crewList, const PlayerCam &camera, std::shared_ptr<Station> station, const Font &font = GetFontDefault());
 void DrawUiButtons(const Texture2D &iconTileset, PlayerCam &camera);
 void DrawUi(GameState &state, PlayerCam &camera, const Font &font = GetFontDefault());
+void InitializeUiElements(const Texture2D &iconTileset, PlayerCam &camera);

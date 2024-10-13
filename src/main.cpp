@@ -71,6 +71,8 @@ int main()
 
     std::shared_ptr<Station> station = CreateStation();
 
+    InitializeUiElements(iconTileset, camera);
+
     LogMessage(LogLevel::INFO, "Initialization Complete");
 
     double timeSinceFixedUpdate = 0;
@@ -139,6 +141,7 @@ int main()
         }
 
         DrawUi(state, camera, font);
+        UiManager::GetInstance().Render();
 
         EndDrawing();
 

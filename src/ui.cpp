@@ -506,15 +506,10 @@ void DrawUiButtons(const Texture2D &iconTileset, PlayerCam &camera)
     constexpr float largeButtonSize = 64.f;
     constexpr float smallButtonSize = 32.f;
 
-    Rectangle buildButtonRect = Rectangle(DEFAULT_PADDING, (screenSize.y - largeButtonSize) / 2.f, largeButtonSize, largeButtonSize);
+    // Rectangle buildButtonRect = Rectangle(DEFAULT_PADDING, (screenSize.y - largeButtonSize) / 2.f, largeButtonSize, largeButtonSize);
 
-    bool isInBuildMode = camera.IsInBuildMode();
-    UiToggle test = UiToggle(buildButtonRect, isInBuildMode, [&camera](bool state)
-                             { camera.SetBuildModeState(state); });
-    test.Render();
-
-    Rectangle buildIconRect = Rectangle(buildButtonRect.x + 8.f, buildButtonRect.y + 8.f, 48.f, 48.f);
-    DrawTexturePro(iconTileset, Rectangle(1, 1, 1, 1) * TILE_SIZE, buildIconRect, Vector2(), 0, Fade(DARKGRAY, .8f));
+    // Rectangle buildIconRect = Rectangle(buildButtonRect.x + 8.f, buildButtonRect.y + 8.f, 48.f, 48.f);
+    // DrawTexturePro(iconTileset, Rectangle(1, 1, 1, 1) * TILE_SIZE, buildIconRect, Vector2(), 0, Fade(DARKGRAY, .8f));
 
     Rectangle currentButtonRect = Rectangle(DEFAULT_PADDING, (screenSize.y + largeButtonSize) / 2.f + DEFAULT_PADDING, smallButtonSize, smallButtonSize);
 
@@ -636,4 +631,23 @@ void DrawUi(GameState &state, PlayerCam &camera, const Font &font)
     default:
         break;
     }
+}
+
+void InitializeUiElements(const Texture2D &iconTileset, PlayerCam &camera)
+{
+    auto &uiManager = UiManager::GetInstance();
+
+    Vector2 screenSize = GetScreenSize();
+    constexpr float largeButtonSize = 64.f;
+    constexpr float smallButtonSize = 32.f;
+
+    Rectangle buildButtonRect = Rectangle(DEFAULT_PADDING, (screenSize.y - largeButtonSize) / 2.f, largeButtonSize, largeButtonSize);
+    bool isInBuildMode = camera.IsInBuildMode();
+
+    uiManager.AddElement("BUILD_TGL", std::make_shared<UiToggle>(buildButtonRect, isInBuildMode, [&camera](bool state)
+                                                                 { camera.SetBuildModeState(state); }));
+
+    Rectangle buildIconRect = Rectangle(buildButtonRect.x + 8.f, buildButtonRect.y + 8.f, 48.f, 48.f);
+    
+    uiManager.AddElement("BUILD_ICN", std::make_shared<UiIcon>(buildIconRect, iconTileset, Rectangle(1, 1, 1, 1) * TILE_SIZE, Fade(DARKGRAY, .8f)));
 }
