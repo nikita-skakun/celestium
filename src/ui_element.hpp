@@ -1,5 +1,5 @@
 #pragma once
-#include "utils.hpp"
+#include "asset_manager.hpp"
 
 struct UiElement
 {
@@ -61,7 +61,7 @@ struct TextAttrs
     int fontSize;
     int horizontalAlignment;
 
-    TextAttrs(const Font &font = GetFontDefault(), int fontSize = DEFAULT_FONT_SIZE, int horizontalAlignment = 1)
+    TextAttrs(const Font &font = AssetManager::GetFont("DEFAULT"), int fontSize = DEFAULT_FONT_SIZE, int horizontalAlignment = 1)
         : font(font), fontSize(fontSize), horizontalAlignment(horizontalAlignment) {}
 };
 
@@ -83,13 +83,13 @@ public:
 struct UiIcon : UiElement
 {
 protected:
-    const Texture2D &spritesheet;
+    std::string spritesheetName;
     Rectangle spriteOutline;
     Color tint;
 
 public:
-    UiIcon(const Rectangle &rect, const Texture2D &spritesheet, const Rectangle &spriteOutline, const Color &tint, std::function<void()> onUpdate = nullptr)
-        : UiElement(rect, onUpdate), spritesheet(spritesheet), spriteOutline(spriteOutline), tint(tint) {}
+    UiIcon(const Rectangle &rect, const std::string &spritesheetName, const Rectangle &spriteOutline, const Color &tint, std::function<void()> onUpdate = nullptr)
+        : UiElement(rect, onUpdate), spritesheetName(spritesheetName), spriteOutline(spriteOutline), tint(tint) {}
 
     void Render() override;
 };

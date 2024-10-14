@@ -13,34 +13,34 @@ private:
     UiManager(const UiManager &) = delete;
     UiManager &operator=(const UiManager &) = delete;
 
-public:
     static UiManager &GetInstance()
     {
         static UiManager instance;
         return instance;
     }
 
-    void AddElement(const std::string &key, std::shared_ptr<UiElement> element)
+public:
+    static void AddElement(const std::string &key, std::shared_ptr<UiElement> element)
     {
-        uiElements.emplace(key, element);
+        UiManager::GetInstance().uiElements.emplace(key, element);
     }
 
-    std::shared_ptr<UiElement> GetElement(const std::string &key) const
+    static std::shared_ptr<UiElement> GetElement(const std::string &key)
     {
-        return uiElements.at(key);
+        return UiManager::GetInstance().uiElements.at(key);
     }
 
-    void Update() const
+    static void Update()
     {
-        for (const auto &pair : uiElements)
+        for (const auto &pair : UiManager::GetInstance().uiElements)
         {
             pair.second->Update();
         }
     }
 
-    void Render() const
+    static void Render()
     {
-        for (const auto &pair : uiElements)
+        for (const auto &pair : UiManager::GetInstance().uiElements)
         {
             const auto &element = pair.second;
             if (element->IsVisible())
@@ -51,10 +51,10 @@ public:
         }
     }
 
-    constexpr void ClearAllElements()
+    static void ClearAllElements()
     {
-        uiElements.clear();
+        UiManager::GetInstance().uiElements.clear();
     }
 
-    void InitializeElements(const Texture2D &iconTileset, GameState &state, PlayerCam &camera, const Font &font);
+    static void InitializeElements(GameState &state, PlayerCam &camera);
 };

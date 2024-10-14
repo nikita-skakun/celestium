@@ -53,16 +53,16 @@ void DrawPath(const std::deque<Vector2Int> &path, const Vector2 &startPos, const
 /**
  * Draws the station tiles and direct overlays.
  *
- * @param station        The station to draw the tiles of.
- * @param stationTileset A texture containing all station tile assets.
- * @param camera         The PlayerCam used for handling overlays and converting coordinates.
+ * @param station The station to draw the tiles of.
+ * @param camera  The PlayerCam used for handling overlays and converting coordinates.
  */
-void DrawStationTiles(std::shared_ptr<Station> station, const Texture2D &stationTileset, const PlayerCam &camera)
+void DrawStationTiles(std::shared_ptr<Station> station, const PlayerCam &camera)
 {
     if (!station)
         return;
 
     Vector2 tileSize = Vector2(1.f, 1.f) * TILE_SIZE * camera.GetZoom();
+    const Texture2D &stationTileset = AssetManager::GetTexture("STATION");
 
     for (const auto &tilesAtPos : station->tileMap)
     {
@@ -93,16 +93,17 @@ void DrawStationTiles(std::shared_ptr<Station> station, const Texture2D &station
 /**
  * Draws the indirect visual overlays.
  *
- * @param station        The station to draw the overlays of.
- * @param stationTileset A texture containing all station tile assets.
- * @param camera         The PlayerCam used for handling overlays and converting coordinates.
+ * @param station The station to draw the overlays of.
+ * @param camera  The PlayerCam used for handling overlays and converting coordinates.
  */
-void DrawStationOverlays(std::shared_ptr<Station> station, const Texture2D &stationTileset, const Texture2D &iconTileset, const PlayerCam &camera)
+void DrawStationOverlays(std::shared_ptr<Station> station, const PlayerCam &camera)
 {
     if (!station)
         return;
 
     const Vector2 tileSize = Vector2(1.f, 1.f) * TILE_SIZE * camera.GetZoom();
+    const Texture2D &stationTileset = AssetManager::GetTexture("STATION");
+    const Texture2D &iconTileset = AssetManager::GetTexture("ICON");
 
     for (const auto &tilesAtPos : station->tileMap)
     {
@@ -227,16 +228,16 @@ void DrawTileOutline(std::shared_ptr<Tile> tile, const PlayerCam &camera)
 /**
  * Draws the station's environmental hazards (such as fire).
  *
- * @param station         The station to draw the overlays of.
- * @param fireSpritesheet A texture containing the fire animation spritesheet.
- * @param camera          The PlayerCam used for converting coordinates.
+ * @param station The station to draw the overlays of.
+ * @param camera  The PlayerCam used for converting coordinates.
  */
-void DrawEnvironmentalHazards(std::shared_ptr<Station> station, const Texture2D &fireSpritesheet, const PlayerCam &camera)
+void DrawEnvironmentalHazards(std::shared_ptr<Station> station, const PlayerCam &camera)
 {
     if (!station)
         return;
 
     const Vector2 tileSize = Vector2(1.f, 1.f) * TILE_SIZE * camera.GetZoom();
+    const Texture2D &fireSpritesheet = AssetManager::GetTexture("FIRE");
 
     for (const auto &hazard : station->hazards)
     {
@@ -346,10 +347,10 @@ void DrawDragSelectBox(const PlayerCam &camera)
  * @param deltaTime The time taken for the last frame, used to display in milliseconds.
  * @param padding   The padding from the screen edges for positioning the text.
  * @param fontSize  The size of the text to be drawn.
- * @param font      The font to use, defaults to RayLib's default.
  */
-void DrawFpsCounter(float deltaTime, float padding, int fontSize, const Font &font)
+void DrawFpsCounter(float deltaTime, float padding, int fontSize)
 {
+    const Font &font = AssetManager::GetFont("DEFAULT");
     std::string fpsText = std::format("FPS: {:} ({:.2f}ms)", GetFPS(), deltaTime * 1000.f);
     const char *text = fpsText.c_str();
     DrawTextEx(font, text, Vector2(GetMonitorWidth(GetCurrentMonitor()) - MeasureTextEx(font, text, fontSize, 1).x - padding, padding), fontSize, 1, UI_TEXT_COLOR);
@@ -360,15 +361,15 @@ void DrawFpsCounter(float deltaTime, float padding, int fontSize, const Font &fo
  *
  * @param tooltip  The text to display in the tooltip.
  * @param pos      The position where the tooltip will be drawn.
- * @param font     The font to use when drawing the tooltip, defaults to RayLib's default.
  * @param padding  The padding around the text within the tooltip background.
  * @param fontSize The size of the text in the tooltip.
  */
-void DrawTooltip(const std::string &tooltip, const Vector2 &pos, const Font &font, float padding, int fontSize)
+void DrawTooltip(const std::string &tooltip, const Vector2 &pos, float padding, int fontSize)
 {
     Vector2 screenSize = GetScreenSize();
     int lineCount = 0;
     const char **lines = TextSplit(tooltip.c_str(), '\n', &lineCount);
+    const Font &font = AssetManager::GetFont("DEFAULT");
 
     float textWidth = 0;
     for (int i = 0; i < lineCount; i++)
@@ -445,9 +446,8 @@ std::string GetHazardInfo(std::shared_ptr<Hazard> hazard)
  * @param crewList   A vector of Crew objects, used to retrieve the hovered crew member's information.
  * @param camera     The PlayerCam used for handling hover state and converting coordinates.
  * @param station    A shared pointer to the Station, used to fetch tiles and their components.
- * @param font       The font to use when drawing the tooltip, defaults to RayLib's default.
  */
-void DrawMainTooltip(const std::vector<Crew> &crewList, const PlayerCam &camera, std::shared_ptr<Station> station, const Font &font)
+void DrawMainTooltip(const std::vector<Crew> &crewList, const PlayerCam &camera, std::shared_ptr<Station> station)
 {
     std::string hoverText;
     const Vector2 mousePos = GetMousePosition();
@@ -498,13 +498,11 @@ void DrawMainTooltip(const std::vector<Crew> &crewList, const PlayerCam &camera,
     if (hoverText.empty())
         return;
 
-    DrawTooltip(hoverText, mousePos, font);
+    DrawTooltip(hoverText, mousePos);
 }
 
-void InitializeEscapeMenu(GameState &state, PlayerCam &camera, const Font &font)
+void InitializeEscapeMenu(GameState &state, PlayerCam &camera)
 {
-    auto &uiManager = UiManager::GetInstance();
-
     constexpr int buttonCount = 3;
     constexpr float buttonWidth = 120.f;
     constexpr float buttonSpacing = 20.f;
@@ -534,25 +532,24 @@ void InitializeEscapeMenu(GameState &state, PlayerCam &camera, const Font &font)
 
     Rectangle resumeButtonRect = Rectangle(buttonPosX, firstButtonPosY, buttonWidth, buttonHeight);
     auto resumeButton = std::make_shared<UiButton>(resumeButtonRect, "Resume", [&camera]()
-                                                   { camera.SetUiState(PlayerCam::UiState::NONE); }, TextAttrs(font));
+                                                   { camera.SetUiState(PlayerCam::UiState::NONE); });
     escMenu->AddChild(resumeButton);
 
     Rectangle settingsButtonRect = Rectangle(buttonPosX, firstButtonPosY + (buttonHeight + buttonSpacing), buttonWidth, buttonHeight);
     auto settingsButton = std::make_shared<UiButton>(settingsButtonRect, "Settings", [&camera]()
-                                                     { camera.SetUiState(PlayerCam::UiState::SETTINGS_MENU); }, TextAttrs(font));
+                                                     { camera.SetUiState(PlayerCam::UiState::SETTINGS_MENU); });
     escMenu->AddChild(settingsButton);
 
     Rectangle exitButtonRect = Rectangle(buttonPosX, firstButtonPosY + 2 * (buttonHeight + buttonSpacing), buttonWidth, buttonHeight);
     auto exitButton = std::make_shared<UiButton>(exitButtonRect, "Exit", [&state]()
-                                                 { SetBit(state, false, GameState::RUNNING); }, TextAttrs(font));
+                                                 { SetBit(state, false, GameState::RUNNING); });
     escMenu->AddChild(exitButton);
 
-    uiManager.AddElement("ESC_MENU", escMenu);
+    UiManager::AddElement("ESC_MENU", escMenu);
 }
 
-void InitializeSettingsMenu(PlayerCam &camera, const Font &font)
+void InitializeSettingsMenu(PlayerCam &camera)
 {
-    auto &uiManager = UiManager::GetInstance();
     Vector2 screenSize = GetScreenSize();
 
     Vector2 menuSize = screenSize * 2.f / 3.f;
@@ -572,7 +569,7 @@ void InitializeSettingsMenu(PlayerCam &camera, const Font &font)
     float halfPanelSize = menuSize.x / 2.f - DEFAULT_PADDING * 1.5f;
 
     Rectangle monitorTextRect = Rectangle(menuPos.x + DEFAULT_PADDING, menuPos.y + DEFAULT_PADDING, halfPanelSize, DEFAULT_FONT_SIZE + DEFAULT_PADDING);
-    auto monitorText = std::make_shared<UiStatusBar>(monitorTextRect, "Render Monitor:", TextAttrs(font));
+    auto monitorText = std::make_shared<UiStatusBar>(monitorTextRect, "Render Monitor:");
     settingsMenu->AddChild(monitorText);
 
     std::string monitorNames;
@@ -586,16 +583,14 @@ void InitializeSettingsMenu(PlayerCam &camera, const Font &font)
     int selectedMonitor = GetCurrentMonitor();
     Rectangle monitorSelectRect = Rectangle(monitorTextRect.x + DEFAULT_PADDING + halfPanelSize, menuPos.y + DEFAULT_PADDING, halfPanelSize, DEFAULT_FONT_SIZE + DEFAULT_PADDING);
     auto monitorSelect = std::make_shared<UiComboBox>(monitorSelectRect, monitorNames, selectedMonitor, [](int state)
-                                                      {  SetWindowMonitor(state); SetTargetFPS(GetMonitorRefreshRate(state)); }, TextAttrs(font));
+                                                      {  SetWindowMonitor(state); SetTargetFPS(GetMonitorRefreshRate(state)); });
     settingsMenu->AddChild(monitorSelect);
 
-    uiManager.AddElement("SETTINGS_MENU", settingsMenu);
+    UiManager::AddElement("SETTINGS_MENU", settingsMenu);
 }
 
-void InitializeSidebar(const Texture2D &iconTileset, PlayerCam &camera)
+void InitializeSidebar(PlayerCam &camera)
 {
-    auto &uiManager = UiManager::GetInstance();
-
     Vector2 screenSize = GetScreenSize();
     constexpr float largeButtonSize = 64.f;
     constexpr float smallButtonSize = 32.f;
@@ -606,14 +601,14 @@ void InitializeSidebar(const Texture2D &iconTileset, PlayerCam &camera)
                                                   { camera.SetBuildModeState(state); });
 
     Rectangle buildIconRect = Rectangle(buildButtonRect.x + 8.f, buildButtonRect.y + 8.f, 48.f, 48.f);
-    buildToggle->AddChild(std::make_shared<UiIcon>(buildIconRect, iconTileset, Rectangle(1, 1, 1, 1) * TILE_SIZE, Fade(DARKGRAY, .8f)));
+    buildToggle->AddChild(std::make_shared<UiIcon>(buildIconRect, "ICON", Rectangle(1, 1, 1, 1) * TILE_SIZE, Fade(DARKGRAY, .8f)));
 
     std::weak_ptr<UiToggle> weakBuildToggle = buildToggle;
     buildToggle->SetOnUpdate([weakBuildToggle, &camera]()
                              { if (auto buildToggle = weakBuildToggle.lock())
                              { buildToggle->SetVisibility(camera.IsUiClear()); } });
 
-    uiManager.AddElement("BUILD_TGL", buildToggle);
+    UiManager::AddElement("BUILD_TGL", buildToggle);
 
     Rectangle overlayRect = Rectangle(DEFAULT_PADDING, (screenSize.y + largeButtonSize) / 2.f + DEFAULT_PADDING, smallButtonSize, smallButtonSize);
 
@@ -628,7 +623,7 @@ void InitializeSidebar(const Texture2D &iconTileset, PlayerCam &camera)
 
         Rectangle iconRect = Rectangle(overlayRect.x + 8.f, overlayRect.y + 8.f, 16.f, 16.f);
         float iconIndex = (float)(magic_enum::enum_underlying<PlayerCam::Overlay>(overlay) - 1);
-        overlayToggle->AddChild(std::make_shared<UiIcon>(iconRect, iconTileset, Rectangle(iconIndex, 0, 1, 1) * TILE_SIZE, Fade(DARKGRAY, .8f)));
+        overlayToggle->AddChild(std::make_shared<UiIcon>(iconRect, "ICON", Rectangle(iconIndex, 0, 1, 1) * TILE_SIZE, Fade(DARKGRAY, .8f)));
 
         std::weak_ptr<UiToggle> weakOverlayToggle = overlayToggle;
         overlayToggle->SetOnUpdate([weakOverlayToggle, overlay, &camera]()
@@ -638,15 +633,15 @@ void InitializeSidebar(const Texture2D &iconTileset, PlayerCam &camera)
                                 overlayToggle->SetToggle(camera.IsOverlay(overlay));
                               } });
 
-        uiManager.AddElement(std::format("OVERLAY_{}_TGL", magic_enum::enum_name(overlay)), overlayToggle);
+        UiManager::AddElement(std::format("OVERLAY_{}_TGL", magic_enum::enum_name(overlay)), overlayToggle);
 
         overlayRect.y += smallButtonSize + DEFAULT_PADDING;
     }
 }
 
-void UiManager::InitializeElements(const Texture2D &iconTileset, GameState &state, PlayerCam &camera, const Font &font)
+void UiManager::InitializeElements(GameState &state, PlayerCam &camera)
 {
-    InitializeSidebar(iconTileset, camera);
-    InitializeEscapeMenu(state, camera, font);
-    InitializeSettingsMenu(camera, font);
+    InitializeSidebar(camera);
+    InitializeEscapeMenu(state, camera);
+    InitializeSettingsMenu(camera);
 }

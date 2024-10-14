@@ -16,7 +16,7 @@ void UiToggle::Render()
 
 void UiIcon::Render()
 {
-    DrawTexturePro(spritesheet, spriteOutline, rect, Vector2(), 0, tint);
+    DrawTexturePro(AssetManager::GetTexture(spritesheetName), spriteOutline, rect, Vector2(), 0, tint);
 }
 
 void UiButton::Render()
@@ -31,7 +31,7 @@ void UiButton::Render()
 
     GuiSetStyle(DEFAULT, TEXT_ALIGNMENT, TEXT_ALIGN_LEFT);
     GuiSetStyle(DEFAULT, TEXT_SIZE, DEFAULT_FONT_SIZE);
-    GuiSetFont(GetFontDefault());
+    GuiSetFont(AssetManager::GetFont("DEFAULT"));
     GuiEnable();
 }
 
@@ -50,7 +50,7 @@ void UiStatusBar::Render()
 
     GuiSetStyle(DEFAULT, TEXT_ALIGNMENT, TEXT_ALIGN_LEFT);
     GuiSetStyle(DEFAULT, TEXT_SIZE, DEFAULT_FONT_SIZE);
-    GuiSetFont(GetFontDefault());
+    GuiSetFont(AssetManager::GetFont("DEFAULT"));
 }
 
 void UiComboBox::Render()
@@ -67,6 +67,6 @@ void UiComboBox::Render()
 
     GuiSetStyle(DEFAULT, TEXT_ALIGNMENT, TEXT_ALIGN_LEFT);
     GuiSetStyle(DEFAULT, TEXT_SIZE, DEFAULT_FONT_SIZE);
-    GuiSetFont(GetFontDefault());
+    GuiSetFont(AssetManager::GetFont("DEFAULT"));
     GuiEnable();
 }

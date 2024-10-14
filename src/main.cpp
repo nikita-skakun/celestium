@@ -55,12 +55,8 @@ int main()
 
     GameState state = GameState::RUNNING;
 
-    Texture2D stationTileset = LoadTexture("../assets/tilesets/station.png");
-    Texture2D iconTileset = LoadTexture("../assets/tilesets/icons.png");
-    Texture2D fireSpritesheet = LoadTexture("../assets/tilesets/fire.png");
-    Font font = LoadFontEx("../assets/fonts/Jersey25.ttf", DEFAULT_FONT_SIZE, NULL, 0);
-
-    TileDefinitionRegistry::GetInstance().ParseTilesFromFile("../assets/definitions/tiles.yml");
+    AssetManager::Initialize();
+    TileDefinitionManager::ParseTilesFromFile("../assets/definitions/tiles.yml");
 
     PlayerCam camera = PlayerCam();
 
@@ -71,7 +67,7 @@ int main()
 
     std::shared_ptr<Station> station = CreateStation();
 
-    UiManager::GetInstance().InitializeElements(iconTileset, state, camera, font);
+    UiManager::InitializeElements(state, camera);
 
     LogMessage(LogLevel::INFO, "Initialization Complete");
 
@@ -111,12 +107,12 @@ int main()
         ClearBackground(Color(31, 40, 45));
 
         DrawTileGrid(camera);
-        DrawStationTiles(station, stationTileset, camera);
-        DrawStationOverlays(station, stationTileset, iconTileset, camera);
+        DrawStationTiles(station, camera);
+        DrawStationOverlays(station, camera);
 
         if (!camera.IsInBuildMode())
         {
-            DrawEnvironmentalHazards(station, fireSpritesheet, camera);
+            DrawEnvironmentalHazards(station, camera);
             DrawCrew(timeSinceFixedUpdate, crewList, camera);
         }
         else
@@ -135,12 +131,12 @@ int main()
         if (camera.IsUiClear())
         {
             DrawDragSelectBox(camera);
-            DrawMainTooltip(crewList, camera, station, font);
-            DrawFpsCounter(deltaTime, 12, DEFAULT_FONT_SIZE, font);
+            DrawMainTooltip(crewList, camera, station);
+            DrawFpsCounter(deltaTime, 12, DEFAULT_FONT_SIZE);
         }
 
-        UiManager::GetInstance().Update();
-        UiManager::GetInstance().Render();
+        UiManager::Update();
+        UiManager::Render();
 
         EndDrawing();
 
@@ -152,10 +148,7 @@ int main()
 
     CloseWindow();
 
-    UnloadTexture(stationTileset);
-    UnloadTexture(iconTileset);
-    UnloadTexture(fireSpritesheet);
-    UnloadFont(font);
+    AssetManager::CleanUp();
 
     LogMessage(LogLevel::INFO, "Clean-up Complete");
     return 0;
