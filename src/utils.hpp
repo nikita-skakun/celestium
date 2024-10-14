@@ -190,6 +190,11 @@ constexpr Vector2 Vector2Cap(const Vector2 &a, const Vector2 &b, float delta) no
         return a + Vector2Normalize(b - a) * delta;
 }
 
+constexpr Vector2 Vector2ScreenScale(const Vector2 &a) noexcept
+{
+    return Vector2(a.x / 1920., a.y / 1080.);
+}
+
 inline int Vector2ToRandomInt(const Vector2 &a, int min, int max) noexcept
 {
     Vector2Hash vectorHash;

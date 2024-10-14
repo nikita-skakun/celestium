@@ -4,12 +4,12 @@ void InitializeEscapeMenu(PlayerCam &camera)
 {
     constexpr int buttonCount = 3;
     constexpr double buttonWidth = 1. / 12.;
-    constexpr double buttonSpacing = 1. / 72.;
+    constexpr Vector2 spacing = Vector2ScreenScale(Vector2(DEFAULT_PADDING, DEFAULT_PADDING));
     constexpr double buttonHeight = 1. / 24.;
-    constexpr double totalButtonHeight = buttonCount * buttonHeight + (buttonCount - 1) * buttonSpacing;
+    constexpr double totalButtonHeight = buttonCount * buttonHeight + (buttonCount - 1) * spacing.y;
 
     // Calculate menu dimensions
-    constexpr Vector2 menuSize = Vector2(buttonWidth + buttonSpacing, totalButtonHeight + buttonSpacing * 2.);
+    constexpr Vector2 menuSize = Vector2(buttonWidth, totalButtonHeight) + spacing * 2;
 
     constexpr Vector2 menuPos = Vector2(.5, .5) - menuSize / 2.;
 
@@ -33,12 +33,12 @@ void InitializeEscapeMenu(PlayerCam &camera)
                                                    { camera.SetUiState(PlayerCam::UiState::NONE); });
     escMenu->AddChild(resumeButton);
 
-    constexpr Rectangle settingsButtonRect = Rectangle(buttonPosX, firstButtonPosY + (buttonHeight + buttonSpacing), buttonWidth, buttonHeight);
+    constexpr Rectangle settingsButtonRect = Rectangle(buttonPosX, firstButtonPosY + (buttonHeight + spacing.y), buttonWidth, buttonHeight);
     auto settingsButton = std::make_shared<UiButton>(settingsButtonRect, "Settings", [&camera]()
                                                      { camera.SetUiState(PlayerCam::UiState::SETTINGS_MENU); });
     escMenu->AddChild(settingsButton);
 
-    constexpr Rectangle exitButtonRect = Rectangle(buttonPosX, firstButtonPosY + 2. * (buttonHeight + buttonSpacing), buttonWidth, buttonHeight);
+    constexpr Rectangle exitButtonRect = Rectangle(buttonPosX, firstButtonPosY + 2. * (buttonHeight + spacing.y), buttonWidth, buttonHeight);
     auto exitButton = std::make_shared<UiButton>(exitButtonRect, "Exit", []()
                                                  { GameManager::SetBit(GameState::RUNNING, false); });
     escMenu->AddChild(exitButton);
@@ -50,6 +50,9 @@ void InitializeSettingsMenu(PlayerCam &camera)
 {
     constexpr Vector2 menuSize = Vector2(1., 1.) * 2. / 3.;
     constexpr Vector2 menuPos = Vector2(.5, .5) - menuSize / 2.;
+    constexpr Vector2 spacing = Vector2ScreenScale(Vector2(DEFAULT_PADDING, DEFAULT_PADDING));
+    constexpr double settingHeight = 1. / 36.;
+    constexpr double halfPanelWidth = menuSize.x / 2. - spacing.x * 1.5;
 
     // Darken the background to draw focus to the UI
     auto settingsMenu = std::make_shared<UiPanel>(Rectangle(0, 0, 1, 1), Fade(BLACK, .2));
@@ -62,11 +65,7 @@ void InitializeSettingsMenu(PlayerCam &camera)
     auto menuBackground = std::make_shared<UiPanel>(Vector2ToRect(menuPos, menuSize), Fade(BLACK, .5));
     settingsMenu->AddChild(menuBackground);
 
-    constexpr double spacing = 1. / 72.;
-    constexpr double settingHeight = 1. / 36.;
-    constexpr double halfPanelWidth = menuSize.x / 2. - spacing * 2. / 3.;
-
-    Rectangle monitorTextRect = Rectangle(menuPos.x + spacing / 3., menuPos.y + spacing, halfPanelWidth, settingHeight);
+    Rectangle monitorTextRect = Rectangle(menuPos.x + spacing.x, menuPos.y + spacing.y, halfPanelWidth, settingHeight);
     auto monitorText = std::make_shared<UiStatusBar>(monitorTextRect, "Render Monitor:");
     settingsMenu->AddChild(monitorText);
 
@@ -79,7 +78,7 @@ void InitializeSettingsMenu(PlayerCam &camera)
     }
 
     int selectedMonitor = GetCurrentMonitor();
-    Rectangle monitorSelectRect = Rectangle(menuPos.x + halfPanelWidth + spacing, menuPos.y + spacing, halfPanelWidth, settingHeight);
+    Rectangle monitorSelectRect = Rectangle(monitorTextRect.x + halfPanelWidth + spacing.x, menuPos.y + spacing.y, halfPanelWidth, settingHeight);
     auto monitorSelect = std::make_shared<UiComboBox>(monitorSelectRect, monitorNames, selectedMonitor, [](int monitor)
                                                       {  SetWindowMonitor(monitor); SetTargetFPS(GetMonitorRefreshRate(monitor)); });
     settingsMenu->AddChild(monitorSelect);
@@ -89,11 +88,11 @@ void InitializeSettingsMenu(PlayerCam &camera)
 
 void InitializeSidebar(PlayerCam &camera)
 {
-    constexpr Vector2 largeButtonSize = Vector2(1. / 30., 8. / 135.);
+    constexpr Vector2 largeButtonSize = Vector2ScreenScale(Vector2(64, 64));
     constexpr Vector2 smallButtonSize = largeButtonSize / 2.;
-    constexpr double spacing = 1. / 72.;
+    constexpr Vector2 spacing = Vector2ScreenScale(Vector2(DEFAULT_PADDING, DEFAULT_PADDING));
 
-    constexpr Rectangle buildButtonRect = Vector2ToRect(Vector2(spacing / 2., (1. - largeButtonSize.x) / 2.), largeButtonSize);
+    constexpr Rectangle buildButtonRect = Vector2ToRect(Vector2(spacing.x, (1. - largeButtonSize.y) / 2.), largeButtonSize);
     bool isInBuildMode = camera.IsInBuildMode();
     auto buildToggle = std::make_shared<UiToggle>(buildButtonRect, isInBuildMode, [&camera](bool state)
                                                   { camera.SetBuildModeState(state); });
@@ -108,7 +107,7 @@ void InitializeSidebar(PlayerCam &camera)
 
     UiManager::AddElement("BUILD_TGL", buildToggle);
 
-    Rectangle overlayRect = Vector2ToRect(Vector2(spacing / 2., (1. + largeButtonSize.y) / 2. + spacing * 2.), smallButtonSize);
+    Rectangle overlayRect = Vector2ToRect(Vector2(spacing.x, (1. + largeButtonSize.y) / 2. + spacing.y), smallButtonSize);
 
     for (auto overlay : magic_enum::enum_values<PlayerCam::Overlay>())
     {
@@ -133,7 +132,7 @@ void InitializeSidebar(PlayerCam &camera)
 
         UiManager::AddElement(std::format("OVERLAY_{}_TGL", magic_enum::enum_name(overlay)), overlayToggle);
 
-        overlayRect.y += smallButtonSize.y + spacing;
+        overlayRect.y += smallButtonSize.y + spacing.y;
     }
 }
 
