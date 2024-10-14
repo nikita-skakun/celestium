@@ -29,6 +29,14 @@ public:
         return uiElements.at(key);
     }
 
+    void Update() const
+    {
+        for (const auto &pair : uiElements)
+        {
+            pair.second->Update();
+        }
+    }
+
     void Render() const
     {
         for (const auto &pair : uiElements)

@@ -500,8 +500,10 @@ void DrawMainTooltip(const std::vector<Crew> &crewList, const PlayerCam &camera,
     DrawTooltip(hoverText, mousePos, font);
 }
 
-void DrawEscapeMenu(GameState &state, PlayerCam &camera, const Font &font)
+void InitializeEscapeMenu(GameState &state, PlayerCam &camera, const Font &font)
 {
+    auto &uiManager = UiManager::GetInstance();
+
     constexpr int buttonCount = 3;
     constexpr float buttonWidth = 120.f;
     constexpr float buttonSpacing = 20.f;
@@ -511,33 +513,40 @@ void DrawEscapeMenu(GameState &state, PlayerCam &camera, const Font &font)
     // Calculate menu dimensions
     constexpr Vector2 menuSize = Vector2(buttonWidth + buttonSpacing * 2.f, totalButtonHeight + buttonSpacing * 2.f);
 
-    // GuiSetStyle(DEFAULT, TEXT_SIZE, DEFAULT_FONT_SIZE);
-    // GuiSetFont(font);
-
     Vector2 screenSize = GetScreenSize();
     Vector2 menuPos = screenSize / 2.f - menuSize / 2.f;
 
     // Darken the background to draw focus to the UI
-    DrawRectangleV(Vector2(0.f, 0.f), screenSize, Fade(BLACK, 0.2f));
+    auto escMenu = std::make_shared<UiPanel>(Vector2ToRect(Vector2(0.f, 0.f), screenSize), Fade(BLACK, 0.2f));
+    std::weak_ptr<UiPanel> weakEscMenu = escMenu;
+    escMenu->SetOnUpdate([weakEscMenu, &camera]()
+                         { if (auto escMenu = weakEscMenu.lock())
+                             { escMenu->SetVisibility(camera.IsUiState(PlayerCam::UiState::ESC_MENU)); } });
 
     // Draw a rectangle for the menu background
-    DrawRectangleV(menuPos, menuSize, Fade(BLACK, 0.4f));
+    auto menuBackground = std::make_shared<UiPanel>(Vector2ToRect(menuPos, menuSize), Fade(BLACK, 0.4f));
+    escMenu->AddChild(menuBackground);
 
     // Dynamically position buttons in the center of the menu
     float firstButtonPosY = menuPos.y + (menuSize.y - totalButtonHeight) / 2.f;
     float buttonPosX = screenSize.x / 2 - buttonWidth / 2;
 
-    // // Resume Button
-    // if ( GuiButton(Rectangle(buttonPosX, firstButtonPosY, buttonWidth, buttonHeight), "Resume"))
-    //     camera.SetUiState(PlayerCam::UiState::NONE);
+    Rectangle resumeButtonRect = Rectangle(buttonPosX, firstButtonPosY, buttonWidth, buttonHeight);
+    auto resumeButton = std::make_shared<UiButton>(resumeButtonRect, "Resume", [&camera]()
+                                                   { camera.SetUiState(PlayerCam::UiState::NONE); }, font);
+    escMenu->AddChild(resumeButton);
 
-    // // Settings Button
-    // if ( GuiButton(Rectangle(buttonPosX, firstButtonPosY + (buttonHeight + buttonSpacing), buttonWidth, buttonHeight), "Settings"))
-    //     camera.SetUiState(PlayerCam::UiState::SETTINGS_MENU);
+    Rectangle settingsButtonRect = Rectangle(buttonPosX, firstButtonPosY + (buttonHeight + buttonSpacing), buttonWidth, buttonHeight);
+    auto settingsButton = std::make_shared<UiButton>(settingsButtonRect, "Settings", [&camera]()
+                                                     { camera.SetUiState(PlayerCam::UiState::SETTINGS_MENU); }, font);
+    escMenu->AddChild(settingsButton);
 
-    // // Exit Button
-    // if ( GuiButton(Rectangle(buttonPosX, firstButtonPosY + 2 * (buttonHeight + buttonSpacing), buttonWidth, buttonHeight), "Exit"))
-    //     SetBit(state, false, GameState::RUNNING);
+    Rectangle exitButtonRect = Rectangle(buttonPosX, firstButtonPosY + 2 * (buttonHeight + buttonSpacing), buttonWidth, buttonHeight);
+    auto exitButton = std::make_shared<UiButton>(exitButtonRect, "Exit", [&state]()
+                                                 { SetBit(state, false, GameState::RUNNING); }, font);
+    escMenu->AddChild(exitButton);
+
+    uiManager.AddElement("ESC_MENU", escMenu);
 }
 
 void DrawSettingsMenu(const Font &font)
@@ -583,34 +592,7 @@ void DrawSettingsMenu(const Font &font)
     }
 }
 
-void DrawUi(GameState &state, PlayerCam &camera, const Font &font)
-{
-    PlayerCam::UiState uiState = camera.GetUiState();
-    auto &uiManager = UiManager::GetInstance();
-
-    uiManager.GetElement("BUILD_TGL")->SetVisibility(camera.IsUiClear());
-
-    for (auto overlay : magic_enum::enum_values<PlayerCam::Overlay>())
-    {
-        if (overlay != PlayerCam::Overlay::NONE)
-            uiManager.GetElement(std::format("OVERLAY_{}_TGL", magic_enum::enum_name(overlay)))->SetVisibility(camera.IsUiClear());
-    }
-
-    switch (uiState)
-    {
-    case PlayerCam::UiState::ESC_MENU:
-        DrawEscapeMenu(state, camera, font);
-        break;
-
-    case PlayerCam::UiState::SETTINGS_MENU:
-        DrawSettingsMenu(font);
-
-    default:
-        break;
-    }
-}
-
-void InitializeUiElements(const Texture2D &iconTileset, PlayerCam &camera)
+void InitializeSidebar(const Texture2D &iconTileset, PlayerCam &camera)
 {
     auto &uiManager = UiManager::GetInstance();
 
@@ -625,6 +607,11 @@ void InitializeUiElements(const Texture2D &iconTileset, PlayerCam &camera)
 
     Rectangle buildIconRect = Rectangle(buildButtonRect.x + 8.f, buildButtonRect.y + 8.f, 48.f, 48.f);
     buildToggle->AddChild(std::make_shared<UiIcon>(buildIconRect, iconTileset, Rectangle(1, 1, 1, 1) * TILE_SIZE, Fade(DARKGRAY, .8f)));
+
+    std::weak_ptr<UiToggle> weakBuildToggle = buildToggle;
+    buildToggle->SetOnUpdate([weakBuildToggle, &camera]()
+                             { if (auto buildToggle = weakBuildToggle.lock())
+                             { buildToggle->SetVisibility(camera.IsUiClear()); } });
 
     uiManager.AddElement("BUILD_TGL", buildToggle);
 
@@ -643,8 +630,22 @@ void InitializeUiElements(const Texture2D &iconTileset, PlayerCam &camera)
         float iconIndex = (float)(magic_enum::enum_underlying<PlayerCam::Overlay>(overlay) - 1);
         overlayToggle->AddChild(std::make_shared<UiIcon>(iconRect, iconTileset, Rectangle(iconIndex, 0, 1, 1) * TILE_SIZE, Fade(DARKGRAY, .8f)));
 
+        std::weak_ptr<UiToggle> weakOverlayToggle = overlayToggle;
+        overlayToggle->SetOnUpdate([weakOverlayToggle, overlay, &camera]()
+                                   { if (auto overlayToggle = weakOverlayToggle.lock())
+                             { 
+                                overlayToggle->SetVisibility(camera.IsUiClear());
+                                overlayToggle->SetToggle(camera.IsOverlay(overlay));
+                              } });
+
         uiManager.AddElement(std::format("OVERLAY_{}_TGL", magic_enum::enum_name(overlay)), overlayToggle);
 
         overlayRect.y += smallButtonSize + DEFAULT_PADDING;
     }
+}
+
+void InitializeUiElements(const Texture2D &iconTileset, GameState &state, PlayerCam &camera, const Font &font)
+{
+    InitializeSidebar(iconTileset, camera);
+    InitializeEscapeMenu(state, camera, font);
 }

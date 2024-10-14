@@ -89,6 +89,7 @@ public:
 
     constexpr UiState GetUiState() const { return uiState; }
     constexpr void SetUiState(UiState newUiState) { uiState = newUiState; }
+    constexpr bool IsUiState(UiState other) const { return uiState == other; }
     constexpr bool IsUiClear() const { return uiState == UiState::NONE; }
 
     constexpr bool IsInBuildMode() const { return buildMode; }

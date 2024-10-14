@@ -71,7 +71,7 @@ int main()
 
     std::shared_ptr<Station> station = CreateStation();
 
-    InitializeUiElements(iconTileset, camera);
+    InitializeUiElements(iconTileset, state, camera, font);
 
     LogMessage(LogLevel::INFO, "Initialization Complete");
 
@@ -139,7 +139,7 @@ int main()
             DrawFpsCounter(deltaTime, 12, DEFAULT_FONT_SIZE, font);
         }
 
-        DrawUi(state, camera, font);
+        UiManager::GetInstance().Update();
         UiManager::GetInstance().Render();
 
         EndDrawing();

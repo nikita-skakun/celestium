@@ -8,9 +8,12 @@ protected:
     bool enabled;
     bool visible;
     std::vector<std::shared_ptr<UiElement>> children;
+    std::function<void()> onUpdate;
 
 public:
-    constexpr UiElement(const Rectangle &rect) : rect(rect), enabled(true), visible(true) {};
+    UiElement(const Rectangle &rect, std::function<void()> onUpdate = nullptr)
+        : rect(rect), enabled(true), visible(true), onUpdate(onUpdate) {};
+
     constexpr const Rectangle &GetRect() const { return rect; }
     constexpr void SetRect(const Rectangle &newRect) { rect = newRect; }
     constexpr bool IsEnabled() const { return enabled; }
@@ -34,6 +37,22 @@ public:
                 child->Render();
         }
     }
+
+    void SetOnUpdate(std::function<void()> callback)
+    {
+        onUpdate = callback;
+    }
+
+    constexpr void Update()
+    {
+        if (onUpdate)
+            onUpdate();
+
+        for (const auto &child : children)
+        {
+            child->Update();
+        }
+    }
 };
 
 struct UiToggle : UiElement
@@ -43,8 +62,10 @@ protected:
     std::function<void(bool)> onToggle;
 
 public:
-    UiToggle(const Rectangle &rect, bool startState, std::function<void(bool)> callback = nullptr)
-        : UiElement(rect), state(startState), onToggle(callback) {}
+    UiToggle(const Rectangle &rect, bool startState, std::function<void(bool)> onToggle = nullptr, std::function<void()> onUpdate = nullptr)
+        : UiElement(rect, onUpdate), state(startState), onToggle(onToggle) {}
+
+    constexpr void SetToggle(bool newState) { state = newState; }
 
     void Render() override;
 };
@@ -57,8 +78,36 @@ protected:
     Color tint;
 
 public:
-    UiIcon(const Rectangle &rect, const Texture2D &spritesheet, const Rectangle &spriteOutline, const Color &tint)
-        : UiElement(rect), spritesheet(spritesheet), spriteOutline(spriteOutline), tint(tint) {}
+    UiIcon(const Rectangle &rect, const Texture2D &spritesheet, const Rectangle &spriteOutline, const Color &tint, std::function<void()> onUpdate = nullptr)
+        : UiElement(rect, onUpdate), spritesheet(spritesheet), spriteOutline(spriteOutline), tint(tint) {}
+
+    void Render() override;
+};
+
+struct UiButton : UiElement
+{
+protected:
+    std::string text;
+    std::function<void()> onPress;
+    const Font &font;
+    int fontSize;
+
+public:
+    UiButton(const Rectangle &rect, std::string text, std::function<void()> onPress = nullptr, const Font &font = GetFontDefault(),
+             int fontSize = DEFAULT_FONT_SIZE, std::function<void()> onUpdate = nullptr)
+        : UiElement(rect, onUpdate), text(text), onPress(onPress), font(font), fontSize(fontSize) {}
+
+    void Render() override;
+};
+
+struct UiPanel : UiElement
+{
+protected:
+    Color backgroundColor;
+
+public:
+    UiPanel(const Rectangle &rect, Color backgroundColor, std::function<void()> onUpdate = nullptr)
+        : UiElement(rect, onUpdate), backgroundColor(backgroundColor) {}
 
     void Render() override;
 };
