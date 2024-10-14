@@ -7,13 +7,13 @@
 std::mutex updateMutex;
 std::condition_variable fixedUpdateCondition;
 
-void FixedUpdate(std::shared_ptr<Station> station, std::vector<Crew> &crewList, double &timeSinceFixedUpdate, GameState &state)
+void FixedUpdate(std::shared_ptr<Station> station, std::vector<Crew> &crewList, double &timeSinceFixedUpdate)
 {
     double previousTime = GetTime();
 
-    while (IsGameRunning(state))
+    while (GameManager::IsGameRunning())
     {
-        if (!IsGamePaused(state))
+        if (!GameManager::IsGamePaused())
         {
             double currentTime = GetTime();
             double deltaTime = currentTime - previousTime;
@@ -53,7 +53,7 @@ int main()
     SetTargetFPS(GetMonitorRefreshRate(GetCurrentMonitor()));
     SetExitKey(0);
 
-    GameState state = GameState::RUNNING;
+    GameManager::SetBit(GameState::RUNNING);
 
     AssetManager::Initialize();
     TileDefinitionManager::ParseTilesFromFile("../assets/definitions/tiles.yml");
@@ -67,20 +67,20 @@ int main()
 
     std::shared_ptr<Station> station = CreateStation();
 
-    UiManager::InitializeElements(state, camera);
+    UiManager::InitializeElements(camera);
 
     LogMessage(LogLevel::INFO, "Initialization Complete");
 
     double timeSinceFixedUpdate = 0;
     // Start the update thread
-    std::thread updateThread(FixedUpdate, station, std::ref(crewList), std::ref(timeSinceFixedUpdate), std::ref(state));
+    std::thread updateThread(FixedUpdate, station, std::ref(crewList), std::ref(timeSinceFixedUpdate));
 
     double deltaTime = 0;
 
-    while (IsGameRunning(state))
+    while (GameManager::IsGameRunning())
     {
         bool forcePaused = camera.GetUiState() != PlayerCam::UiState::NONE || camera.IsInBuildMode();
-        SetBit(state, forcePaused, GameState::FORCE_PAUSED);
+        GameManager::SetBit(GameState::FORCE_PAUSED, forcePaused);
 
         deltaTime = GetFrameTime();
 
@@ -100,7 +100,7 @@ int main()
         }
 
         if (IsKeyPressed(KEY_SPACE))
-            ToggleBit(state, GameState::PAUSED);
+            GameManager::ToggleBit(GameState::PAUSED);
 
         // Render logic
         BeginDrawing();
@@ -141,7 +141,7 @@ int main()
         EndDrawing();
 
         if (WindowShouldClose())
-            SetBit(state, false, GameState::RUNNING);
+            GameManager::SetBit(GameState::RUNNING, false);
     }
 
     updateThread.join();

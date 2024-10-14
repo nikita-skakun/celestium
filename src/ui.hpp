@@ -1,7 +1,6 @@
 #pragma once
 #include "camera.hpp"
 #include "crew.hpp"
-#include "game_state.hpp"
 #include "ui_manager.hpp"
 
 void DrawTileGrid(const PlayerCam &camera);

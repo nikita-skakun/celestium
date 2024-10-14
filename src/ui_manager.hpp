@@ -1,5 +1,6 @@
 #pragma once
 #include "ui_element.hpp"
+#include "game_state.hpp"
 #include "camera.hpp"
 #include <unordered_map>
 
@@ -56,5 +57,5 @@ public:
         UiManager::GetInstance().uiElements.clear();
     }
 
-    static void InitializeElements(GameState &state, PlayerCam &camera);
+    static void InitializeElements(PlayerCam &camera);
 };

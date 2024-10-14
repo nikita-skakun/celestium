@@ -15,5 +15,36 @@ struct magic_enum::customize::enum_range<GameState>
     static constexpr bool is_flags = true;
 };
 
-constexpr bool IsGameRunning(GameState state) { return magic_enum::enum_flags_test(state, GameState::RUNNING); }
-constexpr bool IsGamePaused(GameState state) { return magic_enum::enum_flags_test_any(state, GameState::PAUSED | GameState::FORCE_PAUSED); }
+struct GameManager
+{
+private:
+    GameState state;
+
+    GameManager() = default;
+    ~GameManager() = default;
+    GameManager(const GameManager &) = delete;
+    GameManager &operator=(const GameManager &) = delete;
+
+    static GameManager &GetInstance()
+    {
+        static GameManager instance;
+        return instance;
+    }
+
+public:
+    static GameState GetGameState() { return GetInstance().state; }
+    static bool IsGameRunning() { return magic_enum::enum_flags_test(GetGameState(), GameState::RUNNING); }
+    static bool IsGamePaused() { return magic_enum::enum_flags_test_any(GetGameState(), GameState::PAUSED | GameState::FORCE_PAUSED); }
+    static void SetBit(GameState mask, bool bitState = true)
+    {
+        if (bitState)
+            GetInstance().state |= mask;
+        else
+            GetInstance().state &= ~mask;
+    }
+
+    static void ToggleBit(GameState mask)
+    {
+        GetInstance().state ^= mask;
+    }
+};
