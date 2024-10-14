@@ -1,5 +1,6 @@
 #pragma once
 #include "ui_element.hpp"
+#include "camera.hpp"
 #include <unordered_map>
 
 struct UiManager
@@ -54,4 +55,6 @@ public:
     {
         uiElements.clear();
     }
+
+    void InitializeElements(const Texture2D &iconTileset, GameState &state, PlayerCam &camera, const Font &font);
 };

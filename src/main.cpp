@@ -71,7 +71,7 @@ int main()
 
     std::shared_ptr<Station> station = CreateStation();
 
-    InitializeUiElements(iconTileset, state, camera, font);
+    UiManager::GetInstance().InitializeElements(iconTileset, state, camera, font);
 
     LogMessage(LogLevel::INFO, "Initialization Complete");
 

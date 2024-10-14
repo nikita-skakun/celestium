@@ -55,6 +55,16 @@ public:
     }
 };
 
+struct TextAttrs
+{
+    const Font &font;
+    int fontSize;
+    int horizontalAlignment;
+
+    TextAttrs(const Font &font = GetFontDefault(), int fontSize = DEFAULT_FONT_SIZE, int horizontalAlignment = 1)
+        : font(font), fontSize(fontSize), horizontalAlignment(horizontalAlignment) {}
+};
+
 struct UiToggle : UiElement
 {
 protected:
@@ -89,13 +99,12 @@ struct UiButton : UiElement
 protected:
     std::string text;
     std::function<void()> onPress;
-    const Font &font;
-    int fontSize;
+    TextAttrs textAttrs;
 
 public:
-    UiButton(const Rectangle &rect, std::string text, std::function<void()> onPress = nullptr, const Font &font = GetFontDefault(),
-             int fontSize = DEFAULT_FONT_SIZE, std::function<void()> onUpdate = nullptr)
-        : UiElement(rect, onUpdate), text(text), onPress(onPress), font(font), fontSize(fontSize) {}
+    UiButton(const Rectangle &rect, std::string text, std::function<void()> onPress = nullptr, const TextAttrs &textAttrs = TextAttrs(),
+             std::function<void()> onUpdate = nullptr)
+        : UiElement(rect, onUpdate), text(text), onPress(onPress), textAttrs(textAttrs) {}
 
     void Render() override;
 };
@@ -108,6 +117,35 @@ protected:
 public:
     UiPanel(const Rectangle &rect, Color backgroundColor, std::function<void()> onUpdate = nullptr)
         : UiElement(rect, onUpdate), backgroundColor(backgroundColor) {}
+
+    void Render() override;
+};
+
+struct UiStatusBar : UiElement
+{
+protected:
+    std::string text;
+    TextAttrs textAttrs;
+
+public:
+    UiStatusBar(const Rectangle &rect, const std::string &text, const TextAttrs &textAttrs = TextAttrs(), std::function<void()> onUpdate = nullptr)
+        : UiElement(rect, onUpdate), text(text), textAttrs(textAttrs) {}
+
+    void Render() override;
+};
+
+struct UiComboBox : UiElement
+{
+protected:
+    std::string text;
+    int state;
+    std::function<void(int)> onPress;
+    TextAttrs textAttrs;
+
+public:
+    UiComboBox(const Rectangle &rect, std::string text, int startingState, std::function<void(int)> onPress = nullptr, const TextAttrs &textAttrs = TextAttrs(),
+               std::function<void()> onUpdate = nullptr)
+        : UiElement(rect, onUpdate), text(text), state(startingState), onPress(onPress), textAttrs(textAttrs) {}
 
     void Render() override;
 };

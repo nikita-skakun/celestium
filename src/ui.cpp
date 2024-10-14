@@ -1,4 +1,5 @@
 #include "ui.hpp"
+#include "ui_manager.hpp"
 
 /**
  * Draws a grid of tiles on the screen based on the current camera position and zoom level.
@@ -533,46 +534,46 @@ void InitializeEscapeMenu(GameState &state, PlayerCam &camera, const Font &font)
 
     Rectangle resumeButtonRect = Rectangle(buttonPosX, firstButtonPosY, buttonWidth, buttonHeight);
     auto resumeButton = std::make_shared<UiButton>(resumeButtonRect, "Resume", [&camera]()
-                                                   { camera.SetUiState(PlayerCam::UiState::NONE); }, font);
+                                                   { camera.SetUiState(PlayerCam::UiState::NONE); }, TextAttrs(font));
     escMenu->AddChild(resumeButton);
 
     Rectangle settingsButtonRect = Rectangle(buttonPosX, firstButtonPosY + (buttonHeight + buttonSpacing), buttonWidth, buttonHeight);
     auto settingsButton = std::make_shared<UiButton>(settingsButtonRect, "Settings", [&camera]()
-                                                     { camera.SetUiState(PlayerCam::UiState::SETTINGS_MENU); }, font);
+                                                     { camera.SetUiState(PlayerCam::UiState::SETTINGS_MENU); }, TextAttrs(font));
     escMenu->AddChild(settingsButton);
 
     Rectangle exitButtonRect = Rectangle(buttonPosX, firstButtonPosY + 2 * (buttonHeight + buttonSpacing), buttonWidth, buttonHeight);
     auto exitButton = std::make_shared<UiButton>(exitButtonRect, "Exit", [&state]()
-                                                 { SetBit(state, false, GameState::RUNNING); }, font);
+                                                 { SetBit(state, false, GameState::RUNNING); }, TextAttrs(font));
     escMenu->AddChild(exitButton);
 
     uiManager.AddElement("ESC_MENU", escMenu);
 }
 
-void DrawSettingsMenu(const Font &font)
+void InitializeSettingsMenu(PlayerCam &camera, const Font &font)
 {
-    // GuiSetStyle(DEFAULT, TEXT_SIZE, DEFAULT_FONT_SIZE);
-    // GuiSetStyle(DEFAULT, TEXT_ALIGNMENT, TEXT_ALIGN_CENTER);
-    // GuiSetFont(font);
-
+    auto &uiManager = UiManager::GetInstance();
     Vector2 screenSize = GetScreenSize();
 
-    // Calculate menu dimensions
     Vector2 menuSize = screenSize * 2.f / 3.f;
-
-    // Calculate the position of the menu
     Vector2 menuPos = screenSize / 2.f - menuSize / 2.f;
 
     // Darken the background to draw focus to the UI
-    DrawRectangleV(Vector2(0.f, 0.f), screenSize, Fade(BLACK, 0.2f));
+    auto settingsMenu = std::make_shared<UiPanel>(Vector2ToRect(Vector2(0.f, 0.f), screenSize), Fade(BLACK, 0.2f));
+    std::weak_ptr<UiPanel> weakSettingsMenu = settingsMenu;
+    settingsMenu->SetOnUpdate([weakSettingsMenu, &camera]()
+                              { if (auto settingsMenu = weakSettingsMenu.lock())
+                             { settingsMenu->SetVisibility(camera.IsUiState(PlayerCam::UiState::SETTINGS_MENU)); } });
 
     // Draw a rectangle for the menu background
-    DrawRectangleV(menuPos, menuSize, Fade(BLACK, 0.4f));
+    auto menuBackground = std::make_shared<UiPanel>(Vector2ToRect(menuPos, menuSize), Fade(BLACK, 0.4f));
+    settingsMenu->AddChild(menuBackground);
 
     float halfPanelSize = menuSize.x / 2.f - DEFAULT_PADDING * 1.5f;
 
     Rectangle monitorTextRect = Rectangle(menuPos.x + DEFAULT_PADDING, menuPos.y + DEFAULT_PADDING, halfPanelSize, DEFAULT_FONT_SIZE + DEFAULT_PADDING);
-    // GuiStatusBar(monitorTextRect, "Render Monitor: ");
+    auto monitorText = std::make_shared<UiStatusBar>(monitorTextRect, "Render Monitor:", TextAttrs(font));
+    settingsMenu->AddChild(monitorText);
 
     std::string monitorNames;
     for (int i = 0; i < GetMonitorCount(); i++)
@@ -583,13 +584,12 @@ void DrawSettingsMenu(const Font &font)
     }
 
     int selectedMonitor = GetCurrentMonitor();
-    Rectangle monitorNameRect = Rectangle(monitorTextRect.x + DEFAULT_PADDING + halfPanelSize, menuPos.y + DEFAULT_PADDING, halfPanelSize, DEFAULT_FONT_SIZE + DEFAULT_PADDING);
-    // GuiComboBox(monitorNameRect, monitorNames.c_str(), &selectedMonitor);
-    if (selectedMonitor != GetCurrentMonitor())
-    {
-        SetWindowMonitor(selectedMonitor);
-        SetTargetFPS(GetMonitorRefreshRate(selectedMonitor));
-    }
+    Rectangle monitorSelectRect = Rectangle(monitorTextRect.x + DEFAULT_PADDING + halfPanelSize, menuPos.y + DEFAULT_PADDING, halfPanelSize, DEFAULT_FONT_SIZE + DEFAULT_PADDING);
+    auto monitorSelect = std::make_shared<UiComboBox>(monitorSelectRect, monitorNames, selectedMonitor, [](int state)
+                                                      {  SetWindowMonitor(state); SetTargetFPS(GetMonitorRefreshRate(state)); }, TextAttrs(font));
+    settingsMenu->AddChild(monitorSelect);
+
+    uiManager.AddElement("SETTINGS_MENU", settingsMenu);
 }
 
 void InitializeSidebar(const Texture2D &iconTileset, PlayerCam &camera)
@@ -623,7 +623,7 @@ void InitializeSidebar(const Texture2D &iconTileset, PlayerCam &camera)
             continue;
 
         bool isOverlayActive = camera.IsOverlay(overlay);
-        auto overlayToggle = std::make_shared<UiToggle>(overlayRect, isOverlayActive, [&camera, overlay](bool state)
+        auto overlayToggle = std::make_shared<UiToggle>(overlayRect, isOverlayActive, [&camera, overlay](bool)
                                                         { camera.ToggleOverlay(overlay); });
 
         Rectangle iconRect = Rectangle(overlayRect.x + 8.f, overlayRect.y + 8.f, 16.f, 16.f);
@@ -644,8 +644,9 @@ void InitializeSidebar(const Texture2D &iconTileset, PlayerCam &camera)
     }
 }
 
-void InitializeUiElements(const Texture2D &iconTileset, GameState &state, PlayerCam &camera, const Font &font)
+void UiManager::InitializeElements(const Texture2D &iconTileset, GameState &state, PlayerCam &camera, const Font &font)
 {
     InitializeSidebar(iconTileset, camera);
     InitializeEscapeMenu(state, camera, font);
+    InitializeSettingsMenu(camera, font);
 }
