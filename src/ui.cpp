@@ -500,38 +500,6 @@ void DrawMainTooltip(const std::vector<Crew> &crewList, const PlayerCam &camera,
     DrawTooltip(hoverText, mousePos, font);
 }
 
-void DrawUiButtons(const Texture2D &iconTileset, PlayerCam &camera)
-{
-    Vector2 screenSize = GetScreenSize();
-    constexpr float largeButtonSize = 64.f;
-    constexpr float smallButtonSize = 32.f;
-
-    // Rectangle buildButtonRect = Rectangle(DEFAULT_PADDING, (screenSize.y - largeButtonSize) / 2.f, largeButtonSize, largeButtonSize);
-
-    // Rectangle buildIconRect = Rectangle(buildButtonRect.x + 8.f, buildButtonRect.y + 8.f, 48.f, 48.f);
-    // DrawTexturePro(iconTileset, Rectangle(1, 1, 1, 1) * TILE_SIZE, buildIconRect, Vector2(), 0, Fade(DARKGRAY, .8f));
-
-    Rectangle currentButtonRect = Rectangle(DEFAULT_PADDING, (screenSize.y + largeButtonSize) / 2.f + DEFAULT_PADDING, smallButtonSize, smallButtonSize);
-
-    for (auto overlay : magic_enum::enum_values<PlayerCam::Overlay>())
-    {
-        if (overlay == PlayerCam::Overlay::NONE)
-            continue;
-
-        bool isOverlayActive = camera.IsOverlay(overlay);
-        // GuiToggle(currentButtonRect, "", &isOverlayActive);
-
-        if (isOverlayActive != camera.IsOverlay(overlay))
-            camera.ToggleOverlay(overlay);
-
-        Rectangle iconRect = Rectangle(currentButtonRect.x + 8.f, currentButtonRect.y + 8.f, 16.f, 16.f);
-        float iconIndex = (float)(magic_enum::enum_underlying<PlayerCam::Overlay>(overlay) - 1);
-        DrawTexturePro(iconTileset, Rectangle(iconIndex, 0, 1, 1) * TILE_SIZE, iconRect, Vector2(), 0, Fade(DARKGRAY, .8f));
-
-        currentButtonRect.y += smallButtonSize + DEFAULT_PADDING;
-    }
-}
-
 void DrawEscapeMenu(GameState &state, PlayerCam &camera, const Font &font)
 {
     constexpr int buttonCount = 3;
@@ -618,6 +586,15 @@ void DrawSettingsMenu(const Font &font)
 void DrawUi(GameState &state, PlayerCam &camera, const Font &font)
 {
     PlayerCam::UiState uiState = camera.GetUiState();
+    auto &uiManager = UiManager::GetInstance();
+
+    uiManager.GetElement("BUILD_TGL")->SetVisibility(camera.IsUiClear());
+
+    for (auto overlay : magic_enum::enum_values<PlayerCam::Overlay>())
+    {
+        if (overlay != PlayerCam::Overlay::NONE)
+            uiManager.GetElement(std::format("OVERLAY_{}_TGL", magic_enum::enum_name(overlay)))->SetVisibility(camera.IsUiClear());
+    }
 
     switch (uiState)
     {
@@ -650,4 +627,24 @@ void InitializeUiElements(const Texture2D &iconTileset, PlayerCam &camera)
     buildToggle->AddChild(std::make_shared<UiIcon>(buildIconRect, iconTileset, Rectangle(1, 1, 1, 1) * TILE_SIZE, Fade(DARKGRAY, .8f)));
 
     uiManager.AddElement("BUILD_TGL", buildToggle);
+
+    Rectangle overlayRect = Rectangle(DEFAULT_PADDING, (screenSize.y + largeButtonSize) / 2.f + DEFAULT_PADDING, smallButtonSize, smallButtonSize);
+
+    for (auto overlay : magic_enum::enum_values<PlayerCam::Overlay>())
+    {
+        if (overlay == PlayerCam::Overlay::NONE)
+            continue;
+
+        bool isOverlayActive = camera.IsOverlay(overlay);
+        auto overlayToggle = std::make_shared<UiToggle>(overlayRect, isOverlayActive, [&camera, overlay](bool state)
+                                                        { camera.ToggleOverlay(overlay); });
+
+        Rectangle iconRect = Rectangle(overlayRect.x + 8.f, overlayRect.y + 8.f, 16.f, 16.f);
+        float iconIndex = (float)(magic_enum::enum_underlying<PlayerCam::Overlay>(overlay) - 1);
+        overlayToggle->AddChild(std::make_shared<UiIcon>(iconRect, iconTileset, Rectangle(iconIndex, 0, 1, 1) * TILE_SIZE, Fade(DARKGRAY, .8f)));
+
+        uiManager.AddElement(std::format("OVERLAY_{}_TGL", magic_enum::enum_name(overlay)), overlayToggle);
+
+        overlayRect.y += smallButtonSize + DEFAULT_PADDING;
+    }
 }

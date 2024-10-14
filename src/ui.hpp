@@ -15,6 +15,5 @@ void DrawDragSelectBox(const PlayerCam &camera);
 void DrawFpsCounter(float deltaTime, float padding = DEFAULT_PADDING, int fontSize = DEFAULT_FONT_SIZE, const Font &font = GetFontDefault());
 void DrawTooltip(const std::string &tooltip, const Vector2 &pos, const Font &font = GetFontDefault(), float padding = DEFAULT_PADDING, int fontSize = DEFAULT_FONT_SIZE);
 void DrawMainTooltip(const std::vector<Crew> &crewList, const PlayerCam &camera, std::shared_ptr<Station> station, const Font &font = GetFontDefault());
-void DrawUiButtons(const Texture2D &iconTileset, PlayerCam &camera);
 void DrawUi(GameState &state, PlayerCam &camera, const Font &font = GetFontDefault());
 void InitializeUiElements(const Texture2D &iconTileset, PlayerCam &camera);

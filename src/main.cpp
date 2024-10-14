@@ -136,7 +136,6 @@ int main()
         {
             DrawDragSelectBox(camera);
             DrawMainTooltip(crewList, camera, station, font);
-            DrawUiButtons(iconTileset, camera);
             DrawFpsCounter(deltaTime, 12, DEFAULT_FONT_SIZE, font);
         }
 
