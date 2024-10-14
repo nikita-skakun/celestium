@@ -52,7 +52,7 @@ inline bool CheckIfEventHappens(double chancePerSecond, double deltaTime) noexce
 }
 
 // Utility functions for booleans
-template<typename T>
+template <typename T>
 constexpr void SetBit(T &value, bool bitState, T mask) noexcept
 {
     if (bitState)
@@ -61,7 +61,7 @@ constexpr void SetBit(T &value, bool bitState, T mask) noexcept
         value &= ~mask;
 }
 
-template<typename T>
+template <typename T>
 constexpr void ToggleBit(T &value, T mask) noexcept
 {
     value ^= mask;
@@ -295,12 +295,26 @@ constexpr Rectangle operator*(const Rectangle &a, float b) noexcept
     return {a.x * b, a.y * b, a.width * b, a.height * b};
 }
 
+constexpr Rectangle operator*(const Rectangle &a, const Vector2 &b) noexcept
+{
+    return {a.x * b.x, a.y * b.y, a.width * b.x, a.height * b.y};
+}
+
 constexpr Rectangle &operator*=(Rectangle &a, float b) noexcept
 {
     a.x *= b;
     a.y *= b;
     a.width *= b;
     a.height *= b;
+    return a;
+}
+
+constexpr Rectangle &operator*=(Rectangle &a, const Vector2 &b) noexcept
+{
+    a.x *= b.x;
+    a.y *= b.y;
+    a.width *= b.x;
+    a.height *= b.y;
     return a;
 }
 

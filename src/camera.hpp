@@ -27,25 +27,23 @@ struct PlayerCam
     };
 
 private:
-    Vector2 position;
-    Vector2 dragStartPos;
-    Vector2 dragEndPos;
-    DragType dragType;
+    Vector2 position = Vector2(0, 0);
+    Vector2 dragStartPos = Vector2(0, 0);
+    Vector2 dragEndPos = Vector2(0, 0);
+    DragType dragType = DragType::NONE;
     std::unordered_set<int> selectedCrewList;
-    int crewHoverIndex;
-    float zoom;
-    Overlay overlay;
-    UiState uiState;
-    bool buildMode;
+    int crewHoverIndex = -1;
+    float zoom = 1.f;
+    Overlay overlay = Overlay::NONE;
+    UiState uiState = UiState::NONE;
+    bool buildMode = false;
 
     void HandleMovement();
     void HandleOverlays();
     void HandleUiStates();
 
 public:
-    PlayerCam()
-        : position(Vector2(0, 0)), dragStartPos(Vector2(0, 0)), dragEndPos(Vector2(0, 0)), dragType(DragType::NONE),
-          crewHoverIndex(-1), zoom(1.f), overlay(Overlay::NONE), uiState(UiState::NONE), buildMode(false) {}
+    PlayerCam() {}
 
     // Utility function for Screen to World space transformations
     Vector2 GetWorldMousePos() const;

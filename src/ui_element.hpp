@@ -14,8 +14,7 @@ public:
     UiElement(const Rectangle &rect, std::function<void()> onUpdate = nullptr)
         : rect(rect), enabled(true), visible(true), onUpdate(onUpdate) {};
 
-    constexpr const Rectangle &GetRect() const { return rect; }
-    constexpr void SetRect(const Rectangle &newRect) { rect = newRect; }
+    Rectangle GetRect() const { return rect * GetScreenSize(); }
     constexpr bool IsEnabled() const { return enabled; }
     constexpr void SetEnabled(bool state) { enabled = state; }
     constexpr bool IsVisible() const { return visible; }

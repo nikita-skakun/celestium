@@ -7,7 +7,7 @@ void UiToggle::Render()
     GuiSetState(IsEnabled() ? STATE_NORMAL : STATE_DISABLED);
 
     bool oldState = state;
-    GuiToggle(rect, "", &state);
+    GuiToggle(GetRect(), "", &state);
     if (oldState != state)
         onToggle(state);
 
@@ -16,7 +16,7 @@ void UiToggle::Render()
 
 void UiIcon::Render()
 {
-    DrawTexturePro(AssetManager::GetTexture(spritesheetName), spriteOutline, rect, Vector2(), 0, tint);
+    DrawTexturePro(AssetManager::GetTexture(spritesheetName), spriteOutline, GetRect(), Vector2(), 0, tint);
 }
 
 void UiButton::Render()
@@ -26,7 +26,7 @@ void UiButton::Render()
     GuiSetStyle(DEFAULT, TEXT_SIZE, textAttrs.fontSize);
     GuiSetFont(textAttrs.font);
 
-    if (GuiButton(rect, text.c_str()))
+    if (GuiButton(GetRect(), text.c_str()))
         onPress();
 
     GuiSetStyle(DEFAULT, TEXT_ALIGNMENT, TEXT_ALIGN_LEFT);
@@ -37,7 +37,7 @@ void UiButton::Render()
 
 void UiPanel::Render()
 {
-    DrawRectangleRec(rect, backgroundColor);
+    DrawRectangleRec(GetRect(), backgroundColor);
 }
 
 void UiStatusBar::Render()
@@ -46,7 +46,7 @@ void UiStatusBar::Render()
     GuiSetStyle(DEFAULT, TEXT_SIZE, textAttrs.fontSize);
     GuiSetFont(textAttrs.font);
 
-    GuiStatusBar(rect, text.c_str());
+    GuiStatusBar(GetRect(), text.c_str());
 
     GuiSetStyle(DEFAULT, TEXT_ALIGNMENT, TEXT_ALIGN_LEFT);
     GuiSetStyle(DEFAULT, TEXT_SIZE, DEFAULT_FONT_SIZE);
@@ -61,7 +61,7 @@ void UiComboBox::Render()
     GuiSetFont(textAttrs.font);
 
     int oldState = state;
-    GuiComboBox(rect, text.c_str(), &state);
+    GuiComboBox(GetRect(), text.c_str(), &state);
     if (oldState != state)
         onPress(state);
 

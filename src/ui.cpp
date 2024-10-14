@@ -11,19 +11,19 @@ void DrawTileGrid(const PlayerCam &camera)
     Vector2 screenSize = GetScreenSize();
 
     // Calculate the top-left corner in world coordinates
-    Vector2 topLeft = camera.GetPosition() * TILE_SIZE - screenSize / 2.f / camera.GetZoom();
+    Vector2 topLeft = camera.GetPosition() * TILE_SIZE - screenSize / 2. / camera.GetZoom();
 
     // Draw vertical lines
     for (int x = (int)(floor(topLeft.x / TILE_SIZE) * TILE_SIZE); x <= (int)(ceil((topLeft.x + screenSize.x / camera.GetZoom()) / TILE_SIZE) * TILE_SIZE); x += (int)TILE_SIZE)
     {
-        float screenX = (x - camera.GetPosition().x * TILE_SIZE) * camera.GetZoom() + screenSize.x / 2.f;
+        float screenX = (x - camera.GetPosition().x * TILE_SIZE) * camera.GetZoom() + screenSize.x / 2.;
         DrawLineV(Vector2(screenX, 0), Vector2(screenX, screenSize.y), GRID_COLOR);
     }
 
     // Draw horizontal lines
     for (int y = (int)(floor(topLeft.y / TILE_SIZE) * TILE_SIZE); y <= (int)(ceil((topLeft.y + screenSize.y / camera.GetZoom()) / TILE_SIZE) * TILE_SIZE); y += (int)TILE_SIZE)
     {
-        float screenY = (y - camera.GetPosition().y * TILE_SIZE) * camera.GetZoom() + screenSize.y / 2.f;
+        float screenY = (y - camera.GetPosition().y * TILE_SIZE) * camera.GetZoom() + screenSize.y / 2.;
         DrawLineV(Vector2(0, screenY), Vector2(screenSize.x, screenY), GRID_COLOR);
     }
 }
@@ -40,12 +40,12 @@ void DrawPath(const std::deque<Vector2Int> &path, const Vector2 &startPos, const
     if (path.empty())
         return;
 
-    Vector2 a = startPos + Vector2(.5f, .5f);
+    Vector2 a = startPos + Vector2(.5, .5);
 
     for (const auto &point : path)
     {
-        Vector2 b = ToVector2(point) + Vector2(.5f, .5f);
-        DrawLineV(camera.WorldToScreen(a), camera.WorldToScreen(b), Fade(GREEN, .5f));
+        Vector2 b = ToVector2(point) + Vector2(.5, .5);
+        DrawLineV(camera.WorldToScreen(a), camera.WorldToScreen(b), Fade(GREEN, .5));
         a = b;
     }
 }
@@ -61,7 +61,7 @@ void DrawStationTiles(std::shared_ptr<Station> station, const PlayerCam &camera)
     if (!station)
         return;
 
-    Vector2 tileSize = Vector2(1.f, 1.f) * TILE_SIZE * camera.GetZoom();
+    Vector2 tileSize = Vector2(1, 1) * TILE_SIZE * camera.GetZoom();
     const Texture2D &stationTileset = AssetManager::GetTexture("STATION");
 
     for (const auto &tilesAtPos : station->tileMap)
@@ -77,7 +77,7 @@ void DrawStationTiles(std::shared_ptr<Station> station, const PlayerCam &camera)
             {
                 if (auto oxygen = tile->GetComponent<OxygenComponent>())
                 {
-                    Color color = Color(50, 150, 255, oxygen->GetOxygenLevel() / TILE_OXYGEN_MAX * 255 * .8f);
+                    Color color = Color(50, 150, 255, oxygen->GetOxygenLevel() / TILE_OXYGEN_MAX * 255 * .8);
                     DrawRectangleV(startPos, tileSize, color);
                 }
             }
@@ -101,7 +101,7 @@ void DrawStationOverlays(std::shared_ptr<Station> station, const PlayerCam &came
     if (!station)
         return;
 
-    const Vector2 tileSize = Vector2(1.f, 1.f) * TILE_SIZE * camera.GetZoom();
+    const Vector2 tileSize = Vector2(1, 1) * TILE_SIZE * camera.GetZoom();
     const Texture2D &stationTileset = AssetManager::GetTexture("STATION");
     const Texture2D &iconTileset = AssetManager::GetTexture("ICON");
 
@@ -126,20 +126,20 @@ void DrawStationOverlays(std::shared_ptr<Station> station, const PlayerCam &came
                 Vector2 startPos = camera.WorldToScreen(ToVector2(tile->GetPosition()));
                 Rectangle destRect = Vector2ToRect(startPos, tileSize);
                 Rectangle doorSourceRect = Rectangle(0, 7, 1, 1) * TILE_SIZE;
-                doorSourceRect.height = std::max(19.f * door->GetProgress(), 1.f);
+                doorSourceRect.height = std::max(19. * door->GetProgress(), 1.);
 
                 Rectangle doorDest1 = destRect;
-                doorDest1.height = std::max(19.f * door->GetProgress(), 1.f) * camera.GetZoom();
-                doorDest1.y += 19.f * camera.GetZoom() - doorDest1.height;
+                doorDest1.height = std::max(19. * door->GetProgress(), 1.) * camera.GetZoom();
+                doorDest1.y += 19. * camera.GetZoom() - doorDest1.height;
 
                 DrawTexturePro(stationTileset, doorSourceRect, doorDest1, Vector2(), 0, WHITE);
 
                 Rectangle doorDest2 = destRect;
                 doorDest2.width = -doorDest2.width;
                 doorDest2.height = -doorDest1.height;
-                doorDest2.y -= 19.f * camera.GetZoom() + doorDest2.height;
+                doorDest2.y -= 19. * camera.GetZoom() + doorDest2.height;
 
-                DrawTexturePro(stationTileset, doorSourceRect, doorDest2, Vector2(-doorDest2.width, 0.f), 180.f, WHITE);
+                DrawTexturePro(stationTileset, doorSourceRect, doorDest2, Vector2(-doorDest2.width, 0), 180, WHITE);
             }
 
             if (camera.GetOverlay() == PlayerCam::Overlay::POWER)
@@ -148,25 +148,25 @@ void DrawStationOverlays(std::shared_ptr<Station> station, const PlayerCam &came
                 {
                     if (!powerConsumer->IsActive())
                     {
-                        Vector2 startScreenPos = camera.WorldToScreen(ToVector2(tile->GetPosition()) + Vector2(.66f, 0.f));
-                        Rectangle destRect = Vector2ToRect(startScreenPos, tileSize / 3.f);
+                        Vector2 startScreenPos = camera.WorldToScreen(ToVector2(tile->GetPosition()) + Vector2(2. / 3., 0));
+                        Rectangle destRect = Vector2ToRect(startScreenPos, tileSize / 3.);
                         Rectangle sourceRect = Rectangle(0, 1, 1, 1) * TILE_SIZE;
 
-                        DrawTexturePro(iconTileset, sourceRect, destRect, Vector2(), 0, Fade(YELLOW, .8f));
+                        DrawTexturePro(iconTileset, sourceRect, destRect, Vector2(), 0, Fade(YELLOW, .8));
                     }
                 }
 
                 if (auto battery = tile->GetComponent<BatteryComponent>())
                 {
                     float barProgress = battery->GetChargeLevel() / battery->GetMaxChargeLevel();
-                    Vector2 topLeftPos = camera.WorldToScreen(ToVector2(tile->GetPosition()) + Vector2(1.f / 16.f, 0.f));
-                    Vector2 barStartPos = camera.WorldToScreen(ToVector2(tile->GetPosition()) + Vector2(1.f / 16.f, 1.f - barProgress));
+                    Vector2 topLeftPos = camera.WorldToScreen(ToVector2(tile->GetPosition()) + Vector2(1. / 16., 0));
+                    Vector2 barStartPos = camera.WorldToScreen(ToVector2(tile->GetPosition()) + Vector2(1. / 16., 1. - barProgress));
 
-                    Vector2 totalSize = Vector2(1.f / 8.f, 1.f) * TILE_SIZE * camera.GetZoom();
-                    Vector2 barSize = Vector2(1.f / 8.f, barProgress) * TILE_SIZE * camera.GetZoom();
+                    Vector2 totalSize = Vector2(1. / 8., 1) * TILE_SIZE * camera.GetZoom();
+                    Vector2 barSize = Vector2(1. / 8., barProgress) * TILE_SIZE * camera.GetZoom();
 
                     DrawRectangleV(topLeftPos, totalSize, Color(25, 25, 25, 200));
-                    DrawRectangleV(barStartPos, barSize, Fade(YELLOW, .8f));
+                    DrawRectangleV(barStartPos, barSize, Fade(YELLOW, .8));
                 }
 
                 if (auto powerConnector = tile->GetComponent<PowerConnectorComponent>())
@@ -176,8 +176,8 @@ void DrawStationOverlays(std::shared_ptr<Station> station, const PlayerCam &came
                     {
                         if (auto connectionTile = connection->_parent.lock())
                         {
-                            DrawLineEx(camera.WorldToScreen(ToVector2(tile->GetPosition()) + Vector2(.5f, .5f)),
-                                       camera.WorldToScreen(ToVector2(connectionTile->GetPosition()) + Vector2(.5f, .5f)),
+                            DrawLineEx(camera.WorldToScreen(ToVector2(tile->GetPosition()) + Vector2(.5, .5)),
+                                       camera.WorldToScreen(ToVector2(connectionTile->GetPosition()) + Vector2(.5, .5)),
                                        POWER_CONNECTION_WIDTH * std::max(camera.GetZoom(), 1.f), POWER_CONNECTION_COLOR);
                         }
                     }
@@ -201,7 +201,7 @@ void DrawTileOutline(std::shared_ptr<Tile> tile, const PlayerCam &camera)
         }
     }
 
-    Vector2 tileSize = Vector2(1.f, 1.f) * TILE_SIZE * camera.GetZoom();
+    Vector2 tileSize = Vector2(1, 1) * TILE_SIZE * camera.GetZoom();
     for (const auto &pos : positions)
     {
         Vector2 startPos = camera.WorldToScreen(ToVector2(pos));
@@ -220,7 +220,7 @@ void DrawTileOutline(std::shared_ptr<Tile> tile, const PlayerCam &camera)
             Vector2Int neighborPos = pos + DirectionToVector2Int(directions[i]);
 
             if (positions.count(neighborPos) == 0)
-                DrawLineEx(lines[i].first, lines[i].second, 2.f, MAGENTA);
+                DrawLineEx(lines[i].first, lines[i].second, 2, MAGENTA);
         }
     }
 }
@@ -236,7 +236,7 @@ void DrawEnvironmentalHazards(std::shared_ptr<Station> station, const PlayerCam 
     if (!station)
         return;
 
-    const Vector2 tileSize = Vector2(1.f, 1.f) * TILE_SIZE * camera.GetZoom();
+    const Vector2 tileSize = Vector2(1, 1) * TILE_SIZE * camera.GetZoom();
     const Texture2D &fireSpritesheet = AssetManager::GetTexture("FIRE");
 
     for (const auto &hazard : station->hazards)
@@ -244,7 +244,7 @@ void DrawEnvironmentalHazards(std::shared_ptr<Station> station, const PlayerCam 
         if (const auto fire = std::dynamic_pointer_cast<const FireHazard>(hazard))
         {
             Vector2 fireSize = tileSize * fire->GetRoundedSize();
-            Vector2 startPos = camera.WorldToScreen(ToVector2(fire->GetPosition()) + Vector2(1.f, 1.f) * ((1.f - fire->GetRoundedSize()) / 2.f));
+            Vector2 startPos = camera.WorldToScreen(ToVector2(fire->GetPosition()) + Vector2(1, 1) * ((1. - fire->GetRoundedSize()) / 2.));
             Rectangle sourceRect = Rectangle(GetEvenlySpacedIndex(GetTime(), 8), 0, 1, 1) * TILE_SIZE;
 
             DrawTexturePro(fireSpritesheet, sourceRect, Vector2ToRect(startPos, fireSize), Vector2(), 0, WHITE);
@@ -254,7 +254,7 @@ void DrawEnvironmentalHazards(std::shared_ptr<Station> station, const PlayerCam 
 
 void DrawCrewCircle(const Crew &crew, const Vector2 &drawPosition, bool isSelected, const PlayerCam &camera)
 {
-    Vector2 crewScreenPos = camera.WorldToScreen(drawPosition + Vector2(.5f, .5f));
+    Vector2 crewScreenPos = camera.WorldToScreen(drawPosition + Vector2(.5, .5));
 
     if (isSelected)
         DrawCircleV(crewScreenPos, (CREW_RADIUS + OUTLINE_SIZE) * camera.GetZoom(), OUTLINE_COLOR);
@@ -329,7 +329,7 @@ void DrawDragSelectBox(const PlayerCam &camera)
     switch (camera.GetDragType())
     {
     case PlayerCam::DragType::SELECT:
-        DrawRectangleLinesEx(Vector2ToBoundingBox(dragStart, dragEnd), 1.f, BLUE);
+        DrawRectangleLinesEx(Vector2ToBoundingBox(dragStart, dragEnd), 1, BLUE);
         break;
 
     case PlayerCam::DragType::POWER_CONNECT:
@@ -351,7 +351,7 @@ void DrawDragSelectBox(const PlayerCam &camera)
 void DrawFpsCounter(float deltaTime, float padding, int fontSize)
 {
     const Font &font = AssetManager::GetFont("DEFAULT");
-    std::string fpsText = std::format("FPS: {:} ({:.2f}ms)", GetFPS(), deltaTime * 1000.f);
+    std::string fpsText = std::format("FPS: {:} ({:.2}ms)", GetFPS(), deltaTime * 1000.);
     const char *text = fpsText.c_str();
     DrawTextEx(font, text, Vector2(GetMonitorWidth(GetCurrentMonitor()) - MeasureTextEx(font, text, fontSize, 1).x - padding, padding), fontSize, 1, UI_TEXT_COLOR);
 }
@@ -377,7 +377,7 @@ void DrawTooltip(const std::string &tooltip, const Vector2 &pos, float padding, 
         textWidth = std::max(textWidth, MeasureTextEx(font, lines[i], fontSize, 1).x);
     }
 
-    Vector2 size = Vector2(textWidth + 2.f * padding, lineCount * fontSize + 2.f * padding);
+    Vector2 size = Vector2(textWidth + 2 * padding, lineCount * fontSize + 2 * padding);
     Vector2 tooltipPos = pos;
 
     if (tooltipPos.x + size.x > screenSize.x)
@@ -391,7 +391,7 @@ void DrawTooltip(const std::string &tooltip, const Vector2 &pos, float padding, 
     else if (tooltipPos.y < 0)
         tooltipPos.y = 0;
 
-    DrawRectangleRec(Vector2ToRect(tooltipPos, size), Fade(LIGHTGRAY, 0.7f));
+    DrawRectangleRec(Vector2ToRect(tooltipPos, size), Fade(LIGHTGRAY, .7));
 
     for (int i = 0; i < lineCount; i++)
     {
@@ -405,20 +405,20 @@ std::string GetTileInfo(std::shared_ptr<Tile> tile)
 
     if (auto durability = tile->GetComponent<DurabilityComponent>())
     {
-        tileInfo += std::format("\n   + HP: {:.1f} / {:.1f}", durability->GetHitpoints(), durability->GetMaxHitpoints());
+        tileInfo += std::format("\n   + HP: {:.1} / {:.1}", durability->GetHitpoints(), durability->GetMaxHitpoints());
     }
     if (auto door = tile->GetComponent<DoorComponent>())
     {
         tileInfo += std::format("\n   + {}", door->IsOpen() ? "Open" : "Closed");
-        tileInfo += std::format("\n   + State: {} ({:.0f}%)", door->GetMovementName(), door->GetProgress() * 100.f);
+        tileInfo += std::format("\n   + State: {} ({:.0}%)", door->GetMovementName(), door->GetProgress() * 100.);
     }
     if (auto oxygen = tile->GetComponent<OxygenComponent>())
     {
-        tileInfo += std::format("\n   + Oxygen: {:.0f}", oxygen->GetOxygenLevel());
+        tileInfo += std::format("\n   + Oxygen: {:.0}", oxygen->GetOxygenLevel());
     }
     if (auto battery = tile->GetComponent<BatteryComponent>())
     {
-        tileInfo += std::format("\n   + Energy: {:.0f} / {:.0f}", battery->GetChargeLevel(), battery->GetMaxChargeLevel());
+        tileInfo += std::format("\n   + Energy: {:.0} / {:.0}", battery->GetChargeLevel(), battery->GetMaxChargeLevel());
     }
     if (auto powerConnector = tile->GetComponent<PowerConnectorComponent>())
     {
@@ -459,8 +459,8 @@ void DrawMainTooltip(const std::vector<Crew> &crewList, const PlayerCam &camera,
         hoverText += " - " + crew.GetName();
         if (crew.IsAlive())
         {
-            hoverText += std::format("\n   + Health: {:.1f}", crew.GetHealth());
-            hoverText += std::format("\n   + Oxygen: {:.0f}", crew.GetOxygen());
+            hoverText += std::format("\n   + Health: {:.1}", crew.GetHealth());
+            hoverText += std::format("\n   + Oxygen: {:.0}", crew.GetOxygen());
         }
         else
         {
@@ -504,43 +504,42 @@ void DrawMainTooltip(const std::vector<Crew> &crewList, const PlayerCam &camera,
 void InitializeEscapeMenu(GameState &state, PlayerCam &camera)
 {
     constexpr int buttonCount = 3;
-    constexpr float buttonWidth = 120.f;
-    constexpr float buttonSpacing = 20.f;
-    constexpr float buttonHeight = DEFAULT_FONT_SIZE + buttonSpacing;
-    constexpr float totalButtonHeight = buttonCount * buttonHeight + (buttonCount - 1) * buttonSpacing;
+    constexpr double buttonWidth = 1. / 12.;
+    constexpr double buttonSpacing = 1. / 72.;
+    constexpr double buttonHeight = 1. / 24.;
+    constexpr double totalButtonHeight = buttonCount * buttonHeight + (buttonCount - 1) * buttonSpacing;
 
     // Calculate menu dimensions
-    constexpr Vector2 menuSize = Vector2(buttonWidth + buttonSpacing * 2.f, totalButtonHeight + buttonSpacing * 2.f);
+    constexpr Vector2 menuSize = Vector2(buttonWidth + buttonSpacing, totalButtonHeight + buttonSpacing * 2.);
 
-    Vector2 screenSize = GetScreenSize();
-    Vector2 menuPos = screenSize / 2.f - menuSize / 2.f;
+    constexpr Vector2 menuPos = Vector2(.5, .5) - menuSize / 2.;
 
     // Darken the background to draw focus to the UI
-    auto escMenu = std::make_shared<UiPanel>(Vector2ToRect(Vector2(0.f, 0.f), screenSize), Fade(BLACK, 0.2f));
+    auto escMenu = std::make_shared<UiPanel>(Rectangle(0, 0, 1, 1), Fade(BLACK, .2));
     std::weak_ptr<UiPanel> weakEscMenu = escMenu;
     escMenu->SetOnUpdate([weakEscMenu, &camera]()
                          { if (auto escMenu = weakEscMenu.lock())
                              { escMenu->SetVisibility(camera.IsUiState(PlayerCam::UiState::ESC_MENU)); } });
 
     // Draw a rectangle for the menu background
-    auto menuBackground = std::make_shared<UiPanel>(Vector2ToRect(menuPos, menuSize), Fade(BLACK, 0.4f));
+    auto menuBackground = std::make_shared<UiPanel>(Vector2ToRect(menuPos, menuSize), Fade(BLACK, .5));
     escMenu->AddChild(menuBackground);
 
     // Dynamically position buttons in the center of the menu
-    float firstButtonPosY = menuPos.y + (menuSize.y - totalButtonHeight) / 2.f;
-    float buttonPosX = screenSize.x / 2 - buttonWidth / 2;
+    constexpr double firstButtonPosY = menuPos.y + (menuSize.y - totalButtonHeight) / 2.;
+    constexpr double buttonPosX = .5 - buttonWidth / 2.;
 
-    Rectangle resumeButtonRect = Rectangle(buttonPosX, firstButtonPosY, buttonWidth, buttonHeight);
+    constexpr Rectangle resumeButtonRect = Rectangle(buttonPosX, firstButtonPosY, buttonWidth, buttonHeight);
     auto resumeButton = std::make_shared<UiButton>(resumeButtonRect, "Resume", [&camera]()
                                                    { camera.SetUiState(PlayerCam::UiState::NONE); });
     escMenu->AddChild(resumeButton);
 
-    Rectangle settingsButtonRect = Rectangle(buttonPosX, firstButtonPosY + (buttonHeight + buttonSpacing), buttonWidth, buttonHeight);
+    constexpr Rectangle settingsButtonRect = Rectangle(buttonPosX, firstButtonPosY + (buttonHeight + buttonSpacing), buttonWidth, buttonHeight);
     auto settingsButton = std::make_shared<UiButton>(settingsButtonRect, "Settings", [&camera]()
                                                      { camera.SetUiState(PlayerCam::UiState::SETTINGS_MENU); });
     escMenu->AddChild(settingsButton);
 
-    Rectangle exitButtonRect = Rectangle(buttonPosX, firstButtonPosY + 2 * (buttonHeight + buttonSpacing), buttonWidth, buttonHeight);
+    constexpr Rectangle exitButtonRect = Rectangle(buttonPosX, firstButtonPosY + 2. * (buttonHeight + buttonSpacing), buttonWidth, buttonHeight);
     auto exitButton = std::make_shared<UiButton>(exitButtonRect, "Exit", [&state]()
                                                  { SetBit(state, false, GameState::RUNNING); });
     escMenu->AddChild(exitButton);
@@ -550,25 +549,25 @@ void InitializeEscapeMenu(GameState &state, PlayerCam &camera)
 
 void InitializeSettingsMenu(PlayerCam &camera)
 {
-    Vector2 screenSize = GetScreenSize();
-
-    Vector2 menuSize = screenSize * 2.f / 3.f;
-    Vector2 menuPos = screenSize / 2.f - menuSize / 2.f;
+    constexpr Vector2 menuSize = Vector2(1., 1.) * 2. / 3.;
+    constexpr Vector2 menuPos = Vector2(.5, .5) - menuSize / 2.;
 
     // Darken the background to draw focus to the UI
-    auto settingsMenu = std::make_shared<UiPanel>(Vector2ToRect(Vector2(0.f, 0.f), screenSize), Fade(BLACK, 0.2f));
+    auto settingsMenu = std::make_shared<UiPanel>(Rectangle(0, 0, 1, 1), Fade(BLACK, .2));
     std::weak_ptr<UiPanel> weakSettingsMenu = settingsMenu;
     settingsMenu->SetOnUpdate([weakSettingsMenu, &camera]()
                               { if (auto settingsMenu = weakSettingsMenu.lock())
                              { settingsMenu->SetVisibility(camera.IsUiState(PlayerCam::UiState::SETTINGS_MENU)); } });
 
     // Draw a rectangle for the menu background
-    auto menuBackground = std::make_shared<UiPanel>(Vector2ToRect(menuPos, menuSize), Fade(BLACK, 0.4f));
+    auto menuBackground = std::make_shared<UiPanel>(Vector2ToRect(menuPos, menuSize), Fade(BLACK, .5));
     settingsMenu->AddChild(menuBackground);
 
-    float halfPanelSize = menuSize.x / 2.f - DEFAULT_PADDING * 1.5f;
+    constexpr double spacing = 1. / 72.;
+    constexpr double settingHeight = 1. / 36.;
+    constexpr double halfPanelWidth = menuSize.x / 2. - spacing * 2. / 3.;
 
-    Rectangle monitorTextRect = Rectangle(menuPos.x + DEFAULT_PADDING, menuPos.y + DEFAULT_PADDING, halfPanelSize, DEFAULT_FONT_SIZE + DEFAULT_PADDING);
+    Rectangle monitorTextRect = Rectangle(menuPos.x + spacing / 3., menuPos.y + spacing, halfPanelWidth, settingHeight);
     auto monitorText = std::make_shared<UiStatusBar>(monitorTextRect, "Render Monitor:");
     settingsMenu->AddChild(monitorText);
 
@@ -581,9 +580,9 @@ void InitializeSettingsMenu(PlayerCam &camera)
     }
 
     int selectedMonitor = GetCurrentMonitor();
-    Rectangle monitorSelectRect = Rectangle(monitorTextRect.x + DEFAULT_PADDING + halfPanelSize, menuPos.y + DEFAULT_PADDING, halfPanelSize, DEFAULT_FONT_SIZE + DEFAULT_PADDING);
-    auto monitorSelect = std::make_shared<UiComboBox>(monitorSelectRect, monitorNames, selectedMonitor, [](int state)
-                                                      {  SetWindowMonitor(state); SetTargetFPS(GetMonitorRefreshRate(state)); });
+    Rectangle monitorSelectRect = Rectangle(menuPos.x + halfPanelWidth + spacing, menuPos.y + spacing, halfPanelWidth, settingHeight);
+    auto monitorSelect = std::make_shared<UiComboBox>(monitorSelectRect, monitorNames, selectedMonitor, [](int monitor)
+                                                      {  SetWindowMonitor(monitor); SetTargetFPS(GetMonitorRefreshRate(monitor)); });
     settingsMenu->AddChild(monitorSelect);
 
     UiManager::AddElement("SETTINGS_MENU", settingsMenu);
@@ -591,17 +590,17 @@ void InitializeSettingsMenu(PlayerCam &camera)
 
 void InitializeSidebar(PlayerCam &camera)
 {
-    Vector2 screenSize = GetScreenSize();
-    constexpr float largeButtonSize = 64.f;
-    constexpr float smallButtonSize = 32.f;
+    constexpr Vector2 largeButtonSize = Vector2(1. / 30., 8. / 135.);
+    constexpr Vector2 smallButtonSize = largeButtonSize / 2.;
+    constexpr double spacing = 1. / 72.;
 
-    Rectangle buildButtonRect = Rectangle(DEFAULT_PADDING, (screenSize.y - largeButtonSize) / 2.f, largeButtonSize, largeButtonSize);
+    constexpr Rectangle buildButtonRect = Vector2ToRect(Vector2(spacing / 2., (1. - largeButtonSize.x) / 2.), largeButtonSize);
     bool isInBuildMode = camera.IsInBuildMode();
     auto buildToggle = std::make_shared<UiToggle>(buildButtonRect, isInBuildMode, [&camera](bool state)
                                                   { camera.SetBuildModeState(state); });
 
-    Rectangle buildIconRect = Rectangle(buildButtonRect.x + 8.f, buildButtonRect.y + 8.f, 48.f, 48.f);
-    buildToggle->AddChild(std::make_shared<UiIcon>(buildIconRect, "ICON", Rectangle(1, 1, 1, 1) * TILE_SIZE, Fade(DARKGRAY, .8f)));
+    constexpr Rectangle buildIconRect = Vector2ToRect(Vector2(buildButtonRect.x, buildButtonRect.y) + largeButtonSize / 8., largeButtonSize * .75);
+    buildToggle->AddChild(std::make_shared<UiIcon>(buildIconRect, "ICON", Rectangle(1, 1, 1, 1) * TILE_SIZE, Fade(DARKGRAY, .8)));
 
     std::weak_ptr<UiToggle> weakBuildToggle = buildToggle;
     buildToggle->SetOnUpdate([weakBuildToggle, &camera]()
@@ -610,7 +609,7 @@ void InitializeSidebar(PlayerCam &camera)
 
     UiManager::AddElement("BUILD_TGL", buildToggle);
 
-    Rectangle overlayRect = Rectangle(DEFAULT_PADDING, (screenSize.y + largeButtonSize) / 2.f + DEFAULT_PADDING, smallButtonSize, smallButtonSize);
+    Rectangle overlayRect = Vector2ToRect(Vector2(spacing / 2., (1. + largeButtonSize.y) / 2. + spacing * 2.), smallButtonSize);
 
     for (auto overlay : magic_enum::enum_values<PlayerCam::Overlay>())
     {
@@ -621,9 +620,9 @@ void InitializeSidebar(PlayerCam &camera)
         auto overlayToggle = std::make_shared<UiToggle>(overlayRect, isOverlayActive, [&camera, overlay](bool)
                                                         { camera.ToggleOverlay(overlay); });
 
-        Rectangle iconRect = Rectangle(overlayRect.x + 8.f, overlayRect.y + 8.f, 16.f, 16.f);
+        Rectangle iconRect = Vector2ToRect(Vector2(overlayRect.x, overlayRect.y) + smallButtonSize / 4., smallButtonSize / 2.);
         float iconIndex = (float)(magic_enum::enum_underlying<PlayerCam::Overlay>(overlay) - 1);
-        overlayToggle->AddChild(std::make_shared<UiIcon>(iconRect, "ICON", Rectangle(iconIndex, 0, 1, 1) * TILE_SIZE, Fade(DARKGRAY, .8f)));
+        overlayToggle->AddChild(std::make_shared<UiIcon>(iconRect, "ICON", Rectangle(iconIndex, 0, 1, 1) * TILE_SIZE, Fade(DARKGRAY, .8)));
 
         std::weak_ptr<UiToggle> weakOverlayToggle = overlayToggle;
         overlayToggle->SetOnUpdate([weakOverlayToggle, overlay, &camera]()
@@ -635,7 +634,7 @@ void InitializeSidebar(PlayerCam &camera)
 
         UiManager::AddElement(std::format("OVERLAY_{}_TGL", magic_enum::enum_name(overlay)), overlayToggle);
 
-        overlayRect.y += smallButtonSize + DEFAULT_PADDING;
+        overlayRect.y += smallButtonSize.y + spacing;
     }
 }
 
