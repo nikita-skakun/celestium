@@ -35,7 +35,10 @@ public:
         {
             const auto &element = pair.second;
             if (element->IsVisible())
+            {
                 element->Render();
+                element->RenderChildren();
+            }
         }
     }
 

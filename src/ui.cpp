@@ -643,11 +643,11 @@ void InitializeUiElements(const Texture2D &iconTileset, PlayerCam &camera)
 
     Rectangle buildButtonRect = Rectangle(DEFAULT_PADDING, (screenSize.y - largeButtonSize) / 2.f, largeButtonSize, largeButtonSize);
     bool isInBuildMode = camera.IsInBuildMode();
-
-    uiManager.AddElement("BUILD_TGL", std::make_shared<UiToggle>(buildButtonRect, isInBuildMode, [&camera](bool state)
-                                                                 { camera.SetBuildModeState(state); }));
+    auto buildToggle = std::make_shared<UiToggle>(buildButtonRect, isInBuildMode, [&camera](bool state)
+                                                  { camera.SetBuildModeState(state); });
 
     Rectangle buildIconRect = Rectangle(buildButtonRect.x + 8.f, buildButtonRect.y + 8.f, 48.f, 48.f);
-    
-    uiManager.AddElement("BUILD_ICN", std::make_shared<UiIcon>(buildIconRect, iconTileset, Rectangle(1, 1, 1, 1) * TILE_SIZE, Fade(DARKGRAY, .8f)));
+    buildToggle->AddChild(std::make_shared<UiIcon>(buildIconRect, iconTileset, Rectangle(1, 1, 1, 1) * TILE_SIZE, Fade(DARKGRAY, .8f)));
+
+    uiManager.AddElement("BUILD_TGL", buildToggle);
 }

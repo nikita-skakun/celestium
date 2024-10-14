@@ -7,6 +7,7 @@ protected:
     Rectangle rect;
     bool enabled;
     bool visible;
+    std::vector<std::shared_ptr<UiElement>> children;
 
 public:
     constexpr UiElement(const Rectangle &rect) : rect(rect), enabled(true), visible(true) {};
@@ -19,6 +20,20 @@ public:
 
     virtual void Render() = 0;
     virtual ~UiElement() = default;
+
+    void AddChild(const std::shared_ptr<UiElement> &child)
+    {
+        children.push_back(child);
+    }
+
+    constexpr void RenderChildren() const
+    {
+        for (const auto &child : children)
+        {
+            if (child->IsVisible())
+                child->Render();
+        }
+    }
 };
 
 struct UiToggle : UiElement
