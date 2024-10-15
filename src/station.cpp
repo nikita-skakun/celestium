@@ -82,7 +82,7 @@ std::shared_ptr<Station> CreateStation()
 
     station->UpdateSpriteOffsets();
 
-    station->hazards.push_back(std::make_shared<FireEffect>(Vector2Int(12, 0), FireEffect::SIZE_INCREMENT));
+    station->effects.push_back(std::make_shared<FireEffect>(Vector2Int(12, 0), FireEffect::SIZE_INCREMENT));
 
     return station;
 }
@@ -316,10 +316,10 @@ std::vector<std::shared_ptr<Effect>> Station::GetEffectsAtPosition(const Vector2
 {
     std::vector<std::shared_ptr<Effect>> foundEffects;
 
-    for (const auto &hazard : hazards)
+    for (const auto &effect : effects)
     {
-        if (hazard->GetPosition() == pos)
-            foundEffects.push_back(hazard);
+        if (effect->GetPosition() == pos)
+            foundEffects.push_back(effect);
     }
 
     return foundEffects;

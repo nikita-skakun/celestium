@@ -222,10 +222,10 @@ void HandleCrewEnvironment(std::vector<Crew> &crewList)
             if (auto oxygen = tile->GetComponent<OxygenComponent>())
                 crew.RefillOxygen(FIXED_DELTA_TIME, oxygen->GetOxygenLevel());
 
-            auto hazards = tile->GetStation()->GetEffectsAtPosition(tile->GetPosition());
-            for (const auto &hazard : hazards)
+            auto effects = tile->GetStation()->GetEffectsAtPosition(tile->GetPosition());
+            for (const auto &effect : effects)
             {
-                hazard->EffectCrew(crew, FIXED_DELTA_TIME);
+                effect->EffectCrew(crew, FIXED_DELTA_TIME);
             }
         }
     }
@@ -323,15 +323,15 @@ void UpdateEnvironmentalEffects(std::shared_ptr<Station> station)
     if (!station)
         return;
 
-    for (int i = station->hazards.size() - 1; i >= 0; --i)
+    for (int i = station->effects.size() - 1; i >= 0; --i)
     {
-        auto hazard = station->hazards.at(i);
-        if (auto fire = std::dynamic_pointer_cast<FireEffect>(hazard))
+        auto effect = station->effects.at(i);
+        if (auto fire = std::dynamic_pointer_cast<FireEffect>(effect))
         {
             auto tileWithOxygen = station->GetTileWithComponentAtPosition<OxygenComponent>(fire->GetPosition());
             if (!tileWithOxygen)
             {
-                station->hazards.erase(station->hazards.begin() + i);
+                station->effects.erase(station->effects.begin() + i);
                 continue;
             }
 
@@ -353,7 +353,7 @@ void UpdateEnvironmentalEffects(std::shared_ptr<Station> station)
             if (oxygen->GetOxygenLevel() < oxygenToConsume)
             {
                 oxygen->SetOxygenLevel(0);
-                station->hazards.erase(station->hazards.begin() + i);
+                station->effects.erase(station->effects.begin() + i);
                 continue;
             }
 
@@ -379,7 +379,7 @@ void UpdateEnvironmentalEffects(std::shared_ptr<Station> station)
 
                 int directionSelected = RandomIntWithRange(0, (int)possibleOffsets.size() - 1);
                 Vector2Int newFirePos = fire->GetPosition() + possibleOffsets[directionSelected];
-                station->hazards.push_back(std::make_shared<FireEffect>(newFirePos, FireEffect::SIZE_INCREMENT));
+                station->effects.push_back(std::make_shared<FireEffect>(newFirePos, FireEffect::SIZE_INCREMENT));
             }
         }
     }

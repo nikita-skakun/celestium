@@ -9,7 +9,7 @@ struct Station
 {
     std::unordered_map<Vector2Int, std::vector<std::shared_ptr<Tile>>> tileMap;
     std::vector<std::shared_ptr<Room>> rooms;
-    std::vector<std::shared_ptr<Effect>> hazards;
+    std::vector<std::shared_ptr<Effect>> effects;
 
 public:
     std::shared_ptr<Tile> GetTileAtPosition(const Vector2Int &pos, TileDef::Height height = TileDef::Height::NONE) const;
@@ -31,12 +31,12 @@ public:
     template <typename T>
     std::vector<std::shared_ptr<Effect>> GetTypeEffectsAtPosition(const Vector2Int &pos) const
     {
-        auto hazardsAtPos = GetEffectsAtPosition(pos);
+        auto effectsAtPos = GetEffectsAtPosition(pos);
         std::vector<std::shared_ptr<Effect>> foundEffects;
-        for (const auto &hazard : hazardsAtPos)
+        for (const auto &effect : effectsAtPos)
         {
-            if (std::dynamic_pointer_cast<T>(hazard))
-                foundEffects.push_back(hazard);
+            if (std::dynamic_pointer_cast<T>(effect))
+                foundEffects.push_back(effect);
         }
         return foundEffects;
     }

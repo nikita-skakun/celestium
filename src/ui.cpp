@@ -229,7 +229,7 @@ void DrawTileOutline(std::shared_ptr<Tile> tile, const PlayerCam &camera, Color 
 }
 
 /**
- * Draws the station's environmental hazards (such as fire).
+ * Draws the station's environmental effects (such as fire).
  *
  * @param station The station to draw the overlays of.
  * @param camera  The PlayerCam used for converting coordinates.
@@ -242,9 +242,9 @@ void DrawEnvironmentalEffects(std::shared_ptr<Station> station, const PlayerCam 
     const Vector2 tileSize = Vector2(1, 1) * TILE_SIZE * camera.GetZoom();
     const Texture2D &fireSpritesheet = AssetManager::GetTexture("FIRE");
 
-    for (const auto &hazard : station->hazards)
+    for (const auto &effect : station->effects)
     {
-        if (const auto fire = std::dynamic_pointer_cast<const FireEffect>(hazard))
+        if (const auto fire = std::dynamic_pointer_cast<const FireEffect>(effect))
         {
             Vector2 fireSize = tileSize * fire->GetRoundedSize();
             Vector2 startPos = camera.WorldToScreen(ToVector2(fire->GetPosition()) + Vector2(1, 1) * ((1. - fire->GetRoundedSize()) / 2.));
@@ -431,16 +431,16 @@ std::string GetTileInfo(std::shared_ptr<Tile> tile)
     return tileInfo;
 }
 
-std::string GetEffectInfo(std::shared_ptr<Effect> hazard)
+std::string GetEffectInfo(std::shared_ptr<Effect> effect)
 {
-    std::string hazardInfo = " - " + hazard->GetName();
+    std::string effectInfo = " - " + effect->GetName();
 
-    if (auto fire = std::dynamic_pointer_cast<const FireEffect>(hazard))
+    if (auto fire = std::dynamic_pointer_cast<const FireEffect>(effect))
     {
-        hazardInfo += std::format("\n   + Size: {:.0f}", fire->GetRoundedSize() / FireEffect::SIZE_INCREMENT);
+        effectInfo += std::format("\n   + Size: {:.0f}", fire->GetRoundedSize() / FireEffect::SIZE_INCREMENT);
     }
 
-    return hazardInfo;
+    return effectInfo;
 }
 
 /**
@@ -487,13 +487,13 @@ void DrawMainTooltip(const std::vector<Crew> &crewList, std::shared_ptr<Station>
 
         if (!camera.IsInBuildMode())
         {
-            auto hazards = station->GetEffectsAtPosition(tileHoverPos);
-            for (auto &&hazard : hazards)
+            auto effects = station->GetEffectsAtPosition(tileHoverPos);
+            for (auto &&effect : effects)
             {
                 if (!hoverText.empty())
                     hoverText += "\n";
 
-                hoverText += GetEffectInfo(hazard);
+                hoverText += GetEffectInfo(effect);
             }
         }
     }
