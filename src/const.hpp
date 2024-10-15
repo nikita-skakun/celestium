@@ -1,7 +1,7 @@
 #pragma once
 #include <raylib.h>
 
-constexpr float FIXED_DELTA_TIME = 1.0f / 45.0f;
+constexpr double FIXED_DELTA_TIME = 1. / 45.;
 
 constexpr float MIN_ZOOM = .25f;
 constexpr float MAX_ZOOM = 5.f;

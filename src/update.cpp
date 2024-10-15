@@ -2,7 +2,7 @@
 
 void HandleCrewHover(const std::vector<Crew> &crewList, PlayerCam &camera)
 {
-    const Vector2 worldMousePos = camera.GetWorldMousePos() - Vector2(.5f, .5f);
+    const Vector2 worldMousePos = camera.GetWorldMousePos() - Vector2(.5, .5);
     const float crewSizeSq = CREW_RADIUS / TILE_SIZE * CREW_RADIUS / TILE_SIZE;
 
     camera.SetCrewHoverIndex(-1);
@@ -35,7 +35,7 @@ void HandleMouseDragDuring(std::shared_ptr<Station> station, PlayerCam &camera)
             station->GetTileWithComponentAtPosition<PowerConnectorComponent>(ToVector2Int(camera.GetDragStart())))
         {
             camera.SetDragType(PlayerCam::DragType::POWER_CONNECT);
-            camera.SetDragStart(Vector2Floor(camera.GetDragStart()) + Vector2(.5f, .5f));
+            camera.SetDragStart(Vector2Floor(camera.GetDragStart()) + Vector2(.5, .5));
         }
     }
 
@@ -92,7 +92,7 @@ void HandleCrewSelection(const std::vector<Crew> &crewList, PlayerCam &camera)
         {
             for (std::size_t i = 0; i < crewList.size(); i++)
             {
-                Vector2 crewPos = crewList[i].GetPosition() + Vector2(.5f, .5f);
+                Vector2 crewPos = crewList[i].GetPosition() + Vector2(.5, .5);
                 if (IsVector2WithinRect(Vector2ToBoundingBox(camera.GetDragStart(), camera.GetDragEnd()), crewPos))
                 {
                     camera.AddSelectedCrew(i);
@@ -195,7 +195,7 @@ void HandleCrewTasks(std::vector<Crew> &crewList)
                     auto door = doorTile->GetComponent<DoorComponent>();
                     door->SetMovingState(DoorComponent::MovingState::FORCED_OPEN);
 
-                    if (door->GetProgress() > 0.f)
+                    if (door->GetProgress() > 0)
                         continue;
                 }
             }
@@ -304,7 +304,7 @@ void UpdateTiles(std::shared_ptr<Station> station)
                         continue;
 
                     auto neighborOxygen = neighbor->GetComponent<OxygenComponent>();
-                    float oxygenDiff = oxygen->GetOxygenLevel() - neighborOxygen->GetOxygenLevel();
+                    double oxygenDiff = oxygen->GetOxygenLevel() - neighborOxygen->GetOxygenLevel();
 
                     if (oxygenDiff <= 0)
                         continue;
@@ -346,13 +346,13 @@ void UpdateEnvironmentalHazards(std::shared_ptr<Station> station)
             }
 
             auto oxygen = tileWithOxygen->GetComponent<OxygenComponent>();
-            if (oxygen->GetOxygenLevel() < fire->GetOxygenConsumption() * FIXED_DELTA_TIME * 2.f)
-                fire->SetSize(fire->GetSize() / 3.f * 2.f);
+            if (oxygen->GetOxygenLevel() < fire->GetOxygenConsumption() * FIXED_DELTA_TIME * 2.)
+                fire->SetSize(fire->GetSize() / 3. * 2.);
 
             float oxygenToConsume = fire->GetOxygenConsumption() * FIXED_DELTA_TIME;
             if (oxygen->GetOxygenLevel() < oxygenToConsume)
             {
-                oxygen->SetOxygenLevel(0.f);
+                oxygen->SetOxygenLevel(0);
                 station->hazards.erase(station->hazards.begin() + i);
                 continue;
             }
@@ -412,8 +412,8 @@ void MouseDeleteExistingConnection(std::shared_ptr<Station> station, const Playe
                 if (!otherConnectorTile)
                     continue;
 
-                Vector2 start = camera.WorldToScreen(ToVector2(tile->GetPosition()) + Vector2(.5f, .5f));
-                Vector2 end = camera.WorldToScreen(ToVector2(otherConnectorTile->GetPosition()) + Vector2(.5f, .5f));
+                Vector2 start = camera.WorldToScreen(ToVector2(tile->GetPosition()) + Vector2(.5, .5));
+                Vector2 end = camera.WorldToScreen(ToVector2(otherConnectorTile->GetPosition()) + Vector2(.5, .5));
 
                 if (DistanceSqFromPointToLine(start, end, mousePos) > threshold * threshold)
                     continue;

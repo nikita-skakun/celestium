@@ -32,7 +32,7 @@ std::deque<Vector2Int> AStar(const Vector2Int &start, const Vector2Int &end,
     std::priority_queue<Vector2Int, std::vector<Vector2Int>, decltype(compare)> openQueue(compare);
 
     // Initialize costs for the start node
-    costMap[start] = Vector2(0.f, heuristic(start, end));
+    costMap[start] = Vector2(0, heuristic(start, end));
     // Add start to the queue of open nodes
     openQueue.emplace(start);
 

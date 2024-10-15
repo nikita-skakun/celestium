@@ -48,7 +48,7 @@ void InitializeEscapeMenu(PlayerCam &camera)
 
 void InitializeSettingsMenu(PlayerCam &camera)
 {
-    constexpr Vector2 menuSize = Vector2(1., 1.) * 2. / 3.;
+    constexpr Vector2 menuSize = Vector2(1, 1) * 2. / 3.;
     constexpr Vector2 menuPos = Vector2(.5, .5) - menuSize / 2.;
     constexpr Vector2 spacing = Vector2ScreenScale(Vector2(DEFAULT_PADDING, DEFAULT_PADDING));
     constexpr double settingHeight = 1. / 36.;
