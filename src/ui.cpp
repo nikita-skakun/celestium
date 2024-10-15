@@ -350,7 +350,7 @@ void DrawDragSelectBox(const PlayerCam &camera)
 void DrawFpsCounter(float deltaTime, float padding, int fontSize)
 {
     const Font &font = AssetManager::GetFont("DEFAULT");
-    std::string fpsText = std::format("FPS: {:} ({:.2}ms)", GetFPS(), deltaTime * 1000.);
+    std::string fpsText = std::format("FPS: {:} ({:.2f}ms)", GetFPS(), deltaTime * 1000.);
     const char *text = fpsText.c_str();
     DrawTextEx(font, text, Vector2(GetMonitorWidth(GetCurrentMonitor()) - MeasureTextEx(font, text, fontSize, 1).x - padding, padding), fontSize, 1, UI_TEXT_COLOR);
 }
@@ -404,20 +404,20 @@ std::string GetTileInfo(std::shared_ptr<Tile> tile)
 
     if (auto durability = tile->GetComponent<DurabilityComponent>())
     {
-        tileInfo += std::format("\n   + HP: {:.1} / {:.1}", durability->GetHitpoints(), durability->GetMaxHitpoints());
+        tileInfo += std::format("\n   + HP: {:.1f} / {:.1f}", durability->GetHitpoints(), durability->GetMaxHitpoints());
     }
     if (auto door = tile->GetComponent<DoorComponent>())
     {
         tileInfo += std::format("\n   + {}", door->IsOpen() ? "Open" : "Closed");
-        tileInfo += std::format("\n   + State: {} ({:.0}%)", door->GetMovementName(), door->GetProgress() * 100.);
+        tileInfo += std::format("\n   + State: {} ({:.0f}%)", door->GetMovementName(), door->GetProgress() * 100.);
     }
     if (auto oxygen = tile->GetComponent<OxygenComponent>())
     {
-        tileInfo += std::format("\n   + Oxygen: {:.0}", oxygen->GetOxygenLevel());
+        tileInfo += std::format("\n   + Oxygen: {:.0f}", oxygen->GetOxygenLevel());
     }
     if (auto battery = tile->GetComponent<BatteryComponent>())
     {
-        tileInfo += std::format("\n   + Energy: {:.0} / {:.0}", battery->GetChargeLevel(), battery->GetMaxChargeLevel());
+        tileInfo += std::format("\n   + Energy: {:.0f} / {:.0f}", battery->GetChargeLevel(), battery->GetMaxChargeLevel());
     }
     if (auto powerConnector = tile->GetComponent<PowerConnectorComponent>())
     {
@@ -458,8 +458,8 @@ void DrawMainTooltip(const std::vector<Crew> &crewList, const PlayerCam &camera,
         hoverText += " - " + crew.GetName();
         if (crew.IsAlive())
         {
-            hoverText += std::format("\n   + Health: {:.1}", crew.GetHealth());
-            hoverText += std::format("\n   + Oxygen: {:.0}", crew.GetOxygen());
+            hoverText += std::format("\n   + Health: {:.1f}", crew.GetHealth());
+            hoverText += std::format("\n   + Oxygen: {:.0f}", crew.GetOxygen());
         }
         else
         {
