@@ -222,7 +222,7 @@ void HandleCrewEnvironment(std::vector<Crew> &crewList)
             if (auto oxygen = tile->GetComponent<OxygenComponent>())
                 crew.RefillOxygen(FIXED_DELTA_TIME, oxygen->GetOxygenLevel());
 
-            auto hazards = tile->GetStation()->GetHazardsAtPosition(tile->GetPosition());
+            auto hazards = tile->GetStation()->GetEffectsAtPosition(tile->GetPosition());
             for (const auto &hazard : hazards)
             {
                 hazard->EffectCrew(crew, FIXED_DELTA_TIME);
@@ -318,7 +318,7 @@ void UpdateTiles(std::shared_ptr<Station> station)
     }
 }
 
-void UpdateEnvironmentalHazards(std::shared_ptr<Station> station)
+void UpdateEnvironmentalEffects(std::shared_ptr<Station> station)
 {
     if (!station)
         return;
@@ -326,7 +326,7 @@ void UpdateEnvironmentalHazards(std::shared_ptr<Station> station)
     for (int i = station->hazards.size() - 1; i >= 0; --i)
     {
         auto hazard = station->hazards.at(i);
-        if (auto fire = std::dynamic_pointer_cast<FireHazard>(hazard))
+        if (auto fire = std::dynamic_pointer_cast<FireEffect>(hazard))
         {
             auto tileWithOxygen = station->GetTileWithComponentAtPosition<OxygenComponent>(fire->GetPosition());
             if (!tileWithOxygen)
@@ -341,7 +341,7 @@ void UpdateEnvironmentalHazards(std::shared_ptr<Station> station)
                 for (auto &tileWithDurability : tilesWithDurability)
                 {
                     auto durability = tileWithDurability->GetComponent<DurabilityComponent>();
-                    durability->SetHitpoints(durability->GetHitpoints() - FireHazard::DAMAGE_PER_SECOND * FIXED_DELTA_TIME);
+                    durability->SetHitpoints(durability->GetHitpoints() - FireEffect::DAMAGE_PER_SECOND * FIXED_DELTA_TIME);
                 }
             }
 
@@ -358,7 +358,7 @@ void UpdateEnvironmentalHazards(std::shared_ptr<Station> station)
             }
 
             oxygen->SetOxygenLevel(oxygen->GetOxygenLevel() - oxygenToConsume);
-            fire->SetSize(fire->GetSize() + FireHazard::GROWTH_IF_FED_PER_SECOND * FIXED_DELTA_TIME);
+            fire->SetSize(fire->GetSize() + FireEffect::GROWTH_IF_FED_PER_SECOND * FIXED_DELTA_TIME);
 
             bool tileIsSolid = station->GetTileWithComponentAtPosition<SolidComponent>(fire->GetPosition()) != nullptr;
             if (!tileIsSolid && CheckIfEventHappens(fire->SPREAD_CHANCE_PER_SECOND, FIXED_DELTA_TIME))
@@ -370,7 +370,7 @@ void UpdateEnvironmentalHazards(std::shared_ptr<Station> station)
                     Vector2Int offset = DirectionToVector2Int(direction);
                     Vector2Int neighborPos = fire->GetPosition() + offset;
                     if (station->GetTileWithComponentAtPosition<OxygenComponent>(neighborPos) != nullptr &&
-                        station->GetTypeHazardsAtPosition<FireHazard>(neighborPos).empty())
+                        station->GetTypeEffectsAtPosition<FireEffect>(neighborPos).empty())
                         possibleOffsets.push_back(offset);
                 }
 
@@ -379,7 +379,7 @@ void UpdateEnvironmentalHazards(std::shared_ptr<Station> station)
 
                 int directionSelected = RandomIntWithRange(0, (int)possibleOffsets.size() - 1);
                 Vector2Int newFirePos = fire->GetPosition() + possibleOffsets[directionSelected];
-                station->hazards.push_back(std::make_shared<FireHazard>(newFirePos, FireHazard::SIZE_INCREMENT));
+                station->hazards.push_back(std::make_shared<FireEffect>(newFirePos, FireEffect::SIZE_INCREMENT));
             }
         }
     }

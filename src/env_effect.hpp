@@ -3,7 +3,7 @@
 
 struct Crew;
 
-struct Hazard
+struct Effect
 {
     enum Type : u_int8_t
     {
@@ -17,8 +17,8 @@ protected:
     float size;
 
 public:
-    constexpr Hazard(const Vector2Int &position, float size) : position(position), size(std::clamp(size, 0.f, 1.f)) {}
-    virtual ~Hazard() = default;
+    constexpr Effect(const Vector2Int &position, float size) : position(position), size(std::clamp(size, 0.f, 1.f)) {}
+    virtual ~Effect() = default;
 
     constexpr const Vector2Int &GetPosition() const { return position; };
 
@@ -31,7 +31,7 @@ public:
     constexpr std::string GetName() const { return EnumToName<Type>(GetType()); }
 };
 
-struct FireHazard : public Hazard
+struct FireEffect : public Effect
 {
     static constexpr float SIZE_INCREMENT = 1.f / 8.f;
     static constexpr float OXYGEN_CONSUMPTION_PER_SECOND = 20.f;
@@ -39,7 +39,7 @@ struct FireHazard : public Hazard
     static constexpr float SPREAD_CHANCE_PER_SECOND = .2f;
     static constexpr float DAMAGE_PER_SECOND = 2.f;
 
-    constexpr FireHazard(const Vector2Int &position, float size) : Hazard(position, size) {}
+    constexpr FireEffect(const Vector2Int &position, float size) : Effect(position, size) {}
 
     void EffectCrew(Crew &crew, float deltaTime) const override;
 

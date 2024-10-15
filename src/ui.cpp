@@ -234,7 +234,7 @@ void DrawTileOutline(std::shared_ptr<Tile> tile, const PlayerCam &camera, Color 
  * @param station The station to draw the overlays of.
  * @param camera  The PlayerCam used for converting coordinates.
  */
-void DrawEnvironmentalHazards(std::shared_ptr<Station> station, const PlayerCam &camera)
+void DrawEnvironmentalEffects(std::shared_ptr<Station> station, const PlayerCam &camera)
 {
     if (!station)
         return;
@@ -244,7 +244,7 @@ void DrawEnvironmentalHazards(std::shared_ptr<Station> station, const PlayerCam 
 
     for (const auto &hazard : station->hazards)
     {
-        if (const auto fire = std::dynamic_pointer_cast<const FireHazard>(hazard))
+        if (const auto fire = std::dynamic_pointer_cast<const FireEffect>(hazard))
         {
             Vector2 fireSize = tileSize * fire->GetRoundedSize();
             Vector2 startPos = camera.WorldToScreen(ToVector2(fire->GetPosition()) + Vector2(1, 1) * ((1. - fire->GetRoundedSize()) / 2.));
@@ -431,13 +431,13 @@ std::string GetTileInfo(std::shared_ptr<Tile> tile)
     return tileInfo;
 }
 
-std::string GetHazardInfo(std::shared_ptr<Hazard> hazard)
+std::string GetEffectInfo(std::shared_ptr<Effect> hazard)
 {
     std::string hazardInfo = " - " + hazard->GetName();
 
-    if (auto fire = std::dynamic_pointer_cast<const FireHazard>(hazard))
+    if (auto fire = std::dynamic_pointer_cast<const FireEffect>(hazard))
     {
-        hazardInfo += std::format("\n   + Size: {:.0f}", fire->GetRoundedSize() / FireHazard::SIZE_INCREMENT);
+        hazardInfo += std::format("\n   + Size: {:.0f}", fire->GetRoundedSize() / FireEffect::SIZE_INCREMENT);
     }
 
     return hazardInfo;
@@ -487,13 +487,13 @@ void DrawMainTooltip(const std::vector<Crew> &crewList, std::shared_ptr<Station>
 
         if (!camera.IsInBuildMode())
         {
-            auto hazards = station->GetHazardsAtPosition(tileHoverPos);
+            auto hazards = station->GetEffectsAtPosition(tileHoverPos);
             for (auto &&hazard : hazards)
             {
                 if (!hoverText.empty())
                     hoverText += "\n";
 
-                hoverText += GetHazardInfo(hazard);
+                hoverText += GetEffectInfo(hazard);
             }
         }
     }

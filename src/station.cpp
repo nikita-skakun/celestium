@@ -82,7 +82,7 @@ std::shared_ptr<Station> CreateStation()
 
     station->UpdateSpriteOffsets();
 
-    station->hazards.push_back(std::make_shared<FireHazard>(Vector2Int(12, 0), FireHazard::SIZE_INCREMENT));
+    station->hazards.push_back(std::make_shared<FireEffect>(Vector2Int(12, 0), FireEffect::SIZE_INCREMENT));
 
     return station;
 }
@@ -312,17 +312,17 @@ bool Station::IsDoorFullyOpenAtPos(const Vector2Int &pos) const
     return true;
 }
 
-std::vector<std::shared_ptr<Hazard>> Station::GetHazardsAtPosition(const Vector2Int &pos) const
+std::vector<std::shared_ptr<Effect>> Station::GetEffectsAtPosition(const Vector2Int &pos) const
 {
-    std::vector<std::shared_ptr<Hazard>> foundHazards;
+    std::vector<std::shared_ptr<Effect>> foundEffects;
 
     for (const auto &hazard : hazards)
     {
         if (hazard->GetPosition() == pos)
-            foundHazards.push_back(hazard);
+            foundEffects.push_back(hazard);
     }
 
-    return foundHazards;
+    return foundEffects;
 }
 
 std::shared_ptr<Tile> Station::GetTileAtPosition(const Vector2Int &pos, TileDef::Height height) const

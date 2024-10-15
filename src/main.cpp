@@ -29,7 +29,7 @@ void FixedUpdate(std::shared_ptr<Station> station, std::vector<Crew> &crewList, 
                 HandleCrewTasks(crewList);
                 HandleCrewEnvironment(crewList);
                 UpdateCrewCurrentTile(crewList, station);
-                UpdateEnvironmentalHazards(station);
+                UpdateEnvironmentalEffects(station);
                 UpdateTiles(station);
                 fixedUpdateCondition.notify_all();
 
@@ -113,7 +113,7 @@ int main()
 
         if (!camera.IsInBuildMode())
         {
-            DrawEnvironmentalHazards(station, camera);
+            DrawEnvironmentalEffects(station, camera);
             DrawCrew(timeSinceFixedUpdate, crewList, camera);
         }
         else {

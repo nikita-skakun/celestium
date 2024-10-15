@@ -8,7 +8,7 @@ void DrawPath(const std::deque<Vector2Int> &path, const Vector2 &startPos, const
 void DrawStationTiles(std::shared_ptr<Station> station, const PlayerCam &camera);
 void DrawStationOverlays(std::shared_ptr<Station> station, const PlayerCam &camera);
 void DrawTileOutline(std::shared_ptr<Tile> tile, const PlayerCam &camera, Color color);
-void DrawEnvironmentalHazards(std::shared_ptr<Station> station, const PlayerCam &camera);
+void DrawEnvironmentalEffects(std::shared_ptr<Station> station, const PlayerCam &camera);
 void DrawCrew(double timeSinceFixedUpdate, const std::vector<Crew> &crewList, const PlayerCam &camera);
 void DrawDragSelectBox(const PlayerCam &camera);
 void DrawFpsCounter(float deltaTime, float padding = DEFAULT_PADDING, int fontSize = DEFAULT_FONT_SIZE);
