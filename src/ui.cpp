@@ -70,7 +70,11 @@ void DrawStationTiles(std::shared_ptr<Station> station, const PlayerCam &camera)
             Vector2 startPos = camera.WorldToScreen(ToVector2(tile->GetPosition()));
             Rectangle sourceRect = Rectangle(tile->GetSpriteOffset().x, tile->GetSpriteOffset().y, 1, 1) * TILE_SIZE;
 
-            DrawTexturePro(stationTileset, sourceRect, Vector2ToRect(startPos, tileSize), Vector2(), 0, WHITE);
+            Color tint = WHITE;
+            if (camera.IsInBuildMode() && GameManager::GetSelectedTile() == tile)
+                tint = ColorLerp(WHITE, TILE_SELECTION_TINT, Oscillate(GetTime(), .5));
+
+            DrawTexturePro(stationTileset, sourceRect, Vector2ToRect(startPos, tileSize), Vector2(), 0, tint);
 
             if (camera.GetOverlay() == PlayerCam::Overlay::OXYGEN)
             {
@@ -186,7 +190,7 @@ void DrawStationOverlays(std::shared_ptr<Station> station, const PlayerCam &came
     }
 }
 
-void DrawTileOutline(std::shared_ptr<Tile> tile, const PlayerCam &camera)
+void DrawTileOutline(std::shared_ptr<Tile> tile, const PlayerCam &camera, Color color)
 {
     if (!tile)
         return;
@@ -219,7 +223,7 @@ void DrawTileOutline(std::shared_ptr<Tile> tile, const PlayerCam &camera)
             Vector2Int neighborPos = pos + DirectionToVector2Int(directions[i]);
 
             if (positions.count(neighborPos) == 0)
-                DrawLineEx(lines[i].first, lines[i].second, 2, MAGENTA);
+                DrawLineEx(lines[i].first, lines[i].second, 3, color);
         }
     }
 }
@@ -442,11 +446,11 @@ std::string GetHazardInfo(std::shared_ptr<Hazard> hazard)
 /**
  * Draws a tooltip about the crew member or station tile under the mouse cursor.
  *
- * @param crewList   A vector of Crew objects, used to retrieve the hovered crew member's information.
- * @param camera     The PlayerCam used for handling hover state and converting coordinates.
- * @param station    A shared pointer to the Station, used to fetch tiles and their components.
+ * @param crewList A vector of Crew objects, used to retrieve the hovered crew member's information.
+ * @param station  A shared pointer to the Station, used to fetch tiles and their components.
+ * @param camera   The PlayerCam used for handling hover state and converting coordinates.
  */
-void DrawMainTooltip(const std::vector<Crew> &crewList, const PlayerCam &camera, std::shared_ptr<Station> station)
+void DrawMainTooltip(const std::vector<Crew> &crewList, std::shared_ptr<Station> station, const PlayerCam &camera)
 {
     std::string hoverText;
     const Vector2 mousePos = GetMousePosition();
@@ -498,4 +502,23 @@ void DrawMainTooltip(const std::vector<Crew> &crewList, const PlayerCam &camera,
         return;
 
     DrawTooltip(hoverText, mousePos);
+}
+
+void DrawBuildTileOutline(std::shared_ptr<Station> station, const PlayerCam &camera)
+{
+    if (!station || UiManager::IsMouseOverUiElement())
+        return;
+
+    Vector2Int cursorPos = ToVector2Int(camera.GetWorldMousePos());
+
+    std::shared_ptr<Tile> hoveredTile = nullptr;
+    auto allTiles = station->GetAllTilesAtPosition(cursorPos);
+    if (!allTiles.empty())
+    {
+        hoveredTile = allTiles.at(allTiles.size() - 1);
+        DrawTileOutline(hoveredTile, camera, DARKPURPLE);
+    }
+
+    if (IsMouseButtonPressed(MOUSE_LEFT_BUTTON))
+        GameManager::SetSelectedTile(hoveredTile);
 }

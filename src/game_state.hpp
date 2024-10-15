@@ -1,5 +1,5 @@
 #pragma once
-#include "utils.hpp"
+#include "tile.hpp"
 
 enum class GameState : u_int8_t
 {
@@ -18,7 +18,8 @@ struct magic_enum::customize::enum_range<GameState>
 struct GameManager
 {
 private:
-    GameState state;
+    GameState state = GameState::NONE;
+    std::shared_ptr<Tile> selectedTile;
 
     GameManager() = default;
     ~GameManager() = default;
@@ -47,4 +48,7 @@ public:
     {
         GetInstance().state ^= mask;
     }
+
+    static const std::shared_ptr<Tile> &GetSelectedTile() { return GetInstance().selectedTile; }
+    static void SetSelectedTile(const std::shared_ptr<Tile> &selection) { GetInstance().selectedTile = selection; }
 };

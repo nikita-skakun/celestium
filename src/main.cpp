@@ -116,23 +116,14 @@ int main()
             DrawEnvironmentalHazards(station, camera);
             DrawCrew(timeSinceFixedUpdate, crewList, camera);
         }
-        else
-        {
-            Vector2Int cursorPos = ToVector2Int(camera.GetWorldMousePos());
-            if (station)
-            {
-                auto allTiles = station->GetAllTilesAtPosition(cursorPos);
-                if (!allTiles.empty())
-                {
-                    DrawTileOutline(allTiles.at(allTiles.size() - 1), camera);
-                }
-            }
+        else {
+            DrawBuildTileOutline(station, camera);
         }
 
         if (camera.IsUiClear())
         {
             DrawDragSelectBox(camera);
-            DrawMainTooltip(crewList, camera, station);
+            DrawMainTooltip(crewList, station, camera);
             DrawFpsCounter(deltaTime, 12, DEFAULT_FONT_SIZE);
         }
 

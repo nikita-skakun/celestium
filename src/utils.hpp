@@ -30,6 +30,11 @@ inline int RandomIntWithRange(int min, int max) noexcept
     return distribution(generator);
 }
 
+constexpr double Oscillate(double time, double length) noexcept
+{
+    return std::fabs(std::fmod(time, length * 2.) - length);
+}
+
 /**
  * @brief Determines if an event occurs based on a chance per second and delta time.
  *

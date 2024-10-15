@@ -13,6 +13,7 @@ constexpr Color UI_TEXT_COLOR = LIGHTGRAY;
 
 constexpr float TILE_SIZE = 32.f;
 constexpr float TILE_OXYGEN_MAX = 100.f;
+constexpr Color TILE_SELECTION_TINT = Color(255, 128, 255, 255);
 
 constexpr Color GRID_COLOR = Color(0, 0, 0, 50);
 

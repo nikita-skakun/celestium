@@ -388,9 +388,9 @@ std::vector<std::shared_ptr<Tile>> Station::GetDecorativeTilesAtPosition(const V
 
 std::vector<std::shared_ptr<Tile>> Station::GetAllTilesAtPosition(const Vector2Int &pos) const
 {
-    auto allTiles = GetDecorativeTilesAtPosition(pos);
+    auto tilesAtPos = GetDecorativeTilesAtPosition(pos);
     const auto &tiles = GetTilesAtPosition(pos);
-    allTiles.insert(allTiles.begin(), tiles.begin(), tiles.end());
+    tilesAtPos.insert(tilesAtPos.begin(), tiles.begin(), tiles.end());
 
-    return allTiles;
+    return tilesAtPos;
 }
