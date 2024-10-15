@@ -31,17 +31,17 @@ void InitializeEscapeMenu(PlayerCam &camera)
     constexpr Rectangle resumeButtonRect = Rectangle(buttonPosX, firstButtonPosY, buttonWidth, buttonHeight);
     auto resumeButton = std::make_shared<UiButton>(resumeButtonRect, "Resume", [&camera]()
                                                    { camera.SetUiState(PlayerCam::UiState::NONE); });
-    escMenu->AddChild(resumeButton);
+    menuBackground->AddChild(resumeButton);
 
     constexpr Rectangle settingsButtonRect = Rectangle(buttonPosX, firstButtonPosY + (buttonHeight + spacing.y), buttonWidth, buttonHeight);
     auto settingsButton = std::make_shared<UiButton>(settingsButtonRect, "Settings", [&camera]()
                                                      { camera.SetUiState(PlayerCam::UiState::SETTINGS_MENU); });
-    escMenu->AddChild(settingsButton);
+    menuBackground->AddChild(settingsButton);
 
     constexpr Rectangle exitButtonRect = Rectangle(buttonPosX, firstButtonPosY + 2. * (buttonHeight + spacing.y), buttonWidth, buttonHeight);
     auto exitButton = std::make_shared<UiButton>(exitButtonRect, "Exit", []()
                                                  { GameManager::SetBit(GameState::RUNNING, false); });
-    escMenu->AddChild(exitButton);
+    menuBackground->AddChild(exitButton);
 
     UiManager::AddElement("ESC_MENU", escMenu);
 }
@@ -67,7 +67,7 @@ void InitializeSettingsMenu(PlayerCam &camera)
 
     Rectangle monitorTextRect = Rectangle(menuPos.x + spacing.x, menuPos.y + spacing.y, halfPanelWidth, settingHeight);
     auto monitorText = std::make_shared<UiStatusBar>(monitorTextRect, "Render Monitor:");
-    settingsMenu->AddChild(monitorText);
+    menuBackground->AddChild(monitorText);
 
     std::string monitorNames;
     for (int i = 0; i < GetMonitorCount(); i++)
@@ -81,7 +81,7 @@ void InitializeSettingsMenu(PlayerCam &camera)
     Rectangle monitorSelectRect = Rectangle(monitorTextRect.x + halfPanelWidth + spacing.x, menuPos.y + spacing.y, halfPanelWidth, settingHeight);
     auto monitorSelect = std::make_shared<UiComboBox>(monitorSelectRect, monitorNames, selectedMonitor, [](int monitor)
                                                       {  SetWindowMonitor(monitor); SetTargetFPS(GetMonitorRefreshRate(monitor)); });
-    settingsMenu->AddChild(monitorSelect);
+    menuBackground->AddChild(monitorSelect);
 
     UiManager::AddElement("SETTINGS_MENU", settingsMenu);
 }

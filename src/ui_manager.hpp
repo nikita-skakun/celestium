@@ -58,4 +58,21 @@ public:
     }
 
     static void InitializeElements(PlayerCam &camera);
+
+    static std::shared_ptr<UiElement> FindUiElementAtPos(const Vector2 &pos)
+    {
+        for (const auto &pair : UiManager::GetInstance().uiElements)
+        {
+            const auto &element = pair.second;
+            if (auto found = UiElement::FindChildAtPos(element, pos))
+                return found;
+        }
+
+        return nullptr;
+    }
+
+    static bool IsMouseOverUiElement()
+    {
+        return FindUiElementAtPos(GetMousePosition()) != nullptr;
+    }
 };

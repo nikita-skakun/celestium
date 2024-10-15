@@ -86,16 +86,17 @@ int main()
 
         // Handle all real-time input and camera logic in the main thread
         camera.HandleCamera();
-        if (!camera.IsInBuildMode())
-        {
-            HandleCrewHover(crewList, camera);
-            HandleCrewSelection(crewList, camera);
-            AssignCrewTasks(crewList, camera);
-            HandleMouseDrag(station, camera);
-        }
 
-        if (camera.IsUiClear())
+        if (!UiManager::IsMouseOverUiElement())
         {
+            if (!camera.IsInBuildMode())
+            {
+                HandleCrewHover(crewList, camera);
+                HandleCrewSelection(crewList, camera);
+                AssignCrewTasks(crewList, camera);
+                HandleMouseDrag(station, camera);
+            }
+
             MouseDeleteExistingConnection(station, camera);
         }
 

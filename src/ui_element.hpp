@@ -32,8 +32,10 @@ public:
     {
         for (const auto &child : children)
         {
-            if (child->IsVisible())
+            if (child->IsVisible()) {
                 child->Render();
+                child->RenderChildren();
+            }
         }
     }
 
@@ -51,6 +53,20 @@ public:
         {
             child->Update();
         }
+    }
+
+    static std::shared_ptr<UiElement> FindChildAtPos(std::shared_ptr<UiElement> element, const Vector2 &pos)
+    {
+        if (!element->IsVisible() || !IsVector2WithinRect(element->GetRect(), pos))
+            return nullptr;
+
+        for (const auto &child : element->children)
+        {
+            if (auto found = FindChildAtPos(child, pos))
+                return found;
+        }
+
+        return element;
     }
 };
 

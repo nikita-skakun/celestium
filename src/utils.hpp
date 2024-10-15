@@ -162,11 +162,6 @@ constexpr float Vector2DistanceSq(const Vector2 &a, const Vector2 &b) noexcept
     return (b.x - a.x) * (b.x - a.x) + (b.y - a.y) * (b.y - a.y);
 }
 
-constexpr bool IsVector2WithinBounds(const Vector2 &a, const Vector2 &boxStart, const Vector2 &boxEnd) noexcept
-{
-    return (a.x >= std::min(boxStart.x, boxEnd.x) && a.x <= std::max(boxStart.x, boxEnd.x) && a.y >= std::min(boxStart.y, boxEnd.y) && a.y <= std::max(boxStart.y, boxEnd.y));
-}
-
 constexpr Vector2 Vector2Round(const Vector2 &a) noexcept
 {
     return Vector2(round(a.x), round(a.y));
@@ -334,6 +329,17 @@ constexpr Rectangle Vector2ToBoundingBox(const Vector2 &a, const Vector2 &b) noe
 constexpr Rectangle Vector2ToRect(const Vector2 &pos, const Vector2 &size) noexcept
 {
     return Rectangle(pos.x, pos.y, size.x, size.y);
+}
+
+constexpr bool IsVector2WithinRect(const Rectangle &rect, const Vector2 &point) noexcept
+{
+    return (point.x >= rect.x && point.x <= (rect.x + rect.width) &&
+            point.y >= rect.y && point.y <= (rect.y + rect.height));
+}
+
+constexpr std::string ToString(const Rectangle &rect) noexcept
+{
+    return std::format("({:}, {:}, {:}, {:})", rect.x, rect.y, rect.width, rect.height);
 }
 
 // Utility functions for Line
