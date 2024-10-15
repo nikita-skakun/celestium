@@ -7,13 +7,13 @@
 std::mutex updateMutex;
 std::condition_variable fixedUpdateCondition;
 
-void FixedUpdate(std::shared_ptr<Station> station, std::vector<Crew> &crewList, double &timeSinceFixedUpdate, GameState &state)
+void FixedUpdate(std::shared_ptr<Station> station, std::vector<Crew> &crewList, double &timeSinceFixedUpdate)
 {
     double previousTime = GetTime();
 
-    while (IsGameRunning(state))
+    while (GameManager::IsGameRunning())
     {
-        if (!IsGamePaused(state))
+        if (!GameManager::IsGamePaused())
         {
             double currentTime = GetTime();
             double deltaTime = currentTime - previousTime;
@@ -53,14 +53,10 @@ int main()
     SetTargetFPS(GetMonitorRefreshRate(GetCurrentMonitor()));
     SetExitKey(0);
 
-    GameState state = GameState::RUNNING;
+    GameManager::SetBit(GameState::RUNNING);
 
-    Texture2D stationTileset = LoadTexture("../assets/tilesets/station.png");
-    Texture2D iconTileset = LoadTexture("../assets/tilesets/icons.png");
-    Texture2D fireSpritesheet = LoadTexture("../assets/tilesets/fire.png");
-    Font font = LoadFontEx("../assets/fonts/Jersey25.ttf", DEFAULT_FONT_SIZE, NULL, 0);
-
-    TileDefinitionRegistry::GetInstance().ParseTilesFromFile("../assets/definitions/tiles.yml");
+    AssetManager::Initialize();
+    TileDefinitionManager::ParseTilesFromFile("../assets/definitions/tiles.yml");
 
     PlayerCam camera = PlayerCam();
 
@@ -71,50 +67,53 @@ int main()
 
     std::shared_ptr<Station> station = CreateStation();
 
+    UiManager::InitializeElements(camera);
+
     LogMessage(LogLevel::INFO, "Initialization Complete");
 
     double timeSinceFixedUpdate = 0;
     // Start the update thread
-    std::thread updateThread(FixedUpdate, station, std::ref(crewList), std::ref(timeSinceFixedUpdate), std::ref(state));
+    std::thread updateThread(FixedUpdate, station, std::ref(crewList), std::ref(timeSinceFixedUpdate));
 
     double deltaTime = 0;
 
-    while (IsGameRunning(state))
+    while (GameManager::IsGameRunning())
     {
         bool forcePaused = camera.GetUiState() != PlayerCam::UiState::NONE || camera.IsInBuildMode();
-        SetBit(state, forcePaused, GameState::FORCE_PAUSED);
+        GameManager::SetBit(GameState::FORCE_PAUSED, forcePaused);
 
         deltaTime = GetFrameTime();
 
         // Handle all real-time input and camera logic in the main thread
         camera.HandleCamera();
-        if (!camera.IsInBuildMode())
-        {
-            HandleCrewHover(crewList, camera);
-            HandleCrewSelection(crewList, camera);
-            AssignCrewTasks(crewList, camera);
-            HandleMouseDrag(station, camera);
-        }
 
-        if (camera.IsUiClear())
+        if (!UiManager::IsMouseOverUiElement())
         {
+            if (!camera.IsInBuildMode())
+            {
+                HandleCrewHover(crewList, camera);
+                HandleCrewSelection(crewList, camera);
+                AssignCrewTasks(crewList, camera);
+                HandleMouseDrag(station, camera);
+            }
+
             MouseDeleteExistingConnection(station, camera);
         }
 
         if (IsKeyPressed(KEY_SPACE))
-            ToggleBit(state, GameState::PAUSED);
+            GameManager::ToggleBit(GameState::PAUSED);
 
         // Render logic
         BeginDrawing();
         ClearBackground(Color(31, 40, 45));
 
         DrawTileGrid(camera);
-        DrawStationTiles(station, stationTileset, camera);
-        DrawStationOverlays(station, stationTileset, iconTileset, camera);
+        DrawStationTiles(station, camera);
+        DrawStationOverlays(station, camera);
 
         if (!camera.IsInBuildMode())
         {
-            DrawEnvironmentalHazards(station, fireSpritesheet, camera);
+            DrawEnvironmentalHazards(station, camera);
             DrawCrew(timeSinceFixedUpdate, crewList, camera);
         }
         else
@@ -133,27 +132,24 @@ int main()
         if (camera.IsUiClear())
         {
             DrawDragSelectBox(camera);
-            DrawMainTooltip(crewList, camera, station, font);
-            DrawUiButtons(iconTileset, camera);
-            DrawFpsCounter(deltaTime, 12, DEFAULT_FONT_SIZE, font);
+            DrawMainTooltip(crewList, camera, station);
+            DrawFpsCounter(deltaTime, 12, DEFAULT_FONT_SIZE);
         }
 
-        DrawUi(state, camera, font);
+        UiManager::Update();
+        UiManager::Render();
 
         EndDrawing();
 
         if (WindowShouldClose())
-            SetBit(state, false, GameState::RUNNING);
+            GameManager::SetBit(GameState::RUNNING, false);
     }
 
     updateThread.join();
 
     CloseWindow();
 
-    UnloadTexture(stationTileset);
-    UnloadTexture(iconTileset);
-    UnloadTexture(fireSpritesheet);
-    UnloadFont(font);
+    AssetManager::CleanUp();
 
     LogMessage(LogLevel::INFO, "Clean-up Complete");
     return 0;

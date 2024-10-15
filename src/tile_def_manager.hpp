@@ -4,15 +4,15 @@
 #include <ryml_std.hpp>
 #include <ryml.hpp>
 
-struct TileDefinitionRegistry
+struct TileDefinitionManager
 {
 private:
     std::unordered_map<std::string, std::shared_ptr<TileDef>> tileDefinitions;
 
-    TileDefinitionRegistry() = default;
-    ~TileDefinitionRegistry() = default;
-    TileDefinitionRegistry(const TileDefinitionRegistry &) = delete;
-    TileDefinitionRegistry &operator=(const TileDefinitionRegistry &) = delete;
+    TileDefinitionManager() = default;
+    ~TileDefinitionManager() = default;
+    TileDefinitionManager(const TileDefinitionManager &) = delete;
+    TileDefinitionManager &operator=(const TileDefinitionManager &) = delete;
 
     template <typename T>
     T GetValue(const ryml::ConstNodeRef &node, const ryml::csubstr &key, T defaultValue)
@@ -89,22 +89,23 @@ private:
         }
     }
 
-public:
-    static TileDefinitionRegistry &GetInstance()
+    static TileDefinitionManager &GetInstance()
     {
-        static TileDefinitionRegistry instance;
+        static TileDefinitionManager instance;
         return instance;
     }
 
-    std::shared_ptr<TileDef> GetTileDefinition(const std::string &tileId) const
+public:
+    static std::shared_ptr<TileDef> GetTileDefinition(const std::string &tileId)
     {
-        return tileDefinitions.at(tileId);
+        return TileDefinitionManager::GetInstance().tileDefinitions.at(tileId);
     }
 
-    void ParseTilesFromFile(const std::string &filename)
+    static void ParseTilesFromFile(const std::string &filename)
     {
         std::vector<char> contents = ReadFromFile<std::vector<char>>(filename);
         ryml::Tree tree = ryml::parse_in_place(ryml::to_substr(contents));
+        auto &tileDefManager = TileDefinitionManager::GetInstance();
 
         if (tree.empty())
             throw std::runtime_error(std::format("The tile definition file is empty or unreadable: {}", filename));
@@ -141,13 +142,13 @@ public:
                 if (!type.has_value())
                     throw std::runtime_error(std::format("Parsing of component type string failed: {}", typeStr));
 
-                auto component = CreateComponent(type.value(), node);
+                auto component = tileDefManager.CreateComponent(type.value(), node);
                 if (!component)
                     throw std::runtime_error(std::format("Parsing of component string failed: {}", ryml::emitrs_yaml<std::string>(node)));
                 refComponents.insert(component);
             }
 
-            TileDefinitionRegistry::GetInstance().tileDefinitions[tileId] = std::make_shared<TileDef>(tileId, height.value(), refComponents);
+            TileDefinitionManager::GetInstance().tileDefinitions[tileId] = std::make_shared<TileDef>(tileId, height.value(), refComponents);
         }
     }
 };

@@ -1,5 +1,3 @@
-#define RAYGUI_IMPLEMENTATION
-#include "raygui.h"
 #include "ui.hpp"
 
 /**
@@ -12,19 +10,19 @@ void DrawTileGrid(const PlayerCam &camera)
     Vector2 screenSize = GetScreenSize();
 
     // Calculate the top-left corner in world coordinates
-    Vector2 topLeft = camera.GetPosition() * TILE_SIZE - screenSize / 2.f / camera.GetZoom();
+    Vector2 topLeft = camera.GetPosition() * TILE_SIZE - screenSize / 2. / camera.GetZoom();
 
     // Draw vertical lines
     for (int x = (int)(floor(topLeft.x / TILE_SIZE) * TILE_SIZE); x <= (int)(ceil((topLeft.x + screenSize.x / camera.GetZoom()) / TILE_SIZE) * TILE_SIZE); x += (int)TILE_SIZE)
     {
-        float screenX = (x - camera.GetPosition().x * TILE_SIZE) * camera.GetZoom() + screenSize.x / 2.f;
+        float screenX = (x - camera.GetPosition().x * TILE_SIZE) * camera.GetZoom() + screenSize.x / 2.;
         DrawLineV(Vector2(screenX, 0), Vector2(screenX, screenSize.y), GRID_COLOR);
     }
 
     // Draw horizontal lines
     for (int y = (int)(floor(topLeft.y / TILE_SIZE) * TILE_SIZE); y <= (int)(ceil((topLeft.y + screenSize.y / camera.GetZoom()) / TILE_SIZE) * TILE_SIZE); y += (int)TILE_SIZE)
     {
-        float screenY = (y - camera.GetPosition().y * TILE_SIZE) * camera.GetZoom() + screenSize.y / 2.f;
+        float screenY = (y - camera.GetPosition().y * TILE_SIZE) * camera.GetZoom() + screenSize.y / 2.;
         DrawLineV(Vector2(0, screenY), Vector2(screenSize.x, screenY), GRID_COLOR);
     }
 }
@@ -41,12 +39,12 @@ void DrawPath(const std::deque<Vector2Int> &path, const Vector2 &startPos, const
     if (path.empty())
         return;
 
-    Vector2 a = startPos + Vector2(.5f, .5f);
+    Vector2 a = startPos + Vector2(.5, .5);
 
     for (const auto &point : path)
     {
-        Vector2 b = ToVector2(point) + Vector2(.5f, .5f);
-        DrawLineV(camera.WorldToScreen(a), camera.WorldToScreen(b), Fade(GREEN, .5f));
+        Vector2 b = ToVector2(point) + Vector2(.5, .5);
+        DrawLineV(camera.WorldToScreen(a), camera.WorldToScreen(b), Fade(GREEN, .5));
         a = b;
     }
 }
@@ -54,16 +52,16 @@ void DrawPath(const std::deque<Vector2Int> &path, const Vector2 &startPos, const
 /**
  * Draws the station tiles and direct overlays.
  *
- * @param station        The station to draw the tiles of.
- * @param stationTileset A texture containing all station tile assets.
- * @param camera         The PlayerCam used for handling overlays and converting coordinates.
+ * @param station The station to draw the tiles of.
+ * @param camera  The PlayerCam used for handling overlays and converting coordinates.
  */
-void DrawStationTiles(std::shared_ptr<Station> station, const Texture2D &stationTileset, const PlayerCam &camera)
+void DrawStationTiles(std::shared_ptr<Station> station, const PlayerCam &camera)
 {
     if (!station)
         return;
 
-    Vector2 tileSize = Vector2(1.f, 1.f) * TILE_SIZE * camera.GetZoom();
+    Vector2 tileSize = Vector2(1, 1) * TILE_SIZE * camera.GetZoom();
+    const Texture2D &stationTileset = AssetManager::GetTexture("STATION");
 
     for (const auto &tilesAtPos : station->tileMap)
     {
@@ -78,7 +76,7 @@ void DrawStationTiles(std::shared_ptr<Station> station, const Texture2D &station
             {
                 if (auto oxygen = tile->GetComponent<OxygenComponent>())
                 {
-                    Color color = Color(50, 150, 255, oxygen->GetOxygenLevel() / TILE_OXYGEN_MAX * 255 * .8f);
+                    Color color = Color(50, 150, 255, oxygen->GetOxygenLevel() / TILE_OXYGEN_MAX * 255 * .8);
                     DrawRectangleV(startPos, tileSize, color);
                 }
             }
@@ -94,16 +92,17 @@ void DrawStationTiles(std::shared_ptr<Station> station, const Texture2D &station
 /**
  * Draws the indirect visual overlays.
  *
- * @param station        The station to draw the overlays of.
- * @param stationTileset A texture containing all station tile assets.
- * @param camera         The PlayerCam used for handling overlays and converting coordinates.
+ * @param station The station to draw the overlays of.
+ * @param camera  The PlayerCam used for handling overlays and converting coordinates.
  */
-void DrawStationOverlays(std::shared_ptr<Station> station, const Texture2D &stationTileset, const Texture2D &iconTileset, const PlayerCam &camera)
+void DrawStationOverlays(std::shared_ptr<Station> station, const PlayerCam &camera)
 {
     if (!station)
         return;
 
-    const Vector2 tileSize = Vector2(1.f, 1.f) * TILE_SIZE * camera.GetZoom();
+    const Vector2 tileSize = Vector2(1, 1) * TILE_SIZE * camera.GetZoom();
+    const Texture2D &stationTileset = AssetManager::GetTexture("STATION");
+    const Texture2D &iconTileset = AssetManager::GetTexture("ICON");
 
     for (const auto &tilesAtPos : station->tileMap)
     {
@@ -126,20 +125,20 @@ void DrawStationOverlays(std::shared_ptr<Station> station, const Texture2D &stat
                 Vector2 startPos = camera.WorldToScreen(ToVector2(tile->GetPosition()));
                 Rectangle destRect = Vector2ToRect(startPos, tileSize);
                 Rectangle doorSourceRect = Rectangle(0, 7, 1, 1) * TILE_SIZE;
-                doorSourceRect.height = std::max(19.f * door->GetProgress(), 1.f);
+                doorSourceRect.height = std::max(19. * door->GetProgress(), 1.);
 
                 Rectangle doorDest1 = destRect;
-                doorDest1.height = std::max(19.f * door->GetProgress(), 1.f) * camera.GetZoom();
-                doorDest1.y += 19.f * camera.GetZoom() - doorDest1.height;
+                doorDest1.height = std::max(19. * door->GetProgress(), 1.) * camera.GetZoom();
+                doorDest1.y += 19. * camera.GetZoom() - doorDest1.height;
 
                 DrawTexturePro(stationTileset, doorSourceRect, doorDest1, Vector2(), 0, WHITE);
 
                 Rectangle doorDest2 = destRect;
                 doorDest2.width = -doorDest2.width;
                 doorDest2.height = -doorDest1.height;
-                doorDest2.y -= 19.f * camera.GetZoom() + doorDest2.height;
+                doorDest2.y -= 19. * camera.GetZoom() + doorDest2.height;
 
-                DrawTexturePro(stationTileset, doorSourceRect, doorDest2, Vector2(-doorDest2.width, 0.f), 180.f, WHITE);
+                DrawTexturePro(stationTileset, doorSourceRect, doorDest2, Vector2(-doorDest2.width, 0), 180, WHITE);
             }
 
             if (camera.GetOverlay() == PlayerCam::Overlay::POWER)
@@ -148,25 +147,25 @@ void DrawStationOverlays(std::shared_ptr<Station> station, const Texture2D &stat
                 {
                     if (!powerConsumer->IsActive())
                     {
-                        Vector2 startScreenPos = camera.WorldToScreen(ToVector2(tile->GetPosition()) + Vector2(.66f, 0.f));
-                        Rectangle destRect = Vector2ToRect(startScreenPos, tileSize / 3.f);
+                        Vector2 startScreenPos = camera.WorldToScreen(ToVector2(tile->GetPosition()) + Vector2(2. / 3., 0));
+                        Rectangle destRect = Vector2ToRect(startScreenPos, tileSize / 3.);
                         Rectangle sourceRect = Rectangle(0, 1, 1, 1) * TILE_SIZE;
 
-                        DrawTexturePro(iconTileset, sourceRect, destRect, Vector2(), 0, Fade(YELLOW, .8f));
+                        DrawTexturePro(iconTileset, sourceRect, destRect, Vector2(), 0, Fade(YELLOW, .8));
                     }
                 }
 
                 if (auto battery = tile->GetComponent<BatteryComponent>())
                 {
                     float barProgress = battery->GetChargeLevel() / battery->GetMaxChargeLevel();
-                    Vector2 topLeftPos = camera.WorldToScreen(ToVector2(tile->GetPosition()) + Vector2(1.f / 16.f, 0.f));
-                    Vector2 barStartPos = camera.WorldToScreen(ToVector2(tile->GetPosition()) + Vector2(1.f / 16.f, 1.f - barProgress));
+                    Vector2 topLeftPos = camera.WorldToScreen(ToVector2(tile->GetPosition()) + Vector2(1. / 16., 0));
+                    Vector2 barStartPos = camera.WorldToScreen(ToVector2(tile->GetPosition()) + Vector2(1. / 16., 1. - barProgress));
 
-                    Vector2 totalSize = Vector2(1.f / 8.f, 1.f) * TILE_SIZE * camera.GetZoom();
-                    Vector2 barSize = Vector2(1.f / 8.f, barProgress) * TILE_SIZE * camera.GetZoom();
+                    Vector2 totalSize = Vector2(1. / 8., 1) * TILE_SIZE * camera.GetZoom();
+                    Vector2 barSize = Vector2(1. / 8., barProgress) * TILE_SIZE * camera.GetZoom();
 
                     DrawRectangleV(topLeftPos, totalSize, Color(25, 25, 25, 200));
-                    DrawRectangleV(barStartPos, barSize, Fade(YELLOW, .8f));
+                    DrawRectangleV(barStartPos, barSize, Fade(YELLOW, .8));
                 }
 
                 if (auto powerConnector = tile->GetComponent<PowerConnectorComponent>())
@@ -176,8 +175,8 @@ void DrawStationOverlays(std::shared_ptr<Station> station, const Texture2D &stat
                     {
                         if (auto connectionTile = connection->_parent.lock())
                         {
-                            DrawLineEx(camera.WorldToScreen(ToVector2(tile->GetPosition()) + Vector2(.5f, .5f)),
-                                       camera.WorldToScreen(ToVector2(connectionTile->GetPosition()) + Vector2(.5f, .5f)),
+                            DrawLineEx(camera.WorldToScreen(ToVector2(tile->GetPosition()) + Vector2(.5, .5)),
+                                       camera.WorldToScreen(ToVector2(connectionTile->GetPosition()) + Vector2(.5, .5)),
                                        POWER_CONNECTION_WIDTH * std::max(camera.GetZoom(), 1.f), POWER_CONNECTION_COLOR);
                         }
                     }
@@ -201,7 +200,7 @@ void DrawTileOutline(std::shared_ptr<Tile> tile, const PlayerCam &camera)
         }
     }
 
-    Vector2 tileSize = Vector2(1.f, 1.f) * TILE_SIZE * camera.GetZoom();
+    Vector2 tileSize = Vector2(1, 1) * TILE_SIZE * camera.GetZoom();
     for (const auto &pos : positions)
     {
         Vector2 startPos = camera.WorldToScreen(ToVector2(pos));
@@ -220,7 +219,7 @@ void DrawTileOutline(std::shared_ptr<Tile> tile, const PlayerCam &camera)
             Vector2Int neighborPos = pos + DirectionToVector2Int(directions[i]);
 
             if (positions.count(neighborPos) == 0)
-                DrawLineEx(lines[i].first, lines[i].second, 2.f, MAGENTA);
+                DrawLineEx(lines[i].first, lines[i].second, 2, MAGENTA);
         }
     }
 }
@@ -228,23 +227,23 @@ void DrawTileOutline(std::shared_ptr<Tile> tile, const PlayerCam &camera)
 /**
  * Draws the station's environmental hazards (such as fire).
  *
- * @param station         The station to draw the overlays of.
- * @param fireSpritesheet A texture containing the fire animation spritesheet.
- * @param camera          The PlayerCam used for converting coordinates.
+ * @param station The station to draw the overlays of.
+ * @param camera  The PlayerCam used for converting coordinates.
  */
-void DrawEnvironmentalHazards(std::shared_ptr<Station> station, const Texture2D &fireSpritesheet, const PlayerCam &camera)
+void DrawEnvironmentalHazards(std::shared_ptr<Station> station, const PlayerCam &camera)
 {
     if (!station)
         return;
 
-    const Vector2 tileSize = Vector2(1.f, 1.f) * TILE_SIZE * camera.GetZoom();
+    const Vector2 tileSize = Vector2(1, 1) * TILE_SIZE * camera.GetZoom();
+    const Texture2D &fireSpritesheet = AssetManager::GetTexture("FIRE");
 
     for (const auto &hazard : station->hazards)
     {
         if (const auto fire = std::dynamic_pointer_cast<const FireHazard>(hazard))
         {
             Vector2 fireSize = tileSize * fire->GetRoundedSize();
-            Vector2 startPos = camera.WorldToScreen(ToVector2(fire->GetPosition()) + Vector2(1.f, 1.f) * ((1.f - fire->GetRoundedSize()) / 2.f));
+            Vector2 startPos = camera.WorldToScreen(ToVector2(fire->GetPosition()) + Vector2(1, 1) * ((1. - fire->GetRoundedSize()) / 2.));
             Rectangle sourceRect = Rectangle(GetEvenlySpacedIndex(GetTime(), 8), 0, 1, 1) * TILE_SIZE;
 
             DrawTexturePro(fireSpritesheet, sourceRect, Vector2ToRect(startPos, fireSize), Vector2(), 0, WHITE);
@@ -254,7 +253,7 @@ void DrawEnvironmentalHazards(std::shared_ptr<Station> station, const Texture2D 
 
 void DrawCrewCircle(const Crew &crew, const Vector2 &drawPosition, bool isSelected, const PlayerCam &camera)
 {
-    Vector2 crewScreenPos = camera.WorldToScreen(drawPosition + Vector2(.5f, .5f));
+    Vector2 crewScreenPos = camera.WorldToScreen(drawPosition + Vector2(.5, .5));
 
     if (isSelected)
         DrawCircleV(crewScreenPos, (CREW_RADIUS + OUTLINE_SIZE) * camera.GetZoom(), OUTLINE_COLOR);
@@ -329,7 +328,7 @@ void DrawDragSelectBox(const PlayerCam &camera)
     switch (camera.GetDragType())
     {
     case PlayerCam::DragType::SELECT:
-        DrawRectangleLinesEx(Vector2ToBoundingBox(dragStart, dragEnd), 1.f, BLUE);
+        DrawRectangleLinesEx(Vector2ToBoundingBox(dragStart, dragEnd), 1, BLUE);
         break;
 
     case PlayerCam::DragType::POWER_CONNECT:
@@ -347,11 +346,11 @@ void DrawDragSelectBox(const PlayerCam &camera)
  * @param deltaTime The time taken for the last frame, used to display in milliseconds.
  * @param padding   The padding from the screen edges for positioning the text.
  * @param fontSize  The size of the text to be drawn.
- * @param font      The font to use, defaults to RayLib's default.
  */
-void DrawFpsCounter(float deltaTime, float padding, int fontSize, const Font &font)
+void DrawFpsCounter(float deltaTime, float padding, int fontSize)
 {
-    std::string fpsText = std::format("FPS: {:} ({:.2f}ms)", GetFPS(), deltaTime * 1000.f);
+    const Font &font = AssetManager::GetFont("DEFAULT");
+    std::string fpsText = std::format("FPS: {:} ({:.2f}ms)", GetFPS(), deltaTime * 1000.);
     const char *text = fpsText.c_str();
     DrawTextEx(font, text, Vector2(GetMonitorWidth(GetCurrentMonitor()) - MeasureTextEx(font, text, fontSize, 1).x - padding, padding), fontSize, 1, UI_TEXT_COLOR);
 }
@@ -361,15 +360,15 @@ void DrawFpsCounter(float deltaTime, float padding, int fontSize, const Font &fo
  *
  * @param tooltip  The text to display in the tooltip.
  * @param pos      The position where the tooltip will be drawn.
- * @param font     The font to use when drawing the tooltip, defaults to RayLib's default.
  * @param padding  The padding around the text within the tooltip background.
  * @param fontSize The size of the text in the tooltip.
  */
-void DrawTooltip(const std::string &tooltip, const Vector2 &pos, const Font &font, float padding, int fontSize)
+void DrawTooltip(const std::string &tooltip, const Vector2 &pos, float padding, int fontSize)
 {
     Vector2 screenSize = GetScreenSize();
     int lineCount = 0;
     const char **lines = TextSplit(tooltip.c_str(), '\n', &lineCount);
+    const Font &font = AssetManager::GetFont("DEFAULT");
 
     float textWidth = 0;
     for (int i = 0; i < lineCount; i++)
@@ -377,7 +376,7 @@ void DrawTooltip(const std::string &tooltip, const Vector2 &pos, const Font &fon
         textWidth = std::max(textWidth, MeasureTextEx(font, lines[i], fontSize, 1).x);
     }
 
-    Vector2 size = Vector2(textWidth + 2.f * padding, lineCount * fontSize + 2.f * padding);
+    Vector2 size = Vector2(textWidth + 2 * padding, lineCount * fontSize + 2 * padding);
     Vector2 tooltipPos = pos;
 
     if (tooltipPos.x + size.x > screenSize.x)
@@ -391,7 +390,7 @@ void DrawTooltip(const std::string &tooltip, const Vector2 &pos, const Font &fon
     else if (tooltipPos.y < 0)
         tooltipPos.y = 0;
 
-    DrawRectangleRec(Vector2ToRect(tooltipPos, size), Fade(LIGHTGRAY, 0.7f));
+    DrawRectangleRec(Vector2ToRect(tooltipPos, size), Fade(LIGHTGRAY, .7));
 
     for (int i = 0; i < lineCount; i++)
     {
@@ -410,7 +409,7 @@ std::string GetTileInfo(std::shared_ptr<Tile> tile)
     if (auto door = tile->GetComponent<DoorComponent>())
     {
         tileInfo += std::format("\n   + {}", door->IsOpen() ? "Open" : "Closed");
-        tileInfo += std::format("\n   + State: {} ({:.0f}%)", door->GetMovementName(), door->GetProgress() * 100.f);
+        tileInfo += std::format("\n   + State: {} ({:.0f}%)", door->GetMovementName(), door->GetProgress() * 100.);
     }
     if (auto oxygen = tile->GetComponent<OxygenComponent>())
     {
@@ -446,9 +445,8 @@ std::string GetHazardInfo(std::shared_ptr<Hazard> hazard)
  * @param crewList   A vector of Crew objects, used to retrieve the hovered crew member's information.
  * @param camera     The PlayerCam used for handling hover state and converting coordinates.
  * @param station    A shared pointer to the Station, used to fetch tiles and their components.
- * @param font       The font to use when drawing the tooltip, defaults to RayLib's default.
  */
-void DrawMainTooltip(const std::vector<Crew> &crewList, const PlayerCam &camera, std::shared_ptr<Station> station, const Font &font)
+void DrawMainTooltip(const std::vector<Crew> &crewList, const PlayerCam &camera, std::shared_ptr<Station> station)
 {
     std::string hoverText;
     const Vector2 mousePos = GetMousePosition();
@@ -499,141 +497,5 @@ void DrawMainTooltip(const std::vector<Crew> &crewList, const PlayerCam &camera,
     if (hoverText.empty())
         return;
 
-    DrawTooltip(hoverText, mousePos, font);
-}
-
-void DrawUiButtons(const Texture2D &iconTileset, PlayerCam &camera)
-{
-    Vector2 screenSize = GetScreenSize();
-    constexpr float largeButtonSize = 64.f;
-    constexpr float smallButtonSize = 32.f;
-
-    Rectangle buildButtonRect = Rectangle(DEFAULT_PADDING, (screenSize.y - largeButtonSize) / 2.f, largeButtonSize, largeButtonSize);
-    bool isInBuildMode = camera.IsInBuildMode();
-    GuiToggle(buildButtonRect, "", &isInBuildMode);
-    camera.SetBuildModeState(isInBuildMode);
-
-    Rectangle buildIconRect = Rectangle(buildButtonRect.x + 8.f, buildButtonRect.y + 8.f, 48.f, 48.f);
-    DrawTexturePro(iconTileset, Rectangle(1, 1, 1, 1) * TILE_SIZE, buildIconRect, Vector2(), 0, Fade(DARKGRAY, .8f));
-
-    Rectangle currentButtonRect = Rectangle(DEFAULT_PADDING, (screenSize.y + largeButtonSize) / 2.f + DEFAULT_PADDING, smallButtonSize, smallButtonSize);
-
-    for (auto overlay : magic_enum::enum_values<PlayerCam::Overlay>())
-    {
-        if (overlay == PlayerCam::Overlay::NONE)
-            continue;
-
-        bool isOverlayActive = camera.IsOverlay(overlay);
-        GuiToggle(currentButtonRect, "", &isOverlayActive);
-
-        if (isOverlayActive != camera.IsOverlay(overlay))
-            camera.ToggleOverlay(overlay);
-
-        Rectangle iconRect = Rectangle(currentButtonRect.x + 8.f, currentButtonRect.y + 8.f, 16.f, 16.f);
-        float iconIndex = (float)(magic_enum::enum_underlying<PlayerCam::Overlay>(overlay) - 1);
-        DrawTexturePro(iconTileset, Rectangle(iconIndex, 0, 1, 1) * TILE_SIZE, iconRect, Vector2(), 0, Fade(DARKGRAY, .8f));
-
-        currentButtonRect.y += smallButtonSize + DEFAULT_PADDING;
-    }
-}
-
-void DrawEscapeMenu(GameState &state, PlayerCam &camera, const Font &font)
-{
-    constexpr int buttonCount = 3;
-    constexpr float buttonWidth = 120.f;
-    constexpr float buttonSpacing = 20.f;
-    constexpr float buttonHeight = DEFAULT_FONT_SIZE + buttonSpacing;
-    constexpr float totalButtonHeight = buttonCount * buttonHeight + (buttonCount - 1) * buttonSpacing;
-
-    // Calculate menu dimensions
-    constexpr Vector2 menuSize = Vector2(buttonWidth + buttonSpacing * 2.f, totalButtonHeight + buttonSpacing * 2.f);
-
-    GuiSetStyle(DEFAULT, TEXT_SIZE, DEFAULT_FONT_SIZE);
-    GuiSetFont(font);
-
-    Vector2 screenSize = GetScreenSize();
-    Vector2 menuPos = screenSize / 2.f - menuSize / 2.f;
-
-    // Darken the background to draw focus to the UI
-    DrawRectangleV(Vector2(0.f, 0.f), screenSize, Fade(BLACK, 0.2f));
-
-    // Draw a rectangle for the menu background
-    DrawRectangleV(menuPos, menuSize, Fade(BLACK, 0.4f));
-
-    // Dynamically position buttons in the center of the menu
-    float firstButtonPosY = menuPos.y + (menuSize.y - totalButtonHeight) / 2.f;
-    float buttonPosX = screenSize.x / 2 - buttonWidth / 2;
-
-    // Resume Button
-    if (GuiButton(Rectangle(buttonPosX, firstButtonPosY, buttonWidth, buttonHeight), "Resume"))
-        camera.SetUiState(PlayerCam::UiState::NONE);
-
-    // Settings Button
-    if (GuiButton(Rectangle(buttonPosX, firstButtonPosY + (buttonHeight + buttonSpacing), buttonWidth, buttonHeight), "Settings"))
-        camera.SetUiState(PlayerCam::UiState::SETTINGS_MENU);
-
-    // Exit Button
-    if (GuiButton(Rectangle(buttonPosX, firstButtonPosY + 2 * (buttonHeight + buttonSpacing), buttonWidth, buttonHeight), "Exit"))
-        SetBit(state, false, GameState::RUNNING);
-}
-
-void DrawSettingsMenu(const Font &font)
-{
-    GuiSetStyle(DEFAULT, TEXT_SIZE, DEFAULT_FONT_SIZE);
-    GuiSetStyle(DEFAULT, TEXT_ALIGNMENT, TEXT_ALIGN_CENTER);
-    GuiSetFont(font);
-
-    Vector2 screenSize = GetScreenSize();
-
-    // Calculate menu dimensions
-    Vector2 menuSize = screenSize * 2.f / 3.f;
-
-    // Calculate the position of the menu
-    Vector2 menuPos = screenSize / 2.f - menuSize / 2.f;
-
-    // Darken the background to draw focus to the UI
-    DrawRectangleV(Vector2(0.f, 0.f), screenSize, Fade(BLACK, 0.2f));
-
-    // Draw a rectangle for the menu background
-    DrawRectangleV(menuPos, menuSize, Fade(BLACK, 0.4f));
-
-    float halfPanelSize = menuSize.x / 2.f - DEFAULT_PADDING * 1.5f;
-
-    Rectangle monitorTextRect = Rectangle(menuPos.x + DEFAULT_PADDING, menuPos.y + DEFAULT_PADDING, halfPanelSize, DEFAULT_FONT_SIZE + DEFAULT_PADDING);
-    GuiStatusBar(monitorTextRect, "Render Monitor: ");
-
-    std::string monitorNames;
-    for (int i = 0; i < GetMonitorCount(); i++)
-    {
-        if (i > 0)
-            monitorNames += ";";
-        monitorNames += GetMonitorName(i);
-    }
-
-    int selectedMonitor = GetCurrentMonitor();
-    Rectangle monitorNameRect = Rectangle(monitorTextRect.x + DEFAULT_PADDING + halfPanelSize, menuPos.y + DEFAULT_PADDING, halfPanelSize, DEFAULT_FONT_SIZE + DEFAULT_PADDING);
-    GuiComboBox(monitorNameRect, monitorNames.c_str(), &selectedMonitor);
-    if (selectedMonitor != GetCurrentMonitor())
-    {
-        SetWindowMonitor(selectedMonitor);
-        SetTargetFPS(GetMonitorRefreshRate(selectedMonitor));
-    }
-}
-
-void DrawUi(GameState &state, PlayerCam &camera, const Font &font)
-{
-    PlayerCam::UiState uiState = camera.GetUiState();
-
-    switch (uiState)
-    {
-    case PlayerCam::UiState::ESC_MENU:
-        DrawEscapeMenu(state, camera, font);
-        break;
-
-    case PlayerCam::UiState::SETTINGS_MENU:
-        DrawSettingsMenu(font);
-
-    default:
-        break;
-    }
+    DrawTooltip(hoverText, mousePos);
 }

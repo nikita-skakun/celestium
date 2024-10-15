@@ -4,7 +4,7 @@
 Tile::Tile(const std::string &tileId, const Vector2Int &position, std::shared_ptr<Station> station, std::shared_ptr<Room> room)
     : position(position), room(room), station(station)
 {
-    tileDef = TileDefinitionRegistry::GetInstance().GetTileDefinition(tileId);
+    tileDef = TileDefinitionManager::GetTileDefinition(tileId);
 }
 
 std::shared_ptr<Tile> Tile::CreateTile(const std::string &tileId, const Vector2Int &position, std::shared_ptr<Station> station, std::shared_ptr<Room> room)

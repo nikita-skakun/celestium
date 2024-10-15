@@ -27,6 +27,8 @@ tiles:
         io: INPUT | OUTPUT
       - type: BATTERY
         maxCharge: 2000.0
+      - type: DURABILITY
+        hitpoints: 10.0
   - id: SOLAR_PANEL
     height: WAIST
     components:

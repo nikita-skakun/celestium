@@ -1,5 +1,5 @@
 #pragma once
-#include "tile_def_registry.hpp"
+#include "tile_def_manager.hpp"
 
 struct Room;
 struct Station;

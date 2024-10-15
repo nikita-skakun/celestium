@@ -93,7 +93,7 @@ void HandleCrewSelection(const std::vector<Crew> &crewList, PlayerCam &camera)
             for (std::size_t i = 0; i < crewList.size(); i++)
             {
                 Vector2 crewPos = crewList[i].GetPosition() + Vector2(.5f, .5f);
-                if (IsVector2WithinBounds(crewPos, camera.GetDragStart(), camera.GetDragEnd()))
+                if (IsVector2WithinRect(Vector2ToBoundingBox(camera.GetDragStart(), camera.GetDragEnd()), crewPos))
                 {
                     camera.AddSelectedCrew(i);
                 }

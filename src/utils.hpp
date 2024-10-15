@@ -4,8 +4,8 @@
 #include <cctype>
 #include <cmath>
 #include <format>
-#include <magic_enum_flags.hpp>
-#include <magic_enum.hpp>
+#include <magic_enum/magic_enum_flags.hpp>
+#include <magic_enum/magic_enum.hpp>
 #include <memory>
 #include <random>
 #include <string>
@@ -52,7 +52,7 @@ inline bool CheckIfEventHappens(double chancePerSecond, double deltaTime) noexce
 }
 
 // Utility functions for booleans
-template<typename T>
+template <typename T>
 constexpr void SetBit(T &value, bool bitState, T mask) noexcept
 {
     if (bitState)
@@ -61,7 +61,7 @@ constexpr void SetBit(T &value, bool bitState, T mask) noexcept
         value &= ~mask;
 }
 
-template<typename T>
+template <typename T>
 constexpr void ToggleBit(T &value, T mask) noexcept
 {
     value ^= mask;
@@ -162,11 +162,6 @@ constexpr float Vector2DistanceSq(const Vector2 &a, const Vector2 &b) noexcept
     return (b.x - a.x) * (b.x - a.x) + (b.y - a.y) * (b.y - a.y);
 }
 
-constexpr bool IsVector2WithinBounds(const Vector2 &a, const Vector2 &boxStart, const Vector2 &boxEnd) noexcept
-{
-    return (a.x >= std::min(boxStart.x, boxEnd.x) && a.x <= std::max(boxStart.x, boxEnd.x) && a.y >= std::min(boxStart.y, boxEnd.y) && a.y <= std::max(boxStart.y, boxEnd.y));
-}
-
 constexpr Vector2 Vector2Round(const Vector2 &a) noexcept
 {
     return Vector2(round(a.x), round(a.y));
@@ -188,6 +183,11 @@ constexpr Vector2 Vector2Cap(const Vector2 &a, const Vector2 &b, float delta) no
         return b;
     else
         return a + Vector2Normalize(b - a) * delta;
+}
+
+constexpr Vector2 Vector2ScreenScale(const Vector2 &a) noexcept
+{
+    return Vector2(a.x / 1920., a.y / 1080.);
 }
 
 inline int Vector2ToRandomInt(const Vector2 &a, int min, int max) noexcept
@@ -295,12 +295,26 @@ constexpr Rectangle operator*(const Rectangle &a, float b) noexcept
     return {a.x * b, a.y * b, a.width * b, a.height * b};
 }
 
+constexpr Rectangle operator*(const Rectangle &a, const Vector2 &b) noexcept
+{
+    return {a.x * b.x, a.y * b.y, a.width * b.x, a.height * b.y};
+}
+
 constexpr Rectangle &operator*=(Rectangle &a, float b) noexcept
 {
     a.x *= b;
     a.y *= b;
     a.width *= b;
     a.height *= b;
+    return a;
+}
+
+constexpr Rectangle &operator*=(Rectangle &a, const Vector2 &b) noexcept
+{
+    a.x *= b.x;
+    a.y *= b.y;
+    a.width *= b.x;
+    a.height *= b.y;
     return a;
 }
 
@@ -315,6 +329,17 @@ constexpr Rectangle Vector2ToBoundingBox(const Vector2 &a, const Vector2 &b) noe
 constexpr Rectangle Vector2ToRect(const Vector2 &pos, const Vector2 &size) noexcept
 {
     return Rectangle(pos.x, pos.y, size.x, size.y);
+}
+
+constexpr bool IsVector2WithinRect(const Rectangle &rect, const Vector2 &point) noexcept
+{
+    return (point.x >= rect.x && point.x <= (rect.x + rect.width) &&
+            point.y >= rect.y && point.y <= (rect.y + rect.height));
+}
+
+constexpr std::string ToString(const Rectangle &rect) noexcept
+{
+    return std::format("({:}, {:}, {:}, {:})", rect.x, rect.y, rect.width, rect.height);
 }
 
 // Utility functions for Line
