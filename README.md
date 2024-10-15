@@ -17,7 +17,9 @@ Exciting new features have been added to **Celestium**! Here's a quick look at t
 
 These features bring the station to life and enhance player interaction, setting the stage for deeper simulation gameplay. Stay tuned for more!
 
-[progress-update-2024-09-29.webm](https://github.com/user-attachments/assets/4367d366-b55f-4bcb-a2c6-ae5160bae2b7)
+![progress-update-2024-10-14](https://github.com/user-attachments/assets/2b5e5327-fdcc-4765-b26d-074e8e610307)
+
+[progress-update-2024-09-29](https://github.com/user-attachments/assets/4367d366-b55f-4bcb-a2c6-ae5160bae2b7)
 
 ## Build Instructions
 
