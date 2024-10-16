@@ -1,5 +1,4 @@
 #pragma once
-#include "astar.hpp"
 #include "camera.hpp"
 #include "crew.hpp"
 
