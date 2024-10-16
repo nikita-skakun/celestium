@@ -67,7 +67,7 @@ void DrawStationTiles(std::shared_ptr<Station> station, const PlayerCam &camera)
     {
         for (const auto &tile : tilesAtPos.second)
         {
-            Vector2 startPos = camera.WorldToScreen(ToVector2(tile->GetPosition()));
+            Vector2 startPos = camera.WorldToScreen(tile->GetPosition());
             Rectangle sourceRect = Rectangle(tile->GetSpriteOffset().x, tile->GetSpriteOffset().y, 1, 1) * TILE_SIZE;
 
             Color tint = WHITE;
@@ -117,7 +117,7 @@ void DrawStationOverlays(std::shared_ptr<Station> station, const PlayerCam &came
                 for (const DecorativeTile &dTile : decorative->GetDecorativeTiles())
                 {
                     Rectangle sourceRect = Rectangle(dTile.spriteOffset.x, dTile.spriteOffset.y, 1, 1) * TILE_SIZE;
-                    Vector2 startPos = camera.WorldToScreen(ToVector2(tile->GetPosition() + dTile.offset));
+                    Vector2 startPos = camera.WorldToScreen(tile->GetPosition() + dTile.offset);
                     Rectangle destRect = Rectangle(startPos.x, startPos.y, tileSize.x, tileSize.y);
 
                     DrawTexturePro(stationTileset, sourceRect, destRect, Vector2(), 0, WHITE);
@@ -126,7 +126,7 @@ void DrawStationOverlays(std::shared_ptr<Station> station, const PlayerCam &came
 
             if (auto door = tile->GetComponent<DoorComponent>())
             {
-                Vector2 startPos = camera.WorldToScreen(ToVector2(tile->GetPosition()));
+                Vector2 startPos = camera.WorldToScreen(tile->GetPosition());
                 Rectangle destRect = Vector2ToRect(startPos, tileSize);
                 Rectangle doorSourceRect = Rectangle(0, 7, 1, 1) * TILE_SIZE;
                 doorSourceRect.height = std::max(19. * door->GetProgress(), 1.);
@@ -207,7 +207,7 @@ void DrawTileOutline(std::shared_ptr<Tile> tile, const PlayerCam &camera, Color 
     Vector2 tileSize = Vector2(1, 1) * TILE_SIZE * camera.GetZoom();
     for (const auto &pos : positions)
     {
-        Vector2 startPos = camera.WorldToScreen(ToVector2(pos));
+        Vector2 startPos = camera.WorldToScreen(pos);
         Rectangle rect = Vector2ToRect(startPos, tileSize);
 
         std::array<std::pair<Vector2, Vector2>, 4> lines = {
@@ -229,7 +229,7 @@ void DrawTileOutline(std::shared_ptr<Tile> tile, const PlayerCam &camera, Color 
 }
 
 /**
- * Draws the station's environmental effects (such as fire).
+ * Draws the station's environmental effects (such as fire or foam).
  *
  * @param station The station to draw the overlays of.
  * @param camera  The PlayerCam used for converting coordinates.
@@ -239,19 +239,9 @@ void DrawEnvironmentalEffects(std::shared_ptr<Station> station, const PlayerCam 
     if (!station)
         return;
 
-    const Vector2 tileSize = Vector2(1, 1) * TILE_SIZE * camera.GetZoom();
-    const Texture2D &fireSpritesheet = AssetManager::GetTexture("FIRE");
-
     for (const auto &effect : station->effects)
     {
-        if (const auto fire = std::dynamic_pointer_cast<const FireEffect>(effect))
-        {
-            Vector2 fireSize = tileSize * fire->GetRoundedSize();
-            Vector2 startPos = camera.WorldToScreen(ToVector2(fire->GetPosition()) + Vector2(1, 1) * ((1. - fire->GetRoundedSize()) / 2.));
-            Rectangle sourceRect = Rectangle(GetEvenlySpacedIndex(GetTime(), 8), 0, 1, 1) * TILE_SIZE;
-
-            DrawTexturePro(fireSpritesheet, sourceRect, Vector2ToRect(startPos, fireSize), Vector2(), 0, WHITE);
-        }
+        effect->Render(camera);
     }
 }
 

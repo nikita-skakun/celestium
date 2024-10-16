@@ -325,63 +325,8 @@ void UpdateEnvironmentalEffects(std::shared_ptr<Station> station)
 
     for (int i = station->effects.size() - 1; i >= 0; --i)
     {
-        auto effect = station->effects.at(i);
-        if (auto fire = std::dynamic_pointer_cast<FireEffect>(effect))
-        {
-            auto tileWithOxygen = station->GetTileWithComponentAtPosition<OxygenComponent>(fire->GetPosition());
-            if (!tileWithOxygen)
-            {
-                station->effects.erase(station->effects.begin() + i);
-                continue;
-            }
-
-            auto tilesWithDurability = station->GetTilesWithComponentAtPosition<DurabilityComponent>(fire->GetPosition());
-            if (!tilesWithDurability.empty())
-            {
-                for (auto &tileWithDurability : tilesWithDurability)
-                {
-                    auto durability = tileWithDurability->GetComponent<DurabilityComponent>();
-                    durability->SetHitpoints(durability->GetHitpoints() - FireEffect::DAMAGE_PER_SECOND * FIXED_DELTA_TIME);
-                }
-            }
-
-            auto oxygen = tileWithOxygen->GetComponent<OxygenComponent>();
-            if (oxygen->GetOxygenLevel() < fire->GetOxygenConsumption() * FIXED_DELTA_TIME * 2.)
-                fire->SetSize(fire->GetSize() / 3. * 2.);
-
-            float oxygenToConsume = fire->GetOxygenConsumption() * FIXED_DELTA_TIME;
-            if (oxygen->GetOxygenLevel() < oxygenToConsume)
-            {
-                oxygen->SetOxygenLevel(0);
-                station->effects.erase(station->effects.begin() + i);
-                continue;
-            }
-
-            oxygen->SetOxygenLevel(oxygen->GetOxygenLevel() - oxygenToConsume);
-            fire->SetSize(fire->GetSize() + FireEffect::GROWTH_IF_FED_PER_SECOND * FIXED_DELTA_TIME);
-
-            bool tileIsSolid = station->GetTileWithComponentAtPosition<SolidComponent>(fire->GetPosition()) != nullptr;
-            if (!tileIsSolid && CheckIfEventHappens(fire->SPREAD_CHANCE_PER_SECOND, FIXED_DELTA_TIME))
-            {
-                std::vector<Direction> neighborDirections = {Direction::N, Direction::E, Direction::S, Direction::W};
-                std::vector<Vector2Int> possibleOffsets;
-                for (const auto &direction : neighborDirections)
-                {
-                    Vector2Int offset = DirectionToVector2Int(direction);
-                    Vector2Int neighborPos = fire->GetPosition() + offset;
-                    if (station->GetTileWithComponentAtPosition<OxygenComponent>(neighborPos) != nullptr &&
-                        station->GetTypeEffectsAtPosition<FireEffect>(neighborPos).empty())
-                        possibleOffsets.push_back(offset);
-                }
-
-                if (possibleOffsets.empty())
-                    continue;
-
-                int directionSelected = RandomIntWithRange(0, (int)possibleOffsets.size() - 1);
-                Vector2Int newFirePos = fire->GetPosition() + possibleOffsets[directionSelected];
-                station->effects.push_back(std::make_shared<FireEffect>(newFirePos, FireEffect::SIZE_INCREMENT));
-            }
-        }
+        auto &effect = station->effects.at(i);
+        effect->Update(station, i);
     }
 }
 

@@ -2,6 +2,8 @@
 #include "utils.hpp"
 
 struct Crew;
+struct PlayerCam;
+struct Station;
 
 struct Effect
 {
@@ -9,6 +11,7 @@ struct Effect
     {
         NONE,
         FIRE,
+        FOAM,
     };
 
 protected:
@@ -27,11 +30,13 @@ public:
     constexpr virtual Type GetType() const { return Type::NONE; }
 
     virtual void EffectCrew(Crew &crew, float deltaTime) const = 0;
+    virtual void Render(const PlayerCam &camera) const = 0;
+    virtual void Update(const std::shared_ptr<Station> &station, int index) = 0;
 
     constexpr std::string GetName() const { return EnumToName<Type>(GetType()); }
 };
 
-struct FireEffect : public Effect
+struct FireEffect : Effect
 {
     static constexpr float SIZE_INCREMENT = 1.f / 8.f;
     static constexpr float OXYGEN_CONSUMPTION_PER_SECOND = 20.f;
@@ -42,8 +47,23 @@ struct FireEffect : public Effect
     constexpr FireEffect(const Vector2Int &position, float size) : Effect(position, size) {}
 
     void EffectCrew(Crew &crew, float deltaTime) const override;
+    void Render(const PlayerCam &camera) const override;
+    void Update(const std::shared_ptr<Station> &station, int index) override;
 
     constexpr float GetRoundedSize() const { return std::ceil(size / SIZE_INCREMENT) * SIZE_INCREMENT; }
     constexpr float GetOxygenConsumption() const { return OXYGEN_CONSUMPTION_PER_SECOND * GetRoundedSize(); }
     constexpr Type GetType() const override { return Type::FIRE; }
+};
+
+struct FoamEffect : Effect
+{
+    //TODO: Later add a way to remove it (maybe automatic despawning?)
+
+    constexpr FoamEffect(const Vector2Int &position, float size) : Effect(position, size) {}
+
+    void Render(const PlayerCam &camera) const override;
+    void Update(const std::shared_ptr<Station> &, int) override {}
+
+    constexpr void EffectCrew(Crew &, float) const override {}
+    constexpr Type GetType() const override { return Type::FOAM; }
 };

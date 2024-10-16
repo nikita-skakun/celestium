@@ -44,6 +44,17 @@ Vector2 PlayerCam::WorldToScreen(const Vector2 &worldPos) const
 }
 
 /**
+ * Converts world coordinates to screen coordinates based on the camera's position and zoom level.
+ *
+ * @param worldPos The position in world coordinates.
+ * @return The position in screen coordinates as a Vector2.
+ */
+Vector2 PlayerCam::WorldToScreen(const Vector2Int &worldPos) const
+{
+    return (ToVector2(worldPos) - position) * TILE_SIZE * zoom + (GetScreenSize() / 2.f);
+}
+
+/**
  * Handles camera movement and zoom based on user input.
  */
 void PlayerCam::HandleMovement()

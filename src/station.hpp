@@ -29,6 +29,18 @@ public:
     std::vector<std::shared_ptr<Effect>> GetEffectsAtPosition(const Vector2Int &pos) const;
 
     template <typename T>
+    std::shared_ptr<Effect> GetTypeEffectAtPosition(const Vector2Int &pos) const
+    {
+        auto effectsAtPos = GetEffectsAtPosition(pos);
+        for (const auto &effect : effectsAtPos)
+        {
+            if (std::dynamic_pointer_cast<T>(effect))
+                return effect;
+        }
+        return nullptr;
+    }
+
+    template <typename T>
     std::vector<std::shared_ptr<Effect>> GetTypeEffectsAtPosition(const Vector2Int &pos) const
     {
         auto effectsAtPos = GetEffectsAtPosition(pos);

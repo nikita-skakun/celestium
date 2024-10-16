@@ -83,6 +83,7 @@ std::shared_ptr<Station> CreateStation()
     station->UpdateSpriteOffsets();
 
     station->effects.push_back(std::make_shared<FireEffect>(Vector2Int(12, 0), FireEffect::SIZE_INCREMENT));
+    station->effects.push_back(std::make_shared<FoamEffect>(Vector2Int(11, 0), 1));
 
     return station;
 }

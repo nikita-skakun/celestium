@@ -50,6 +50,7 @@ public:
     Vector2 ScreenToWorld(const Vector2 &screenPos) const;
     Vector2Int ScreenToTile(const Vector2 &screenPos) const;
     Vector2 WorldToScreen(const Vector2 &worldPos) const;
+    Vector2 WorldToScreen(const Vector2Int &worldPos) const;
 
     constexpr const Vector2 &GetPosition() const { return position; }
 
