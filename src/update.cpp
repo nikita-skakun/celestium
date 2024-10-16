@@ -115,13 +115,38 @@ void AssignCrewTasks(std::vector<Crew> &crewList, const PlayerCam &camera)
         for (int crewId : camera.GetSelectedCrew())
         {
             Crew &crew = crewList[crewId];
-            if (crew.IsAlive() && crew.GetCurrentTile())
-            {
-                if (!IsKeyDown(KEY_LEFT_SHIFT))
-                    crew.GetTaskQueue().clear();
+            if (!crew.IsAlive() || !crew.GetCurrentTile())
+                continue;
 
-                // Modify this to be adaptive to the selected tile (ie. move, operate, build)
-                crew.GetTaskQueue().push_back(std::make_shared<MoveTask>(MoveTask(worldPos)));
+            if (!IsKeyDown(KEY_LEFT_SHIFT))
+                crew.GetTaskQueue().clear();
+
+            // Modify this to be adaptive to the selected tile (ie. move, operate, build)
+            crew.GetTaskQueue().push_back(std::make_shared<MoveTask>(worldPos));
+        }
+    }
+
+    for (Crew &crew : crewList)
+    {
+        if (!crew.IsAlive() || !crew.GetTaskQueue().empty() || !crew.GetCurrentTile())
+            continue;
+
+        auto station = crew.GetCurrentTile()->GetStation();
+        Vector2Int crewPos = ToVector2Int(crew.GetPosition());
+
+        if (station->GetTypeEffectAtPosition<FireEffect>(crewPos))
+        {
+            crew.GetTaskQueue().push_back(std::make_shared<ExtinguishTask>(crewPos));
+            continue;
+        }
+
+        for (const auto &direction : CARDINAL_DIRECTIONS)
+        {
+            Vector2Int neighborPos = crewPos + DirectionToVector2Int(direction);
+            if (station->GetTypeEffectAtPosition<FireEffect>(neighborPos))
+            {
+                crew.GetTaskQueue().push_back(std::make_shared<ExtinguishTask>(neighborPos));
+                break;
             }
         }
     }
@@ -131,16 +156,16 @@ void HandleCrewTasks(std::vector<Crew> &crewList)
 {
     for (Crew &crew : crewList)
     {
-        if (crew.GetTaskQueue().empty() || !crew.IsAlive())
+        if (!crew.IsAlive() || crew.GetTaskQueue().empty())
             continue;
 
-        std::shared_ptr<Task> task = crew.GetTaskQueue()[0];
+        std::shared_ptr<Task> task = crew.GetTaskQueue().at(0);
+        auto station = crew.GetCurrentTile()->GetStation();
         switch (task->GetType())
         {
         case Task::Type::MOVE:
         {
-            std::shared_ptr<MoveTask> moveTask = std::dynamic_pointer_cast<MoveTask>(task);
-            std::shared_ptr<Station> station = crew.GetCurrentTile()->GetStation();
+            auto moveTask = std::dynamic_pointer_cast<MoveTask>(task);
 
             Vector2Int floorCrewPos = ToVector2Int(crew.GetPosition());
             if (moveTask->path.empty())
@@ -203,6 +228,35 @@ void HandleCrewTasks(std::vector<Crew> &crewList)
             crew.SetPosition(crew.GetPosition() + Vector2Normalize(stepPos - crew.GetPosition()) * distanceToTravel);
             break;
         }
+
+        case Task::Type::EXTINGUISH:
+        {
+            auto extinguishTask = std::dynamic_pointer_cast<ExtinguishTask>(task);
+
+            if (!station)
+            {
+                crew.GetTaskQueue().erase(crew.GetTaskQueue().begin());
+                continue;
+            }
+
+            auto fire = station->GetTypeEffectAtPosition<FireEffect>(extinguishTask->targetPosition);
+            if (!fire)
+            {
+                crew.GetTaskQueue().erase(crew.GetTaskQueue().begin());
+                continue;
+            }
+
+            if (extinguishTask->progress > 1.)
+            {
+                station->RemoveEffect(fire);
+                crew.GetTaskQueue().erase(crew.GetTaskQueue().begin());
+                continue;
+            }
+
+            extinguishTask->progress += CREW_EXTINGUISH_SPEED * FIXED_DELTA_TIME;
+            break;
+        }
+
         default:
             break;
         }

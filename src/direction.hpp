@@ -31,3 +31,5 @@ constexpr Vector2Int DirectionToVector2Int(Direction direction)
 
     return v;
 }
+
+constexpr std::array<Direction, 4> CARDINAL_DIRECTIONS = {Direction::N, Direction::E, Direction::S, Direction::W};

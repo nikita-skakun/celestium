@@ -216,11 +216,9 @@ void DrawTileOutline(std::shared_ptr<Tile> tile, const PlayerCam &camera, Color 
             std::make_pair(Vector2{rect.x, rect.y + rect.height}, Vector2{rect.x + rect.width, rect.y + rect.height}),
             std::make_pair(Vector2{rect.x, rect.y}, Vector2{rect.x, rect.y + rect.height})};
 
-        std::array<Direction, 4> directions = {Direction::N, Direction::E, Direction::S, Direction::W};
-
-        for (size_t i = 0; i < directions.size(); ++i)
+        for (size_t i = 0; i < CARDINAL_DIRECTIONS.size(); ++i)
         {
-            Vector2Int neighborPos = pos + DirectionToVector2Int(directions[i]);
+            Vector2Int neighborPos = pos + DirectionToVector2Int(CARDINAL_DIRECTIONS[i]);
 
             if (positions.count(neighborPos) == 0)
                 DrawLineEx(lines[i].first, lines[i].second, 3, color);
@@ -454,6 +452,7 @@ void DrawMainTooltip(const std::vector<Crew> &crewList, std::shared_ptr<Station>
         {
             hoverText += std::format("\n   + Health: {:.1f}", crew.GetHealth());
             hoverText += std::format("\n   + Oxygen: {:.0f}", crew.GetOxygen());
+            hoverText += std::format("\n   + Action: {}", crew.GetActionName());
         }
         else
         {

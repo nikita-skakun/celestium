@@ -83,7 +83,7 @@ std::shared_ptr<Station> CreateStation()
     station->UpdateSpriteOffsets();
 
     station->effects.push_back(std::make_shared<FireEffect>(Vector2Int(12, 0), FireEffect::SIZE_INCREMENT));
-    station->effects.push_back(std::make_shared<FoamEffect>(Vector2Int(11, 0), 1));
+    station->effects.push_back(std::make_shared<FoamEffect>(Vector2Int(13, 0), 1));
 
     return station;
 }
@@ -324,6 +324,14 @@ std::vector<std::shared_ptr<Effect>> Station::GetEffectsAtPosition(const Vector2
     }
 
     return foundEffects;
+}
+
+void Station::RemoveEffect(const std::shared_ptr<Effect> &effect)
+{
+    effects.erase(std::remove_if(effects.begin(), effects.end(),
+                                 [effect](const std::shared_ptr<Effect> &other)
+                                 { return effect == other; }),
+                  effects.end());
 }
 
 std::shared_ptr<Tile> Station::GetTileAtPosition(const Vector2Int &pos, TileDef::Height height) const

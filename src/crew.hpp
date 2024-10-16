@@ -60,6 +60,14 @@ public:
             Die();
     }
 
+    constexpr std::string GetActionName() const
+    {
+        if (taskQueue.empty())
+            return "Idle";
+        
+        return taskQueue.at(0)->GetActionName();
+    }
+
     constexpr void Die()
     {
         isAlive = false;

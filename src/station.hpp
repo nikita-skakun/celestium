@@ -27,6 +27,7 @@ public:
     }
 
     std::vector<std::shared_ptr<Effect>> GetEffectsAtPosition(const Vector2Int &pos) const;
+    void RemoveEffect(const std::shared_ptr<Effect> &effect);
 
     template <typename T>
     std::shared_ptr<Effect> GetTypeEffectAtPosition(const Vector2Int &pos) const

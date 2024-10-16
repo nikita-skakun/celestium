@@ -55,9 +55,8 @@ void FireEffect::Update(const std::shared_ptr<Station> &station, int index)
     bool tileIsSolid = station->GetTileWithComponentAtPosition<SolidComponent>(GetPosition()) != nullptr;
     if (!tileIsSolid && CheckIfEventHappens(SPREAD_CHANCE_PER_SECOND, FIXED_DELTA_TIME))
     {
-        std::vector<Direction> neighborDirections = {Direction::N, Direction::E, Direction::S, Direction::W};
         std::vector<Vector2Int> possibleOffsets;
-        for (const auto &direction : neighborDirections)
+        for (const auto &direction : CARDINAL_DIRECTIONS)
         {
             Vector2Int offset = DirectionToVector2Int(direction);
             Vector2Int neighborPos = GetPosition() + offset;
