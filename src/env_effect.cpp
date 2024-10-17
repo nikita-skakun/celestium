@@ -3,18 +3,36 @@
 #include "crew.hpp"
 #include "env_effect.hpp"
 
+Effect::Effect(const std::string &defName, const Vector2Int &position, float s)
+    : position(position)
+{
+    effectDef = DefinitionManager::GetEffectDefinition(defName);
+    if (s == 0)
+        s = 1. / effectDef->GetSizeIncrements();
+
+    size = std::clamp(s, 0.f, 1.f);
+}
+
+void Effect::Render() const
+{
+    Vector2 screenSize = Vector2(1, 1) * TILE_SIZE * GameManager::GetCamera().GetZoom() * GetRoundedSize();
+    Vector2 startPos = GameManager::WorldToScreen(ToVector2(GetPosition()) + Vector2(1, 1) * ((1. - GetRoundedSize()) / 2.));
+    Rectangle sourceRect = Rectangle(GetEvenlySpacedIndex(GetTime() * effectDef->GetAnimationSpeed(), effectDef->GetSpriteCount()), 0, 1, 1) * TILE_SIZE;
+
+    DrawTexturePro(AssetManager::GetTexture(effectDef->GetSpriteSheet()), sourceRect, Vector2ToRect(startPos, screenSize), Vector2(), 0, WHITE);
+}
+
+std::string Effect::GetInfo() const
+{
+    std::string effectInfo = " - " + GetName();
+    effectInfo += std::format("\n   + Size: {:.0f}", GetRoundedSize() * effectDef->GetSizeIncrements());
+
+    return effectInfo;
+}
+
 void FireEffect::EffectCrew(Crew &crew, float deltaTime) const
 {
     crew.SetHealth(crew.GetHealth() - DAMAGE_PER_SECOND * deltaTime);
-}
-
-void FireEffect::Render() const
-{
-    Vector2 fireSize = Vector2(1, 1) * TILE_SIZE * GameManager::GetCamera().GetZoom() * GetRoundedSize();
-    Vector2 startPos = GameManager::WorldToScreen(ToVector2(GetPosition()) + Vector2(1, 1) * ((1. - GetRoundedSize()) / 2.));
-    Rectangle sourceRect = Rectangle(GetEvenlySpacedIndex(GetTime(), 8), 0, 1, 1) * TILE_SIZE;
-
-    DrawTexturePro(AssetManager::GetTexture("FIRE"), sourceRect, Vector2ToRect(startPos, fireSize), Vector2(), 0, WHITE);
 }
 
 void FireEffect::Update(const std::shared_ptr<Station> &station, int index)
@@ -73,27 +91,6 @@ void FireEffect::Update(const std::shared_ptr<Station> &station, int index)
 
         int directionSelected = RandomIntWithRange(0, (int)possibleOffsets.size() - 1);
         Vector2Int newFirePos = GetPosition() + possibleOffsets[directionSelected];
-        station->effects.push_back(std::make_shared<FireEffect>(newFirePos, FireEffect::SIZE_INCREMENT));
+        station->effects.push_back(std::make_shared<FireEffect>(newFirePos));
     }
-}
-
-void FoamEffect::Render() const
-{
-    Vector2 foamSize = Vector2(1, 1) * TILE_SIZE * GameManager::GetCamera().GetZoom();
-    Vector2 startPos = GameManager::WorldToScreen(GetPosition());
-    Rectangle sourceRect = Rectangle(0, 0, 1, 1) * TILE_SIZE;
-
-    DrawTexturePro(AssetManager::GetTexture("FOAM"), sourceRect, Vector2ToRect(startPos, foamSize), Vector2(), 0, WHITE);
-}
-
-std::string Effect::GetInfo() const
-{
-    std::string effectInfo = " - " + GetName();
-
-    if (auto fire = std::dynamic_pointer_cast<const FireEffect>(shared_from_this()))
-    {
-        effectInfo += std::format("\n   + Size: {:.0f}", fire->GetRoundedSize() / FireEffect::SIZE_INCREMENT);
-    }
-
-    return effectInfo;
 }

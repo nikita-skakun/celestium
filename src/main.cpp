@@ -56,7 +56,8 @@ int main()
     GameManager::SetGameState(GameState::RUNNING);
 
     AssetManager::Initialize();
-    TileDefinitionManager::ParseTilesFromFile("../assets/definitions/tiles.yml");
+    DefinitionManager::ParseTilesFromFile("../assets/definitions/tiles.yml");
+    DefinitionManager::ParseEffectsFromFile("../assets/definitions/env_effects.yml");
 
     auto &camera = GameManager::GetCamera();
 

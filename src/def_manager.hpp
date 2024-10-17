@@ -1,21 +1,23 @@
 #pragma once
+#include "env_effect_def.hpp"
 #include "fs_utils.hpp"
 #include "tile_def.hpp"
 #include <ryml_std.hpp>
 #include <ryml.hpp>
 
-struct TileDefinitionManager
+struct DefinitionManager
 {
 private:
     std::unordered_map<std::string, std::shared_ptr<TileDef>> tileDefinitions;
+    std::unordered_map<std::string, std::shared_ptr<EffectDef>> effectDefinitions;
 
-    TileDefinitionManager() = default;
-    ~TileDefinitionManager() = default;
-    TileDefinitionManager(const TileDefinitionManager &) = delete;
-    TileDefinitionManager &operator=(const TileDefinitionManager &) = delete;
+    DefinitionManager() = default;
+    ~DefinitionManager() = default;
+    DefinitionManager(const DefinitionManager &) = delete;
+    DefinitionManager &operator=(const DefinitionManager &) = delete;
 
     template <typename T>
-    T GetValue(const ryml::ConstNodeRef &node, const ryml::csubstr &key, T defaultValue)
+    static T GetValue(const ryml::ConstNodeRef &node, const ryml::csubstr &key, T defaultValue)
     {
         if (node.has_child(key) && !node[key].val_is_null())
         {
@@ -89,23 +91,63 @@ private:
         }
     }
 
-    static TileDefinitionManager &GetInstance()
+    static DefinitionManager &GetInstance()
     {
-        static TileDefinitionManager instance;
+        static DefinitionManager instance;
         return instance;
     }
 
 public:
     static std::shared_ptr<TileDef> GetTileDefinition(const std::string &tileId)
     {
-        return TileDefinitionManager::GetInstance().tileDefinitions.at(tileId);
+        return DefinitionManager::GetInstance().tileDefinitions.at(tileId);
+    }
+
+    static std::shared_ptr<EffectDef> GetEffectDefinition(const std::string &effectId)
+    {
+        return DefinitionManager::GetInstance().effectDefinitions.at(effectId);
+    }
+
+    static void ParseEffectsFromFile(const std::string &filename)
+    {
+        std::vector<char> contents = ReadFromFile<std::vector<char>>(filename);
+        ryml::Tree tree = ryml::parse_in_place(ryml::to_substr(contents));
+        auto &defManager = DefinitionManager::GetInstance();
+
+        if (tree.empty())
+            throw std::runtime_error(std::format("The effect definition file is empty or unreadable: {}", filename));
+
+        for (ryml::ConstNodeRef tileNode : tree["env_effects"])
+        {
+            // Retrieve the effect ID string
+            std::string effectId;
+            tileNode["id"] >> effectId;
+            StringRemoveSpaces(effectId);
+
+            if (effectId.empty())
+                throw std::runtime_error(std::format("Parsing of effect ID string failed: {}", effectId));
+
+            // Retrieve the effect spritesheet string
+            std::string spritesheet;
+            tileNode["spritesheet"] >> spritesheet;
+            StringRemoveSpaces(spritesheet);
+
+            if (spritesheet.empty())
+                throw std::runtime_error(std::format("Parsing of effect spritesheet string failed: {}", spritesheet));
+
+            uint sizeIncrements = GetValue<uint>(tileNode, "sizeIncrements", 1);
+            uint spriteCount = GetValue<uint>(tileNode, "spriteCount", 1);
+            float animationSpeed = GetValue<float>(tileNode, "animationSpeed", 0);
+
+            defManager.effectDefinitions[effectId] = std::make_shared<EffectDef>(effectId, spritesheet, sizeIncrements, spriteCount, animationSpeed);
+        }
     }
 
     static void ParseTilesFromFile(const std::string &filename)
     {
         std::vector<char> contents = ReadFromFile<std::vector<char>>(filename);
         ryml::Tree tree = ryml::parse_in_place(ryml::to_substr(contents));
-        auto &tileDefManager = TileDefinitionManager::GetInstance();
+        auto &defManager = DefinitionManager::GetInstance();
 
         if (tree.empty())
             throw std::runtime_error(std::format("The tile definition file is empty or unreadable: {}", filename));
@@ -142,13 +184,13 @@ public:
                 if (!type.has_value())
                     throw std::runtime_error(std::format("Parsing of component type string failed: {}", typeStr));
 
-                auto component = tileDefManager.CreateComponent(type.value(), node);
+                auto component = defManager.CreateComponent(type.value(), node);
                 if (!component)
                     throw std::runtime_error(std::format("Parsing of component string failed: {}", ryml::emitrs_yaml<std::string>(node)));
                 refComponents.insert(component);
             }
 
-            TileDefinitionManager::GetInstance().tileDefinitions[tileId] = std::make_shared<TileDef>(tileId, height.value(), refComponents);
+            defManager.tileDefinitions[tileId] = std::make_shared<TileDef>(tileId, height.value(), refComponents);
         }
     }
 };
