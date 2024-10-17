@@ -46,6 +46,10 @@ tiles:
   - id: DOOR
     height: WAIST | CEILING
     components:
+      - type: POWER_CONNECTOR
+        io: INPUT
+      - type: POWER_CONSUMER
+        powerConsumption: 5.0
       - type: DOOR
         movingSpeed: 0.75
       - type: DURABILITY

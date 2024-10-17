@@ -131,7 +131,7 @@ void OxygenProducerComponent::ProduceOxygen(float deltaTime) const
 
     auto oxygenTile = parent->GetStation()->GetTileWithComponentAtPosition<OxygenComponent>(parent->GetPosition());
     auto powerConsumer = parent->GetComponent<PowerConsumerComponent>();
-    if (!oxygenTile || !powerConsumer || !powerConsumer->IsActive())
+    if (!oxygenTile || (powerConsumer && !powerConsumer->IsActive()))
         return;
 
     auto oxygen = oxygenTile->GetComponent<OxygenComponent>();
@@ -153,6 +153,27 @@ void DoorComponent::SetOpenState(bool openState)
 
     if (movingState != MovingState::FORCED_OPEN)
         movingState = MovingState::IDLE;
+}
+
+void DoorComponent::Animate(float deltaTime)
+{
+    if (movingState == MovingState::IDLE)
+        return;
+
+    if (auto parent = _parent.lock())
+    {
+        auto powerConsumer = parent->GetComponent<PowerConsumerComponent>();
+        if (powerConsumer && !powerConsumer->IsActive())
+            return;
+    }
+
+    float direction = movingState == MovingState::CLOSING ? 1.f : -1.f;
+
+    SetProgress(progress + direction * movingSpeed * deltaTime);
+    if (progress >= 1.f)
+        SetOpenState(false);
+    if (progress <= 0.f)
+        SetOpenState(true);
 }
 
 void DurabilityComponent::SetHitpoints(float newHitpoints)

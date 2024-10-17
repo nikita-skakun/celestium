@@ -428,6 +428,7 @@ public:
     constexpr void SetProgress(float newProgress) { progress = std::clamp(newProgress, 0.f, 1.f); }
 
     void SetOpenState(bool openState);
+    void Animate(float deltaTime);
 
     constexpr std::string GetMovementName() const { return EnumToName<MovingState>(movingState); }
 
@@ -444,20 +445,6 @@ public:
         }
 
         movingState = newMovingState;
-    }
-
-    constexpr void Animate(float deltaTime)
-    {
-        if (movingState == MovingState::IDLE)
-            return;
-
-        float direction = movingState == MovingState::CLOSING ? 1.f : -1.f;
-
-        SetProgress(progress + direction * movingSpeed * deltaTime);
-        if (progress >= 1.f)
-            SetOpenState(false);
-        if (progress <= 0.f)
-            SetOpenState(true);
     }
 
     constexpr void PingPong()
