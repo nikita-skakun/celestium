@@ -1,7 +1,6 @@
 #pragma once
 #include "ui_element.hpp"
 #include "game_state.hpp"
-#include "camera.hpp"
 #include <unordered_map>
 
 struct UiManager
@@ -57,7 +56,7 @@ public:
         UiManager::GetInstance().uiElements.clear();
     }
 
-    static void InitializeElements(PlayerCam &camera);
+    static void InitializeElements();
 
     static std::shared_ptr<UiElement> FindUiElementAtPos(const Vector2 &pos)
     {

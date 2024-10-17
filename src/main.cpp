@@ -53,12 +53,12 @@ int main()
     SetTargetFPS(GetMonitorRefreshRate(GetCurrentMonitor()));
     SetExitKey(0);
 
-    GameManager::SetBit(GameState::RUNNING);
+    GameManager::SetGameState(GameState::RUNNING);
 
     AssetManager::Initialize();
     TileDefinitionManager::ParseTilesFromFile("../assets/definitions/tiles.yml");
 
-    PlayerCam camera = PlayerCam();
+    auto &camera = GameManager::GetCamera();
 
     std::vector<Crew> crewList{
         Crew("ALICE", {-2, 2}, RED),
@@ -67,7 +67,7 @@ int main()
 
     std::shared_ptr<Station> station = CreateStation();
 
-    UiManager::InitializeElements(camera);
+    UiManager::InitializeElements();
 
     LogMessage(LogLevel::INFO, "Initialization Complete");
 
@@ -80,7 +80,7 @@ int main()
     while (GameManager::IsGameRunning())
     {
         bool forcePaused = camera.GetUiState() != PlayerCam::UiState::NONE || camera.IsInBuildMode();
-        GameManager::SetBit(GameState::FORCE_PAUSED, forcePaused);
+        GameManager::SetGameState(GameState::FORCE_PAUSED, forcePaused);
 
         deltaTime = GetFrameTime();
 
@@ -91,39 +91,39 @@ int main()
         {
             if (!camera.IsInBuildMode())
             {
-                HandleCrewHover(crewList, camera);
-                HandleCrewSelection(crewList, camera);
-                AssignCrewTasks(crewList, camera);
-                HandleMouseDrag(station, camera);
+                HandleCrewHover(crewList);
+                HandleCrewSelection(crewList);
+                AssignCrewTasks(crewList);
+                HandleMouseDrag(station);
             }
 
-            MouseDeleteExistingConnection(station, camera);
+            MouseDeleteExistingConnection(station);
         }
 
         if (IsKeyPressed(KEY_SPACE))
-            GameManager::ToggleBit(GameState::PAUSED);
+            GameManager::ToggleGameState(GameState::PAUSED);
 
         // Render logic
         BeginDrawing();
         ClearBackground(Color(31, 40, 45));
 
-        DrawTileGrid(camera);
-        DrawStationTiles(station, camera);
-        DrawStationOverlays(station, camera);
+        DrawTileGrid();
+        DrawStationTiles(station);
+        DrawStationOverlays(station);
 
         if (!camera.IsInBuildMode())
         {
-            DrawEnvironmentalEffects(station, camera);
-            DrawCrew(timeSinceFixedUpdate, crewList, camera);
+            DrawEnvironmentalEffects(station);
+            DrawCrew(timeSinceFixedUpdate, crewList);
         }
         else {
-            DrawBuildTileOutline(station, camera);
+            DrawBuildUi(station);
         }
 
         if (camera.IsUiClear())
         {
-            DrawDragSelectBox(camera);
-            DrawMainTooltip(crewList, station, camera);
+            DrawDragSelectBox();
+            DrawMainTooltip(crewList, station);
             DrawFpsCounter(deltaTime, 12, DEFAULT_FONT_SIZE);
         }
 
@@ -133,7 +133,7 @@ int main()
         EndDrawing();
 
         if (WindowShouldClose())
-            GameManager::SetBit(GameState::RUNNING, false);
+            GameManager::SetGameState(GameState::RUNNING, false);
     }
 
     updateThread.join();

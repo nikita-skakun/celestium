@@ -38,19 +38,53 @@ private:
     UiState uiState = UiState::NONE;
     bool buildMode = false;
 
-    void HandleMovement();
-    void HandleOverlays();
-    void HandleUiStates();
+    /**
+     * Handles camera movement and zoom based on user input.
+     */
+    void HandleMovement()
+    {
+        if (uiState != UiState::NONE)
+            return;
+
+        // Update zoom based on mouse wheel input, clamping to min and max values
+        zoom = std::clamp(zoom + GetMouseWheelMove() * ZOOM_SPEED * zoom, MIN_ZOOM, MAX_ZOOM);
+
+        // Move camera position if the middle mouse button is pressed
+        if (IsMouseButtonDown(MOUSE_MIDDLE_BUTTON))
+        {
+            position -= (GetMouseDelta() / zoom / TILE_SIZE);
+        }
+    }
+
+    /**
+     * Toggles camera overlays based on user key input.
+     */
+    void HandleOverlays()
+    {
+        if (uiState != UiState::NONE)
+            return;
+
+        if (IsKeyPressed(KEY_O))
+            ToggleOverlay(Overlay::OXYGEN);
+
+        if (IsKeyPressed(KEY_W))
+            ToggleOverlay(Overlay::WALL);
+
+        if (IsKeyPressed(KEY_P))
+            ToggleOverlay(Overlay::POWER);
+    }
+
+    /**
+     * Toggles UI state based on user key input.
+     */
+    void HandleUiStates()
+    {
+        if (IsKeyPressed(KEY_ESCAPE))
+            uiState = uiState == UiState::NONE ? UiState::ESC_MENU : UiState::NONE;
+    }
 
 public:
     PlayerCam() {}
-
-    // Utility function for Screen to World space transformations
-    Vector2 GetWorldMousePos() const;
-    Vector2 ScreenToWorld(const Vector2 &screenPos) const;
-    Vector2Int ScreenToTile(const Vector2 &screenPos) const;
-    Vector2 WorldToScreen(const Vector2 &worldPos) const;
-    Vector2 WorldToScreen(const Vector2Int &worldPos) const;
 
     constexpr const Vector2 &GetPosition() const { return position; }
 

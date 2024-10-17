@@ -5,7 +5,7 @@ struct Crew;
 struct PlayerCam;
 struct Station;
 
-struct Effect
+struct Effect : public std::enable_shared_from_this<Effect>
 {
     enum Type : u_int8_t
     {
@@ -30,10 +30,12 @@ public:
     constexpr virtual Type GetType() const { return Type::NONE; }
 
     virtual void EffectCrew(Crew &crew, float deltaTime) const = 0;
-    virtual void Render(const PlayerCam &camera) const = 0;
+    virtual void Render() const = 0;
     virtual void Update(const std::shared_ptr<Station> &station, int index) = 0;
 
     constexpr std::string GetName() const { return EnumToName<Type>(GetType()); }
+
+    std::string GetInfo() const;
 };
 
 struct FireEffect : Effect
@@ -47,7 +49,7 @@ struct FireEffect : Effect
     constexpr FireEffect(const Vector2Int &position, float size) : Effect(position, size) {}
 
     void EffectCrew(Crew &crew, float deltaTime) const override;
-    void Render(const PlayerCam &camera) const override;
+    void Render() const override;
     void Update(const std::shared_ptr<Station> &station, int index) override;
 
     constexpr float GetRoundedSize() const { return std::ceil(size / SIZE_INCREMENT) * SIZE_INCREMENT; }
@@ -57,11 +59,11 @@ struct FireEffect : Effect
 
 struct FoamEffect : Effect
 {
-    //TODO: Later add a way to remove it (maybe automatic despawning?)
+    // TODO: Later add a way to remove it (maybe automatic despawning?)
 
     constexpr FoamEffect(const Vector2Int &position, float size) : Effect(position, size) {}
 
-    void Render(const PlayerCam &camera) const override;
+    void Render() const override;
     void Update(const std::shared_ptr<Station> &, int) override {}
 
     constexpr void EffectCrew(Crew &, float) const override {}

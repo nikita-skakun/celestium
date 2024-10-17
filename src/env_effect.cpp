@@ -1,5 +1,5 @@
 #include "asset_manager.hpp"
-#include "camera.hpp"
+#include "game_state.hpp"
 #include "crew.hpp"
 #include "env_effect.hpp"
 
@@ -8,10 +8,10 @@ void FireEffect::EffectCrew(Crew &crew, float deltaTime) const
     crew.SetHealth(crew.GetHealth() - DAMAGE_PER_SECOND * deltaTime);
 }
 
-void FireEffect::Render(const PlayerCam &camera) const
+void FireEffect::Render() const
 {
-    Vector2 fireSize = Vector2(1, 1) * TILE_SIZE * camera.GetZoom() * GetRoundedSize();
-    Vector2 startPos = camera.WorldToScreen(ToVector2(GetPosition()) + Vector2(1, 1) * ((1. - GetRoundedSize()) / 2.));
+    Vector2 fireSize = Vector2(1, 1) * TILE_SIZE * GameManager::GetCamera().GetZoom() * GetRoundedSize();
+    Vector2 startPos = GameManager::WorldToScreen(ToVector2(GetPosition()) + Vector2(1, 1) * ((1. - GetRoundedSize()) / 2.));
     Rectangle sourceRect = Rectangle(GetEvenlySpacedIndex(GetTime(), 8), 0, 1, 1) * TILE_SIZE;
 
     DrawTexturePro(AssetManager::GetTexture("FIRE"), sourceRect, Vector2ToRect(startPos, fireSize), Vector2(), 0, WHITE);
@@ -77,11 +77,23 @@ void FireEffect::Update(const std::shared_ptr<Station> &station, int index)
     }
 }
 
-void FoamEffect::Render(const PlayerCam &camera) const
+void FoamEffect::Render() const
 {
-    Vector2 foamSize = Vector2(1, 1) * TILE_SIZE * camera.GetZoom();
-    Vector2 startPos = camera.WorldToScreen(GetPosition());
+    Vector2 foamSize = Vector2(1, 1) * TILE_SIZE * GameManager::GetCamera().GetZoom();
+    Vector2 startPos = GameManager::WorldToScreen(GetPosition());
     Rectangle sourceRect = Rectangle(0, 0, 1, 1) * TILE_SIZE;
 
     DrawTexturePro(AssetManager::GetTexture("FOAM"), sourceRect, Vector2ToRect(startPos, foamSize), Vector2(), 0, WHITE);
+}
+
+std::string Effect::GetInfo() const
+{
+    std::string effectInfo = " - " + GetName();
+
+    if (auto fire = std::dynamic_pointer_cast<const FireEffect>(shared_from_this()))
+    {
+        effectInfo += std::format("\n   + Size: {:.0f}", fire->GetRoundedSize() / FireEffect::SIZE_INCREMENT);
+    }
+
+    return effectInfo;
 }
