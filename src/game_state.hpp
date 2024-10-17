@@ -63,4 +63,5 @@ public:
     static Vector2Int ScreenToTile(const Vector2 &screenPos);
     static Vector2 WorldToScreen(const Vector2 &worldPos);
     static Vector2 WorldToScreen(const Vector2Int &worldPos);
+    static Rectangle WorldToScreen(const Rectangle &worldRect);
 };

@@ -1,4 +1,5 @@
 #include "ui_manager.hpp"
+#include "tile.hpp"
 
 void InitializeEscapeMenu()
 {
@@ -18,7 +19,7 @@ void InitializeEscapeMenu()
     std::weak_ptr<UiPanel> weakEscMenu = escMenu;
     escMenu->SetOnUpdate([weakEscMenu]()
                          { if (auto escMenu = weakEscMenu.lock())
-                             { escMenu->SetVisibility(GameManager::GetCamera().IsUiState(PlayerCam::UiState::ESC_MENU)); } });
+                             { escMenu->SetVisible(GameManager::GetCamera().IsUiState(PlayerCam::UiState::ESC_MENU)); } });
 
     // Draw a rectangle for the menu background
     auto menuBackground = std::make_shared<UiPanel>(Vector2ToRect(menuPos, menuSize), Fade(BLACK, .5));
@@ -59,7 +60,7 @@ void InitializeSettingsMenu()
     std::weak_ptr<UiPanel> weakSettingsMenu = settingsMenu;
     settingsMenu->SetOnUpdate([weakSettingsMenu]()
                               { if (auto settingsMenu = weakSettingsMenu.lock())
-                             { settingsMenu->SetVisibility(GameManager::GetCamera().IsUiState(PlayerCam::UiState::SETTINGS_MENU)); } });
+                             { settingsMenu->SetVisible(GameManager::GetCamera().IsUiState(PlayerCam::UiState::SETTINGS_MENU)); } });
 
     // Draw a rectangle for the menu background
     auto menuBackground = std::make_shared<UiPanel>(Vector2ToRect(menuPos, menuSize), Fade(BLACK, .5));
@@ -103,7 +104,7 @@ void InitializeSidebar()
     std::weak_ptr<UiToggle> weakBuildToggle = buildToggle;
     buildToggle->SetOnUpdate([weakBuildToggle]()
                              { if (auto buildToggle = weakBuildToggle.lock())
-                             { buildToggle->SetVisibility(GameManager::GetCamera().IsUiClear()); } });
+                             { buildToggle->SetVisible(GameManager::GetCamera().IsUiClear()); } });
 
     UiManager::AddElement("BUILD_TGL", buildToggle);
 
@@ -127,7 +128,7 @@ void InitializeSidebar()
                                    { if (auto overlayToggle = weakOverlayToggle.lock())
                              { 
                                 auto &camera = GameManager::GetCamera();
-                                overlayToggle->SetVisibility(camera.IsUiClear());
+                                overlayToggle->SetVisible(camera.IsUiClear());
                                 overlayToggle->SetToggle(camera.IsOverlay(overlay));
                               } });
 
@@ -137,9 +138,48 @@ void InitializeSidebar()
     }
 }
 
+void InitializeBuildUi()
+{
+    auto buildMoveButton = std::make_shared<UiButton>(Rectangle(0, 0, 1, 1), "", nullptr, TextAttrs(), nullptr, true);
+    buildMoveButton->SetVisible(false);
+
+    std::weak_ptr<UiButton> weakBuildMoveButton = buildMoveButton;
+    buildMoveButton->SetOnUpdate([weakBuildMoveButton]()
+                                 { if (auto buildMoveButton = weakBuildMoveButton.lock())
+                            { 
+                                constexpr Vector2 buttonSize = Vector2(1. / 3., 1. / 3.);
+                                auto selectedTile = GameManager::GetSelectedTile();
+                                bool visible = GameManager::GetCamera().IsInBuildMode() && selectedTile;
+                                if (visible && ToVector2Int(RectToPos(buildMoveButton->GetRect())) != selectedTile->GetPosition()) {
+                                    buildMoveButton->SetRect(Vector2ToRect(ToVector2(selectedTile->GetPosition()) + Vector2(1 + buttonSize.x / 2., (1. - buttonSize.y) / 2.), buttonSize));
+                                }
+                                buildMoveButton->SetVisible(visible);
+                            } });
+
+    auto buildMoveIcon = std::make_shared<UiIcon>(Rectangle(0, 0, 1, 1), "ICON", Rectangle(2, 1, 1, 1) * TILE_SIZE, Fade(DARKGRAY, .8), nullptr, true);
+
+    std::weak_ptr<UiIcon> weakBuildMoveIcon = buildMoveIcon;
+    buildMoveIcon->SetOnUpdate([weakBuildMoveIcon]()
+                               { if (auto buildMoveIcon = weakBuildMoveIcon.lock())
+                            { 
+                                constexpr Vector2 buttonSize = Vector2(1. / 3., 1. / 3.);
+                                constexpr double iconSize = 2. / 3.;
+                                constexpr Vector2 offset = buttonSize * (1. - iconSize) / 2.;
+                                auto selectedTile = GameManager::GetSelectedTile();
+                                bool visible = GameManager::GetCamera().IsInBuildMode() && selectedTile;
+                                if (visible && ToVector2Int(RectToPos(buildMoveIcon->GetRect())) != selectedTile->GetPosition()) {
+                                    buildMoveIcon->SetRect(Vector2ToRect(ToVector2(selectedTile->GetPosition()) + Vector2(1 + buttonSize.x / 2., (1. - buttonSize.y) / 2.) + offset, buttonSize * iconSize));
+                                }
+                            } });
+
+    buildMoveButton->AddChild(buildMoveIcon);
+    UiManager::AddElement("BUILD_MOVE_BTN", buildMoveButton);
+}
+
 void UiManager::InitializeElements()
 {
     InitializeSidebar();
     InitializeEscapeMenu();
     InitializeSettingsMenu();
+    InitializeBuildUi();
 }

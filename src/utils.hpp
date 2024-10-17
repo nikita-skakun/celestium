@@ -323,6 +323,11 @@ constexpr Rectangle &operator*=(Rectangle &a, const Vector2 &b) noexcept
     return a;
 }
 
+constexpr bool operator==(const Rectangle &a, const Rectangle &b) noexcept
+{
+    return a.x == b.x && a.y == b.y && a.width == b.width && a.height == b.height;
+}
+
 // Utility functions for Rectangle
 constexpr Rectangle Vector2ToBoundingBox(const Vector2 &a, const Vector2 &b) noexcept
 {
@@ -334,6 +339,16 @@ constexpr Rectangle Vector2ToBoundingBox(const Vector2 &a, const Vector2 &b) noe
 constexpr Rectangle Vector2ToRect(const Vector2 &pos, const Vector2 &size) noexcept
 {
     return Rectangle(pos.x, pos.y, size.x, size.y);
+}
+
+constexpr Vector2 RectToPos(const Rectangle &rect) noexcept
+{
+    return Vector2(rect.x, rect.y);
+}
+
+constexpr Vector2 RectToSize(const Rectangle &rect) noexcept
+{
+    return Vector2(rect.width, rect.height);
 }
 
 constexpr bool IsVector2WithinRect(const Rectangle &rect, const Vector2 &point) noexcept

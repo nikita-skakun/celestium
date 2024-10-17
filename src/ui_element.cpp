@@ -1,6 +1,12 @@
+#include "game_state.hpp"
 #define RAYGUI_IMPLEMENTATION
 #include "raygui.h"
 #include "ui_element.hpp"
+
+Rectangle UiElement::GetRect() const
+{
+    return inWorldSpace ? GameManager::WorldToScreen(rect) : rect * GetScreenSize();
+}
 
 void UiToggle::Render()
 {
@@ -8,7 +14,7 @@ void UiToggle::Render()
 
     bool oldState = state;
     GuiToggle(GetRect(), "", &state);
-    if (oldState != state)
+    if (oldState != state && onToggle)
         onToggle(state);
 
     GuiEnable();
@@ -26,7 +32,7 @@ void UiButton::Render()
     GuiSetStyle(DEFAULT, TEXT_SIZE, textAttrs.fontSize);
     GuiSetFont(textAttrs.font);
 
-    if (GuiButton(GetRect(), text.c_str()))
+    if (GuiButton(GetRect(), text.c_str()) && onPress)
         onPress();
 
     GuiSetStyle(DEFAULT, TEXT_ALIGNMENT, TEXT_ALIGN_LEFT);
@@ -62,7 +68,7 @@ void UiComboBox::Render()
 
     int oldState = state;
     GuiComboBox(GetRect(), text.c_str(), &state);
-    if (oldState != state)
+    if (oldState != state && onPress)
         onPress(state);
 
     GuiSetStyle(DEFAULT, TEXT_ALIGNMENT, TEXT_ALIGN_LEFT);

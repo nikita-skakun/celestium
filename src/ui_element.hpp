@@ -9,16 +9,18 @@ protected:
     bool visible;
     std::vector<std::shared_ptr<UiElement>> children;
     std::function<void()> onUpdate;
+    bool inWorldSpace;
 
 public:
-    UiElement(const Rectangle &rect, std::function<void()> onUpdate = nullptr)
-        : rect(rect), enabled(true), visible(true), onUpdate(onUpdate) {};
+    UiElement(const Rectangle &rect, std::function<void()> onUpdate = nullptr, bool inWorldSpace = false)
+        : rect(rect), enabled(true), visible(true), onUpdate(onUpdate), inWorldSpace(inWorldSpace) {};
 
-    Rectangle GetRect() const { return rect * GetScreenSize(); }
+    Rectangle GetRect() const;
+    constexpr void SetRect(const Rectangle &r) { rect = r; }
     constexpr bool IsEnabled() const { return enabled; }
     constexpr void SetEnabled(bool state) { enabled = state; }
     constexpr bool IsVisible() const { return visible; }
-    constexpr void SetVisibility(bool state) { visible = state; }
+    constexpr void SetVisible(bool state) { visible = state; }
 
     virtual void Render() = 0;
     virtual ~UiElement() = default;
@@ -32,7 +34,8 @@ public:
     {
         for (const auto &child : children)
         {
-            if (child->IsVisible()) {
+            if (child->IsVisible())
+            {
                 child->Render();
                 child->RenderChildren();
             }
@@ -87,8 +90,9 @@ protected:
     std::function<void(bool)> onToggle;
 
 public:
-    UiToggle(const Rectangle &rect, bool startState, std::function<void(bool)> onToggle = nullptr, std::function<void()> onUpdate = nullptr)
-        : UiElement(rect, onUpdate), state(startState), onToggle(onToggle) {}
+    UiToggle(const Rectangle &rect, bool startState, std::function<void(bool)> onToggle = nullptr, std::function<void()> onUpdate = nullptr,
+             bool inWorldSpace = false)
+        : UiElement(rect, onUpdate, inWorldSpace), state(startState), onToggle(onToggle) {}
 
     constexpr void SetToggle(bool newState) { state = newState; }
 
@@ -103,8 +107,9 @@ protected:
     Color tint;
 
 public:
-    UiIcon(const Rectangle &rect, const std::string &spritesheetName, const Rectangle &spriteOutline, const Color &tint, std::function<void()> onUpdate = nullptr)
-        : UiElement(rect, onUpdate), spritesheetName(spritesheetName), spriteOutline(spriteOutline), tint(tint) {}
+    UiIcon(const Rectangle &rect, const std::string &spritesheetName, const Rectangle &spriteOutline, const Color &tint,
+           std::function<void()> onUpdate = nullptr, bool inWorldSpace = false)
+        : UiElement(rect, onUpdate, inWorldSpace), spritesheetName(spritesheetName), spriteOutline(spriteOutline), tint(tint) {}
 
     void Render() override;
 };
@@ -118,8 +123,8 @@ protected:
 
 public:
     UiButton(const Rectangle &rect, std::string text, std::function<void()> onPress = nullptr, const TextAttrs &textAttrs = TextAttrs(),
-             std::function<void()> onUpdate = nullptr)
-        : UiElement(rect, onUpdate), text(text), onPress(onPress), textAttrs(textAttrs) {}
+             std::function<void()> onUpdate = nullptr, bool inWorldSpace = false)
+        : UiElement(rect, onUpdate, inWorldSpace), text(text), onPress(onPress), textAttrs(textAttrs) {}
 
     void Render() override;
 };
@@ -130,8 +135,8 @@ protected:
     Color backgroundColor;
 
 public:
-    UiPanel(const Rectangle &rect, Color backgroundColor, std::function<void()> onUpdate = nullptr)
-        : UiElement(rect, onUpdate), backgroundColor(backgroundColor) {}
+    UiPanel(const Rectangle &rect, Color backgroundColor, std::function<void()> onUpdate = nullptr, bool inWorldSpace = false)
+        : UiElement(rect, onUpdate, inWorldSpace), backgroundColor(backgroundColor) {}
 
     void Render() override;
 };
@@ -143,8 +148,9 @@ protected:
     TextAttrs textAttrs;
 
 public:
-    UiStatusBar(const Rectangle &rect, const std::string &text, const TextAttrs &textAttrs = TextAttrs(), std::function<void()> onUpdate = nullptr)
-        : UiElement(rect, onUpdate), text(text), textAttrs(textAttrs) {}
+    UiStatusBar(const Rectangle &rect, const std::string &text, const TextAttrs &textAttrs = TextAttrs(), std::function<void()> onUpdate = nullptr,
+                bool inWorldSpace = false)
+        : UiElement(rect, onUpdate, inWorldSpace), text(text), textAttrs(textAttrs) {}
 
     void Render() override;
 };
@@ -159,8 +165,8 @@ protected:
 
 public:
     UiComboBox(const Rectangle &rect, std::string text, int startingState, std::function<void(int)> onPress = nullptr, const TextAttrs &textAttrs = TextAttrs(),
-               std::function<void()> onUpdate = nullptr)
-        : UiElement(rect, onUpdate), text(text), state(startingState), onPress(onPress), textAttrs(textAttrs) {}
+               std::function<void()> onUpdate = nullptr, bool inWorldSpace = false)
+        : UiElement(rect, onUpdate, inWorldSpace), text(text), state(startingState), onPress(onPress), textAttrs(textAttrs) {}
 
     void Render() override;
 };
