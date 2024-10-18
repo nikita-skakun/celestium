@@ -24,8 +24,8 @@ std::shared_ptr<Room> CreateHorizontalCorridor(const Vector2Int &startPos, int l
     std::shared_ptr<Room> room = Room::CreateEmptyRoom(station);
 
     int totalWidth = width + 2;
-    int start = -(int)floor(totalWidth / 2.f);
-    int end = (int)ceil(totalWidth / 2.f);
+    int start = -(totalWidth / 2);
+    int end = (totalWidth + 1) / 2;
 
     int direction = (length > 0) ? 1 : -1;
     int absLength = std::abs(length);
@@ -34,7 +34,8 @@ std::shared_ptr<Room> CreateHorizontalCorridor(const Vector2Int &startPos, int l
     {
         for (int y = start; y < end; y++)
         {
-            bool isWall = (y == start || y == end - 1);
+            bool isEnding = (i == 0 || i == absLength - 1);
+            bool isWall = isEnding ? (y != 0) : (y == start || y == end - 1);
             Vector2Int pos = startPos + Vector2Int(i * direction, y);
             std::shared_ptr<Tile> oldTile = station->GetTileAtPosition(pos);
             if (isWall && oldTile)
@@ -45,7 +46,8 @@ std::shared_ptr<Room> CreateHorizontalCorridor(const Vector2Int &startPos, int l
 
             Tile::CreateTile(isWall ? "WALL" : "BLUE_FLOOR", pos, station, room);
 
-            if (i == 0 || i == absLength - 1)
+            // TODO: Add larger sized doors
+            if (isEnding && !isWall)
                 Tile::CreateTile("DOOR", pos, station, room);
         }
     }
@@ -58,7 +60,7 @@ std::shared_ptr<Station> CreateStation()
     std::shared_ptr<Station> station = std::make_shared<Station>();
     std::shared_ptr<Room> room1 = CreateRectRoom(Vector2Int(-4, -4), Vector2Int(9, 9), station);
     std::shared_ptr<Room> room2 = CreateRectRoom(Vector2Int(10, -4), Vector2Int(9, 9), station);
-    std::shared_ptr<Room> room3 = CreateHorizontalCorridor(Vector2Int(4, 0), 7, 1, station);
+    std::shared_ptr<Room> room3 = CreateHorizontalCorridor(Vector2Int(4, 0), 7, 3, station);
 
     auto oxygenProducer1 = Tile::CreateTile("OXYGEN_PRODUCER", Vector2Int(0, 0), station, room1);
     auto oxygenProducer2 = Tile::CreateTile("OXYGEN_PRODUCER", Vector2Int(14, 0), station, room2);
@@ -160,6 +162,10 @@ void Station::UpdateSpriteOffsets() const
             }
             else if (tileId == "WALL")
             {
+                std::string ssId = GetTileIdAtPosition(tilePos + Vector2Int(0, 2));
+                bool seSame = GetTileIdAtPosition(tilePos + Vector2Int(1, 1)) == tileId;
+                bool swSame = GetTileIdAtPosition(tilePos + Vector2Int(-1, 1)) == tileId;
+
                 if (!eSame && !wSame && !sSame && !nSame)
                     tile->SetSpriteOffset(Vector2Int(3, 4));
                 else if (eSame && !wSame && !sSame && !nSame)
@@ -169,7 +175,12 @@ void Station::UpdateSpriteOffsets() const
                 else if (!eSame && !wSame && sSame && !nSame)
                     tile->SetSpriteOffset(Vector2Int(2, 3));
                 else if (!eSame && !wSame && !sSame && nSame)
-                    tile->SetSpriteOffset(Vector2Int(3, 3));
+                {
+                    if (sExists)
+                        tile->SetSpriteOffset(Vector2Int(4, 1));
+                    else
+                        tile->SetSpriteOffset(Vector2Int(3, 3));
+                }
                 else if (eSame && !wSame && sSame && !nSame)
                 {
                     if (!nExists)
@@ -207,10 +218,6 @@ void Station::UpdateSpriteOffsets() const
                 }
                 else if (!eSame && !wSame && sSame && nSame)
                 {
-                    std::string ssId = GetTileIdAtPosition(tilePos + Vector2Int(0, 2));
-                    bool seSame = GetTileIdAtPosition(tilePos + Vector2Int(1, 1)) == tileId;
-                    bool swSame = GetTileIdAtPosition(tilePos + Vector2Int(-1, 1)) == tileId;
-
                     if (ssId != "" && ssId != tileId)
                     {
                         if (seSame && swSame)
@@ -222,15 +229,34 @@ void Station::UpdateSpriteOffsets() const
                         else
                             tile->SetSpriteOffset(Vector2Int(2, 4));
                     }
+                    else if (ssId != "")
+                    {
+                        if (seSame)
+                            tile->SetSpriteOffset(Vector2Int(5, 5));
+                        else if (swSame)
+                            tile->SetSpriteOffset(Vector2Int(7, 5));
+                        else
+                            tile->SetSpriteOffset(Vector2Int(2, 4));
+                    }
                     else
                         tile->SetSpriteOffset(Vector2Int(2, 4));
                 }
                 else if (eSame && !wSame && sSame && nSame)
-                    tile->SetSpriteOffset(Vector2Int(5, 5));
+                {
+                    if (ssId != "" && ssId != tileId)
+                        tile->SetSpriteOffset(Vector2Int(3, 3));
+                    else
+                        tile->SetSpriteOffset(Vector2Int(5, 5));
+                }
                 else if (eSame && wSame && sSame && nSame)
                     tile->SetSpriteOffset(Vector2Int(6, 5));
                 else if (!eSame && wSame && sSame && nSame)
-                    tile->SetSpriteOffset(Vector2Int(7, 5));
+                {
+                    if (ssId != "" && ssId != tileId)
+                        tile->SetSpriteOffset(Vector2Int(3, 3));
+                    else
+                        tile->SetSpriteOffset(Vector2Int(7, 5));
+                }
                 else if (eSame && !wSame && !sSame && nSame)
                 {
                     if (sExists)

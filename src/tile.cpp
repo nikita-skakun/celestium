@@ -22,15 +22,10 @@ std::shared_ptr<Tile> Tile::CreateTile(const std::string &tileId, const Vector2I
     if (station)
     {
         auto &tilesAtPos = station->tileMap[position];
-        for (const std::shared_ptr<Tile> &existingTile : tilesAtPos)
+        for (const auto &existingTile : tilesAtPos)
         {
-            if (!existingTile)
-                continue;
-            if (magic_enum::enum_integer(existingTile->GetHeight() & tile->GetHeight()) > 0)
-            {
+            if (existingTile && (magic_enum::enum_integer(existingTile->GetHeight() & tile->GetHeight()) > 0))
                 throw std::runtime_error(std::format("A tile {} already exists at {} with overlapping height.", existingTile->GetName(), ToString(position)));
-                return nullptr;
-            }
         }
 
         tilesAtPos.push_back(tile);
@@ -48,11 +43,13 @@ std::shared_ptr<Tile> Tile::CreateTile(const std::string &tileId, const Vector2I
 
 void Tile::DeleteTile()
 {
+    auto self = shared_from_this();
+
     if (station)
     {
         auto &tilesAtPos = station->tileMap[position];
         tilesAtPos.erase(std::remove_if(tilesAtPos.begin(), tilesAtPos.end(),
-                                        [self = shared_from_this()](const std::shared_ptr<Tile> &tile)
+                                        [&self](const std::shared_ptr<Tile> &tile)
                                         { return tile == self; }),
                          tilesAtPos.end());
     }
@@ -61,7 +58,7 @@ void Tile::DeleteTile()
     {
         auto &roomTiles = room->tiles;
         roomTiles.erase(std::remove_if(roomTiles.begin(), roomTiles.end(),
-                                       [self = shared_from_this()](const std::weak_ptr<Tile> &weakTile)
+                                       [&self](const std::weak_ptr<Tile> &weakTile)
                                        { if (auto sharedTile = weakTile.lock())
                                                return sharedTile == self;
                                            return true; }),

@@ -371,15 +371,12 @@ constexpr float DistanceSqFromPointToLine(const Vector2 &a, const Vector2 &b, co
     float abLengthSquared = Vector2LengthSq(ab);
 
     // Project point P onto line AB, computing parameterized position t
-    float t = (ap.x * ab.x + ap.y * ab.y) / abLengthSquared;
-
-    // Clamp t to the range [0, 1] to ensure the point is on the segment
-    t = std::clamp(t, 0.f, 1.f);
+    float t = std::clamp((ap.x * ab.x + ap.y * ab.y) / abLengthSquared, 0.f, 1.f);
 
     // Compute the closest point on the line segment to P
     Vector2 closestPoint = a + ab * t;
 
-    // Return the distance between the mouse and the closest point on the line segment
+    // Return the distance between the point and the closest point on the line segment
     return Vector2DistanceSq(p, closestPoint);
 }
 
@@ -393,23 +390,29 @@ constexpr bool Contains(const Container &container, const T &value) noexcept
 // Utility functions for std::string
 constexpr std::string StringToTitleCase(const std::string &a) noexcept
 {
-    std::string result = a;
+    std::string result;
+    result.reserve(a.size());
     bool capitalizeNext = true;
 
-    for (char &c : result)
+    for (char c : a)
     {
         if (std::isalpha(c))
         {
             if (capitalizeNext)
             {
-                c = std::toupper(c);
+                result += std::toupper(c);
                 capitalizeNext = false;
             }
             else
-                c = std::tolower(c);
+            {
+                result += std::tolower(c);
+            }
         }
         else
+        {
+            result += c;
             capitalizeNext = true;
+        }
     }
 
     return result;
@@ -420,7 +423,7 @@ constexpr void StringRemoveSpaces(std::string &s) noexcept
     s.erase(std::remove_if(s.begin(), s.end(), ::isspace), s.end());
 }
 
-constexpr std::string MacroCaseToName(const std::string &s)
+constexpr std::string MacroCaseToName(const std::string &s) noexcept
 {
     std::string name = s;
     std::replace(name.begin(), name.end(), '_', ' ');
@@ -430,5 +433,5 @@ constexpr std::string MacroCaseToName(const std::string &s)
 template <typename T>
 constexpr std::string EnumToName(const T &enumValue)
 {
-    return MacroCaseToName(std::string(magic_enum::enum_name<T>(enumValue)));
+    return MacroCaseToName(std::string(magic_enum::enum_name(enumValue)));
 }
