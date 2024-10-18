@@ -112,16 +112,15 @@ public:
     {
         std::vector<char> contents = ReadFromFile<std::vector<char>>(filename);
         ryml::Tree tree = ryml::parse_in_place(ryml::to_substr(contents));
-        auto &defManager = DefinitionManager::GetInstance();
 
         if (tree.empty())
-            throw std::runtime_error(std::format("The effect definition file is empty or unreadable: {}", filename));
+            throw std::runtime_error(std::format("The definition file is empty or unreadable: {}", filename));
 
-        for (ryml::ConstNodeRef tileNode : tree["env_effects"])
+        for (ryml::ConstNodeRef effectNode : tree["env_effects"])
         {
             // Retrieve the effect ID string
             std::string effectId;
-            tileNode["id"] >> effectId;
+            effectNode["id"] >> effectId;
             StringRemoveSpaces(effectId);
 
             if (effectId.empty())
@@ -129,17 +128,17 @@ public:
 
             // Retrieve the effect spritesheet string
             std::string spritesheet;
-            tileNode["spritesheet"] >> spritesheet;
+            effectNode["spritesheet"] >> spritesheet;
             StringRemoveSpaces(spritesheet);
 
             if (spritesheet.empty())
                 throw std::runtime_error(std::format("Parsing of effect spritesheet string failed: {}", spritesheet));
 
-            uint sizeIncrements = GetValue<uint>(tileNode, "sizeIncrements", 1);
-            uint spriteCount = GetValue<uint>(tileNode, "spriteCount", 1);
-            float animationSpeed = GetValue<float>(tileNode, "animationSpeed", 0);
+            uint sizeIncrements = GetValue<uint>(effectNode, "sizeIncrements", 1);
+            uint spriteCount = GetValue<uint>(effectNode, "spriteCount", 1);
+            float animationSpeed = GetValue<float>(effectNode, "animationSpeed", 0);
 
-            defManager.effectDefinitions[effectId] = std::make_shared<EffectDef>(effectId, spritesheet, sizeIncrements, spriteCount, animationSpeed);
+            DefinitionManager::GetInstance().effectDefinitions[effectId] = std::make_shared<EffectDef>(effectId, spritesheet, sizeIncrements, spriteCount, animationSpeed);
         }
     }
 
@@ -147,10 +146,9 @@ public:
     {
         std::vector<char> contents = ReadFromFile<std::vector<char>>(filename);
         ryml::Tree tree = ryml::parse_in_place(ryml::to_substr(contents));
-        auto &defManager = DefinitionManager::GetInstance();
 
         if (tree.empty())
-            throw std::runtime_error(std::format("The tile definition file is empty or unreadable: {}", filename));
+            throw std::runtime_error(std::format("The definition file is empty or unreadable: {}", filename));
 
         for (ryml::ConstNodeRef tileNode : tree["tiles"])
         {
@@ -184,13 +182,13 @@ public:
                 if (!type.has_value())
                     throw std::runtime_error(std::format("Parsing of component type string failed: {}", typeStr));
 
-                auto component = defManager.CreateComponent(type.value(), node);
+                auto component = DefinitionManager::GetInstance().CreateComponent(type.value(), node);
                 if (!component)
                     throw std::runtime_error(std::format("Parsing of component string failed: {}", ryml::emitrs_yaml<std::string>(node)));
                 refComponents.insert(component);
             }
 
-            defManager.tileDefinitions[tileId] = std::make_shared<TileDef>(tileId, height.value(), refComponents);
+            DefinitionManager::GetInstance().tileDefinitions[tileId] = std::make_shared<TileDef>(tileId, height.value(), refComponents);
         }
     }
 };

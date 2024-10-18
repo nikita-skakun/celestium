@@ -32,12 +32,7 @@ public:
 
     constexpr float GetRoundedSize() const { return std::ceil(size * effectDef->GetSizeIncrements()) / (float)effectDef->GetSizeIncrements(); }
     constexpr const std::string &GetId() const { return effectDef->GetId(); }
-    constexpr std::string GetName() const
-    {
-        std::string name = GetId();
-        std::replace(name.begin(), name.end(), '_', ' ');
-        return StringToTitleCase(name);
-    }
+    constexpr std::string GetName() const { return MacroCaseToName(GetId()); }
 };
 
 struct FireEffect : Effect

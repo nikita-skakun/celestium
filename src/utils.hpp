@@ -420,10 +420,15 @@ constexpr void StringRemoveSpaces(std::string &s) noexcept
     s.erase(std::remove_if(s.begin(), s.end(), ::isspace), s.end());
 }
 
+constexpr std::string MacroCaseToName(const std::string &s)
+{
+    std::string name = s;
+    std::replace(name.begin(), name.end(), '_', ' ');
+    return StringToTitleCase(name);
+}
+
 template <typename T>
 constexpr std::string EnumToName(const T &enumValue)
 {
-    std::string name = std::string(magic_enum::enum_name<T>(enumValue));
-    std::replace(name.begin(), name.end(), '_', ' ');
-    return StringToTitleCase(name);
+    return MacroCaseToName(std::string(magic_enum::enum_name<T>(enumValue)));
 }

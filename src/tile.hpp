@@ -33,13 +33,7 @@ public:
     std::shared_ptr<Station> GetStation() const { return station; }
 
     constexpr const std::string &GetId() const { return tileDef->GetId(); }
-
-    constexpr std::string GetName() const
-    {
-        std::string name = GetId();
-        std::replace(name.begin(), name.end(), '_', ' ');
-        return StringToTitleCase(name);
-    }
+    constexpr std::string GetName() const { return MacroCaseToName(GetId()); }
 
     std::string GetInfo() const
     {
