@@ -17,11 +17,12 @@ constexpr CharContainer ReadFromFile(const std::filesystem::path &filepath)
     if (fileSize > MAX_FILE_SIZE)
         throw std::runtime_error(std::format("File size exceeds maximum allowed size: {}", filepath.string()));
 
-    std::ifstream file(filepath, std::ios::binary);
+    std::ifstream file;
+    file.exceptions(std::ifstream::failbit | std::ifstream::badbit);
+
+    file.open(filepath, std::ios::binary);
     if (!file.is_open())
         throw std::runtime_error(std::format("Unable to open file: {}", filepath.string()));
-
-    file.exceptions(std::ifstream::failbit | std::ifstream::badbit);
 
     CharContainer cc(fileSize);
 
@@ -29,7 +30,7 @@ constexpr CharContainer ReadFromFile(const std::filesystem::path &filepath)
     {
         file.read(cc.data(), fileSize);
     }
-    catch (const std::ifstream::failure &e)
+    catch (const std::ios_base::failure &e)
     {
         throw std::runtime_error(std::format("Error reading file {}: {}", filepath.string(), e.what()));
     }
