@@ -94,7 +94,6 @@ void Station::AddVisualWallHeight() const
 {
     std::unordered_map<std::shared_ptr<Tile>, Vector2Int> queuedSpriteOffsets;
     std::unordered_set<std::shared_ptr<Tile>> tilesToCheck;
-
     std::vector<std::shared_ptr<Tile>> wallTiles;
 
     for (const auto &tilesAtPos : tileMap)
@@ -111,31 +110,25 @@ void Station::AddVisualWallHeight() const
     for (const auto &tile : wallTiles)
     {
         const Vector2Int &tilePos = tile->GetPosition();
-        const std::string &tileId = tile->GetId();
 
         auto sTile = GetTileAtPosition(tilePos + Vector2Int(0, 1));
         auto ssTile = GetTileAtPosition(tilePos + Vector2Int(0, 2));
         auto nTile = GetTileIdAtPosition(tilePos + Vector2Int(0, -1));
 
-        bool tileToCheck = Contains(tilesToCheck, tile);
-        if (nTile.empty() || tileToCheck)
+        if (Contains(tilesToCheck, tile) || nTile.empty())
         {
             if (sTile && ssTile)
             {
-                if (sTile->GetId() == tileId)
-                    queuedSpriteOffsets.emplace(tile, sTile->GetSpriteOffset());
-                else
-                    queuedSpriteOffsets.emplace(tile, Vector2Int(4, 1));
+                queuedSpriteOffsets.emplace(tile, sTile->GetId() == tile->GetId() ? sTile->GetSpriteOffset() : Vector2Int(4, 1));
                 tilesToCheck.insert(sTile);
             }
-            if (tileToCheck)
-                tilesToCheck.erase(tile);
+            tilesToCheck.erase(tile);
+        }
 
-            if (nTile.empty())
-            {
-                auto decorative = tile->AddComponent<DecorativeComponent>(tile);
-                decorative->AddDecorativeTile(Vector2Int(0, -1), tile->GetSpriteOffset());
-            }
+        if (nTile.empty())
+        {
+            auto decorative = tile->AddComponent<DecorativeComponent>(tile);
+            decorative->AddDecorativeTile(Vector2Int(0, -1), tile->GetSpriteOffset());
         }
 
         if (!sTile)
