@@ -11,6 +11,8 @@ struct Station
     std::vector<std::shared_ptr<Room>> rooms;
     std::vector<std::shared_ptr<Effect>> effects;
 
+    void AddVisualWallHeight() const;
+
 public:
     std::shared_ptr<Tile> GetTileAtPosition(const Vector2Int &pos, TileDef::Height height = TileDef::Height::NONE) const;
     const std::vector<std::shared_ptr<Tile>> &GetTilesAtPosition(const Vector2Int &pos) const;

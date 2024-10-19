@@ -90,6 +90,69 @@ std::shared_ptr<Station> CreateStation()
     return station;
 }
 
+void Station::AddVisualWallHeight() const
+{
+    std::unordered_map<std::shared_ptr<Tile>, Vector2Int> queuedSpriteOffsets;
+    std::unordered_set<std::shared_ptr<Tile>> tilesToCheck;
+
+    std::vector<std::shared_ptr<Tile>> wallTiles;
+
+    for (const auto &tilesAtPos : tileMap)
+    {
+        for (const auto &tile : tilesAtPos.second)
+        {
+            if (tile->GetId() == "WALL")
+                wallTiles.push_back(tile);
+        }
+    }
+    std::sort(wallTiles.begin(), wallTiles.end(), [](const std::shared_ptr<Tile> &a, const std::shared_ptr<Tile> &b)
+              { return a->GetPosition().y < b->GetPosition().y; });
+
+    for (const auto &tile : wallTiles)
+    {
+        const Vector2Int &tilePos = tile->GetPosition();
+        const std::string &tileId = tile->GetId();
+
+        auto sTile = GetTileAtPosition(tilePos + Vector2Int(0, 1));
+        auto ssTile = GetTileAtPosition(tilePos + Vector2Int(0, 2));
+        auto nTile = GetTileIdAtPosition(tilePos + Vector2Int(0, -1));
+
+        bool tileToCheck = Contains(tilesToCheck, tile);
+        if (nTile.empty() || tileToCheck)
+        {
+            if (sTile && ssTile)
+            {
+                if (sTile->GetId() == tileId)
+                    queuedSpriteOffsets.emplace(tile, sTile->GetSpriteOffset());
+                else
+                    queuedSpriteOffsets.emplace(tile, Vector2Int(4, 1));
+                tilesToCheck.insert(sTile);
+            }
+            if (tileToCheck)
+                tilesToCheck.erase(tile);
+
+            if (nTile.empty())
+            {
+                auto decorative = tile->AddComponent<DecorativeComponent>(tile);
+                decorative->AddDecorativeTile(Vector2Int(0, -1), tile->GetSpriteOffset());
+            }
+        }
+
+        if (!sTile)
+        {
+            auto decorative = tile->AddComponent<DecorativeComponent>(tile);
+            decorative->AddDecorativeTile(Vector2Int(0, 1), Vector2Int(Vector2IntToRandomInt(tilePos, 4, 5), 3));
+            if (GetTileIdAtPosition(tilePos + Vector2Int(0, 2)).empty())
+                decorative->AddDecorativeTile(Vector2Int(0, 2), Vector2Int(Vector2IntToRandomInt(tilePos, 6, 7), 3));
+        }
+    }
+
+    for (const auto &queued : queuedSpriteOffsets)
+    {
+        queued.first->SetSpriteOffset(queued.second);
+    }
+}
+
 void Station::UpdateSpriteOffsets() const
 {
     for (const auto &tilesAtPos : tileMap)
@@ -105,9 +168,6 @@ void Station::UpdateSpriteOffsets() const
             bool eSame = CheckAdjacentTile(tilePos, tileId, Direction::E);
             bool sSame = CheckAdjacentTile(tilePos, tileId, Direction::S);
             bool wSame = CheckAdjacentTile(tilePos, tileId, Direction::W);
-
-            bool nExists = GetTileIdAtPosition(tilePos + Vector2Int(0, -1)) != "";
-            bool sExists = GetTileIdAtPosition(tilePos + Vector2Int(0, 1)) != "";
 
             if (tileId == "BLUE_FLOOR")
             {
@@ -162,124 +222,38 @@ void Station::UpdateSpriteOffsets() const
             }
             else if (tileId == "WALL")
             {
-                std::string ssId = GetTileIdAtPosition(tilePos + Vector2Int(0, 2));
-                bool seSame = GetTileIdAtPosition(tilePos + Vector2Int(1, 1)) == tileId;
-                bool swSame = GetTileIdAtPosition(tilePos + Vector2Int(-1, 1)) == tileId;
-
-                if (!eSame && !wSame && !sSame && !nSame)
-                    tile->SetSpriteOffset(Vector2Int(3, 4));
-                else if (eSame && !wSame && !sSame && !nSame)
+                if (eSame && !wSame && !sSame && !nSame)
                     tile->SetSpriteOffset(Vector2Int(0, 3));
                 else if (!eSame && wSame && !sSame && !nSame)
                     tile->SetSpriteOffset(Vector2Int(1, 3));
                 else if (!eSame && !wSame && sSame && !nSame)
                     tile->SetSpriteOffset(Vector2Int(2, 3));
                 else if (!eSame && !wSame && !sSame && nSame)
-                {
-                    if (sExists)
-                        tile->SetSpriteOffset(Vector2Int(4, 1));
-                    else
-                        tile->SetSpriteOffset(Vector2Int(3, 3));
-                }
+                    tile->SetSpriteOffset(Vector2Int(3, 3));
+                else if (!eSame && !wSame && !sSame && !nSame)
+                    tile->SetSpriteOffset(Vector2Int(3, 4));
                 else if (eSame && !wSame && sSame && !nSame)
-                {
-                    if (!nExists)
-                    {
-                        tile->SetSpriteOffset(Vector2Int(2, 4));
-                        auto dComp = tile->AddComponent<DecorativeComponent>(tile);
-                        dComp->AddDecorativeTile(Vector2Int(0, -1), Vector2Int(5, 4));
-                    }
-                    else
-                        tile->SetSpriteOffset(Vector2Int(5, 4));
-                }
+                    tile->SetSpriteOffset(Vector2Int(5, 4));
                 else if (eSame && wSame && sSame && !nSame)
                     tile->SetSpriteOffset(Vector2Int(6, 4));
                 else if (!eSame && wSame && sSame && !nSame)
-                {
-                    if (!nExists)
-                    {
-                        tile->SetSpriteOffset(Vector2Int(2, 4));
-                        auto dComp = tile->AddComponent<DecorativeComponent>(tile);
-                        dComp->AddDecorativeTile(Vector2Int(0, -1), Vector2Int(7, 4));
-                    }
-                    else
-                        tile->SetSpriteOffset(Vector2Int(7, 4));
-                }
+                    tile->SetSpriteOffset(Vector2Int(7, 4));
                 else if (eSame && wSame && !sSame && !nSame)
-                {
-                    if (!nExists)
-                    {
-                        tile->SetSpriteOffset(Vector2Int(4, 1));
-                        auto dComp = tile->AddComponent<DecorativeComponent>(tile);
-                        dComp->AddDecorativeTile(Vector2Int(0, -1), Vector2Int(0, 4));
-                    }
-                    else
-                        tile->SetSpriteOffset(Vector2Int(0, 4));
-                }
+                    tile->SetSpriteOffset(Vector2Int(0, 4));
                 else if (!eSame && !wSame && sSame && nSame)
-                {
-                    if (ssId != "" && ssId != tileId)
-                    {
-                        if (seSame && swSame)
-                            tile->SetSpriteOffset(Vector2Int(6, 6));
-                        else if (seSame && !swSame)
-                            tile->SetSpriteOffset(Vector2Int(5, 6));
-                        else if (!seSame && swSame)
-                            tile->SetSpriteOffset(Vector2Int(7, 6));
-                        else
-                            tile->SetSpriteOffset(Vector2Int(2, 4));
-                    }
-                    else if (ssId != "")
-                    {
-                        if (seSame)
-                            tile->SetSpriteOffset(Vector2Int(5, 5));
-                        else if (swSame)
-                            tile->SetSpriteOffset(Vector2Int(7, 5));
-                        else
-                            tile->SetSpriteOffset(Vector2Int(2, 4));
-                    }
-                    else
-                        tile->SetSpriteOffset(Vector2Int(2, 4));
-                }
+                    tile->SetSpriteOffset(Vector2Int(2, 4));
                 else if (eSame && !wSame && sSame && nSame)
-                {
-                    if (ssId != "" && ssId != tileId)
-                        tile->SetSpriteOffset(Vector2Int(3, 3));
-                    else
-                        tile->SetSpriteOffset(Vector2Int(5, 5));
-                }
+                    tile->SetSpriteOffset(Vector2Int(5, 5));
                 else if (eSame && wSame && sSame && nSame)
                     tile->SetSpriteOffset(Vector2Int(6, 5));
                 else if (!eSame && wSame && sSame && nSame)
-                {
-                    if (ssId != "" && ssId != tileId)
-                        tile->SetSpriteOffset(Vector2Int(3, 3));
-                    else
-                        tile->SetSpriteOffset(Vector2Int(7, 5));
-                }
+                    tile->SetSpriteOffset(Vector2Int(7, 5));
                 else if (eSame && !wSame && !sSame && nSame)
-                {
-                    if (sExists)
-                        tile->SetSpriteOffset(Vector2Int(4, 1));
-                    else
-                        tile->SetSpriteOffset(Vector2Int(5, 6));
-                }
+                    tile->SetSpriteOffset(Vector2Int(5, 6));
                 else if (eSame && wSame && !sSame && nSame)
                     tile->SetSpriteOffset(Vector2Int(6, 6));
                 else if (!eSame && wSame && !sSame && nSame)
-                {
-                    if (sExists)
-                        tile->SetSpriteOffset(Vector2Int(4, 1));
-                    else
-                        tile->SetSpriteOffset(Vector2Int(7, 6));
-                }
-
-                if (!sExists)
-                {
-                    auto dComp = tile->AddComponent<DecorativeComponent>(tile);
-                    dComp->AddDecorativeTile(Vector2Int(0, 1), Vector2Int(Vector2IntToRandomInt(tilePos, 4, 5), 3));
-                    dComp->AddDecorativeTile(Vector2Int(0, 2), Vector2Int(Vector2IntToRandomInt(tilePos, 6, 7), 3));
-                }
+                    tile->SetSpriteOffset(Vector2Int(7, 6));
             }
             else if (tileId == "OXYGEN_PRODUCER")
             {
@@ -305,6 +279,8 @@ void Station::UpdateSpriteOffsets() const
             }
         }
     }
+
+    AddVisualWallHeight();
 }
 
 std::string Station::GetTileIdAtPosition(const Vector2Int &pos, TileDef::Height height) const
