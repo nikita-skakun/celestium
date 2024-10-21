@@ -33,7 +33,6 @@ set(FETCHCONTENT_QUIET OFF)
 # Enable Wayland and build raylib as a shared library
 set(USE_EXTERNAL_GLFW ON CACHE BOOL "" FORCE)
 set(USE_WAYLAND ON CACHE BOOL "" FORCE)
-set(DBUILD_SHARED_LIBS ON CACHE BOOL "" FORCE)
 
 # Disable examples to speed up build
 set(BUILD_EXAMPLES OFF CACHE BOOL "" FORCE)
@@ -58,6 +57,16 @@ target_compile_options(celestium PRIVATE
     $<$<CXX_COMPILER_ID:Clang,GNU>:-Wall -Wextra -Wpedantic>
     $<$<CXX_COMPILER_ID:MSVC>:/W4>
 )
+
+# Link to installed libraries
+find_package(PkgConfig REQUIRED)
+
+pkg_check_modules(OpusFile REQUIRED opusfile)
+target_link_libraries(celestium PRIVATE ${OpusFile_LIBRARIES})
+include_directories(${OpusFile_INCLUDE_DIRS})
+
+pkg_check_modules(RtAudio REQUIRED rtaudio)
+target_link_libraries(celestium PRIVATE ${RtAudio_LIBRARIES})
 
 # Helper function to fetch, make available, and link dependencies
 function(fetch_and_link_dependency name repo tag)
