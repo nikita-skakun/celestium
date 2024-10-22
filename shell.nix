@@ -23,6 +23,7 @@ pkgs.mkShell {
     pkg-config # pkg-config to manage library paths
     pulseaudio # PulseAudio for audio handling
     rtaudio_6 # RtAudio for audio handling
+    termcolor # Termcolor for colored output
     wayland # Wayland development libraries
     wayland-protocols # Wayland protocols for Wayland support
   ];
@@ -31,6 +32,7 @@ pkgs.mkShell {
     export CC=${pkgs.clang}/bin/clang
     export CXX=${pkgs.clang}/bin/clang++
     export MAGIC_ENUM_DIR=${pkgs.magic-enum}/include
+    export TERM_COLOR_DIR=${pkgs.termcolor}/include
     echo "Using Clang: $CC and $CXX"
   '';
 }
