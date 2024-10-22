@@ -90,15 +90,3 @@ void UiSlider::Render()
 
     GuiEnable();
 }
-
-void UiSliderBar::Render()
-{
-    GuiSetState(IsEnabled() ? STATE_NORMAL : STATE_DISABLED);
-
-    float oldValue = value;
-    GuiSliderBar(GetRect(), "", nullptr, &value, minValue, maxValue);
-    if (oldValue != value && onSlide)
-        onSlide(value);
-
-    GuiEnable();
-}

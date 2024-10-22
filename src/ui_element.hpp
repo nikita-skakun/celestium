@@ -189,21 +189,3 @@ public:
 
     void Render() override;
 };
-
-struct UiSliderBar : UiElement
-{
-protected:
-    float value;
-    float minValue;
-    float maxValue;
-    std::function<void(float)> onSlide;
-
-public:
-    UiSliderBar(const Rectangle &rect, float startingValue, float minValue, float maxValue, std::function<void(float)> onSlide = nullptr,
-                std::function<void()> onUpdate = nullptr, bool inWorldSpace = false)
-        : UiElement(rect, onUpdate, inWorldSpace), value(startingValue), minValue(minValue), maxValue(maxValue), onSlide(onSlide) {}
-
-    constexpr void SetValue(float newValue) { value = newValue; }
-
-    void Render() override;
-};
