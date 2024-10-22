@@ -1,5 +1,5 @@
 #pragma once
-#include <opusfile.h>
+#include <opus/opusfile.h>
 #include <rtaudio/RtAudio.h>
 #include "utils.hpp"
 #include <vector>

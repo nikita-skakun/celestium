@@ -16,6 +16,7 @@ pkgs.mkShell {
     gnumake # Make for building the project
     jack2 # JACK for audio handling
     libogg # Ogg for audio handling
+    libopus # Opus for audio handling
     libxkbcommon # Keymap handling library (shared between X11 and Wayland)
     opusfile.dev # Opus for audio handling
     pkg-config # pkg-config to manage library paths
