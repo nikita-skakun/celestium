@@ -140,7 +140,7 @@ void AssignCrewTasks(std::vector<Crew> &crewList)
         auto station = crew.GetCurrentTile()->GetStation();
         Vector2Int crewPos = ToVector2Int(crew.GetPosition());
 
-        if (station->GetTypeEffectAtPosition<FireEffect>(crewPos))
+        if (station->GetEffectOfTypeAtPosition<FireEffect>(crewPos))
         {
             crew.GetTaskQueue().push_back(std::make_shared<ExtinguishTask>(crewPos));
             continue;
@@ -149,7 +149,7 @@ void AssignCrewTasks(std::vector<Crew> &crewList)
         for (const auto &direction : CARDINAL_DIRECTIONS)
         {
             Vector2Int neighborPos = crewPos + DirectionToVector2Int(direction);
-            if (station->GetTypeEffectAtPosition<FireEffect>(neighborPos))
+            if (station->GetEffectOfTypeAtPosition<FireEffect>(neighborPos))
             {
                 crew.GetTaskQueue().push_back(std::make_shared<ExtinguishTask>(neighborPos));
                 break;

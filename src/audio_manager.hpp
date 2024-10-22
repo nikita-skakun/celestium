@@ -1,9 +1,9 @@
 #pragma once
+#include "utils.hpp"
+#include <memory>
 #include <opus/opusfile.h>
 #include <rtaudio/RtAudio.h>
-#include "utils.hpp"
-#include <vector>
-#include <memory>
+#include <unordered_set>
 
 struct SoundEffect
 {
@@ -18,9 +18,10 @@ struct SoundEffect
     bool isPlaying;
     bool isLooping;
     float volume;
+    std::function<bool()> onUpdate;
 
-    SoundEffect(OggOpusFile *file, Type type, bool isPlaying = true, bool isLooping = false, float volume = 1.f)
-        : file(file), type(type), isPlaying(isPlaying), isLooping(isLooping), volume(volume) {}
+    SoundEffect(OggOpusFile *file, Type type, bool isPlaying = true, bool isLooping = false, float volume = 1.f, std::function<bool()> onUpdate = nullptr)
+        : file(file), type(type), isPlaying(isPlaying), isLooping(isLooping), volume(volume), onUpdate(onUpdate) {}
 
     void Play() { isPlaying = true; }
     void Pause() { isPlaying = false; }
@@ -39,7 +40,7 @@ private:
     RtAudio::StreamOptions options;
     uint32_t bufferFrames = 32;
 
-    std::vector<std::shared_ptr<SoundEffect>> sounds;
+    std::unordered_set<std::shared_ptr<SoundEffect>> sounds;
 
     float masterVolume = 1.f;
     float musicVolume = 1.f;
@@ -86,10 +87,12 @@ private:
             throw std::runtime_error(std::format("Stream underflow detected: {}", status));
 
         float *output = static_cast<float *>(outputBuffer);
-        std::fill(output, output + nBufferFrames * CHANNELS, 0.f);
-
         AudioManager &audioManager = GetInstance();
 
+        if (audioManager.sounds.empty())
+            return 0;
+
+        std::fill(output, output + nBufferFrames * CHANNELS, 0.f);
         std::vector<float> tempBuffer(nBufferFrames * CHANNELS);
 
         for (auto &sound : audioManager.sounds)
@@ -132,7 +135,7 @@ public:
     static float GetEffectsVolume() { return GetInstance().effectsVolume; }
     static void SetEffectsVolume(float volume) { GetInstance().effectsVolume = std::clamp(volume, 0.f, 1.f); }
 
-    static void LoadSoundEffect(const std::string &filePath, SoundEffect::Type type, bool loop = false, float volume = 1.f)
+    static std::shared_ptr<SoundEffect> LoadSoundEffect(const std::string &filePath, SoundEffect::Type type, bool startPlaying = false, bool loop = false, float volume = 1.f)
     {
         AudioManager &audio = GetInstance();
 
@@ -141,34 +144,9 @@ public:
         if (!soundFile)
             throw std::runtime_error(std::format("Error opening Opus file: {}", error));
 
-        audio.sounds.push_back(std::make_shared<SoundEffect>(soundFile, type, true, loop, volume));
-    }
-
-    static void PauseSoundEffect(size_t soundIndex)
-    {
-        AudioManager &audio = GetInstance();
-        if (soundIndex < audio.sounds.size())
-        {
-            audio.sounds[soundIndex]->Pause();
-        }
-    }
-
-    static void PlaySoundEffect(size_t soundIndex)
-    {
-        AudioManager &audio = GetInstance();
-        if (soundIndex < audio.sounds.size())
-        {
-            audio.sounds[soundIndex]->Play();
-        }
-    }
-
-    static void StopSoundEffect(size_t soundIndex)
-    {
-        AudioManager &audio = GetInstance();
-        if (soundIndex < audio.sounds.size())
-        {
-            audio.sounds[soundIndex]->Stop();
-        }
+        auto sound = std::make_shared<SoundEffect>(soundFile, type, startPlaying, loop, volume);
+        audio.sounds.insert(sound);
+        return sound;
     }
 
     static void Initialize()
@@ -194,6 +172,17 @@ public:
 
         if (audioStream.startStream())
             throw std::runtime_error(std::format("Error starting stream: {}", audioStream.getErrorText()));
+    }
+
+    static void Update()
+    {
+        AudioManager &audio = GetInstance();
+        for (auto &sound : audio.sounds)
+        {
+            if (sound->onUpdate)
+                if (sound->onUpdate())
+                    audio.sounds.erase(sound);
+        }
     }
 
     static void CleanUp()

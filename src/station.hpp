@@ -11,6 +11,7 @@ struct Station
     std::vector<std::shared_ptr<Room>> rooms;
     std::vector<std::shared_ptr<Effect>> effects;
 
+protected:
     void AddVisualWallHeight() const;
 
 public:
@@ -32,7 +33,7 @@ public:
     void RemoveEffect(const std::shared_ptr<Effect> &effect);
 
     template <typename T>
-    std::shared_ptr<Effect> GetTypeEffectAtPosition(const Vector2Int &pos) const
+    std::shared_ptr<Effect> GetEffectOfTypeAtPosition(const Vector2Int &pos) const
     {
         auto effectsAtPos = GetEffectsAtPosition(pos);
         for (const auto &effect : effectsAtPos)
@@ -44,7 +45,7 @@ public:
     }
 
     template <typename T>
-    std::vector<std::shared_ptr<Effect>> GetTypeEffectsAtPosition(const Vector2Int &pos) const
+    std::vector<std::shared_ptr<Effect>> GetEffectsOfTypeAtPosition(const Vector2Int &pos) const
     {
         auto effectsAtPos = GetEffectsAtPosition(pos);
         std::vector<std::shared_ptr<Effect>> foundEffects;
@@ -54,6 +55,17 @@ public:
                 foundEffects.push_back(effect);
         }
         return foundEffects;
+    }
+
+    template <typename T>
+    bool HasEffectOfType() const
+    {
+        for (const auto &effect : effects)
+        {
+            if (std::dynamic_pointer_cast<T>(effect))
+                return true;
+        }
+        return false;
     }
 
     template <typename T>

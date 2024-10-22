@@ -1,4 +1,5 @@
 #include "station.hpp"
+#include "audio_manager.hpp"
 
 std::shared_ptr<Room> CreateRectRoom(const Vector2Int &pos, const Vector2Int &size, std::shared_ptr<Station> station)
 {
@@ -86,6 +87,22 @@ std::shared_ptr<Station> CreateStation()
 
     station->effects.push_back(std::make_shared<FireEffect>(Vector2Int(12, 0)));
     station->effects.push_back(std::make_shared<FoamEffect>(Vector2Int(13, 0)));
+
+    auto fireAlarm = AudioManager::LoadSoundEffect("../assets/audio/fire_alarm.opus", SoundEffect::Type::EFFECT, false, true, .05);
+    std::weak_ptr<SoundEffect> fireAlarmWeak = fireAlarm;
+    fireAlarm->onUpdate = [fireAlarmWeak, &station]()
+    {
+        auto fireAlarm = fireAlarmWeak.lock();
+        if (!station || !fireAlarm)
+            return true;
+
+        if (station->HasEffectOfType<FireEffect>())
+            fireAlarm->Play();
+        else
+            fireAlarm->Stop();
+
+        return false;
+    };
 
     return station;
 }

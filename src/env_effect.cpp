@@ -38,7 +38,7 @@ void FireEffect::EffectCrew(Crew &crew, float deltaTime) const
 void FireEffect::Update(const std::shared_ptr<Station> &station, int index)
 {
     auto tileWithOxygen = station->GetTileWithComponentAtPosition<OxygenComponent>(GetPosition());
-    bool isFoamOnTile = station->GetTypeEffectAtPosition<FoamEffect>(GetPosition()) != nullptr;
+    bool isFoamOnTile = station->GetEffectOfTypeAtPosition<FoamEffect>(GetPosition()) != nullptr;
     if (!tileWithOxygen || isFoamOnTile)
     {
         station->effects.erase(station->effects.begin() + index);
@@ -80,8 +80,8 @@ void FireEffect::Update(const std::shared_ptr<Station> &station, int index)
             Vector2Int neighborPos = GetPosition() + offset;
 
             bool neighborHasOxygen = station->GetTileWithComponentAtPosition<OxygenComponent>(neighborPos) != nullptr;
-            bool neighborHasFire = station->GetTypeEffectAtPosition<FireEffect>(neighborPos) != nullptr;
-            bool neighborHasFoam = station->GetTypeEffectAtPosition<FoamEffect>(neighborPos) != nullptr;
+            bool neighborHasFire = station->GetEffectOfTypeAtPosition<FireEffect>(neighborPos) != nullptr;
+            bool neighborHasFoam = station->GetEffectOfTypeAtPosition<FoamEffect>(neighborPos) != nullptr;
             if (neighborHasOxygen && !neighborHasFire && !neighborHasFoam)
                 possibleOffsets.push_back(offset);
         }

@@ -76,7 +76,7 @@ void ExtinguishTask::Update(Crew &crew)
         return;
     }
 
-    auto fire = station->GetTypeEffectAtPosition<FireEffect>(targetPosition);
+    auto fire = station->GetEffectOfTypeAtPosition<FireEffect>(targetPosition);
     if (!fire)
     {
         crew.GetTaskQueue().erase(crew.GetTaskQueue().begin());
