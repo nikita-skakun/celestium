@@ -61,7 +61,7 @@ int main()
     DefinitionManager::ParseEffectsFromFile("../assets/definitions/env_effects.yml");
 
     AudioManager::Initialize();
-    AudioManager::LoadSoundEffect("../assets/audio/fire_alarm.opus", true, .05);
+    AudioManager::LoadSoundEffect("../assets/audio/fire_alarm.opus", SoundEffect::Type::EFFECT, true, .05);
 
     auto &camera = GameManager::GetCamera();
 

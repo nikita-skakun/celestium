@@ -7,13 +7,20 @@
 
 struct SoundEffect
 {
+    enum class Type
+    {
+        MUSIC,
+        EFFECT
+    };
+
     OggOpusFile *file;
+    Type type;
     bool isPlaying;
     bool isLooping;
     float volume;
 
-    SoundEffect(OggOpusFile *file = nullptr, bool isPlaying = true, bool isLooping = false, float volume = 1.f)
-        : file(file), isPlaying(isPlaying), isLooping(isLooping), volume(volume) {}
+    SoundEffect(OggOpusFile *file, Type type, bool isPlaying = true, bool isLooping = false, float volume = 1.f)
+        : file(file), type(type), isPlaying(isPlaying), isLooping(isLooping), volume(volume) {}
 
     void Play() { isPlaying = true; }
     void Pause() { isPlaying = false; }
@@ -34,6 +41,10 @@ private:
 
     std::vector<std::shared_ptr<SoundEffect>> sounds;
 
+    float masterVolume = 1.f;
+    float musicVolume = 1.f;
+    float effectsVolume = 1.f;
+
     AudioManager() = default;
     ~AudioManager() = default;
     AudioManager(const AudioManager &) = delete;
@@ -46,6 +57,26 @@ private:
     {
         static AudioManager instance;
         return instance;
+    }
+
+    static float GetVolume(SoundEffect::Type type)
+    {
+        AudioManager &audio = GetInstance();
+        float volume = audio.masterVolume;
+
+        switch (type)
+        {
+        case SoundEffect::Type::MUSIC:
+            return volume * audio.musicVolume;
+
+        case SoundEffect::Type::EFFECT:
+            return volume * audio.effectsVolume;
+
+        default:
+            break;
+        }
+
+        return volume;
     }
 
     static int AudioCallback(void *outputBuffer, void * /*inputBuffer*/, uint32_t nBufferFrames,
@@ -75,7 +106,7 @@ private:
 
             for (uint32_t i = 0; i < samplesRead * CHANNELS; ++i)
             {
-                output[i] += tempBuffer[i] * sound->volume;
+                output[i] += tempBuffer[i] * sound->volume * GetVolume(sound->type);
             }
 
             if (samplesRead == 0 && sound->isLooping)
@@ -85,11 +116,16 @@ private:
                 sound->isPlaying = false;
         }
 
+        for (uint32_t i = 0; i < nBufferFrames * CHANNELS; ++i)
+        {
+            output[i] = std::clamp(output[i], -1.f, 1.f);
+        }
+
         return 0;
     }
 
 public:
-    static void LoadSoundEffect(const std::string &filePath, bool loop = false, float volume = 1.f)
+    static void LoadSoundEffect(const std::string &filePath, SoundEffect::Type type, bool loop = false, float volume = 1.f)
     {
         AudioManager &audio = GetInstance();
 
@@ -98,7 +134,7 @@ public:
         if (!soundFile)
             throw std::runtime_error(std::format("Error opening Opus file: {}", error));
 
-        audio.sounds.push_back(std::make_shared<SoundEffect>(soundFile, true, loop, volume));
+        audio.sounds.push_back(std::make_shared<SoundEffect>(soundFile, type, true, loop, volume));
     }
 
     static void PauseSoundEffect(size_t soundIndex)
