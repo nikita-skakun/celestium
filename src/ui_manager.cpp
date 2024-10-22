@@ -84,6 +84,45 @@ void InitializeSettingsMenu()
                                                       {  SetWindowMonitor(monitor); SetTargetFPS(GetMonitorRefreshRate(monitor)); });
     menuBackground->AddChild(monitorSelect);
 
+    Rectangle masterVolumeTextRect = Rectangle(menuPos.x + spacing.x, monitorTextRect.y + settingHeight + spacing.y, halfPanelWidth, settingHeight);
+    auto masterVolumeText = std::make_shared<UiStatusBar>(masterVolumeTextRect, "Master Volume:");
+    menuBackground->AddChild(masterVolumeText);
+
+    Rectangle masterVolumeSliderRect = Rectangle(masterVolumeTextRect.x + halfPanelWidth + spacing.x, masterVolumeTextRect.y, halfPanelWidth, settingHeight);
+    auto masterVolumeSlider = std::make_shared<UiSlider>(masterVolumeSliderRect, AudioManager::GetMasterVolume(), 0, 1, [](float volume)
+                                                         { AudioManager::SetMasterVolume(volume); });
+    std::weak_ptr<UiSlider> weakMasterVolumeSlider = masterVolumeSlider;
+    masterVolumeSlider->SetOnUpdate([weakMasterVolumeSlider]()
+                                    { if (auto masterVolumeSlider = weakMasterVolumeSlider.lock())
+                             { masterVolumeSlider->SetValue(AudioManager::GetMasterVolume()); } });
+    menuBackground->AddChild(masterVolumeSlider);
+
+    Rectangle musicVolumeTextRect = Rectangle(menuPos.x + spacing.x, masterVolumeTextRect.y + settingHeight + spacing.y, halfPanelWidth, settingHeight);
+    auto musicVolumeText = std::make_shared<UiStatusBar>(musicVolumeTextRect, "Music Volume:");
+    menuBackground->AddChild(musicVolumeText);
+
+    Rectangle musicVolumeSliderRect = Rectangle(musicVolumeTextRect.x + halfPanelWidth + spacing.x, musicVolumeTextRect.y, halfPanelWidth, settingHeight);
+    auto musicVolumeSlider = std::make_shared<UiSlider>(musicVolumeSliderRect, AudioManager::GetMusicVolume(), 0, 1, [](float volume)
+                                                        { AudioManager::SetMusicVolume(volume); });
+    std::weak_ptr<UiSlider> weakMusicVolumeSlider = musicVolumeSlider;
+    musicVolumeSlider->SetOnUpdate([weakMusicVolumeSlider]()
+                                   { if (auto musicVolumeSlider = weakMusicVolumeSlider.lock())
+                             { musicVolumeSlider->SetValue(AudioManager::GetMusicVolume()); } });
+    menuBackground->AddChild(musicVolumeSlider);
+
+    Rectangle effectsVolumeTextRect = Rectangle(menuPos.x + spacing.x, musicVolumeTextRect.y + settingHeight + spacing.y, halfPanelWidth, settingHeight);
+    auto effectsVolumeText = std::make_shared<UiStatusBar>(effectsVolumeTextRect, "Effects Volume:");
+    menuBackground->AddChild(effectsVolumeText);
+
+    Rectangle effectsVolumeSliderRect = Rectangle(effectsVolumeTextRect.x + halfPanelWidth + spacing.x, effectsVolumeTextRect.y, halfPanelWidth, settingHeight);
+    auto effectsVolumeSlider = std::make_shared<UiSlider>(effectsVolumeSliderRect, AudioManager::GetEffectsVolume(), 0, 1, [](float volume)
+                                                          { AudioManager::SetEffectsVolume(volume); });
+    std::weak_ptr<UiSlider> weakEffectsVolumeSlider = effectsVolumeSlider;
+    effectsVolumeSlider->SetOnUpdate([weakEffectsVolumeSlider]()
+                                     { if (auto effectsVolumeSlider = weakEffectsVolumeSlider.lock())
+                             { effectsVolumeSlider->SetValue(AudioManager::GetEffectsVolume()); } });
+    menuBackground->AddChild(effectsVolumeSlider);
+
     UiManager::AddElement("SETTINGS_MENU", settingsMenu);
 }
 

@@ -125,6 +125,13 @@ private:
     }
 
 public:
+    static float GetMasterVolume() { return GetInstance().masterVolume; }
+    static void SetMasterVolume(float volume) { GetInstance().masterVolume = std::clamp(volume, 0.f, 1.f); }
+    static float GetMusicVolume() { return GetInstance().musicVolume; }
+    static void SetMusicVolume(float volume) { GetInstance().musicVolume = std::clamp(volume, 0.f, 1.f); }
+    static float GetEffectsVolume() { return GetInstance().effectsVolume; }
+    static void SetEffectsVolume(float volume) { GetInstance().effectsVolume = std::clamp(volume, 0.f, 1.f); }
+
     static void LoadSoundEffect(const std::string &filePath, SoundEffect::Type type, bool loop = false, float volume = 1.f)
     {
         AudioManager &audio = GetInstance();

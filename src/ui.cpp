@@ -42,7 +42,7 @@ void DrawPath(const std::deque<Vector2Int> &path, const Vector2 &startPos)
     for (const auto &point : path)
     {
         Vector2 b = ToVector2(point) + Vector2(.5, .5);
-        DrawLineV(GameManager::WorldToScreen(a), GameManager::WorldToScreen(b), Fade(GREEN, .5));
+        DrawLineEx(GameManager::WorldToScreen(a), GameManager::WorldToScreen(b), 3, Fade(GREEN, .5));
         a = b;
     }
 }

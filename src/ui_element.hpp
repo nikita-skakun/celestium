@@ -1,5 +1,6 @@
 #pragma once
 #include "asset_manager.hpp"
+#include "audio_manager.hpp"
 
 struct UiElement
 {
@@ -167,6 +168,42 @@ public:
     UiComboBox(const Rectangle &rect, std::string text, int startingState, std::function<void(int)> onPress = nullptr, const TextAttrs &textAttrs = TextAttrs(),
                std::function<void()> onUpdate = nullptr, bool inWorldSpace = false)
         : UiElement(rect, onUpdate, inWorldSpace), text(text), state(startingState), onPress(onPress), textAttrs(textAttrs) {}
+
+    void Render() override;
+};
+
+struct UiSlider : UiElement
+{
+protected:
+    float value;
+    float minValue;
+    float maxValue;
+    std::function<void(float)> onSlide;
+
+public:
+    UiSlider(const Rectangle &rect, float startingValue, float minValue, float maxValue, std::function<void(float)> onSlide = nullptr,
+             std::function<void()> onUpdate = nullptr, bool inWorldSpace = false)
+        : UiElement(rect, onUpdate, inWorldSpace), value(startingValue), minValue(minValue), maxValue(maxValue), onSlide(onSlide) {}
+
+    constexpr void SetValue(float newValue) { value = newValue; }
+
+    void Render() override;
+};
+
+struct UiSliderBar : UiElement
+{
+protected:
+    float value;
+    float minValue;
+    float maxValue;
+    std::function<void(float)> onSlide;
+
+public:
+    UiSliderBar(const Rectangle &rect, float startingValue, float minValue, float maxValue, std::function<void(float)> onSlide = nullptr,
+                std::function<void()> onUpdate = nullptr, bool inWorldSpace = false)
+        : UiElement(rect, onUpdate, inWorldSpace), value(startingValue), minValue(minValue), maxValue(maxValue), onSlide(onSlide) {}
+
+    constexpr void SetValue(float newValue) { value = newValue; }
 
     void Render() override;
 };
