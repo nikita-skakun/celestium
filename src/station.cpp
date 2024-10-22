@@ -1,5 +1,6 @@
 #include "station.hpp"
 #include "audio_manager.hpp"
+#include "game_state.hpp"
 
 std::shared_ptr<Room> CreateRectRoom(const Vector2Int &pos, const Vector2Int &size, std::shared_ptr<Station> station)
 {
@@ -96,10 +97,12 @@ std::shared_ptr<Station> CreateStation()
         if (!station || !fireAlarm)
             return true;
 
-        if (station->HasEffectOfType<FireEffect>())
-            fireAlarm->Play();
-        else
+        if (!station->HasEffectOfType<FireEffect>())
             fireAlarm->Stop();
+        else if (GameManager::GetCamera().IsInBuildMode())
+            fireAlarm->Pause();
+        else
+            fireAlarm->Play();
 
         return false;
     };

@@ -190,7 +190,7 @@ void InitializeBuildUi()
                                 auto selectedTile = GameManager::GetSelectedTile();
                                 bool visible = GameManager::GetCamera().IsInBuildMode() && selectedTile;
                                 if (visible && ToVector2Int(RectToPos(buildMoveButton->GetRect())) != selectedTile->GetPosition()) {
-                                    buildMoveButton->SetRect(Vector2ToRect(ToVector2(selectedTile->GetPosition()) + Vector2(1 + buttonSize.x / 2., (1. - buttonSize.y) / 2.), buttonSize));
+                                    buildMoveButton->SetRect(Vector2ToRect(ToVector2(selectedTile->GetPosition()) + Vector2(1 + buttonSize.x / 2., (.5 - buttonSize.y) / 2.), buttonSize));
                                 }
                                 buildMoveButton->SetVisible(visible);
                             } });
@@ -207,12 +207,47 @@ void InitializeBuildUi()
                                 auto selectedTile = GameManager::GetSelectedTile();
                                 bool visible = GameManager::GetCamera().IsInBuildMode() && selectedTile;
                                 if (visible && ToVector2Int(RectToPos(buildMoveIcon->GetRect())) != selectedTile->GetPosition()) {
-                                    buildMoveIcon->SetRect(Vector2ToRect(ToVector2(selectedTile->GetPosition()) + Vector2(1 + buttonSize.x / 2., (1. - buttonSize.y) / 2.) + offset, buttonSize * iconSize));
+                                    buildMoveIcon->SetRect(Vector2ToRect(ToVector2(selectedTile->GetPosition()) + Vector2(1 + buttonSize.x / 2., (.5 - buttonSize.y) / 2.) + offset, buttonSize * iconSize));
                                 }
                             } });
 
     buildMoveButton->AddChild(buildMoveIcon);
     UiManager::AddElement("BUILD_MOVE_BTN", buildMoveButton);
+
+    auto buildDeleteButton = std::make_shared<UiButton>(Rectangle(0, 0, 1, 1), "", nullptr, TextAttrs(), nullptr, true);
+    buildDeleteButton->SetVisible(false);
+
+    std::weak_ptr<UiButton> weakBuildDeleteButton = buildDeleteButton;
+    buildDeleteButton->SetOnUpdate([weakBuildDeleteButton]()
+                                   { if (auto buildDeleteButton = weakBuildDeleteButton.lock())
+                            { 
+                                constexpr Vector2 buttonSize = Vector2(1. / 3., 1. / 3.);
+                                auto selectedTile = GameManager::GetSelectedTile();
+                                bool visible = GameManager::GetCamera().IsInBuildMode() && selectedTile;
+                                if (visible && ToVector2Int(RectToPos(buildDeleteButton->GetRect())) != selectedTile->GetPosition()) {
+                                    buildDeleteButton->SetRect(Vector2ToRect(ToVector2(selectedTile->GetPosition()) + Vector2(1 + buttonSize.x / 2., 1. - ((.5 + buttonSize.y) / 2.)), buttonSize));
+                                }
+                                buildDeleteButton->SetVisible(visible);
+                            } });
+
+    auto buildDeleteIcon = std::make_shared<UiIcon>(Rectangle(0, 0, 1, 1), "ICON", Rectangle(3, 1, 1, 1) * TILE_SIZE, Fade(DARKGRAY, .8), nullptr, true);
+
+    std::weak_ptr<UiIcon> weakBuildDeleteIcon = buildDeleteIcon;
+    buildDeleteIcon->SetOnUpdate([weakBuildDeleteIcon]()
+                                 { if (auto buildDeleteIcon = weakBuildDeleteIcon.lock())
+                            { 
+                                constexpr Vector2 buttonSize = Vector2(1. / 3., 1. / 3.);
+                                constexpr double iconSize = 2. / 3.;
+                                constexpr Vector2 offset = buttonSize * (1. - iconSize) / 2.;
+                                auto selectedTile = GameManager::GetSelectedTile();
+                                bool visible = GameManager::GetCamera().IsInBuildMode() && selectedTile;
+                                if (visible && ToVector2Int(RectToPos(buildDeleteIcon->GetRect())) != selectedTile->GetPosition()) {
+                                    buildDeleteIcon->SetRect(Vector2ToRect(ToVector2(selectedTile->GetPosition()) + Vector2(1 + buttonSize.x / 2., 1. - ((.5 + buttonSize.y) / 2.)) + offset, buttonSize * iconSize));
+                                }
+                            } });
+
+    buildDeleteButton->AddChild(buildDeleteIcon);
+    UiManager::AddElement("BUILD_DELETE_BTN", buildDeleteButton);
 }
 
 void UiManager::InitializeElements()
