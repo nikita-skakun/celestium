@@ -1,6 +1,8 @@
-#include "game_state.hpp"
 #define RAYGUI_IMPLEMENTATION
 #include "raygui.h"
+#undef RAYGUI_IMPLEMENTATION
+
+#include "game_state.hpp"
 #include "ui_element.hpp"
 
 Rectangle UiElement::GetRect() const

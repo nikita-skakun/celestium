@@ -1,3 +1,4 @@
+#include "audio_manager.hpp"
 #include "ui.hpp"
 #include "update.hpp"
 #include <condition_variable>
@@ -59,6 +60,8 @@ int main()
     DefinitionManager::ParseTilesFromFile("../assets/definitions/tiles.yml");
     DefinitionManager::ParseEffectsFromFile("../assets/definitions/env_effects.yml");
 
+    AudioManager::Initialize();
+
     auto &camera = GameManager::GetCamera();
 
     std::vector<Crew> crewList{
@@ -117,7 +120,8 @@ int main()
             DrawEnvironmentalEffects(station);
             DrawCrew(timeSinceFixedUpdate, crewList);
         }
-        else {
+        else
+        {
             DrawBuildUi(station);
         }
 
@@ -139,9 +143,10 @@ int main()
 
     updateThread.join();
 
-    CloseWindow();
-
     AssetManager::CleanUp();
+    AudioManager::CleanUp();
+
+    CloseWindow();
 
     LogMessage(LogLevel::INFO, "Clean-up Complete");
     return 0;

@@ -197,7 +197,7 @@ void Station::UpdateSpriteOffsets() const
                         tile->SetSpriteOffset(Vector2Int(1, 1));
                     else if (seSame && swSame && !neSame && !nwSame)
                         tile->SetSpriteOffset(Vector2Int(2, 1));
-                    else if (seSame && swSame && !neSame && !nwSame)
+                    else if (!seSame && !swSame && neSame && nwSame)
                         tile->SetSpriteOffset(Vector2Int(3, 1));
                     else
                         tile->SetSpriteOffset(Vector2Int(6, 1));
