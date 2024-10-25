@@ -193,7 +193,7 @@ void OxygenComponent::Diffuse(float deltaTime)
 
     auto station = parent->GetStation();
 
-    for (int i = 0; i < CARDINAL_DIRECTIONS.size(); i++)
+    for (int i = 0; i < (int)CARDINAL_DIRECTIONS.size(); i++)
     {
         Vector2Int neighborPos = parent->GetPosition() + DirectionToVector2Int(CARDINAL_DIRECTIONS.at(i));
 

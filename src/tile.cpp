@@ -55,6 +55,8 @@ void Tile::DeleteTile()
                                         [&self](const std::shared_ptr<Tile> &tile)
                                         { return tile == self; }),
                          tilesAtPos.end());
+
+        station->UpdateSpriteOffsets();
     }
 
     if (room)

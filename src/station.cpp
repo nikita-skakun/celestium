@@ -145,7 +145,7 @@ void Station::AddVisualWallHeight() const
             tilesToCheck.erase(tile);
         }
 
-        if (nTile.empty())
+        if (nTile.empty() && sTile && GetTileWithHeightAtPosition(tilePos + Vector2Int(0, 1), TileDef::Height::FLOOR))
         {
             auto decorative = tile->AddComponent<DecorativeComponent>(tile);
             decorative->AddDecorativeTile(Vector2Int(0, -1), tile->GetSpriteOffset());
@@ -175,7 +175,7 @@ void Station::UpdateSpriteOffsets() const
             const Vector2Int &tilePos = tile->GetPosition();
             const std::string &tileId = tile->GetId();
 
-            tile->RemoveComponent<DecorativeTile>();
+            tile->RemoveComponent<DecorativeComponent>();
 
             bool nSame = CheckAdjacentTile(tilePos, tileId, Direction::N);
             bool eSame = CheckAdjacentTile(tilePos, tileId, Direction::E);
@@ -417,4 +417,19 @@ std::vector<std::shared_ptr<Tile>> Station::GetAllTilesAtPosition(const Vector2I
     tilesAtPos.insert(tilesAtPos.begin(), tiles.begin(), tiles.end());
 
     return tilesAtPos;
+}
+
+std::shared_ptr<Tile> Station::GetTileWithHeightAtPosition(const Vector2Int &pos, TileDef::Height height) const
+{
+    auto posIt = tileMap.find(pos);
+    if (posIt == tileMap.end())
+        return nullptr;
+
+    for (const std::shared_ptr<Tile> &tile : posIt->second)
+    {
+        if (magic_enum::enum_flags_test(tile->GetHeight(), height))
+            return tile;
+    }
+
+    return nullptr;
 }
