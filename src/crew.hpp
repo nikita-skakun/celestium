@@ -12,7 +12,7 @@ protected:
     float oxygen;
     float health;
     bool isAlive;
-    std::shared_ptr<Tile> currentTile;
+    std::weak_ptr<Tile> currentTile;
 
 public:
     constexpr Crew(const std::string &n, const Vector2 &p, const Color &c)
@@ -27,7 +27,7 @@ public:
     constexpr float GetOxygen() const { return oxygen; }
     constexpr float GetHealth() const { return health; }
     constexpr bool IsAlive() const { return isAlive; }
-    std::shared_ptr<Tile> GetCurrentTile() const { return currentTile; }
+    std::shared_ptr<Tile> GetCurrentTile() const { return currentTile.lock(); }
     constexpr void SetCurrentTile(const std::shared_ptr<Tile> &tile) { currentTile = tile; }
 
     constexpr void ConsumeOxygen(float deltaTime)

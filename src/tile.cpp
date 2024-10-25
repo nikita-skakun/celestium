@@ -45,6 +45,9 @@ void Tile::DeleteTile()
 {
     auto self = shared_from_this();
 
+    if (auto powerConnector = GetComponent<PowerConnectorComponent>())
+        powerConnector->DisconnectFromAll();
+
     if (station)
     {
         auto &tilesAtPos = station->tileMap[position];

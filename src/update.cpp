@@ -34,7 +34,7 @@ void HandleMouseDragDuring(std::shared_ptr<Station> station)
     {
         camera.SetDragType(PlayerCam::DragType::SELECT);
 
-        if (camera.GetOverlay() == PlayerCam::Overlay::POWER && station &&
+        if (camera.IsOverlay(PlayerCam::Overlay::POWER) && station &&
             station->GetTileWithComponentAtPosition<PowerConnectorComponent>(ToVector2Int(camera.GetDragStart())))
         {
             camera.SetDragType(PlayerCam::DragType::POWER_CONNECT);
@@ -294,7 +294,7 @@ void UpdateEnvironmentalEffects(std::shared_ptr<Station> station)
 void MouseDeleteExistingConnection(std::shared_ptr<Station> station)
 {
     auto &camera = GameManager::GetCamera();
-    if (!station || !IsMouseButtonPressed(MOUSE_BUTTON_RIGHT) || camera.GetOverlay() != PlayerCam::Overlay::POWER)
+    if (!station || !IsMouseButtonPressed(MOUSE_BUTTON_RIGHT) || !camera.IsOverlay(PlayerCam::Overlay::POWER))
         return;
 
     Vector2 mousePos = GetMousePosition();

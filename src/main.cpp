@@ -97,9 +97,9 @@ int main()
                 HandleCrewHover(crewList);
                 HandleCrewSelection(crewList);
                 AssignCrewTasks(crewList);
-                HandleMouseDrag(station);
             }
 
+            HandleMouseDrag(station);
             MouseDeleteExistingConnection(station);
         }
 

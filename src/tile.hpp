@@ -58,7 +58,7 @@ public:
         }
         if (auto powerConnector = GetComponent<PowerConnectorComponent>())
         {
-            tileInfo += std::format("\n   + Power Connector: {}", magic_enum::enum_flags_name(powerConnector->GetIO()));
+            tileInfo += std::format("\n   + Power Connector: {} ({})", magic_enum::enum_flags_name(powerConnector->GetIo()), powerConnector->GetConnections().size());
         }
 
         return tileInfo;

@@ -22,7 +22,7 @@ struct GameManager
 private:
     GameState state = GameState::NONE;
     PlayerCam camera = PlayerCam();
-    std::shared_ptr<Tile> selectedTile;
+    std::weak_ptr<Tile> selectedTile;
 
     GameManager() = default;
     ~GameManager() = default;
@@ -54,8 +54,8 @@ public:
 
     static PlayerCam &GetCamera() { return GetInstance().camera; }
 
-    static const std::shared_ptr<Tile> &GetSelectedTile() { return GetInstance().selectedTile; }
-    static void SetSelectedTile(const std::shared_ptr<Tile> &selection) { GetInstance().selectedTile = selection; }
+    static std::shared_ptr<Tile> GetSelectedTile() { return GetInstance().selectedTile.lock(); }
+    static void SetSelectedTile(const std::shared_ptr<Tile> &selection = nullptr) { GetInstance().selectedTile = selection; }
 
     // Utility function for Screen to World space transformations
     static Vector2 GetWorldMousePos();

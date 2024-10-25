@@ -189,7 +189,7 @@ void InitializeBuildUi()
                                 constexpr Vector2 buttonSize = Vector2(1. / 3., 1. / 3.);
                                 auto selectedTile = GameManager::GetSelectedTile();
                                 bool visible = GameManager::GetCamera().IsInBuildMode() && selectedTile;
-                                if (visible && ToVector2Int(RectToPos(buildMoveButton->GetRect())) != selectedTile->GetPosition()) {
+                                if (visible) {
                                     buildMoveButton->SetRect(Vector2ToRect(ToVector2(selectedTile->GetPosition()) + Vector2(1 + buttonSize.x / 2., (.5 - buttonSize.y) / 2.), buttonSize));
                                 }
                                 buildMoveButton->SetVisible(visible);
@@ -206,7 +206,7 @@ void InitializeBuildUi()
                                 constexpr Vector2 offset = buttonSize * (1. - iconSize) / 2.;
                                 auto selectedTile = GameManager::GetSelectedTile();
                                 bool visible = GameManager::GetCamera().IsInBuildMode() && selectedTile;
-                                if (visible && ToVector2Int(RectToPos(buildMoveIcon->GetRect())) != selectedTile->GetPosition()) {
+                                if (visible) {
                                     buildMoveIcon->SetRect(Vector2ToRect(ToVector2(selectedTile->GetPosition()) + Vector2(1 + buttonSize.x / 2., (.5 - buttonSize.y) / 2.) + offset, buttonSize * iconSize));
                                 }
                             } });
@@ -214,7 +214,10 @@ void InitializeBuildUi()
     buildMoveButton->AddChild(buildMoveIcon);
     UiManager::AddElement("BUILD_MOVE_BTN", buildMoveButton);
 
-    auto buildDeleteButton = std::make_shared<UiButton>(Rectangle(0, 0, 1, 1), "", nullptr, TextAttrs(), nullptr, true);
+    auto buildDeleteButton = std::make_shared<UiButton>(Rectangle(0, 0, 1, 1), "", []() {
+        GameManager::GetSelectedTile()->DeleteTile();
+        GameManager::SetSelectedTile(nullptr);
+    }, TextAttrs(), nullptr, true);
     buildDeleteButton->SetVisible(false);
 
     std::weak_ptr<UiButton> weakBuildDeleteButton = buildDeleteButton;
@@ -224,7 +227,7 @@ void InitializeBuildUi()
                                 constexpr Vector2 buttonSize = Vector2(1. / 3., 1. / 3.);
                                 auto selectedTile = GameManager::GetSelectedTile();
                                 bool visible = GameManager::GetCamera().IsInBuildMode() && selectedTile;
-                                if (visible && ToVector2Int(RectToPos(buildDeleteButton->GetRect())) != selectedTile->GetPosition()) {
+                                if (visible) {
                                     buildDeleteButton->SetRect(Vector2ToRect(ToVector2(selectedTile->GetPosition()) + Vector2(1 + buttonSize.x / 2., 1. - ((.5 + buttonSize.y) / 2.)), buttonSize));
                                 }
                                 buildDeleteButton->SetVisible(visible);
@@ -241,7 +244,7 @@ void InitializeBuildUi()
                                 constexpr Vector2 offset = buttonSize * (1. - iconSize) / 2.;
                                 auto selectedTile = GameManager::GetSelectedTile();
                                 bool visible = GameManager::GetCamera().IsInBuildMode() && selectedTile;
-                                if (visible && ToVector2Int(RectToPos(buildDeleteIcon->GetRect())) != selectedTile->GetPosition()) {
+                                if (visible) {
                                     buildDeleteIcon->SetRect(Vector2ToRect(ToVector2(selectedTile->GetPosition()) + Vector2(1 + buttonSize.x / 2., 1. - ((.5 + buttonSize.y) / 2.)) + offset, buttonSize * iconSize));
                                 }
                             } });

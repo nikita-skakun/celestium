@@ -14,7 +14,7 @@ struct DecorativeTile
     DecorativeTile(const Vector2Int &offset, const Vector2Int &spriteOffset) : offset(offset), spriteOffset(spriteOffset) {}
 };
 
-struct Component
+struct Component : public std::enable_shared_from_this<Component>
 {
     enum class Type : u_int8_t
     {
@@ -109,7 +109,7 @@ public:
     std::vector<std::weak_ptr<PowerConnectorComponent>> _connections;
     PowerConnectorComponent(IO io, std::shared_ptr<Tile> parent = nullptr) : Component(parent), io(io) {}
 
-    constexpr IO GetIO() const
+    constexpr IO GetIo() const
     {
         return io;
     }
@@ -129,6 +129,22 @@ public:
         }
 
         return connections;
+    }
+
+    void DisconnectFromAll()
+    {
+        // Cast into PowerConnectorComponent
+        auto self = std::dynamic_pointer_cast<PowerConnectorComponent>(shared_from_this());
+
+        for (int i = _connections.size() - 1; i >= 0; --i)
+        {
+            if (auto connection = _connections[i].lock())
+            {
+                DeleteConnection(self, connection);
+            }
+            else
+                _connections.erase(_connections.begin() + i);
+        }
     }
 
     static bool AddConnection(std::shared_ptr<PowerConnectorComponent> a, std::shared_ptr<PowerConnectorComponent> b)

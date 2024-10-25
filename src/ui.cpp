@@ -74,7 +74,7 @@ void DrawStationTiles(std::shared_ptr<Station> station)
 
             DrawTexturePro(stationTileset, sourceRect, Vector2ToRect(startPos, tileSize), Vector2(), 0, tint);
 
-            if (camera.GetOverlay() == PlayerCam::Overlay::OXYGEN)
+            if (camera.IsOverlay(PlayerCam::Overlay::OXYGEN))
             {
                 if (auto oxygen = tile->GetComponent<OxygenComponent>())
                 {
@@ -83,7 +83,7 @@ void DrawStationTiles(std::shared_ptr<Station> station)
                 }
             }
 
-            if (camera.GetOverlay() == PlayerCam::Overlay::WALL && tile->HasComponent<SolidComponent>())
+            if (camera.IsOverlay(PlayerCam::Overlay::WALL) && tile->HasComponent<SolidComponent>())
             {
                 DrawRectangleV(startPos, tileSize, Color(255, 0, 0, 64));
             }
@@ -155,7 +155,7 @@ void DrawStationOverlays(std::shared_ptr<Station> station)
                 }
             }
 
-            if (camera.GetOverlay() == PlayerCam::Overlay::POWER)
+            if (camera.IsOverlay(PlayerCam::Overlay::POWER))
             {
                 if (auto battery = tile->GetComponent<BatteryComponent>())
                 {
