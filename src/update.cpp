@@ -248,32 +248,7 @@ void UpdateTiles(std::shared_ptr<Station> station)
 
             if (auto oxygen = tile->GetComponent<OxygenComponent>())
             {
-                std::vector<Vector2Int> neighbors = {
-                    tile->GetPosition() + Vector2Int(1, 0),  // Right
-                    tile->GetPosition() + Vector2Int(-1, 0), // Left
-                    tile->GetPosition() + Vector2Int(0, 1),  // Down
-                    tile->GetPosition() + Vector2Int(0, -1), // Up
-                };
-
-                for (int i = 0; i < (int)neighbors.size(); i++)
-                {
-                    std::shared_ptr<Tile> neighbor = station->GetTileWithComponentAtPosition<OxygenComponent>(neighbors[i]);
-                    if (!neighbor)
-                        continue;
-
-                    if (station->GetTileWithComponentAtPosition<SolidComponent>(neighbors[i]))
-                        continue;
-
-                    auto neighborOxygen = neighbor->GetComponent<OxygenComponent>();
-                    double oxygenDiff = oxygen->GetOxygenLevel() - neighborOxygen->GetOxygenLevel();
-
-                    if (oxygenDiff <= 0)
-                        continue;
-
-                    float oxygenTransfer = std::min(oxygenDiff * OXYGEN_DIFFUSION_RATE * FIXED_DELTA_TIME, oxygenDiff);
-                    oxygen->SetOxygenLevel(oxygen->GetOxygenLevel() - oxygenTransfer);
-                    neighborOxygen->SetOxygenLevel(neighborOxygen->GetOxygenLevel() + oxygenTransfer);
-                }
+              oxygen->Diffuse(FIXED_DELTA_TIME);
             }
         }
     }

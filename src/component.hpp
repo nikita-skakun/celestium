@@ -357,6 +357,8 @@ public:
         return oxygenLevel;
     }
 
+    void Diffuse(float deltaTime);
+
     std::shared_ptr<Component> Clone(std::shared_ptr<Tile> newParent) const override
     {
         return std::make_shared<OxygenComponent>(oxygenLevel, newParent);

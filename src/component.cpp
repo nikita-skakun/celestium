@@ -184,3 +184,40 @@ void DurabilityComponent::SetHitpoints(float newHitpoints)
 
     _parent.lock()->DeleteTile();
 }
+
+void OxygenComponent::Diffuse(float deltaTime)
+{
+    auto parent = _parent.lock();
+    if (!parent || !parent->GetStation())
+        return;
+
+    auto station = parent->GetStation();
+
+    for (int i = 0; i < CARDINAL_DIRECTIONS.size(); i++)
+    {
+        Vector2Int neighborPos = parent->GetPosition() + DirectionToVector2Int(CARDINAL_DIRECTIONS.at(i));
+
+        if (!station->GetTileAtPosition(neighborPos))
+        {
+            SetOxygenLevel(GetOxygenLevel() - GetOxygenLevel() * OXYGEN_DIFFUSION_RATE * deltaTime);
+            continue;
+        }
+
+        if (station->GetTileWithComponentAtPosition<SolidComponent>(neighborPos))
+            continue;
+
+        std::shared_ptr<Tile> neighborWithOxygen = station->GetTileWithComponentAtPosition<OxygenComponent>(neighborPos);
+        if (!neighborWithOxygen)
+            continue;
+
+        auto neighborOxygen = neighborWithOxygen->GetComponent<OxygenComponent>();
+        double oxygenDiff = GetOxygenLevel() - neighborOxygen->GetOxygenLevel();
+
+        if (oxygenDiff <= 0)
+            continue;
+
+        float oxygenTransfer = std::min(oxygenDiff * OXYGEN_DIFFUSION_RATE * deltaTime, oxygenDiff);
+        SetOxygenLevel(GetOxygenLevel() - oxygenTransfer);
+        neighborOxygen->SetOxygenLevel(neighborOxygen->GetOxygenLevel() + oxygenTransfer);
+    }
+}
