@@ -248,7 +248,7 @@ void UpdateTiles(std::shared_ptr<Station> station)
 
             if (auto oxygen = tile->GetComponent<OxygenComponent>())
             {
-              oxygen->Diffuse(FIXED_DELTA_TIME);
+                oxygen->Diffuse(FIXED_DELTA_TIME);
             }
         }
     }

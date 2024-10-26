@@ -62,6 +62,7 @@ int main()
     AudioManager::Initialize();
 
     auto &camera = GameManager::GetCamera();
+    camera.SetBuildModeState(true);
 
     std::vector<Crew> crewList{
         Crew("ALICE", {-2, 2}, RED),
