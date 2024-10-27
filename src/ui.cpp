@@ -1,5 +1,14 @@
 #include "ui.hpp"
 
+Color OscillateSelectedColor(std::shared_ptr<Tile> tile)
+{
+    Color tint = WHITE;
+    if (GameManager::GetCamera().IsInBuildMode() && GameManager::GetSelectedTile() == tile)
+        tint = ColorLerp(WHITE, TILE_SELECTION_TINT, Oscillate(GetTime(), .5));
+
+    return tint;
+}
+
 /**
  * Draws a grid of tiles on the screen based on the current camera position and zoom level.
  */
@@ -68,11 +77,7 @@ void DrawStationTiles(std::shared_ptr<Station> station)
             Vector2 startPos = GameManager::WorldToScreen(tile->GetPosition());
             Rectangle sourceRect = Rectangle(tile->GetSpriteOffset().x, tile->GetSpriteOffset().y, 1, 1) * TILE_SIZE;
 
-            Color tint = WHITE;
-            if (camera.IsInBuildMode() && GameManager::GetSelectedTile() == tile)
-                tint = ColorLerp(WHITE, TILE_SELECTION_TINT, Oscillate(GetTime(), .5));
-
-            DrawTexturePro(stationTileset, sourceRect, Vector2ToRect(startPos, tileSize), Vector2(), 0, tint);
+            DrawTexturePro(stationTileset, sourceRect, Vector2ToRect(startPos, tileSize), Vector2(), 0, OscillateSelectedColor(tile));
 
             if (camera.IsOverlay(PlayerCam::Overlay::OXYGEN))
             {
@@ -110,6 +115,8 @@ void DrawStationOverlays(std::shared_ptr<Station> station)
     {
         for (const auto &tile : tilesAtPos.second)
         {
+            Color tint = OscillateSelectedColor(tile);
+
             if (auto decorative = tile->GetComponent<DecorativeComponent>())
             {
                 for (const DecorativeTile &dTile : decorative->GetDecorativeTiles())
@@ -118,12 +125,13 @@ void DrawStationOverlays(std::shared_ptr<Station> station)
                     Vector2 startPos = GameManager::WorldToScreen(tile->GetPosition() + dTile.offset);
                     Rectangle destRect = Rectangle(startPos.x, startPos.y, tileSize.x, tileSize.y);
 
-                    DrawTexturePro(stationTileset, sourceRect, destRect, Vector2(), 0, WHITE);
+                    DrawTexturePro(stationTileset, sourceRect, destRect, Vector2(), 0, tint);
                 }
             }
 
             if (auto door = tile->GetComponent<DoorComponent>())
             {
+
                 Vector2 startPos = GameManager::WorldToScreen(tile->GetPosition());
                 Rectangle destRect = Vector2ToRect(startPos, tileSize);
                 Rectangle doorSourceRect = Rectangle(0, 7, 1, 1) * TILE_SIZE;
@@ -133,14 +141,14 @@ void DrawStationOverlays(std::shared_ptr<Station> station)
                 doorDest1.height = std::max(25. * door->GetProgress(), 1.) * camera.GetZoom();
                 doorDest1.y += (TILE_SIZE + 9.) * camera.GetZoom() - doorDest1.height;
 
-                DrawTexturePro(stationTileset, doorSourceRect, doorDest1, Vector2(), 0, WHITE);
+                DrawTexturePro(stationTileset, doorSourceRect, doorDest1, Vector2(), 0, tint);
 
                 Rectangle doorDest2 = destRect;
                 doorDest2.width = -doorDest2.width;
                 doorDest2.height = -doorDest1.height;
                 doorDest2.y -= 9. * camera.GetZoom() + doorDest2.height;
 
-                DrawTexturePro(stationTileset, doorSourceRect, doorDest2, Vector2(-doorDest2.width, 0), 180, WHITE);
+                DrawTexturePro(stationTileset, doorSourceRect, doorDest2, Vector2(-doorDest2.width, 0), 180, tint);
             }
 
             if (auto powerConsumer = tile->GetComponent<PowerConsumerComponent>())
