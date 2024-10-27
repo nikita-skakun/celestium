@@ -38,50 +38,8 @@ private:
     UiState uiState = UiState::NONE;
     bool buildMode = false;
 
-    /**
-     * Handles camera movement and zoom based on user input.
-     */
-    void HandleMovement()
-    {
-        if (uiState != UiState::NONE)
-            return;
-
-        // Update zoom based on mouse wheel input, clamping to min and max values
-        zoom = std::clamp(zoom + GetMouseWheelMove() * ZOOM_SPEED * zoom, MIN_ZOOM, MAX_ZOOM);
-
-        // Move camera position if the middle mouse button is pressed
-        if (IsMouseButtonDown(MOUSE_MIDDLE_BUTTON))
-        {
-            position -= (GetMouseDelta() / zoom / TILE_SIZE);
-        }
-    }
-
-    /**
-     * Toggles camera overlays based on user key input.
-     */
-    void HandleOverlays()
-    {
-        if (uiState != UiState::NONE)
-            return;
-
-        if (IsKeyPressed(KEY_O))
-            ToggleOverlay(Overlay::OXYGEN);
-
-        if (IsKeyPressed(KEY_W))
-            ToggleOverlay(Overlay::WALL);
-
-        if (IsKeyPressed(KEY_P))
-            ToggleOverlay(Overlay::POWER);
-    }
-
-    /**
-     * Toggles UI state based on user key input.
-     */
-    void HandleUiStates()
-    {
-        if (IsKeyPressed(KEY_ESCAPE))
-            uiState = uiState == UiState::NONE ? UiState::ESC_MENU : UiState::NONE;
-    }
+    void HandleMovement();
+    void HandleStateInputs();
 
 public:
     PlayerCam() {}
@@ -100,14 +58,7 @@ public:
     constexpr const std::unordered_set<int> &GetSelectedCrew() const { return selectedCrewList; }
     constexpr void ClearSelectedCrew() { selectedCrewList.clear(); }
     constexpr void AddSelectedCrew(int crewIndex) { selectedCrewList.insert(crewIndex); }
-    void ToggleSelectedCrew(int crewIndex)
-    {
-        const auto selectedCrewListIter = selectedCrewList.find(crewIndex);
-        if (selectedCrewListIter == selectedCrewList.end())
-            selectedCrewList.insert(crewIndex);
-        else
-            selectedCrewList.erase(selectedCrewListIter);
-    }
+    void ToggleSelectedCrew(int crewIndex);
 
     constexpr int GetCrewHoverIndex() const { return crewHoverIndex; }
     constexpr void SetCrewHoverIndex(int newIndex) { crewHoverIndex = newIndex; }
@@ -122,6 +73,7 @@ public:
 
     constexpr UiState GetUiState() const { return uiState; }
     constexpr void SetUiState(UiState newUiState) { uiState = newUiState; }
+    constexpr void ToggleUiState(UiState targetUiState) { uiState = (uiState != targetUiState) ? targetUiState : UiState::NONE; }
     constexpr bool IsUiState(UiState other) const { return uiState == other; }
     constexpr bool IsUiClear() const { return uiState == UiState::NONE; }
 
@@ -132,7 +84,6 @@ public:
     constexpr void HandleCamera()
     {
         HandleMovement();
-        HandleOverlays();
-        HandleUiStates();
+        HandleStateInputs();
     }
 };
