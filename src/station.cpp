@@ -67,16 +67,16 @@ std::shared_ptr<Station> CreateStation()
     auto oxygenProducer1 = Tile::CreateTile("OXYGEN_PRODUCER", Vector2Int(0, 0), station, room1);
     auto oxygenProducer2 = Tile::CreateTile("OXYGEN_PRODUCER", Vector2Int(14, 0), station, room2);
     auto battery = Tile::CreateTile("BATTERY", Vector2Int(3, -3), station, room1);
+    Tile::CreateTile("FRAME", Vector2Int(0, -5), station);
     Tile::CreateTile("FRAME", Vector2Int(0, -6), station);
+    Tile::CreateTile("FRAME", Vector2Int(-1, -6), station);
+    Tile::CreateTile("FRAME", Vector2Int(1, -6), station);
     Tile::CreateTile("FRAME", Vector2Int(0, -7), station);
     Tile::CreateTile("FRAME", Vector2Int(-1, -7), station);
     Tile::CreateTile("FRAME", Vector2Int(1, -7), station);
-    Tile::CreateTile("FRAME", Vector2Int(0, -8), station);
-    Tile::CreateTile("FRAME", Vector2Int(-1, -8), station);
-    Tile::CreateTile("FRAME", Vector2Int(1, -8), station);
-    auto panel1 = Tile::CreateTile("SOLAR_PANEL", Vector2Int(0, -8), station);
-    auto panel2 = Tile::CreateTile("SOLAR_PANEL", Vector2Int(-1, -8), station);
-    auto panel3 = Tile::CreateTile("SOLAR_PANEL", Vector2Int(1, -8), station);
+    auto panel1 = Tile::CreateTile("SOLAR_PANEL", Vector2Int(0, -7), station);
+    auto panel2 = Tile::CreateTile("SOLAR_PANEL", Vector2Int(-1, -7), station);
+    auto panel3 = Tile::CreateTile("SOLAR_PANEL", Vector2Int(1, -7), station);
 
     PowerConnectorComponent::AddConnection(battery->GetComponent<PowerConnectorComponent>(), panel1->GetComponent<PowerConnectorComponent>());
     PowerConnectorComponent::AddConnection(battery->GetComponent<PowerConnectorComponent>(), panel2->GetComponent<PowerConnectorComponent>());
@@ -108,62 +108,6 @@ std::shared_ptr<Station> CreateStation()
     };
 
     return station;
-}
-
-void Station::AddVisualWallHeight() const
-{
-    std::unordered_map<std::shared_ptr<Tile>, Vector2Int> queuedSpriteOffsets;
-    std::unordered_set<std::shared_ptr<Tile>> tilesToCheck;
-    std::vector<std::shared_ptr<Tile>> wallTiles;
-
-    for (const auto &tilesAtPos : tileMap)
-    {
-        for (const auto &tile : tilesAtPos.second)
-        {
-            if (tile->GetId() == "WALL")
-                wallTiles.push_back(tile);
-        }
-    }
-    std::sort(wallTiles.begin(), wallTiles.end(), [](const std::shared_ptr<Tile> &a, const std::shared_ptr<Tile> &b)
-              { return a->GetPosition().y < b->GetPosition().y; });
-
-    for (const auto &tile : wallTiles)
-    {
-        const Vector2Int &tilePos = tile->GetPosition();
-
-        auto sTile = GetTileAtPosition(tilePos + Vector2Int(0, 1));
-        auto ssTile = GetTileAtPosition(tilePos + Vector2Int(0, 2));
-        auto nTile = GetTileIdAtPosition(tilePos + Vector2Int(0, -1));
-
-        if (Contains(tilesToCheck, tile) || nTile.empty())
-        {
-            if (sTile && ssTile)
-            {
-                queuedSpriteOffsets.emplace(tile, sTile->GetId() == tile->GetId() ? sTile->GetSpriteOffset() : Vector2Int(4, 1));
-                tilesToCheck.insert(sTile);
-            }
-            tilesToCheck.erase(tile);
-        }
-
-        if (nTile.empty() && sTile && GetTileWithHeightAtPosition(tilePos + Vector2Int(0, 1), TileDef::Height::FLOOR))
-        {
-            auto decorative = tile->AddComponent<DecorativeComponent>(tile);
-            decorative->AddDecorativeTile(Vector2Int(0, -1), tile->GetSpriteOffset());
-        }
-
-        if (!sTile)
-        {
-            auto decorative = tile->AddComponent<DecorativeComponent>(tile);
-            decorative->AddDecorativeTile(Vector2Int(0, 1), Vector2Int(Vector2IntToRandomInt(tilePos, 4, 5), 3));
-            if (GetTileIdAtPosition(tilePos + Vector2Int(0, 2)).empty())
-                decorative->AddDecorativeTile(Vector2Int(0, 2), Vector2Int(Vector2IntToRandomInt(tilePos, 6, 7), 3));
-        }
-    }
-
-    for (const auto &queued : queuedSpriteOffsets)
-    {
-        queued.first->SetSpriteOffset(queued.second);
-    }
 }
 
 void Station::UpdateSpriteOffsets() const
@@ -292,8 +236,6 @@ void Station::UpdateSpriteOffsets() const
             }
         }
     }
-
-    AddVisualWallHeight();
 }
 
 std::string Station::GetTileIdAtPosition(const Vector2Int &pos, TileDef::Height height) const
