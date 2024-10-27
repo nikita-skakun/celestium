@@ -18,30 +18,6 @@ void PlayerCam::HandleMovement()
     }
 }
 
-/**
- * Toggles camera state based on user key input.
- */
-void PlayerCam::HandleStateInputs()
-{
-    if (IsKeyPressed(KEY_ESCAPE))
-        ToggleUiState(UiState::ESC_MENU);
-
-    if (uiState != UiState::NONE)
-        return;
-
-    if (IsKeyPressed(KEY_O))
-        ToggleOverlay(Overlay::OXYGEN);
-
-    if (IsKeyPressed(KEY_W))
-        ToggleOverlay(Overlay::WALL);
-
-    if (IsKeyPressed(KEY_P))
-        ToggleOverlay(Overlay::POWER);
-
-    if (IsKeyPressed(KEY_B))
-        ToggleBuildGameState();
-}
-
 void PlayerCam::ToggleSelectedCrew(int crewIndex)
 {
     const auto selectedCrewListIter = selectedCrewList.find(crewIndex);

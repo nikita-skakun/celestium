@@ -1,6 +1,32 @@
 #include "game_state.hpp"
 
 /**
+ * Toggles camera state based on user key input.
+ */
+void GameManager::HandleStateInputs()
+{
+    auto &camera = GetInstance().camera;
+
+    if (IsKeyPressed(KEY_ESCAPE))
+        camera.ToggleUiState(PlayerCam::UiState::ESC_MENU);
+
+    if (!camera.IsUiState(PlayerCam::UiState::NONE))
+        return;
+
+    if (IsKeyPressed(KEY_O))
+        camera.ToggleOverlay(PlayerCam::Overlay::OXYGEN);
+
+    if (IsKeyPressed(KEY_W))
+        camera.ToggleOverlay(PlayerCam::Overlay::WALL);
+
+    if (IsKeyPressed(KEY_P))
+        camera.ToggleOverlay(PlayerCam::Overlay::POWER);
+
+    if (IsKeyPressed(KEY_B))
+        GetInstance().ToggleBuildGameState();
+}
+
+/**
  * Converts the current mouse position from screen coordinates to world coordinates.
  *
  * @return The world position of the mouse as a Vector2.

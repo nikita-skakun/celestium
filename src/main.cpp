@@ -54,6 +54,7 @@ int main()
     SetExitKey(0);
 
     GameManager::SetGameState(GameState::RUNNING);
+    GameManager::SetBuildModeState(true);
 
     AssetManager::Initialize();
     DefinitionManager::ParseTilesFromFile("../assets/definitions/tiles.yml");
@@ -62,7 +63,6 @@ int main()
     AudioManager::Initialize();
 
     auto &camera = GameManager::GetCamera();
-    camera.SetBuildModeState(true);
 
     std::vector<Crew> crewList{
         Crew("ALICE", {-2, 2}, RED),
@@ -83,17 +83,18 @@ int main()
 
     while (GameManager::IsGameRunning())
     {
-        bool forcePaused = camera.GetUiState() != PlayerCam::UiState::NONE || camera.IsInBuildMode();
+        bool forcePaused = camera.GetUiState() != PlayerCam::UiState::NONE || GameManager::IsInBuildMode();
         GameManager::SetGameState(GameState::FORCE_PAUSED, forcePaused);
 
         deltaTime = GetFrameTime();
 
         // Handle all real-time input and camera logic in the main thread
-        camera.HandleCamera();
+        camera.HandleMovement();
+        GameManager::HandleStateInputs();
 
         if (!UiManager::IsMouseOverUiElement())
         {
-            if (!camera.IsInBuildMode())
+            if (!GameManager::IsInBuildMode())
             {
                 HandleCrewHover(crewList);
                 HandleCrewSelection(crewList);
@@ -115,7 +116,7 @@ int main()
         DrawStationTiles(station);
         DrawStationOverlays(station);
 
-        if (!camera.IsInBuildMode())
+        if (!GameManager::IsInBuildMode())
         {
             DrawEnvironmentalEffects(station);
             DrawCrew(timeSinceFixedUpdate, crewList);

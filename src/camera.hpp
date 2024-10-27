@@ -36,10 +36,6 @@ private:
     float zoom = 1.f;
     Overlay overlay = Overlay::NONE;
     UiState uiState = UiState::NONE;
-    bool buildMode = false;
-
-    void HandleMovement();
-    void HandleStateInputs();
 
 public:
     PlayerCam() {}
@@ -77,13 +73,5 @@ public:
     constexpr bool IsUiState(UiState other) const { return uiState == other; }
     constexpr bool IsUiClear() const { return uiState == UiState::NONE; }
 
-    constexpr bool IsInBuildMode() const { return buildMode; }
-    constexpr void SetBuildModeState(bool newState) { buildMode = newState; }
-    constexpr void ToggleBuildGameState() { buildMode = !buildMode; }
-
-    constexpr void HandleCamera()
-    {
-        HandleMovement();
-        HandleStateInputs();
-    }
+    void HandleMovement();
 };

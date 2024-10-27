@@ -133,9 +133,9 @@ void InitializeSidebar()
     constexpr Vector2 spacing = Vector2ScreenScale(Vector2(DEFAULT_PADDING, DEFAULT_PADDING));
 
     constexpr Rectangle buildButtonRect = Vector2ToRect(Vector2(1. - spacing.x - largeButtonSize.x, (1. - largeButtonSize.y) / 2.), largeButtonSize);
-    bool isInBuildMode = GameManager::GetCamera().IsInBuildMode();
+    bool isInBuildMode = GameManager::IsInBuildMode();
     auto buildToggle = std::make_shared<UiToggle>(buildButtonRect, isInBuildMode, [](bool state)
-                                                  { GameManager::GetCamera().SetBuildModeState(state); });
+                                                  { GameManager::SetBuildModeState(state); });
 
     constexpr Rectangle buildIconRect = Vector2ToRect(Vector2(buildButtonRect.x, buildButtonRect.y) + largeButtonSize / 8., largeButtonSize * .75);
     buildToggle->AddChild(std::make_shared<UiIcon>(buildIconRect, "ICON", Rectangle(1, 1, 1, 1) * TILE_SIZE, Fade(DARKGRAY, .8)));
@@ -145,7 +145,7 @@ void InitializeSidebar()
                              { if (auto buildToggle = weakBuildToggle.lock())
         { 
             buildToggle->SetVisible(GameManager::GetCamera().IsUiClear());
-            buildToggle->SetToggle(GameManager::GetCamera().IsInBuildMode());
+            buildToggle->SetToggle(GameManager::IsInBuildMode());
         } });
 
     UiManager::AddElement("BUILD_TGL", buildToggle);
@@ -190,7 +190,7 @@ void InitializeBuildWorldUi()
                             { 
                                 constexpr Vector2 buttonSize = Vector2(1. / 3., 1. / 3.);
                                 auto selectedTile = GameManager::GetSelectedTile();
-                                bool visible = GameManager::GetCamera().IsInBuildMode() && selectedTile;
+                                bool visible = GameManager::IsInBuildMode() && selectedTile;
                                 if (visible) {
                                     buildMoveButton->SetRect(Vector2ToRect(ToVector2(selectedTile->GetPosition()) + Vector2(1 + buttonSize.x / 2., (.5 - buttonSize.y) / 2.), buttonSize));
                                 }
@@ -207,7 +207,7 @@ void InitializeBuildWorldUi()
                                 constexpr double iconSize = 2. / 3.;
                                 constexpr Vector2 offset = buttonSize * (1. - iconSize) / 2.;
                                 auto selectedTile = GameManager::GetSelectedTile();
-                                bool visible = GameManager::GetCamera().IsInBuildMode() && selectedTile;
+                                bool visible = GameManager::IsInBuildMode() && selectedTile;
                                 if (visible) {
                                     buildMoveIcon->SetRect(Vector2ToRect(ToVector2(selectedTile->GetPosition()) + Vector2(1 + buttonSize.x / 2., (.5 - buttonSize.y) / 2.) + offset, buttonSize * iconSize));
                                 }
@@ -228,7 +228,7 @@ void InitializeBuildWorldUi()
                             { 
                                 constexpr Vector2 buttonSize = Vector2(1. / 3., 1. / 3.);
                                 auto selectedTile = GameManager::GetSelectedTile();
-                                bool visible = GameManager::GetCamera().IsInBuildMode() && selectedTile;
+                                bool visible = GameManager::IsInBuildMode() && selectedTile;
                                 if (visible) {
                                     buildDeleteButton->SetRect(Vector2ToRect(ToVector2(selectedTile->GetPosition()) + Vector2(1 + buttonSize.x / 2., 1. - ((.5 + buttonSize.y) / 2.)), buttonSize));
                                 }
@@ -245,7 +245,7 @@ void InitializeBuildWorldUi()
                                 constexpr double iconSize = 2. / 3.;
                                 constexpr Vector2 offset = buttonSize * (1. - iconSize) / 2.;
                                 auto selectedTile = GameManager::GetSelectedTile();
-                                bool visible = GameManager::GetCamera().IsInBuildMode() && selectedTile;
+                                bool visible = GameManager::IsInBuildMode() && selectedTile;
                                 if (visible) {
                                     buildDeleteIcon->SetRect(Vector2ToRect(ToVector2(selectedTile->GetPosition()) + Vector2(1 + buttonSize.x / 2., 1. - ((.5 + buttonSize.y) / 2.)) + offset, buttonSize * iconSize));
                                 }
@@ -265,7 +265,19 @@ void InitializeBuildMenu()
     std::weak_ptr<UiPanel> weakBuildMenu = buildMenu;
     buildMenu->SetOnUpdate([weakBuildMenu]()
                            { if (auto buildMenu = weakBuildMenu.lock())
-                             { buildMenu->SetVisible(GameManager::GetCamera().IsInBuildMode() && GameManager::GetCamera().IsUiClear()); } });
+                             { buildMenu->SetVisible(GameManager::IsInBuildMode() && GameManager::GetCamera().IsUiClear()); } });
+
+    constexpr Vector2 toggleSize = Vector2ScreenScale(Vector2(64, 64));
+    constexpr Vector2 togglePos = Vector2(menuPos.x + spacing.x, menuPos.y + spacing.y);
+
+    auto buildWallToggle = std::make_shared<UiToggle>(Vector2ToRect(togglePos, toggleSize), GameManager::IsBuildTileId("WALL"), [](bool state)
+                                                      { GameManager::SetBuildTileId(state ? "WALL" : ""); });
+    buildMenu->AddChild(buildWallToggle);
+
+    Rectangle buildWallIconRect = Vector2ToRect(togglePos + toggleSize / 8., toggleSize * .75);
+
+    auto buildWallIcon = std::make_shared<UiIcon>(buildWallIconRect, "STATION", Rectangle(3, 4, 1, 1) * TILE_SIZE, WHITE);
+    buildWallToggle->AddChild(buildWallIcon);
 
     UiManager::AddElement("BUILD_MENU", buildMenu);
 }

@@ -23,6 +23,8 @@ private:
     GameState state = GameState::NONE;
     PlayerCam camera = PlayerCam();
     std::weak_ptr<Tile> selectedTile;
+    bool buildMode = false;
+    std::string buildTileId = "";
 
     GameManager() = default;
     ~GameManager() = default;
@@ -53,9 +55,19 @@ public:
     }
 
     static PlayerCam &GetCamera() { return GetInstance().camera; }
+    static void HandleStateInputs();
 
     static std::shared_ptr<Tile> GetSelectedTile() { return GetInstance().selectedTile.lock(); }
     static void SetSelectedTile(const std::shared_ptr<Tile> &selection = nullptr) { GetInstance().selectedTile = selection; }
+
+    static const std::string &GetBuildTileId() { return GetInstance().buildTileId; }
+    static void SetBuildTileId(const std::string &tileId) { GetInstance().buildTileId = tileId; }
+    static void ToggleBuildTileId(const std::string &tileId) { GetInstance().buildTileId = GetInstance().buildTileId == tileId ? "" : tileId; }
+    static bool IsBuildTileId(const std::string &tileId) { return GetInstance().buildTileId == tileId; }
+
+    static bool IsInBuildMode() { return GetInstance().buildMode; }
+    static void SetBuildModeState(bool newState) { GetInstance().buildMode = newState; }
+    static void ToggleBuildGameState() { GetInstance().buildMode = !GetInstance().buildMode; }
 
     // Utility function for Screen to World space transformations
     static Vector2 GetWorldMousePos();

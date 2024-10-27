@@ -3,7 +3,7 @@
 Color OscillateSelectedColor(std::shared_ptr<Tile> tile)
 {
     Color tint = WHITE;
-    if (GameManager::GetCamera().IsInBuildMode() && GameManager::GetSelectedTile() == tile)
+    if (GameManager::IsInBuildMode() && GameManager::GetSelectedTile() == tile)
         tint = ColorLerp(WHITE, TILE_SELECTION_TINT, Oscillate(GetTime(), .5));
 
     return tint;
@@ -268,7 +268,6 @@ void DrawCrewCircle(const Crew &crew, const Vector2 &drawPosition, bool isSelect
  */
 void DrawCrew(double timeSinceFixedUpdate, const std::vector<Crew> &crewList)
 {
-    auto &camera = GameManager::GetCamera();
     for (const Crew &crew : crewList)
     {
         Vector2 drawPosition = crew.GetPosition();
@@ -278,7 +277,7 @@ void DrawCrew(double timeSinceFixedUpdate, const std::vector<Crew> &crewList)
         {
             const std::shared_ptr<MoveTask> moveTask = std::dynamic_pointer_cast<MoveTask>(taskQueue.front());
 
-            if (!camera.IsInBuildMode() && !moveTask->path.empty())
+            if (!GameManager::IsInBuildMode() && !moveTask->path.empty())
             {
                 DrawPath(moveTask->path, crew.GetPosition());
                 Vector2 nextPosition = ToVector2(moveTask->path.front());
@@ -307,7 +306,7 @@ void DrawCrew(double timeSinceFixedUpdate, const std::vector<Crew> &crewList)
             }
         }
 
-        DrawCrewCircle(crew, drawPosition, camera.GetSelectedCrew().contains(&crew - &crewList[0]));
+        DrawCrewCircle(crew, drawPosition, GameManager::GetCamera().GetSelectedCrew().contains(&crew - &crewList[0]));
     }
 }
 
@@ -409,7 +408,7 @@ void DrawMainTooltip(const std::vector<Crew> &crewList, std::shared_ptr<Station>
     auto &camera = GameManager::GetCamera();
 
     // Add crew info we are hovering over
-    if (!camera.IsInBuildMode() && camera.GetCrewHoverIndex() >= 0)
+    if (!GameManager::IsInBuildMode() && camera.GetCrewHoverIndex() >= 0)
     {
         const Crew &crew = crewList[camera.GetCrewHoverIndex()];
         hoverText += " - " + crew.GetName();
@@ -439,7 +438,7 @@ void DrawMainTooltip(const std::vector<Crew> &crewList, std::shared_ptr<Station>
             hoverText += tile->GetInfo();
         }
 
-        if (!camera.IsInBuildMode())
+        if (!GameManager::IsInBuildMode())
         {
             auto effects = station->GetEffectsAtPosition(tileHoverPos);
             for (auto &&effect : effects)
@@ -474,5 +473,29 @@ void DrawBuildUi(std::shared_ptr<Station> station)
     }
 
     if (IsMouseButtonPressed(MOUSE_LEFT_BUTTON))
-        GameManager::SetSelectedTile(hoveredTile);
+    {
+        const std::string &buildTileId = GameManager::GetBuildTileId();
+        if (buildTileId.empty())
+            GameManager::SetSelectedTile(hoveredTile);
+        else
+        {
+            auto tileDef = DefinitionManager::GetTileDefinition(buildTileId);
+            if (!tileDef)
+                return;
+
+            auto overlappingTiles = station->GetTilesWithHeightAtPosition(cursorPos, tileDef->GetHeight());
+            for (auto &tile : overlappingTiles)
+            {
+                tile->DeleteTile();
+            }
+
+            if (Tile::CreateTile(buildTileId, cursorPos, station))
+            {
+                station->UpdateSpriteOffsets();
+                LogMessage(LogLevel::DEBUG, std::format("Placed tile {} at {}", buildTileId, ToString(cursorPos)));
+            }
+            else
+                LogMessage(LogLevel::ERROR, std::format("Failed to place tile {} at {}", buildTileId, ToString(cursorPos)));
+        }
+    }
 }

@@ -99,7 +99,7 @@ std::shared_ptr<Station> CreateStation()
 
         if (!station->HasEffectOfType<FireEffect>())
             fireAlarm->Stop();
-        else if (GameManager::GetCamera().IsInBuildMode())
+        else if (GameManager::IsInBuildMode())
             fireAlarm->Pause();
         else
             fireAlarm->Play();
@@ -364,15 +364,26 @@ std::vector<std::shared_ptr<Tile>> Station::GetAllTilesAtPosition(const Vector2I
 
 std::shared_ptr<Tile> Station::GetTileWithHeightAtPosition(const Vector2Int &pos, TileDef::Height height) const
 {
-    auto posIt = tileMap.find(pos);
-    if (posIt == tileMap.end())
-        return nullptr;
-
-    for (const std::shared_ptr<Tile> &tile : posIt->second)
+    const auto &tilesAtPos = GetTilesAtPosition(pos);
+    for (const auto &tile : tilesAtPos)
     {
-        if (magic_enum::enum_flags_test(tile->GetHeight(), height))
+        if (magic_enum::enum_flags_test_any(tile->GetHeight(), height))
             return tile;
     }
 
     return nullptr;
+}
+
+std::vector<std::shared_ptr<Tile>> Station::GetTilesWithHeightAtPosition(const Vector2Int &pos, TileDef::Height height) const
+{
+    std::vector<std::shared_ptr<Tile>> foundTiles;
+
+    const auto &tilesAtPos = GetTilesAtPosition(pos);
+    for (const auto &tile : tilesAtPos)
+    {
+        if (magic_enum::enum_flags_test_any(tile->GetHeight(), height))
+            foundTiles.push_back(tile);
+    }
+
+    return foundTiles;
 }

@@ -17,6 +17,7 @@ public:
     std::vector<std::shared_ptr<Tile>> GetDecorativeTilesAtPosition(const Vector2Int &pos) const;
     std::vector<std::shared_ptr<Tile>> GetAllTilesAtPosition(const Vector2Int &pos) const;
     std::shared_ptr<Tile> GetTileWithHeightAtPosition(const Vector2Int &pos, TileDef::Height height) const;
+    std::vector<std::shared_ptr<Tile>> GetTilesWithHeightAtPosition(const Vector2Int &pos, TileDef::Height height) const;
     std::string GetTileIdAtPosition(const Vector2Int &pos, TileDef::Height height = TileDef::Height::NONE) const;
     void UpdateSpriteOffsets() const;
     bool IsPositionPathable(const Vector2Int &pos) const;
