@@ -230,9 +230,10 @@ void Station::UpdateSpriteOffsets() const
             }
             else if (tileId == "DOOR")
             {
-                tile->SetSpriteOffset(Vector2Int(0, 6));
+                tile->SetSpriteOffset(Vector2Int(0, 0));
                 auto decorative = tile->AddComponent<DecorativeComponent>(tile);
                 decorative->AddDecorativeTile(Vector2Int(0, -1), Vector2Int(0, 5));
+                decorative->AddDecorativeTile(Vector2Int(0, 1), Vector2Int(0, 6));
             }
         }
     }

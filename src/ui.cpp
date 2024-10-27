@@ -127,18 +127,18 @@ void DrawStationOverlays(std::shared_ptr<Station> station)
                 Vector2 startPos = GameManager::WorldToScreen(tile->GetPosition());
                 Rectangle destRect = Vector2ToRect(startPos, tileSize);
                 Rectangle doorSourceRect = Rectangle(0, 7, 1, 1) * TILE_SIZE;
-                doorSourceRect.height = std::max(19. * door->GetProgress(), 1.);
+                doorSourceRect.height = std::max(25. * door->GetProgress(), 1.);
 
                 Rectangle doorDest1 = destRect;
-                doorDest1.height = std::max(19. * door->GetProgress(), 1.) * camera.GetZoom();
-                doorDest1.y += 19. * camera.GetZoom() - doorDest1.height;
+                doorDest1.height = std::max(25. * door->GetProgress(), 1.) * camera.GetZoom();
+                doorDest1.y += (TILE_SIZE + 9.) * camera.GetZoom() - doorDest1.height;
 
                 DrawTexturePro(stationTileset, doorSourceRect, doorDest1, Vector2(), 0, WHITE);
 
                 Rectangle doorDest2 = destRect;
                 doorDest2.width = -doorDest2.width;
                 doorDest2.height = -doorDest1.height;
-                doorDest2.y -= 19. * camera.GetZoom() + doorDest2.height;
+                doorDest2.y -= 9. * camera.GetZoom() + doorDest2.height;
 
                 DrawTexturePro(stationTileset, doorSourceRect, doorDest2, Vector2(-doorDest2.width, 0), 180, WHITE);
             }
