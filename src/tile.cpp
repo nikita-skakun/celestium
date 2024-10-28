@@ -1,5 +1,21 @@
 #include "tile.hpp"
 #include "station.hpp"
+#include "game_state.hpp"
+#include "asset_manager.hpp"
+
+void BasicSprite::Draw(const Vector2Int &position, const Color &tint) const
+{
+    Vector2 screenPos = GameManager::WorldToScreen(position);
+    Vector2 tileSize = Vector2(1, 1) * TILE_SIZE * GameManager::GetCamera().GetZoom();
+    Rectangle sourceRect = Rectangle(spriteOffset.x, spriteOffset.y, 1, 1) * TILE_SIZE;
+
+    DrawTexturePro(AssetManager::GetTexture("STATION"), sourceRect, Vector2ToRect(screenPos, tileSize), Vector2(), 0, tint);
+}
+
+void NineSliceSprite::Draw(const Vector2Int &position, const Color &tint) const
+{
+    // TODO: Implement NineSliceSprite::Draw
+}
 
 Tile::Tile(const std::string &tileId, const Vector2Int &position, std::shared_ptr<Station> station, std::shared_ptr<Room> room)
     : position(position), room(room), station(station)

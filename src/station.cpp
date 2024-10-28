@@ -128,109 +128,110 @@ void Station::UpdateSpriteOffsets() const
 
             if (tileId == "BLUE_FLOOR")
             {
-                if (eSame && wSame && !sSame && !nSame)
-                    tile->SetSpriteOffset(Vector2Int(1, 0));
-                else if (!eSame && !wSame && sSame && nSame)
-                    tile->SetSpriteOffset(Vector2Int(2, 0));
-                else if (eSame && !wSame && sSame && !nSame)
-                    tile->SetSpriteOffset(Vector2Int(5, 0));
-                else if (eSame && wSame && sSame && !nSame)
-                    tile->SetSpriteOffset(Vector2Int(6, 0));
-                else if (!eSame && wSame && sSame && !nSame)
-                    tile->SetSpriteOffset(Vector2Int(7, 0));
-                else if (eSame && !wSame && sSame && nSame)
-                    tile->SetSpriteOffset(Vector2Int(5, 1));
-                else if (eSame && wSame && sSame && nSame)
-                {
-                    bool neSame = CheckAdjacentTile(tilePos, tileId, Direction::N | Direction::E);
-                    bool seSame = CheckAdjacentTile(tilePos, tileId, Direction::S | Direction::E);
-                    bool nwSame = CheckAdjacentTile(tilePos, tileId, Direction::N | Direction::W);
-                    bool swSame = CheckAdjacentTile(tilePos, tileId, Direction::S | Direction::W);
+                tile->SetSprite(std::make_shared<BasicSprite>(Vector2Int(6, 1)));
 
-                    if (seSame && swSame && !neSame && nwSame)
-                        tile->SetSpriteOffset(Vector2Int(0, 2));
-                    else if (seSame && swSame && neSame && !nwSame)
-                        tile->SetSpriteOffset(Vector2Int(1, 2));
-                    else if (!seSame && swSame && neSame && nwSame)
-                        tile->SetSpriteOffset(Vector2Int(2, 2));
-                    else if (seSame && !swSame && neSame && nwSame)
-                        tile->SetSpriteOffset(Vector2Int(3, 2));
-                    else if (seSame && !swSame && neSame && !nwSame)
-                        tile->SetSpriteOffset(Vector2Int(0, 1));
-                    else if (!seSame && swSame && !neSame && nwSame)
-                        tile->SetSpriteOffset(Vector2Int(1, 1));
-                    else if (seSame && swSame && !neSame && !nwSame)
-                        tile->SetSpriteOffset(Vector2Int(2, 1));
-                    else if (!seSame && !swSame && neSame && nwSame)
-                        tile->SetSpriteOffset(Vector2Int(3, 1));
-                    else
-                        tile->SetSpriteOffset(Vector2Int(6, 1));
-                }
-                else if (!eSame && wSame && sSame && nSame)
-                    tile->SetSpriteOffset(Vector2Int(7, 1));
-                else if (eSame && !wSame && !sSame && nSame)
-                    tile->SetSpriteOffset(Vector2Int(5, 2));
-                else if (eSame && wSame && !sSame && nSame)
-                    tile->SetSpriteOffset(Vector2Int(6, 2));
-                else if (!eSame && wSame && !sSame && nSame)
-                    tile->SetSpriteOffset(Vector2Int(7, 2));
-                else
-                    tile->SetSpriteOffset(Vector2Int(0, 0));
+                // if (eSame && wSame && !sSame && !nSame)
+                //     tile->SetSpriteOffset(Vector2Int(1, 0));
+                // else if (!eSame && !wSame && sSame && nSame)
+                //     tile->SetSpriteOffset(Vector2Int(2, 0));
+                // else if (eSame && !wSame && sSame && !nSame)
+                //     tile->SetSpriteOffset(Vector2Int(5, 0));
+                // else if (eSame && wSame && sSame && !nSame)
+                //     tile->SetSpriteOffset(Vector2Int(6, 0));
+                // else if (!eSame && wSame && sSame && !nSame)
+                //     tile->SetSpriteOffset(Vector2Int(7, 0));
+                // else if (eSame && !wSame && sSame && nSame)
+                //     tile->SetSpriteOffset(Vector2Int(5, 1));
+                // else if (eSame && wSame && sSame && nSame)
+                // {
+                //     bool neSame = CheckAdjacentTile(tilePos, tileId, Direction::N | Direction::E);
+                //     bool seSame = CheckAdjacentTile(tilePos, tileId, Direction::S | Direction::E);
+                //     bool nwSame = CheckAdjacentTile(tilePos, tileId, Direction::N | Direction::W);
+                //     bool swSame = CheckAdjacentTile(tilePos, tileId, Direction::S | Direction::W);
+                //     if (seSame && swSame && !neSame && nwSame)
+                //         tile->SetSpriteOffset(Vector2Int(0, 2));
+                //     else if (seSame && swSame && neSame && !nwSame)
+                //         tile->SetSpriteOffset(Vector2Int(1, 2));
+                //     else if (!seSame && swSame && neSame && nwSame)
+                //         tile->SetSpriteOffset(Vector2Int(2, 2));
+                //     else if (seSame && !swSame && neSame && nwSame)
+                //         tile->SetSpriteOffset(Vector2Int(3, 2));
+                //     else if (seSame && !swSame && neSame && !nwSame)
+                //         tile->SetSpriteOffset(Vector2Int(0, 1));
+                //     else if (!seSame && swSame && !neSame && nwSame)
+                //         tile->SetSpriteOffset(Vector2Int(1, 1));
+                //     else if (seSame && swSame && !neSame && !nwSame)
+                //         tile->SetSpriteOffset(Vector2Int(2, 1));
+                //     else if (!seSame && !swSame && neSame && nwSame)
+                //         tile->SetSpriteOffset(Vector2Int(3, 1));
+                //     else
+                //         tile->SetSpriteOffset(Vector2Int(6, 1));
+                // }
+                // else if (!eSame && wSame && sSame && nSame)
+                //     tile->SetSpriteOffset(Vector2Int(7, 1));
+                // else if (eSame && !wSame && !sSame && nSame)
+                //     tile->SetSpriteOffset(Vector2Int(5, 2));
+                // else if (eSame && wSame && !sSame && nSame)
+                //     tile->SetSpriteOffset(Vector2Int(6, 2));
+                // else if (!eSame && wSame && !sSame && nSame)
+                //     tile->SetSpriteOffset(Vector2Int(7, 2));
+                // else
+                // tile->SetSpriteOffset(Vector2Int(0, 0));
             }
             else if (tileId == "WALL")
             {
                 if (eSame && !wSame && !sSame && !nSame)
-                    tile->SetSpriteOffset(Vector2Int(0, 3));
+                    tile->SetSprite(std::make_shared<BasicSprite>(Vector2Int(0, 3)));
                 else if (!eSame && wSame && !sSame && !nSame)
-                    tile->SetSpriteOffset(Vector2Int(1, 3));
+                    tile->SetSprite(std::make_shared<BasicSprite>(Vector2Int(1, 3)));
                 else if (!eSame && !wSame && sSame && !nSame)
-                    tile->SetSpriteOffset(Vector2Int(2, 3));
+                    tile->SetSprite(std::make_shared<BasicSprite>(Vector2Int(2, 3)));
                 else if (!eSame && !wSame && !sSame && nSame)
-                    tile->SetSpriteOffset(Vector2Int(3, 3));
-                else if (!eSame && !wSame && !sSame && !nSame)
-                    tile->SetSpriteOffset(Vector2Int(3, 4));
-                else if (eSame && !wSame && sSame && !nSame)
-                    tile->SetSpriteOffset(Vector2Int(5, 4));
-                else if (eSame && wSame && sSame && !nSame)
-                    tile->SetSpriteOffset(Vector2Int(6, 4));
-                else if (!eSame && wSame && sSame && !nSame)
-                    tile->SetSpriteOffset(Vector2Int(7, 4));
+                    tile->SetSprite(std::make_shared<BasicSprite>(Vector2Int(3, 3)));
                 else if (eSame && wSame && !sSame && !nSame)
-                    tile->SetSpriteOffset(Vector2Int(0, 4));
+                    tile->SetSprite(std::make_shared<BasicSprite>(Vector2Int(0, 4)));
                 else if (!eSame && !wSame && sSame && nSame)
-                    tile->SetSpriteOffset(Vector2Int(2, 4));
+                    tile->SetSprite(std::make_shared<BasicSprite>(Vector2Int(2, 4)));
+                else if (!eSame && !wSame && !sSame && !nSame)
+                    tile->SetSprite(std::make_shared<BasicSprite>(Vector2Int(3, 4)));
+                else if (eSame && !wSame && sSame && !nSame)
+                    tile->SetSprite(std::make_shared<BasicSprite>(Vector2Int(5, 4)));
+                else if (eSame && wSame && sSame && !nSame)
+                    tile->SetSprite(std::make_shared<BasicSprite>(Vector2Int(6, 4)));
+                else if (!eSame && wSame && sSame && !nSame)
+                    tile->SetSprite(std::make_shared<BasicSprite>(Vector2Int(7, 4)));
                 else if (eSame && !wSame && sSame && nSame)
-                    tile->SetSpriteOffset(Vector2Int(5, 5));
+                    tile->SetSprite(std::make_shared<BasicSprite>(Vector2Int(5, 5)));
                 else if (eSame && wSame && sSame && nSame)
-                    tile->SetSpriteOffset(Vector2Int(6, 5));
+                    tile->SetSprite(std::make_shared<BasicSprite>(Vector2Int(6, 5)));
                 else if (!eSame && wSame && sSame && nSame)
-                    tile->SetSpriteOffset(Vector2Int(7, 5));
+                    tile->SetSprite(std::make_shared<BasicSprite>(Vector2Int(7, 5)));
                 else if (eSame && !wSame && !sSame && nSame)
-                    tile->SetSpriteOffset(Vector2Int(5, 6));
+                    tile->SetSprite(std::make_shared<BasicSprite>(Vector2Int(5, 6)));
                 else if (eSame && wSame && !sSame && nSame)
-                    tile->SetSpriteOffset(Vector2Int(6, 6));
+                    tile->SetSprite(std::make_shared<BasicSprite>(Vector2Int(6, 6)));
                 else if (!eSame && wSame && !sSame && nSame)
-                    tile->SetSpriteOffset(Vector2Int(7, 6));
+                    tile->SetSprite(std::make_shared<BasicSprite>(Vector2Int(7, 6)));
             }
             else if (tileId == "OXYGEN_PRODUCER")
             {
-                tile->SetSpriteOffset(Vector2Int(6, 7));
+                tile->SetSprite(std::make_shared<BasicSprite>(Vector2Int(6, 7)));
             }
             else if (tileId == "BATTERY")
             {
-                tile->SetSpriteOffset(Vector2Int(5, 7));
+                tile->SetSprite(std::make_shared<BasicSprite>(Vector2Int(5, 7)));
             }
             else if (tileId == "SOLAR_PANEL")
             {
-                tile->SetSpriteOffset(Vector2Int(7, 7));
+                tile->SetSprite(std::make_shared<BasicSprite>(Vector2Int(7, 7)));
             }
             else if (tileId == "FRAME")
             {
-                tile->SetSpriteOffset(Vector2Int(4, 4));
+                tile->SetSprite(std::make_shared<BasicSprite>(Vector2Int(4, 4)));
             }
             else if (tileId == "DOOR")
             {
-                tile->SetSpriteOffset(Vector2Int(0, 0));
+                tile->SetSprite(nullptr);
                 auto decorative = tile->AddComponent<DecorativeComponent>(tile);
                 decorative->AddDecorativeTile(Vector2Int(0, -1), Vector2Int(0, 5));
                 decorative->AddDecorativeTile(Vector2Int(0, 1), Vector2Int(0, 6));

@@ -74,10 +74,10 @@ void DrawStationTiles(std::shared_ptr<Station> station)
     {
         for (const auto &tile : tilesAtPos.second)
         {
-            Vector2 startPos = GameManager::WorldToScreen(tile->GetPosition());
-            Rectangle sourceRect = Rectangle(tile->GetSpriteOffset().x, tile->GetSpriteOffset().y, 1, 1) * TILE_SIZE;
+            if (auto sprite = tile->GetSprite())
+                sprite->Draw(tile->GetPosition(), OscillateSelectedColor(tile));
 
-            DrawTexturePro(stationTileset, sourceRect, Vector2ToRect(startPos, tileSize), Vector2(), 0, OscillateSelectedColor(tile));
+            Vector2 startPos = GameManager::WorldToScreen(tile->GetPosition());
 
             if (camera.IsOverlay(PlayerCam::Overlay::OXYGEN))
             {
@@ -131,7 +131,6 @@ void DrawStationOverlays(std::shared_ptr<Station> station)
 
             if (auto door = tile->GetComponent<DoorComponent>())
             {
-
                 Vector2 startPos = GameManager::WorldToScreen(tile->GetPosition());
                 Rectangle destRect = Vector2ToRect(startPos, tileSize);
                 Rectangle doorSourceRect = Rectangle(0, 7, 1, 1) * TILE_SIZE;

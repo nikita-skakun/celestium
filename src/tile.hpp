@@ -4,12 +4,36 @@
 struct Room;
 struct Station;
 
+struct Sprite
+{
+    virtual ~Sprite() = default;
+    virtual void Draw(const Vector2Int &position, const Color &tint) const = 0;
+};
+
+struct BasicSprite : public Sprite
+{
+    Vector2Int spriteOffset;
+
+    BasicSprite(const Vector2Int &offset) : spriteOffset(offset) {}
+
+    void Draw(const Vector2Int &position, const Color &tint) const override;
+};
+
+struct NineSliceSprite : public Sprite
+{
+    std::array<Rectangle, 9> slices;
+
+    NineSliceSprite(const std::array<Rectangle, 9> &slices) : slices(slices) {}
+
+    void Draw(const Vector2Int &position, const Color &tint) const override;
+};
+
 struct Tile : public std::enable_shared_from_this<Tile>
 {
 private:
     std::shared_ptr<TileDef> tileDef;
     Vector2Int position;
-    Vector2Int spriteOffset;
+    std::shared_ptr<Sprite> sprite;
     std::unordered_set<std::shared_ptr<Component>> components;
     std::shared_ptr<Room> room;
     std::shared_ptr<Station> station;
@@ -25,8 +49,8 @@ public:
 
     constexpr TileDef::Height GetHeight() const { return tileDef->GetHeight(); }
 
-    constexpr const Vector2Int &GetSpriteOffset() const { return spriteOffset; }
-    constexpr void SetSpriteOffset(const Vector2Int &newOffset) { spriteOffset = newOffset; }
+    constexpr const std::shared_ptr<Sprite> &GetSprite() const { return sprite; }
+    void SetSprite(const std::shared_ptr<Sprite> &newSprite) { sprite = newSprite; }
 
     std::shared_ptr<TileDef> GetTileDefinition() const { return tileDef; }
     std::shared_ptr<Room> GetRoom() const { return room; }
