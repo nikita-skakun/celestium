@@ -180,38 +180,71 @@ void Station::UpdateSpriteOffsets() const
             }
             else if (tileId == "WALL")
             {
-                if (eSame && !wSame && !sSame && !nSame)
-                    tile->SetSprite(std::make_shared<BasicSprite>(Vector2Int(0, 3)));
-                else if (!eSame && wSame && !sSame && !nSame)
-                    tile->SetSprite(std::make_shared<BasicSprite>(Vector2Int(1, 3)));
-                else if (!eSame && !wSame && sSame && !nSame)
-                    tile->SetSprite(std::make_shared<BasicSprite>(Vector2Int(2, 3)));
-                else if (!eSame && !wSame && !sSame && nSame)
-                    tile->SetSprite(std::make_shared<BasicSprite>(Vector2Int(3, 3)));
-                else if (eSame && wSame && !sSame && !nSame)
-                    tile->SetSprite(std::make_shared<BasicSprite>(Vector2Int(0, 4)));
-                else if (!eSame && !wSame && sSame && nSame)
-                    tile->SetSprite(std::make_shared<BasicSprite>(Vector2Int(2, 4)));
-                else if (!eSame && !wSame && !sSame && !nSame)
-                    tile->SetSprite(std::make_shared<BasicSprite>(Vector2Int(3, 4)));
-                else if (eSame && !wSame && sSame && !nSame)
-                    tile->SetSprite(std::make_shared<BasicSprite>(Vector2Int(5, 4)));
-                else if (eSame && wSame && sSame && !nSame)
-                    tile->SetSprite(std::make_shared<BasicSprite>(Vector2Int(6, 4)));
-                else if (!eSame && wSame && sSame && !nSame)
-                    tile->SetSprite(std::make_shared<BasicSprite>(Vector2Int(7, 4)));
-                else if (eSame && !wSame && sSame && nSame)
-                    tile->SetSprite(std::make_shared<BasicSprite>(Vector2Int(5, 5)));
-                else if (eSame && wSame && sSame && nSame)
-                    tile->SetSprite(std::make_shared<BasicSprite>(Vector2Int(6, 5)));
-                else if (!eSame && wSame && sSame && nSame)
-                    tile->SetSprite(std::make_shared<BasicSprite>(Vector2Int(7, 5)));
-                else if (eSame && !wSame && !sSame && nSame)
-                    tile->SetSprite(std::make_shared<BasicSprite>(Vector2Int(5, 6)));
-                else if (eSame && wSame && !sSame && nSame)
-                    tile->SetSprite(std::make_shared<BasicSprite>(Vector2Int(6, 6)));
-                else if (!eSame && wSame && !sSame && nSame)
-                    tile->SetSprite(std::make_shared<BasicSprite>(Vector2Int(7, 6)));
+                std::array<SpriteSlice, 9> slices;
+
+                if (nSame)
+                {
+                    slices[1] = SpriteSlice(Rectangle(3 * 32 + 12, 3 * 32, 8, 12), Vector2(12, 0));
+                    slices[4] = SpriteSlice(Rectangle(3 * 32 + 12, 3 * 32 + 12, 8, 8), Vector2(12, 12));
+                }
+                else
+                {
+                    slices[1] = SpriteSlice(Rectangle(2 * 32 + 12, 3 * 32, 8, 12), Vector2(12, 0));
+                    slices[4] = SpriteSlice(Rectangle(2 * 32 + 12, 3 * 32 + 12, 8, 8), Vector2(12, 12));
+                }
+
+                if (eSame)
+                    slices[5] = SpriteSlice(Rectangle(0 * 32 + 20, 3 * 32 + 12, 12, 8), Vector2(20, 12));
+                else
+                    slices[5] = SpriteSlice(Rectangle(1 * 32 + 20, 3 * 32 + 12, 12, 8), Vector2(20, 12));
+
+                if (sSame)
+                    slices[7] = SpriteSlice(Rectangle(2 * 32 + 12, 3 * 32 + 20, 8, 12), Vector2(12, 20));
+                else
+                    slices[7] = SpriteSlice(Rectangle(3 * 32 + 12, 3 * 32 + 20, 8, 12), Vector2(12, 20));
+
+                if (wSame)
+                    slices[3] = SpriteSlice(Rectangle(1 * 32, 3 * 32 + 12, 12, 8), Vector2(0, 12));
+                else
+                    slices[3] = SpriteSlice(Rectangle(0 * 32, 3 * 32 + 12, 12, 8), Vector2(0, 12));
+
+                if (nSame && eSame)
+                    slices[2] = SpriteSlice(Rectangle(6 * 32 + 20, 5 * 32, 12, 12), Vector2(20, 0));
+                if (nSame && !eSame)
+                    slices[2] = SpriteSlice(Rectangle(3 * 32 + 20, 3 * 32, 12, 12), Vector2(20, 0));
+                if (!nSame && eSame)
+                    slices[2] = SpriteSlice(Rectangle(0 * 32 + 20, 3 * 32, 12, 12), Vector2(20, 0));
+                if (!nSame && !eSame)
+                    slices[2] = SpriteSlice(Rectangle(1 * 32 + 20, 3 * 32, 12, 12), Vector2(20, 0));
+
+                if (sSame && eSame)
+                    slices[8] = SpriteSlice(Rectangle(6 * 32 + 20, 5 * 32 + 20, 12, 12), Vector2(20, 20));
+                if (sSame && !eSame)
+                    slices[8] = SpriteSlice(Rectangle(2 * 32 + 20, 3 * 32 + 20, 12, 12), Vector2(20, 20));
+                if (!sSame && eSame)
+                    slices[8] = SpriteSlice(Rectangle(0 * 32 + 20, 3 * 32 + 20, 12, 12), Vector2(20, 20));
+                if (!sSame && !eSame)
+                    slices[8] = SpriteSlice(Rectangle(1 * 32 + 20, 3 * 32 + 20, 12, 12), Vector2(20, 20));
+
+                if (sSame && wSame)
+                    slices[6] = SpriteSlice(Rectangle(6 * 32, 5 * 32 + 20, 12, 12), Vector2(0, 20));
+                if (sSame && !wSame)
+                    slices[6] = SpriteSlice(Rectangle(2 * 32, 3 * 32 + 20, 12, 12), Vector2(0, 20));
+                if (!sSame && wSame)
+                    slices[6] = SpriteSlice(Rectangle(1 * 32, 3 * 32 + 20, 12, 12), Vector2(0, 20));
+                if (!sSame && !wSame)
+                    slices[6] = SpriteSlice(Rectangle(0 * 32, 3 * 32 + 20, 12, 12), Vector2(0, 20));
+
+                if (nSame && wSame)
+                    slices[0] = SpriteSlice(Rectangle(6 * 32, 5 * 32, 12, 12), Vector2(0, 0));
+                if (nSame && !wSame)
+                    slices[0] = SpriteSlice(Rectangle(3 * 32, 3 * 32, 12, 12), Vector2(0, 0));
+                if (!nSame && wSame)
+                    slices[0] = SpriteSlice(Rectangle(1 * 32, 3 * 32, 12, 12), Vector2(0, 0));
+                if (!nSame && !wSame)
+                    slices[0] = SpriteSlice(Rectangle(0 * 32, 3 * 32, 12, 12), Vector2(0, 0));
+
+                tile->SetSprite(std::make_shared<NineSliceSprite>(slices));
             }
             else if (tileId == "OXYGEN_PRODUCER")
             {

@@ -14,7 +14,19 @@ void BasicSprite::Draw(const Vector2Int &position, const Color &tint) const
 
 void NineSliceSprite::Draw(const Vector2Int &position, const Color &tint) const
 {
-    // TODO: Implement NineSliceSprite::Draw
+    Vector2 screenPos = GameManager::WorldToScreen(position);
+
+    for (const auto &slice : slices)
+    {
+        if (slice.sourceRect.width <= 0 || slice.sourceRect.height <= 0)
+            continue;
+
+        Rectangle destRect = Vector2ToRect(slice.destOffset, RectToSize(slice.sourceRect)) * GameManager::GetCamera().GetZoom();
+        destRect.x += screenPos.x;
+        destRect.y += screenPos.y;
+
+        DrawTexturePro(AssetManager::GetTexture("STATION"), slice.sourceRect, destRect, Vector2(), 0, tint);
+    }
 }
 
 Tile::Tile(const std::string &tileId, const Vector2Int &position, std::shared_ptr<Station> station, std::shared_ptr<Room> room)

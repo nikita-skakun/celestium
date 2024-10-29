@@ -19,11 +19,20 @@ struct BasicSprite : public Sprite
     void Draw(const Vector2Int &position, const Color &tint) const override;
 };
 
+struct SpriteSlice
+{
+    Rectangle sourceRect;
+    Vector2 destOffset;
+
+    SpriteSlice() : sourceRect(Rectangle()), destOffset(Vector2()) {}
+    SpriteSlice(const Rectangle &sourceRect, const Vector2 &destOffset) : sourceRect(sourceRect), destOffset(destOffset) {}
+};
+
 struct NineSliceSprite : public Sprite
 {
-    std::array<Rectangle, 9> slices;
+    std::array<SpriteSlice, 9> slices;
 
-    NineSliceSprite(const std::array<Rectangle, 9> &slices) : slices(slices) {}
+    NineSliceSprite(const std::array<SpriteSlice, 9> &slices) : slices(slices) {}
 
     void Draw(const Vector2Int &position, const Color &tint) const override;
 };
