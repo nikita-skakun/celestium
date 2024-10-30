@@ -12,7 +12,7 @@ void BasicSprite::Draw(const Vector2Int &position, const Color &tint) const
     DrawTexturePro(AssetManager::GetTexture("STATION"), sourceRect, Vector2ToRect(screenPos, tileSize), Vector2(), 0, tint);
 }
 
-void NineSliceSprite::Draw(const Vector2Int &position, const Color &tint) const
+void MultiSliceSprite::Draw(const Vector2Int &position, const Color &tint) const
 {
     Vector2 screenPos = GameManager::WorldToScreen(position);
 

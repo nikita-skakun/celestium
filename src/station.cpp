@@ -180,71 +180,72 @@ void Station::UpdateSpriteOffsets() const
             }
             else if (tileId == "WALL")
             {
-                std::array<SpriteSlice, 9> slices;
+                std::vector<SpriteSlice> slices;
+                slices.reserve(9);
 
                 if (nSame)
                 {
-                    slices[1] = SpriteSlice(Rectangle(1 * 32 + 12, 3 * 32, 8, 12), Vector2(12, 0));
-                    slices[4] = SpriteSlice(Rectangle(1 * 32 + 12, 3 * 32 + 12, 8, 8), Vector2(12, 12));
+                    slices.push_back(SpriteSlice(Rectangle(44, 96, 8, 12), Vector2(12, 0)));
+                    slices.push_back(SpriteSlice(Rectangle(44, 108, 8, 8), Vector2(12, 12)));
                 }
                 else
                 {
-                    slices[1] = SpriteSlice(Rectangle(0 * 32 + 12, 3 * 32, 8, 12), Vector2(12, 0));
-                    slices[4] = SpriteSlice(Rectangle(0 * 32 + 12, 3 * 32 + 12, 8, 8), Vector2(12, 12));
+                    slices.push_back(SpriteSlice(Rectangle(12, 96, 8, 12), Vector2(12, 0)));
+                    slices.push_back(SpriteSlice(Rectangle(12, 108, 8, 8), Vector2(12, 12)));
                 }
 
                 if (eSame)
-                    slices[5] = SpriteSlice(Rectangle(1 * 32 + 20, 3 * 32 + 12, 12, 8), Vector2(20, 12));
+                    slices.push_back(SpriteSlice(Rectangle(52, 108, 12, 8), Vector2(20, 12)));
                 else
-                    slices[5] = SpriteSlice(Rectangle(0 * 32 + 20, 3 * 32 + 12, 12, 8), Vector2(20, 12));
+                    slices.push_back(SpriteSlice(Rectangle(20, 108, 12, 8), Vector2(20, 12)));
 
                 if (sSame)
-                    slices[7] = SpriteSlice(Rectangle(1 * 32 + 12, 3 * 32 + 20, 8, 12), Vector2(12, 20));
+                    slices.push_back(SpriteSlice(Rectangle(44, 116, 8, 12), Vector2(12, 20)));
                 else
-                    slices[7] = SpriteSlice(Rectangle(0 * 32 + 12, 3 * 32 + 20, 8, 12), Vector2(12, 20));
+                    slices.push_back(SpriteSlice(Rectangle(12, 116, 8, 12), Vector2(12, 20)));
 
                 if (wSame)
-                    slices[3] = SpriteSlice(Rectangle(1 * 32, 3 * 32 + 12, 12, 8), Vector2(0, 12));
+                    slices.push_back(SpriteSlice(Rectangle(32, 108, 12, 8), Vector2(0, 12)));
                 else
-                    slices[3] = SpriteSlice(Rectangle(0 * 32, 3 * 32 + 12, 12, 8), Vector2(0, 12));
+                    slices.push_back(SpriteSlice(Rectangle(0, 108, 12, 8), Vector2(0, 12)));
 
                 if (nSame && eSame)
-                    slices[2] = SpriteSlice(Rectangle(1 * 32 + 20, 3 * 32, 12, 12), Vector2(20, 0));
+                    slices.push_back(SpriteSlice(Rectangle(52, 96, 12, 12), Vector2(20, 0)));
                 if (nSame && !eSame)
-                    slices[2] = SpriteSlice(Rectangle(2 * 32 + 20, 3 * 32, 12, 12), Vector2(20, 0));
+                    slices.push_back(SpriteSlice(Rectangle(84, 96, 12, 12), Vector2(20, 0)));
                 if (!nSame && eSame)
-                    slices[2] = SpriteSlice(Rectangle(3 * 32 + 20, 3 * 32, 12, 12), Vector2(20, 0));
+                    slices.push_back(SpriteSlice(Rectangle(116, 96, 12, 12), Vector2(20, 0)));
                 if (!nSame && !eSame)
-                    slices[2] = SpriteSlice(Rectangle(0 * 32 + 20, 3 * 32, 12, 12), Vector2(20, 0));
+                    slices.push_back(SpriteSlice(Rectangle(20, 96, 12, 12), Vector2(20, 0)));
 
                 if (sSame && eSame)
-                    slices[8] = SpriteSlice(Rectangle(1 * 32 + 20, 3 * 32 + 20, 12, 12), Vector2(20, 20));
+                    slices.push_back(SpriteSlice(Rectangle(52, 116, 12, 12), Vector2(20, 20)));
                 if (sSame && !eSame)
-                    slices[8] = SpriteSlice(Rectangle(2 * 32 + 20, 3 * 32 + 20, 12, 12), Vector2(20, 20));
+                    slices.push_back(SpriteSlice(Rectangle(84, 116, 12, 12), Vector2(20, 20)));
                 if (!sSame && eSame)
-                    slices[8] = SpriteSlice(Rectangle(3 * 32 + 20, 3 * 32 + 20, 12, 12), Vector2(20, 20));
+                    slices.push_back(SpriteSlice(Rectangle(116, 116, 12, 12), Vector2(20, 20)));
                 if (!sSame && !eSame)
-                    slices[8] = SpriteSlice(Rectangle(0 * 32 + 20, 3 * 32 + 20, 12, 12), Vector2(20, 20));
+                    slices.push_back(SpriteSlice(Rectangle(20, 116, 12, 12), Vector2(20, 20)));
 
                 if (sSame && wSame)
-                    slices[6] = SpriteSlice(Rectangle(1 * 32, 3 * 32 + 20, 12, 12), Vector2(0, 20));
+                    slices.push_back(SpriteSlice(Rectangle(32, 116, 12, 12), Vector2(0, 20)));
                 if (sSame && !wSame)
-                    slices[6] = SpriteSlice(Rectangle(2 * 32, 3 * 32 + 20, 12, 12), Vector2(0, 20));
+                    slices.push_back(SpriteSlice(Rectangle(64, 116, 12, 12), Vector2(0, 20)));
                 if (!sSame && wSame)
-                    slices[6] = SpriteSlice(Rectangle(3 * 32, 3 * 32 + 20, 12, 12), Vector2(0, 20));
+                    slices.push_back(SpriteSlice(Rectangle(96, 116, 12, 12), Vector2(0, 20)));
                 if (!sSame && !wSame)
-                    slices[6] = SpriteSlice(Rectangle(0 * 32, 3 * 32 + 20, 12, 12), Vector2(0, 20));
+                    slices.push_back(SpriteSlice(Rectangle(0, 116, 12, 12), Vector2(0, 20)));
 
                 if (nSame && wSame)
-                    slices[0] = SpriteSlice(Rectangle(1 * 32, 3 * 32, 12, 12), Vector2(0, 0));
+                    slices.push_back(SpriteSlice(Rectangle(32, 96, 12, 12), Vector2(0, 0)));
                 if (nSame && !wSame)
-                    slices[0] = SpriteSlice(Rectangle(2 * 32, 3 * 32, 12, 12), Vector2(0, 0));
+                    slices.push_back(SpriteSlice(Rectangle(64, 96, 12, 12), Vector2(0, 0)));
                 if (!nSame && wSame)
-                    slices[0] = SpriteSlice(Rectangle(3 * 32, 3 * 32, 12, 12), Vector2(0, 0));
+                    slices.push_back(SpriteSlice(Rectangle(96, 96, 12, 12), Vector2(0, 0)));
                 if (!nSame && !wSame)
-                    slices[0] = SpriteSlice(Rectangle(0 * 32, 3 * 32, 12, 12), Vector2(0, 0));
+                    slices.push_back(SpriteSlice(Rectangle(0, 96, 12, 12), Vector2(0, 0)));
 
-                tile->SetSprite(std::make_shared<NineSliceSprite>(slices));
+                tile->SetSprite(std::make_shared<MultiSliceSprite>(slices));
             }
             else if (tileId == "OXYGEN_PRODUCER")
             {

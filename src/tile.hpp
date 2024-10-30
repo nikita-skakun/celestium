@@ -28,11 +28,11 @@ struct SpriteSlice
     SpriteSlice(const Rectangle &sourceRect, const Vector2 &destOffset) : sourceRect(sourceRect), destOffset(destOffset) {}
 };
 
-struct NineSliceSprite : public Sprite
+struct MultiSliceSprite : public Sprite
 {
-    std::array<SpriteSlice, 9> slices;
+    std::vector<SpriteSlice> slices;
 
-    NineSliceSprite(const std::array<SpriteSlice, 9> &slices) : slices(slices) {}
+    MultiSliceSprite(const std::vector<SpriteSlice> &slices) : slices(slices) {}
 
     void Draw(const Vector2Int &position, const Color &tint) const override;
 };
