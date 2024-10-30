@@ -68,7 +68,6 @@ void DrawStationTiles(std::shared_ptr<Station> station)
 
     auto &camera = GameManager::GetCamera();
     Vector2 tileSize = Vector2(1, 1) * TILE_SIZE * camera.GetZoom();
-    const Texture2D &stationTileset = AssetManager::GetTexture("STATION");
 
     for (const auto &tilesAtPos : station->tileMap)
     {
