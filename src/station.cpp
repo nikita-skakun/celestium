@@ -183,67 +183,25 @@ void Station::UpdateSpriteOffsets() const
                 std::vector<SpriteSlice> slices;
                 slices.reserve(9);
 
-                if (nSame)
+                slices.push_back(SpriteSlice(nSame ? 44 : 12, 96, 8, 12, 12, 0));
+                slices.push_back(SpriteSlice(nSame ? 44 : 12, 108, 8, 8, 12, 12));
+                slices.push_back(SpriteSlice(eSame ? 52 : 20, 108, 12, 8, 20, 12));
+                slices.push_back(SpriteSlice(sSame ? 44 : 12, 116, 8, 12, 12, 20));
+                slices.push_back(SpriteSlice(wSame ? 32 : 0, 108, 12, 8, 0, 12));
+
+                struct CornerCondition
                 {
-                    slices.push_back(SpriteSlice(Rectangle(44, 96, 8, 12), Vector2(12, 0)));
-                    slices.push_back(SpriteSlice(Rectangle(44, 108, 8, 8), Vector2(12, 12)));
-                }
-                else
+                    bool condition1, condition2;
+                    int x, y;
+                };
+
+                CornerCondition cornerConditions[] = {{nSame, eSame, 52, 96}, {nSame, !eSame, 84, 96}, {!nSame, eSame, 116, 96}, {!nSame, !eSame, 20, 96}, {sSame, eSame, 52, 116}, {sSame, !eSame, 84, 116}, {!sSame, eSame, 116, 116}, {!sSame, !eSame, 20, 116}, {sSame, wSame, 32, 116}, {sSame, !wSame, 64, 116}, {!sSame, wSame, 96, 116}, {!sSame, !wSame, 0, 116}, {nSame, wSame, 32, 96}, {nSame, !wSame, 64, 96}, {!nSame, wSame, 96, 96}, {!nSame, !wSame, 0, 96}};
+
+                for (const auto &corner : cornerConditions)
                 {
-                    slices.push_back(SpriteSlice(Rectangle(12, 96, 8, 12), Vector2(12, 0)));
-                    slices.push_back(SpriteSlice(Rectangle(12, 108, 8, 8), Vector2(12, 12)));
+                    if (corner.condition1 && corner.condition2)
+                        slices.push_back(SpriteSlice(corner.x, corner.y, 12, 12, (corner.x % 32), (corner.y % 32)));
                 }
-
-                if (eSame)
-                    slices.push_back(SpriteSlice(Rectangle(52, 108, 12, 8), Vector2(20, 12)));
-                else
-                    slices.push_back(SpriteSlice(Rectangle(20, 108, 12, 8), Vector2(20, 12)));
-
-                if (sSame)
-                    slices.push_back(SpriteSlice(Rectangle(44, 116, 8, 12), Vector2(12, 20)));
-                else
-                    slices.push_back(SpriteSlice(Rectangle(12, 116, 8, 12), Vector2(12, 20)));
-
-                if (wSame)
-                    slices.push_back(SpriteSlice(Rectangle(32, 108, 12, 8), Vector2(0, 12)));
-                else
-                    slices.push_back(SpriteSlice(Rectangle(0, 108, 12, 8), Vector2(0, 12)));
-
-                if (nSame && eSame)
-                    slices.push_back(SpriteSlice(Rectangle(52, 96, 12, 12), Vector2(20, 0)));
-                if (nSame && !eSame)
-                    slices.push_back(SpriteSlice(Rectangle(84, 96, 12, 12), Vector2(20, 0)));
-                if (!nSame && eSame)
-                    slices.push_back(SpriteSlice(Rectangle(116, 96, 12, 12), Vector2(20, 0)));
-                if (!nSame && !eSame)
-                    slices.push_back(SpriteSlice(Rectangle(20, 96, 12, 12), Vector2(20, 0)));
-
-                if (sSame && eSame)
-                    slices.push_back(SpriteSlice(Rectangle(52, 116, 12, 12), Vector2(20, 20)));
-                if (sSame && !eSame)
-                    slices.push_back(SpriteSlice(Rectangle(84, 116, 12, 12), Vector2(20, 20)));
-                if (!sSame && eSame)
-                    slices.push_back(SpriteSlice(Rectangle(116, 116, 12, 12), Vector2(20, 20)));
-                if (!sSame && !eSame)
-                    slices.push_back(SpriteSlice(Rectangle(20, 116, 12, 12), Vector2(20, 20)));
-
-                if (sSame && wSame)
-                    slices.push_back(SpriteSlice(Rectangle(32, 116, 12, 12), Vector2(0, 20)));
-                if (sSame && !wSame)
-                    slices.push_back(SpriteSlice(Rectangle(64, 116, 12, 12), Vector2(0, 20)));
-                if (!sSame && wSame)
-                    slices.push_back(SpriteSlice(Rectangle(96, 116, 12, 12), Vector2(0, 20)));
-                if (!sSame && !wSame)
-                    slices.push_back(SpriteSlice(Rectangle(0, 116, 12, 12), Vector2(0, 20)));
-
-                if (nSame && wSame)
-                    slices.push_back(SpriteSlice(Rectangle(32, 96, 12, 12), Vector2(0, 0)));
-                if (nSame && !wSame)
-                    slices.push_back(SpriteSlice(Rectangle(64, 96, 12, 12), Vector2(0, 0)));
-                if (!nSame && wSame)
-                    slices.push_back(SpriteSlice(Rectangle(96, 96, 12, 12), Vector2(0, 0)));
-                if (!nSame && !wSame)
-                    slices.push_back(SpriteSlice(Rectangle(0, 96, 12, 12), Vector2(0, 0)));
 
                 tile->SetSprite(std::make_shared<MultiSliceSprite>(slices));
             }

@@ -26,6 +26,8 @@ struct SpriteSlice
 
     SpriteSlice() : sourceRect(Rectangle()), destOffset(Vector2()) {}
     SpriteSlice(const Rectangle &sourceRect, const Vector2 &destOffset) : sourceRect(sourceRect), destOffset(destOffset) {}
+    SpriteSlice(float x, float y, float width, float height, float offsetX, float offsetY)
+        : sourceRect(Rectangle(x, y, width, height)), destOffset(Vector2(offsetX, offsetY)) {}
 };
 
 struct MultiSliceSprite : public Sprite
