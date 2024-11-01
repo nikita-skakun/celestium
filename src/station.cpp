@@ -138,16 +138,56 @@ void Station::UpdateSpriteOffsets() const
                 slices.emplace_back(0, 32, 32, 32, 0, 0);
 
                 if (!nSame)
+                {
                     slices.emplace_back(74, 32, 12, 10, 10, 0);
 
+                    if (wSame)
+                        slices.emplace_back(64, 32, 10, 10, 0, 0);
+                    else
+                        slices.emplace_back(64, 43, 10, 10, 0, 0);
+
+                    if (eSame)
+                        slices.emplace_back(86, 32, 10, 10, 22, 0);
+                    else
+                        slices.emplace_back(86, 43, 10, 10, 22, 0);
+                }
+
                 if (!eSame)
+                {
                     slices.emplace_back(118, 42, 10, 12, 22, 10);
 
+                    if (nSame)
+                        slices.emplace_back(118, 32, 10, 10, 22, 0);
+
+                    if (sSame)
+                        slices.emplace_back(118, 54, 10, 10, 22, 22);
+                }
+
                 if (!sSame)
+                {
                     slices.emplace_back(74, 54, 12, 10, 10, 22);
 
+                    if (wSame)
+                        slices.emplace_back(64, 54, 10, 10, 0, 22);
+                    else
+                        slices.emplace_back(107, 32, 10, 10, 0, 22);
+
+                    if (eSame)
+                        slices.emplace_back(86, 54, 10, 10, 22, 22);
+                    else
+                        slices.emplace_back(107, 54, 10, 10, 22, 22);
+                }
+
                 if (!wSame)
+                {
                     slices.emplace_back(96, 42, 10, 12, 0, 10);
+
+                    if (nSame)
+                        slices.emplace_back(96, 32, 10, 10, 0, 0);
+
+                    if (sSame)
+                        slices.emplace_back(96, 54, 10, 10, 0, 22);
+                }
 
                 if (nSame && eSame)
                 {
