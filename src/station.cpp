@@ -128,66 +128,71 @@ void Station::UpdateSpriteOffsets() const
 
             if (tileId == "BLUE_FLOOR")
             {
-                tile->SetSprite(std::make_shared<BasicSprite>(Vector2Int(6, 1)));
+                bool neSame = CheckAdjacentTile(tilePos, tileId, Direction::N | Direction::E);
+                bool seSame = CheckAdjacentTile(tilePos, tileId, Direction::S | Direction::E);
+                bool nwSame = CheckAdjacentTile(tilePos, tileId, Direction::N | Direction::W);
+                bool swSame = CheckAdjacentTile(tilePos, tileId, Direction::S | Direction::W);
 
-                // if (eSame && wSame && !sSame && !nSame)
-                //     tile->SetSpriteOffset(Vector2Int(1, 0));
-                // else if (!eSame && !wSame && sSame && nSame)
-                //     tile->SetSpriteOffset(Vector2Int(2, 0));
-                // else if (eSame && !wSame && sSame && !nSame)
-                //     tile->SetSpriteOffset(Vector2Int(5, 0));
-                // else if (eSame && wSame && sSame && !nSame)
-                //     tile->SetSpriteOffset(Vector2Int(6, 0));
-                // else if (!eSame && wSame && sSame && !nSame)
-                //     tile->SetSpriteOffset(Vector2Int(7, 0));
-                // else if (eSame && !wSame && sSame && nSame)
-                //     tile->SetSpriteOffset(Vector2Int(5, 1));
-                // else if (eSame && wSame && sSame && nSame)
-                // {
-                //     bool neSame = CheckAdjacentTile(tilePos, tileId, Direction::N | Direction::E);
-                //     bool seSame = CheckAdjacentTile(tilePos, tileId, Direction::S | Direction::E);
-                //     bool nwSame = CheckAdjacentTile(tilePos, tileId, Direction::N | Direction::W);
-                //     bool swSame = CheckAdjacentTile(tilePos, tileId, Direction::S | Direction::W);
-                //     if (seSame && swSame && !neSame && nwSame)
-                //         tile->SetSpriteOffset(Vector2Int(0, 2));
-                //     else if (seSame && swSame && neSame && !nwSame)
-                //         tile->SetSpriteOffset(Vector2Int(1, 2));
-                //     else if (!seSame && swSame && neSame && nwSame)
-                //         tile->SetSpriteOffset(Vector2Int(2, 2));
-                //     else if (seSame && !swSame && neSame && nwSame)
-                //         tile->SetSpriteOffset(Vector2Int(3, 2));
-                //     else if (seSame && !swSame && neSame && !nwSame)
-                //         tile->SetSpriteOffset(Vector2Int(0, 1));
-                //     else if (!seSame && swSame && !neSame && nwSame)
-                //         tile->SetSpriteOffset(Vector2Int(1, 1));
-                //     else if (seSame && swSame && !neSame && !nwSame)
-                //         tile->SetSpriteOffset(Vector2Int(2, 1));
-                //     else if (!seSame && !swSame && neSame && nwSame)
-                //         tile->SetSpriteOffset(Vector2Int(3, 1));
-                //     else
-                //         tile->SetSpriteOffset(Vector2Int(6, 1));
-                // }
-                // else if (!eSame && wSame && sSame && nSame)
-                //     tile->SetSpriteOffset(Vector2Int(7, 1));
-                // else if (eSame && !wSame && !sSame && nSame)
-                //     tile->SetSpriteOffset(Vector2Int(5, 2));
-                // else if (eSame && wSame && !sSame && nSame)
-                //     tile->SetSpriteOffset(Vector2Int(6, 2));
-                // else if (!eSame && wSame && !sSame && nSame)
-                //     tile->SetSpriteOffset(Vector2Int(7, 2));
-                // else
-                // tile->SetSpriteOffset(Vector2Int(0, 0));
+                std::vector<SpriteSlice> slices;
+
+                slices.emplace_back(0, 32, 32, 32, 0, 0);
+
+                if (!nSame)
+                    slices.emplace_back(74, 32, 12, 10, 10, 0);
+
+                if (!eSame)
+                    slices.emplace_back(118, 42, 10, 12, 22, 10);
+
+                if (!sSame)
+                    slices.emplace_back(74, 54, 12, 10, 10, 22);
+
+                if (!wSame)
+                    slices.emplace_back(96, 42, 10, 12, 0, 10);
+
+                if (nSame && eSame)
+                {
+                    if (neSame)
+                        slices.emplace_back(46, 46, 4, 4, 26, 2);
+                    else
+                        slices.emplace_back(54, 32, 10, 10, 22, 0);
+                }
+
+                if (sSame && eSame)
+                {
+                    if (seSame)
+                        slices.emplace_back(46, 46, 4, 4, 26, 26);
+                    else
+                        slices.emplace_back(54, 54, 10, 10, 22, 22);
+                }
+
+                if (sSame && wSame)
+                {
+                    if (swSame)
+                        slices.emplace_back(46, 46, 4, 4, 2, 26);
+                    else
+                        slices.emplace_back(32, 54, 10, 10, 0, 22);
+                }
+
+                if (nSame && wSame)
+                {
+                    if (nwSame)
+                        slices.emplace_back(46, 46, 4, 4, 2, 2);
+                    else
+                        slices.emplace_back(32, 32, 10, 10, 0, 0);
+                }
+
+                tile->SetSprite(std::make_shared<MultiSliceSprite>(slices));
             }
             else if (tileId == "WALL")
             {
                 std::vector<SpriteSlice> slices;
                 slices.reserve(9);
 
-                slices.push_back(SpriteSlice(nSame ? 44 : 12, 96, 8, 12, 12, 0));
-                slices.push_back(SpriteSlice(nSame ? 44 : 12, 108, 8, 8, 12, 12));
-                slices.push_back(SpriteSlice(eSame ? 52 : 20, 108, 12, 8, 20, 12));
-                slices.push_back(SpriteSlice(sSame ? 44 : 12, 116, 8, 12, 12, 20));
-                slices.push_back(SpriteSlice(wSame ? 32 : 0, 108, 12, 8, 0, 12));
+                slices.emplace_back(nSame ? 172 : 140, 32, 8, 12, 12, 0);
+                slices.emplace_back(nSame ? 172 : 140, 44, 8, 8, 12, 12);
+                slices.emplace_back(eSame ? 180 : 148, 44, 12, 8, 20, 12);
+                slices.emplace_back(sSame ? 172 : 140, 52, 8, 12, 12, 20);
+                slices.emplace_back(wSame ? 160 : 128, 44, 12, 8, 0, 12);
 
                 struct CornerCondition
                 {
@@ -195,12 +200,12 @@ void Station::UpdateSpriteOffsets() const
                     int x, y;
                 };
 
-                CornerCondition cornerConditions[] = {{nSame, eSame, 52, 96}, {nSame, !eSame, 84, 96}, {!nSame, eSame, 116, 96}, {!nSame, !eSame, 20, 96}, {sSame, eSame, 52, 116}, {sSame, !eSame, 84, 116}, {!sSame, eSame, 116, 116}, {!sSame, !eSame, 20, 116}, {sSame, wSame, 32, 116}, {sSame, !wSame, 64, 116}, {!sSame, wSame, 96, 116}, {!sSame, !wSame, 0, 116}, {nSame, wSame, 32, 96}, {nSame, !wSame, 64, 96}, {!nSame, wSame, 96, 96}, {!nSame, !wSame, 0, 96}};
+                CornerCondition cornerConditions[] = {{nSame, eSame, 180, 32}, {nSame, !eSame, 212, 32}, {!nSame, eSame, 244, 32}, {!nSame, !eSame, 148, 32}, {sSame, eSame, 180, 52}, {sSame, !eSame, 212, 52}, {!sSame, eSame, 244, 52}, {!sSame, !eSame, 148, 52}, {sSame, wSame, 160, 52}, {sSame, !wSame, 192, 52}, {!sSame, wSame, 224, 52}, {!sSame, !wSame, 128, 52}, {nSame, wSame, 160, 32}, {nSame, !wSame, 192, 32}, {!nSame, wSame, 224, 32}, {!nSame, !wSame, 128, 32}};
 
                 for (const auto &corner : cornerConditions)
                 {
                     if (corner.condition1 && corner.condition2)
-                        slices.push_back(SpriteSlice(corner.x, corner.y, 12, 12, (corner.x % 32), (corner.y % 32)));
+                        slices.emplace_back(corner.x, corner.y, 12, 12, (corner.x % 32), (corner.y % 32));
                 }
 
                 tile->SetSprite(std::make_shared<MultiSliceSprite>(slices));
@@ -219,7 +224,7 @@ void Station::UpdateSpriteOffsets() const
             }
             else if (tileId == "FRAME")
             {
-                tile->SetSprite(std::make_shared<BasicSprite>(Vector2Int(4, 4)));
+                tile->SetSprite(std::make_shared<BasicSprite>(Vector2Int(1, 0)));
             }
             else if (tileId == "DOOR")
             {

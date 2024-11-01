@@ -276,7 +276,7 @@ void InitializeBuildMenu()
 
     Rectangle buildWallIconRect = Vector2ToRect(togglePos + toggleSize / 8., toggleSize * .75);
 
-    auto buildWallIcon = std::make_shared<UiIcon>(buildWallIconRect, "STATION", Rectangle(0, 3, 1, 1) * TILE_SIZE, WHITE);
+    auto buildWallIcon = std::make_shared<UiIcon>(buildWallIconRect, "STATION", Rectangle(4, 1, 1, 1) * TILE_SIZE, WHITE);
     buildWallToggle->AddChild(buildWallIcon);
 
     UiManager::AddElement("BUILD_MENU", buildMenu);
