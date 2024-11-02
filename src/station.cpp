@@ -116,22 +116,12 @@ void Station::UpdateSpriteOffsets() const
     {
         for (const auto &tile : tilesAtPos.second)
         {
-            const Vector2Int &tilePos = tile->GetPosition();
-            const std::string &tileId = tile->GetId();
-
             tile->RemoveComponent<DecorativeComponent>();
 
-            SpriteCondition status = SpriteCondition::NONE;
-            status |= CheckAdjacentTile(tilePos, tileId, Direction::N) ? SpriteCondition::NORTH_SAME : SpriteCondition::NORTH_DIFFERENT;
-            status |= CheckAdjacentTile(tilePos, tileId, Direction::E) ? SpriteCondition::EAST_SAME : SpriteCondition::EAST_DIFFERENT;
-            status |= CheckAdjacentTile(tilePos, tileId, Direction::S) ? SpriteCondition::SOUTH_SAME : SpriteCondition::SOUTH_DIFFERENT;
-            status |= CheckAdjacentTile(tilePos, tileId, Direction::W) ? SpriteCondition::WEST_SAME : SpriteCondition::WEST_DIFFERENT;
-            status |= CheckAdjacentTile(tilePos, tileId, Direction::N | Direction::E) ? SpriteCondition::NORTH_EAST_SAME : SpriteCondition::NORTH_EAST_DIFFERENT;
-            status |= CheckAdjacentTile(tilePos, tileId, Direction::S | Direction::E) ? SpriteCondition::SOUTH_EAST_SAME : SpriteCondition::SOUTH_EAST_DIFFERENT;
-            status |= CheckAdjacentTile(tilePos, tileId, Direction::S | Direction::W) ? SpriteCondition::SOUTH_WEST_SAME : SpriteCondition::SOUTH_WEST_DIFFERENT;
-            status |= CheckAdjacentTile(tilePos, tileId, Direction::N | Direction::W) ? SpriteCondition::NORTH_WEST_SAME : SpriteCondition::NORTH_WEST_DIFFERENT;
+            SpriteCondition status = GetSpriteConditionForTile(tile);
 
-            if (auto spriteDef = tile->GetTileDefinition()->GetReferenceSprite()) {
+            if (auto spriteDef = tile->GetTileDefinition()->GetReferenceSprite())
+            {
                 if (auto basicSpriteDef = std::dynamic_pointer_cast<BasicSpriteDef>(spriteDef))
                 {
                     tile->SetSprite(std::make_shared<BasicSprite>(basicSpriteDef->spriteOffset));
@@ -149,7 +139,7 @@ void Station::UpdateSpriteOffsets() const
                 }
             }
 
-            if (tileId == "DOOR")
+            if (tile->GetId() == "DOOR")
             {
                 auto decorative = tile->AddComponent<DecorativeComponent>(tile);
                 decorative->AddDecorativeTile(Vector2Int(0, -1), Vector2Int(0, 5));
@@ -167,6 +157,27 @@ std::string Station::GetTileIdAtPosition(const Vector2Int &pos, TileDef::Height 
         return "";
 
     return tile->GetId();
+}
+
+SpriteCondition Station::GetSpriteConditionForTile(const std::shared_ptr<Tile> &tile) const
+{
+    if (!tile)
+        return SpriteCondition::NONE;
+
+    const Vector2Int &tilePos = tile->GetPosition();
+    const std::string &tileId = tile->GetId();
+
+    SpriteCondition status = SpriteCondition::NONE;
+    status |= CheckAdjacentTile(tilePos, tileId, Direction::N) ? SpriteCondition::NORTH_SAME : SpriteCondition::NORTH_DIFFERENT;
+    status |= CheckAdjacentTile(tilePos, tileId, Direction::E) ? SpriteCondition::EAST_SAME : SpriteCondition::EAST_DIFFERENT;
+    status |= CheckAdjacentTile(tilePos, tileId, Direction::S) ? SpriteCondition::SOUTH_SAME : SpriteCondition::SOUTH_DIFFERENT;
+    status |= CheckAdjacentTile(tilePos, tileId, Direction::W) ? SpriteCondition::WEST_SAME : SpriteCondition::WEST_DIFFERENT;
+    status |= CheckAdjacentTile(tilePos, tileId, Direction::N | Direction::E) ? SpriteCondition::NORTH_EAST_SAME : SpriteCondition::NORTH_EAST_DIFFERENT;
+    status |= CheckAdjacentTile(tilePos, tileId, Direction::S | Direction::E) ? SpriteCondition::SOUTH_EAST_SAME : SpriteCondition::SOUTH_EAST_DIFFERENT;
+    status |= CheckAdjacentTile(tilePos, tileId, Direction::S | Direction::W) ? SpriteCondition::SOUTH_WEST_SAME : SpriteCondition::SOUTH_WEST_DIFFERENT;
+    status |= CheckAdjacentTile(tilePos, tileId, Direction::N | Direction::W) ? SpriteCondition::NORTH_WEST_SAME : SpriteCondition::NORTH_WEST_DIFFERENT;
+
+    return status;
 }
 
 bool Station::IsPositionPathable(const Vector2Int &pos) const
