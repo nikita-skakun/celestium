@@ -110,12 +110,6 @@ std::shared_ptr<Station> CreateStation()
     return station;
 }
 
-struct SliceWithConditions
-{
-    std::vector<bool> conditions;
-    SpriteSlice slice;
-};
-
 void Station::UpdateSpriteOffsets() const
 {
     for (const auto &tilesAtPos : tileMap)
@@ -127,133 +121,36 @@ void Station::UpdateSpriteOffsets() const
 
             tile->RemoveComponent<DecorativeComponent>();
 
-            bool nSame = CheckAdjacentTile(tilePos, tileId, Direction::N);
-            bool eSame = CheckAdjacentTile(tilePos, tileId, Direction::E);
-            bool sSame = CheckAdjacentTile(tilePos, tileId, Direction::S);
-            bool wSame = CheckAdjacentTile(tilePos, tileId, Direction::W);
+            SpriteCondition status = SpriteCondition::NONE;
+            status |= CheckAdjacentTile(tilePos, tileId, Direction::N) ? SpriteCondition::NORTH_SAME : SpriteCondition::NORTH_DIFFERENT;
+            status |= CheckAdjacentTile(tilePos, tileId, Direction::E) ? SpriteCondition::EAST_SAME : SpriteCondition::EAST_DIFFERENT;
+            status |= CheckAdjacentTile(tilePos, tileId, Direction::S) ? SpriteCondition::SOUTH_SAME : SpriteCondition::SOUTH_DIFFERENT;
+            status |= CheckAdjacentTile(tilePos, tileId, Direction::W) ? SpriteCondition::WEST_SAME : SpriteCondition::WEST_DIFFERENT;
+            status |= CheckAdjacentTile(tilePos, tileId, Direction::N | Direction::E) ? SpriteCondition::NORTH_EAST_SAME : SpriteCondition::NORTH_EAST_DIFFERENT;
+            status |= CheckAdjacentTile(tilePos, tileId, Direction::S | Direction::E) ? SpriteCondition::SOUTH_EAST_SAME : SpriteCondition::SOUTH_EAST_DIFFERENT;
+            status |= CheckAdjacentTile(tilePos, tileId, Direction::S | Direction::W) ? SpriteCondition::SOUTH_WEST_SAME : SpriteCondition::SOUTH_WEST_DIFFERENT;
+            status |= CheckAdjacentTile(tilePos, tileId, Direction::N | Direction::W) ? SpriteCondition::NORTH_WEST_SAME : SpriteCondition::NORTH_WEST_DIFFERENT;
 
-            if (tileId == "BLUE_FLOOR")
-            {
-                bool neSame = CheckAdjacentTile(tilePos, tileId, Direction::N | Direction::E);
-                bool seSame = CheckAdjacentTile(tilePos, tileId, Direction::S | Direction::E);
-                bool nwSame = CheckAdjacentTile(tilePos, tileId, Direction::N | Direction::W);
-                bool swSame = CheckAdjacentTile(tilePos, tileId, Direction::S | Direction::W);
-
-                std::vector<SliceWithConditions> sliceConditions = {
-                    {{}, SpriteSlice(0, 32, 32, 32, 0, 0)},
-                    {{!nSame}, SpriteSlice(74, 32, 12, 10, 10, 0)},
-                    {{!nSame, wSame}, SpriteSlice(64, 32, 10, 10, 0, 0)},
-                    {{!nSame, !wSame}, SpriteSlice(64, 43, 10, 10, 0, 0)},
-                    {{!nSame, eSame}, SpriteSlice(86, 32, 10, 10, 22, 0)},
-                    {{!nSame, !eSame}, SpriteSlice(86, 43, 10, 10, 22, 0)},
-                    {{!eSame}, SpriteSlice(118, 42, 10, 12, 22, 10)},
-                    {{!eSame, nSame}, SpriteSlice(118, 32, 10, 10, 22, 0)},
-                    {{!eSame, sSame}, SpriteSlice(118, 54, 10, 10, 22, 22)},
-                    {{!sSame}, SpriteSlice(74, 54, 12, 10, 10, 22)},
-                    {{!sSame, wSame}, SpriteSlice(64, 54, 10, 10, 0, 22)},
-                    {{!sSame, !wSame}, SpriteSlice(107, 32, 10, 10, 0, 22)},
-                    {{!sSame, eSame}, SpriteSlice(86, 54, 10, 10, 22, 22)},
-                    {{!sSame, !eSame}, SpriteSlice(107, 54, 10, 10, 22, 22)},
-                    {{!wSame}, SpriteSlice(96, 42, 10, 12, 0, 10)},
-                    {{!wSame, nSame}, SpriteSlice(96, 32, 10, 10, 0, 0)},
-                    {{!wSame, sSame}, SpriteSlice(96, 54, 10, 10, 0, 22)},
-                    {{nSame, eSame, neSame}, SpriteSlice(46, 46, 4, 4, 26, 2)},
-                    {{nSame, eSame, !neSame}, SpriteSlice(54, 32, 10, 10, 22, 0)},
-                    {{sSame, eSame, seSame}, SpriteSlice(46, 46, 4, 4, 26, 26)},
-                    {{sSame, eSame, !seSame}, SpriteSlice(54, 54, 10, 10, 22, 22)},
-                    {{sSame, wSame, swSame}, SpriteSlice(46, 46, 4, 4, 2, 26)},
-                    {{sSame, wSame, !swSame}, SpriteSlice(32, 54, 10, 10, 0, 22)},
-                    {{nSame, wSame, nwSame}, SpriteSlice(46, 46, 4, 4, 2, 2)},
-                    {{nSame, wSame, !nwSame}, SpriteSlice(32, 32, 10, 10, 0, 0)}};
-
-                std::vector<SpriteSlice> slices;
-                for (const auto &sliceCondition : sliceConditions)
+            if (auto spriteDef = tile->GetTileDefinition()->GetReferenceSprite()) {
+                if (auto basicSpriteDef = std::dynamic_pointer_cast<BasicSpriteDef>(spriteDef))
                 {
-                    bool valid = true;
-                    for (size_t i = 0; i < sliceCondition.conditions.size(); i++)
+                    tile->SetSprite(std::make_shared<BasicSprite>(basicSpriteDef->spriteOffset));
+                }
+                else if (auto multiSliceSpriteDef = std::dynamic_pointer_cast<MultiSliceSpriteDef>(spriteDef))
+                {
+                    std::vector<SpriteSlice> slices;
+                    for (const auto &sliceCondition : multiSliceSpriteDef->slices)
                     {
-                        if (!sliceCondition.conditions[i])
-                        {
-                            valid = false;
-                            break;
-                        }
+                        if ((status & sliceCondition.conditions) == sliceCondition.conditions)
+                            slices.push_back(sliceCondition.slice);
                     }
 
-                    if (valid)
-                        slices.push_back(sliceCondition.slice);
+                    tile->SetSprite(std::make_shared<MultiSliceSprite>(slices));
                 }
+            }
 
-                tile->SetSprite(std::make_shared<MultiSliceSprite>(slices));
-            }
-            else if (tileId == "WALL")
+            if (tileId == "DOOR")
             {
-                std::vector<SliceWithConditions> sliceConditions = {
-                    {{nSame}, SpriteSlice(172, 32, 8, 12, 12, 0)},
-                    {{!nSame}, SpriteSlice(140, 32, 8, 12, 12, 0)},
-                    {{nSame}, SpriteSlice(172, 44, 8, 8, 12, 12)},
-                    {{!nSame}, SpriteSlice(140, 44, 8, 8, 12, 12)},
-                    {{eSame}, SpriteSlice(180, 44, 12, 8, 20, 12)},
-                    {{!eSame}, SpriteSlice(148, 44, 12, 8, 20, 12)},
-                    {{sSame}, SpriteSlice(172, 52, 8, 12, 12, 20)},
-                    {{!sSame}, SpriteSlice(140, 52, 8, 12, 12, 20)},
-                    {{wSame}, SpriteSlice(160, 44, 12, 8, 0, 12)},
-                    {{!wSame}, SpriteSlice(128, 44, 12, 8, 0, 12)},
-                    {{nSame, eSame}, SpriteSlice(180, 32, 12, 12, 20, 0)},
-                    {{nSame, !eSame}, SpriteSlice(212, 32, 12, 12, 20, 0)},
-                    {{!nSame, eSame}, SpriteSlice(244, 32, 12, 12, 20, 0)},
-                    {{!nSame, !eSame}, SpriteSlice(148, 32, 12, 12, 20, 0)},
-                    {{sSame, eSame}, SpriteSlice(180, 52, 12, 12, 20, 20)},
-                    {{sSame, !eSame}, SpriteSlice(212, 52, 12, 12, 20, 20)},
-                    {{!sSame, eSame}, SpriteSlice(244, 52, 12, 12, 20, 20)},
-                    {{!sSame, !eSame}, SpriteSlice(148, 52, 12, 12, 20, 20)},
-                    {{sSame, wSame}, SpriteSlice(160, 52, 12, 12, 0, 20)},
-                    {{sSame, !wSame}, SpriteSlice(192, 52, 12, 12, 0, 20)},
-                    {{!sSame, wSame}, SpriteSlice(224, 52, 12, 12, 0, 20)},
-                    {{!sSame, !wSame}, SpriteSlice(128, 52, 12, 12, 0, 20)},
-                    {{nSame, wSame}, SpriteSlice(160, 32, 12, 12, 0, 0)},
-                    {{nSame, !wSame}, SpriteSlice(192, 32, 12, 12, 0, 0)},
-                    {{!nSame, wSame}, SpriteSlice(224, 32, 12, 12, 0, 0)},
-                    {{!nSame, !wSame}, SpriteSlice(128, 32, 12, 12, 0, 0)}};
-
-                std::vector<SpriteSlice> slices;
-                slices.reserve(9);
-                for (const auto &sliceCondition : sliceConditions)
-                {
-                    bool valid = true;
-                    for (size_t i = 0; i < sliceCondition.conditions.size(); i++)
-                    {
-                        if (!sliceCondition.conditions[i])
-                        {
-                            valid = false;
-                            break;
-                        }
-                    }
-
-                    if (valid)
-                        slices.push_back(sliceCondition.slice);
-                }
-
-                tile->SetSprite(std::make_shared<MultiSliceSprite>(slices));
-            }
-            else if (tileId == "OXYGEN_PRODUCER")
-            {
-                tile->SetSprite(std::make_shared<BasicSprite>(Vector2Int(6, 7)));
-            }
-            else if (tileId == "BATTERY")
-            {
-                tile->SetSprite(std::make_shared<BasicSprite>(Vector2Int(5, 7)));
-            }
-            else if (tileId == "SOLAR_PANEL")
-            {
-                tile->SetSprite(std::make_shared<BasicSprite>(Vector2Int(7, 7)));
-            }
-            else if (tileId == "FRAME")
-            {
-                tile->SetSprite(std::make_shared<BasicSprite>(Vector2Int(1, 0)));
-            }
-            else if (tileId == "DOOR")
-            {
-                tile->SetSprite(nullptr);
                 auto decorative = tile->AddComponent<DecorativeComponent>(tile);
                 decorative->AddDecorativeTile(Vector2Int(0, -1), Vector2Int(0, 5));
                 decorative->AddDecorativeTile(Vector2Int(0, 1), Vector2Int(0, 6));

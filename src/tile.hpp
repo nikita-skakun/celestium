@@ -4,41 +4,6 @@
 struct Room;
 struct Station;
 
-struct Sprite
-{
-    virtual ~Sprite() = default;
-    virtual void Draw(const Vector2Int &position, const Color &tint) const = 0;
-};
-
-struct BasicSprite : public Sprite
-{
-    Vector2Int spriteOffset;
-
-    BasicSprite(const Vector2Int &offset) : spriteOffset(offset) {}
-
-    void Draw(const Vector2Int &position, const Color &tint) const override;
-};
-
-struct SpriteSlice
-{
-    Rectangle sourceRect;
-    Vector2 destOffset;
-
-    SpriteSlice() : sourceRect(Rectangle()), destOffset(Vector2()) {}
-    SpriteSlice(const Rectangle &sourceRect, const Vector2 &destOffset) : sourceRect(sourceRect), destOffset(destOffset) {}
-    SpriteSlice(float x, float y, float width, float height, float offsetX, float offsetY)
-        : sourceRect(Rectangle(x, y, width, height)), destOffset(Vector2(offsetX, offsetY)) {}
-};
-
-struct MultiSliceSprite : public Sprite
-{
-    std::vector<SpriteSlice> slices;
-
-    MultiSliceSprite(const std::vector<SpriteSlice> &slices) : slices(slices) {}
-
-    void Draw(const Vector2Int &position, const Color &tint) const override;
-};
-
 struct Tile : public std::enable_shared_from_this<Tile>
 {
 private:

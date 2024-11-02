@@ -5,10 +5,165 @@ tiles:
       - type: WALKABLE
       - type: OXYGEN
         oxygenLevel: 100.0
+    slicedSprite:
+      - conditions: NONE
+        sourceRect: (0, 32, 32, 32)
+        destOffset: (0, 0)
+      - conditions: NORTH_DIFFERENT
+        sourceRect: (74, 32, 12, 10)
+        destOffset: (10, 0)
+      - conditions: NORTH_DIFFERENT | WEST_SAME
+        sourceRect: (64, 32, 10, 10)
+        destOffset: (0, 0)
+      - conditions: NORTH_DIFFERENT | WEST_DIFFERENT
+        sourceRect: (64, 43, 10, 10)
+        destOffset: (0, 0)
+      - conditions: NORTH_DIFFERENT | EAST_SAME
+        sourceRect: (86, 32, 10, 10)
+        destOffset: (22, 0)
+      - conditions: NORTH_DIFFERENT | EAST_DIFFERENT
+        sourceRect: (86, 43, 10, 10)
+        destOffset: (22, 0)
+      - conditions: EAST_DIFFERENT
+        sourceRect: (118, 42, 10, 12)
+        destOffset: (22, 10)
+      - conditions: EAST_DIFFERENT | NORTH_SAME
+        sourceRect: (118, 32, 10, 10)
+        destOffset: (22, 0)
+      - conditions: EAST_DIFFERENT | SOUTH_SAME
+        sourceRect: (118, 54, 10, 10)
+        destOffset: (22, 22)
+      - conditions: SOUTH_DIFFERENT
+        sourceRect: (74, 54, 12, 10)
+        destOffset: (10, 22)
+      - conditions: SOUTH_DIFFERENT | WEST_SAME
+        sourceRect: (64, 54, 10, 10)
+        destOffset: (0, 22)
+      - conditions: SOUTH_DIFFERENT | WEST_DIFFERENT
+        sourceRect: (107, 32, 10, 10)
+        destOffset: (0, 22)
+      - conditions: SOUTH_DIFFERENT | EAST_SAME
+        sourceRect: (86, 54, 10, 10)
+        destOffset: (22, 22)
+      - conditions: SOUTH_DIFFERENT | EAST_DIFFERENT
+        sourceRect: (107, 54, 10, 10)
+        destOffset: (22, 22)
+      - conditions: WEST_DIFFERENT
+        sourceRect: (96, 42, 10, 12)
+        destOffset: (0, 10)
+      - conditions: WEST_DIFFERENT | NORTH_SAME
+        sourceRect: (96, 32, 10, 10)
+        destOffset: (0, 0)
+      - conditions: WEST_DIFFERENT | SOUTH_SAME
+        sourceRect: (96, 54, 10, 10)
+        destOffset: (0, 22)
+      - conditions: NORTH_SAME | EAST_SAME | NORTH_EAST_SAME
+        sourceRect: (46, 46, 4, 4)
+        destOffset: (26, 2)
+      - conditions: NORTH_SAME | EAST_SAME | NORTH_EAST_DIFFERENT
+        sourceRect: (54, 32, 10, 10)
+        destOffset: (22, 0)
+      - conditions: SOUTH_SAME | EAST_SAME | SOUTH_EAST_SAME
+        sourceRect: (46, 46, 4, 4)
+        destOffset: (26, 26)
+      - conditions: SOUTH_SAME | EAST_SAME | SOUTH_EAST_DIFFERENT
+        sourceRect: (54, 54, 10, 10)
+        destOffset: (22, 22)
+      - conditions: SOUTH_SAME | WEST_SAME | SOUTH_WEST_SAME
+        sourceRect: (46, 46, 4, 4)
+        destOffset: (2, 26)
+      - conditions: SOUTH_SAME | WEST_SAME | SOUTH_WEST_DIFFERENT
+        sourceRect: (32, 54, 10, 10)
+        destOffset: (0, 22)
+      - conditions: NORTH_SAME | WEST_SAME | NORTH_WEST_SAME
+        sourceRect: (46, 46, 4, 4)
+        destOffset: (2, 2)
+      - conditions: NORTH_SAME | WEST_SAME | NORTH_WEST_DIFFERENT
+        sourceRect: (32, 32, 10, 10)
+        destOffset: (0, 0)
   - id: WALL
     height: FLOOR | WAIST | CEILING
     components:
       - type: SOLID
+    slicedSprite:
+      - conditions: NORTH_SAME
+        sourceRect: (172, 32, 8, 12)
+        destOffset: (12, 0)
+      - conditions: NORTH_DIFFERENT
+        sourceRect: (140, 32, 8, 12)
+        destOffset: (12, 0)
+      - conditions: NORTH_SAME
+        sourceRect: (172, 44, 8, 8)
+        destOffset: (12, 12)
+      - conditions: NORTH_DIFFERENT
+        sourceRect: (140, 44, 8, 8)
+        destOffset: (12, 12)
+      - conditions: EAST_SAME
+        sourceRect: (180, 44, 12, 8)
+        destOffset: (20, 12)
+      - conditions: EAST_DIFFERENT
+        sourceRect: (148, 44, 12, 8)
+        destOffset: (20, 12)
+      - conditions: SOUTH_SAME
+        sourceRect: (172, 52, 8, 12)
+        destOffset: (12, 20)
+      - conditions: SOUTH_DIFFERENT
+        sourceRect: (140, 52, 8, 12)
+        destOffset: (12, 20)
+      - conditions: WEST_SAME
+        sourceRect: (160, 44, 12, 8)
+        destOffset: (0, 12)
+      - conditions: WEST_DIFFERENT
+        sourceRect: (128, 44, 12, 8)
+        destOffset: (0, 12)
+      - conditions: NORTH_SAME | EAST_SAME
+        sourceRect: (180, 32, 12, 12)
+        destOffset: (20, 0)
+      - conditions: NORTH_SAME | EAST_DIFFERENT
+        sourceRect: (212, 32, 12, 12)
+        destOffset: (20, 0)
+      - conditions: NORTH_DIFFERENT | EAST_SAME
+        sourceRect: (244, 32, 12, 12)
+        destOffset: (20, 0)
+      - conditions: NORTH_DIFFERENT | EAST_DIFFERENT
+        sourceRect: (148, 32, 12, 12)
+        destOffset: (20, 0)
+      - conditions: SOUTH_SAME | EAST_SAME
+        sourceRect: (180, 52, 12, 12)
+        destOffset: (20, 20)
+      - conditions: SOUTH_SAME | EAST_DIFFERENT
+        sourceRect: (212, 52, 12, 12)
+        destOffset: (20, 20)
+      - conditions: SOUTH_DIFFERENT | EAST_SAME
+        sourceRect: (244, 52, 12, 12)
+        destOffset: (20, 20)
+      - conditions: SOUTH_DIFFERENT | EAST_DIFFERENT
+        sourceRect: (148, 52, 12, 12)
+        destOffset: (20, 20)
+      - conditions: SOUTH_SAME | WEST_SAME
+        sourceRect: (160, 52, 12, 12)
+        destOffset: (0, 20)
+      - conditions: SOUTH_SAME | WEST_DIFFERENT
+        sourceRect: (192, 52, 12, 12)
+        destOffset: (0, 20)
+      - conditions: SOUTH_DIFFERENT | WEST_SAME
+        sourceRect: (224, 52, 12, 12)
+        destOffset: (0, 20)
+      - conditions: SOUTH_DIFFERENT | WEST_DIFFERENT
+        sourceRect: (128, 52, 12, 12)
+        destOffset: (0, 20)
+      - conditions: NORTH_SAME | WEST_SAME
+        sourceRect: (160, 32, 12, 12)
+        destOffset: (0, 0)
+      - conditions: NORTH_SAME | WEST_DIFFERENT
+        sourceRect: (192, 32, 12, 12)
+        destOffset: (0, 0)
+      - conditions: NORTH_DIFFERENT | WEST_SAME
+        sourceRect: (224, 32, 12, 12)
+        destOffset: (0, 0)
+      - conditions: NORTH_DIFFERENT | WEST_DIFFERENT
+        sourceRect: (128, 32, 12, 12)
+        destOffset: (0, 0)
   - id: OXYGEN_PRODUCER
     height: WAIST
     components:
@@ -20,6 +175,7 @@ tiles:
         oxygenProduction: 100.0
       - type: DURABILITY
         hitpoints: 10.0
+    sprite: (6, 7)
   - id: BATTERY
     height: WAIST
     components:
@@ -29,6 +185,7 @@ tiles:
         maxCharge: 2000.0
       - type: DURABILITY
         hitpoints: 10.0
+    sprite: (5, 7)
   - id: SOLAR_PANEL
     height: WAIST
     components:
@@ -39,10 +196,12 @@ tiles:
       - type: SOLAR_PANEL
       - type: DURABILITY
         hitpoints: 5.0
+    sprite: (7, 7)
   - id: FRAME
     height: FLOOR
     components:
       - type: WALKABLE
+    sprite: (1, 0)
   - id: DOOR
     height: WAIST | CEILING
     components:

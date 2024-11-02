@@ -2,8 +2,30 @@
 #include "env_effect_def.hpp"
 #include "fs_utils.hpp"
 #include "tile_def.hpp"
+#include <c4/format.hpp>
 #include <ryml_std.hpp>
 #include <ryml.hpp>
+
+namespace c4
+{
+    inline bool from_chars(ryml::csubstr buf, Vector2 *vector)
+    {
+        size_t ret = ryml::unformat(buf, "({},{})", vector->x, vector->y);
+        return ret != ryml::yml::npos;
+    }
+
+    inline bool from_chars(ryml::csubstr buf, Vector2Int *vector)
+    {
+        size_t ret = ryml::unformat(buf, "({},{})", vector->x, vector->y);
+        return ret != ryml::yml::npos;
+    }
+
+    inline bool from_chars(ryml::csubstr buf, Rectangle *rect)
+    {
+        size_t ret = ryml::unformat(buf, "({},{},{},{})", rect->x, rect->y, rect->width, rect->height);
+        return ret != ryml::yml::npos;
+    }
+}
 
 struct DefinitionManager
 {
@@ -168,7 +190,7 @@ public:
             // Parse Height
             auto height = magic_enum::enum_flags_cast<TileDef::Height>(heightStr, magic_enum::case_insensitive);
             if (!height.has_value())
-                throw std::runtime_error(std::format("Parsing of height string failed: {}", heightStr));
+                throw std::runtime_error(std::format("Parsing of height string for tile ({}) failed: {}", tileId, heightStr));
 
             // Parse Components
             std::unordered_set<std::shared_ptr<Component>> refComponents;
@@ -180,7 +202,7 @@ public:
 
                 auto type = magic_enum::enum_cast<Component::Type>(typeStr, magic_enum::case_insensitive);
                 if (!type.has_value())
-                    throw std::runtime_error(std::format("Parsing of component type string failed: {}", typeStr));
+                    throw std::runtime_error(std::format("Parsing of component type string for tile ({}) failed: {}", tileId, typeStr));
 
                 auto component = DefinitionManager::GetInstance().CreateComponent(type.value(), node);
                 if (!component)
@@ -188,7 +210,48 @@ public:
                 refComponents.insert(component);
             }
 
-            DefinitionManager::GetInstance().tileDefinitions[tileId] = std::make_shared<TileDef>(tileId, height.value(), refComponents);
+            // Parse Sprites
+            std::shared_ptr<SpriteDef> refSprite;
+            if (tileNode.has_child("sprite"))
+            {
+                Vector2Int sprite;
+                tileNode["sprite"] >> sprite;
+
+                refSprite = std::make_shared<BasicSpriteDef>(sprite);
+            }
+            else if (tileNode.has_child("slicedSprite"))
+            {
+                std::vector<SliceWithConditions> slices;
+                for (ryml::ConstNodeRef sliceNode : tileNode["slicedSprite"])
+                {
+                    std::string conditionsStr;
+                    sliceNode["conditions"] >> conditionsStr;
+                    StringRemoveSpaces(conditionsStr);
+
+                    SpriteCondition conditions;
+                    if (conditionsStr.empty() || conditionsStr == "NONE")
+                        conditions = SpriteCondition::NONE;
+                    else
+                    {
+                        auto parsedConditions = magic_enum::enum_flags_cast<SpriteCondition>(conditionsStr, magic_enum::case_insensitive);
+                        if (!parsedConditions.has_value())
+                            throw std::runtime_error(std::format("Parsing of conditions string for tile ({}) failed: {}", tileId, conditionsStr));
+                        conditions = parsedConditions.value();
+                    }
+
+                    Rectangle sourceRect;
+                    sliceNode["sourceRect"] >> sourceRect;
+
+                    Vector2 destOffset;
+                    sliceNode["destOffset"] >> destOffset;
+
+                    slices.emplace_back(conditions, SpriteSlice(sourceRect, destOffset));
+                }
+
+                refSprite = std::make_shared<MultiSliceSpriteDef>(slices);
+            }
+
+            DefinitionManager::GetInstance().tileDefinitions[tileId] = std::make_shared<TileDef>(tileId, height.value(), refComponents, refSprite);
         }
     }
 };

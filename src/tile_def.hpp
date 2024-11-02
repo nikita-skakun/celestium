@@ -1,5 +1,6 @@
 #pragma once
 #include "component.hpp"
+#include "sprite.hpp"
 #include <unordered_set>
 
 struct TileDef
@@ -16,14 +17,17 @@ private:
     const std::string id;
     const Height height;
     const std::unordered_set<std::shared_ptr<Component>> refComponents;
+    const std::shared_ptr<SpriteDef> refSprite;
 
 public:
-    TileDef(const std::string &id, Height height, std::unordered_set<std::shared_ptr<Component>> refComponents)
-        : id(id), height(height), refComponents(refComponents) {}
+    TileDef(const std::string &id, Height height, const std::unordered_set<std::shared_ptr<Component>> &refComponents,
+            const std::shared_ptr<SpriteDef> &refSprite)
+        : id(id), height(height), refComponents(refComponents), refSprite(refSprite) {}
 
     constexpr const std::string &GetId() const { return id; }
     constexpr Height GetHeight() const { return height; }
     constexpr const std::unordered_set<std::shared_ptr<Component>> &GetReferenceComponents() const { return refComponents; }
+    constexpr const std::shared_ptr<SpriteDef> &GetReferenceSprite() const { return refSprite; }
 };
 
 template <>
