@@ -145,8 +145,10 @@ void DrawStationOverlays(std::shared_ptr<Station> station)
                 doorDest2.width = -doorDest2.width;
                 doorDest2.height = -doorDest1.height;
                 doorDest2.y -= 9. * camera.GetZoom() + doorDest2.height;
+                Rectangle doorSourceRect2 = doorSourceRect;
+                doorSourceRect2.width = -doorSourceRect2.width;
 
-                DrawTexturePro(stationTileset, doorSourceRect, doorDest2, Vector2(-doorDest2.width, 0), 180, tint);
+                DrawTexturePro(stationTileset, doorSourceRect2, doorDest2, Vector2(-doorDest2.width, 0), 180, tint);
             }
 
             if (auto powerConsumer = tile->GetComponent<PowerConsumerComponent>())
