@@ -110,6 +110,12 @@ std::shared_ptr<Station> CreateStation()
     return station;
 }
 
+struct SliceWithConditions
+{
+    std::vector<bool> conditions;
+    SpriteSlice slice;
+};
+
 void Station::UpdateSpriteOffsets() const
 {
     for (const auto &tilesAtPos : tileMap)
@@ -133,119 +139,98 @@ void Station::UpdateSpriteOffsets() const
                 bool nwSame = CheckAdjacentTile(tilePos, tileId, Direction::N | Direction::W);
                 bool swSame = CheckAdjacentTile(tilePos, tileId, Direction::S | Direction::W);
 
+                std::vector<SliceWithConditions> sliceConditions = {
+                    {{}, SpriteSlice(0, 32, 32, 32, 0, 0)},
+                    {{!nSame}, SpriteSlice(74, 32, 12, 10, 10, 0)},
+                    {{!nSame, wSame}, SpriteSlice(64, 32, 10, 10, 0, 0)},
+                    {{!nSame, !wSame}, SpriteSlice(64, 43, 10, 10, 0, 0)},
+                    {{!nSame, eSame}, SpriteSlice(86, 32, 10, 10, 22, 0)},
+                    {{!nSame, !eSame}, SpriteSlice(86, 43, 10, 10, 22, 0)},
+                    {{!eSame}, SpriteSlice(118, 42, 10, 12, 22, 10)},
+                    {{!eSame, nSame}, SpriteSlice(118, 32, 10, 10, 22, 0)},
+                    {{!eSame, sSame}, SpriteSlice(118, 54, 10, 10, 22, 22)},
+                    {{!sSame}, SpriteSlice(74, 54, 12, 10, 10, 22)},
+                    {{!sSame, wSame}, SpriteSlice(64, 54, 10, 10, 0, 22)},
+                    {{!sSame, !wSame}, SpriteSlice(107, 32, 10, 10, 0, 22)},
+                    {{!sSame, eSame}, SpriteSlice(86, 54, 10, 10, 22, 22)},
+                    {{!sSame, !eSame}, SpriteSlice(107, 54, 10, 10, 22, 22)},
+                    {{!wSame}, SpriteSlice(96, 42, 10, 12, 0, 10)},
+                    {{!wSame, nSame}, SpriteSlice(96, 32, 10, 10, 0, 0)},
+                    {{!wSame, sSame}, SpriteSlice(96, 54, 10, 10, 0, 22)},
+                    {{nSame, eSame, neSame}, SpriteSlice(46, 46, 4, 4, 26, 2)},
+                    {{nSame, eSame, !neSame}, SpriteSlice(54, 32, 10, 10, 22, 0)},
+                    {{sSame, eSame, seSame}, SpriteSlice(46, 46, 4, 4, 26, 26)},
+                    {{sSame, eSame, !seSame}, SpriteSlice(54, 54, 10, 10, 22, 22)},
+                    {{sSame, wSame, swSame}, SpriteSlice(46, 46, 4, 4, 2, 26)},
+                    {{sSame, wSame, !swSame}, SpriteSlice(32, 54, 10, 10, 0, 22)},
+                    {{nSame, wSame, nwSame}, SpriteSlice(46, 46, 4, 4, 2, 2)},
+                    {{nSame, wSame, !nwSame}, SpriteSlice(32, 32, 10, 10, 0, 0)}};
+
                 std::vector<SpriteSlice> slices;
-
-                slices.emplace_back(0, 32, 32, 32, 0, 0);
-
-                if (!nSame)
+                for (const auto &sliceCondition : sliceConditions)
                 {
-                    slices.emplace_back(74, 32, 12, 10, 10, 0);
+                    bool valid = true;
+                    for (size_t i = 0; i < sliceCondition.conditions.size(); i++)
+                    {
+                        if (!sliceCondition.conditions[i])
+                        {
+                            valid = false;
+                            break;
+                        }
+                    }
 
-                    if (wSame)
-                        slices.emplace_back(64, 32, 10, 10, 0, 0);
-                    else
-                        slices.emplace_back(64, 43, 10, 10, 0, 0);
-
-                    if (eSame)
-                        slices.emplace_back(86, 32, 10, 10, 22, 0);
-                    else
-                        slices.emplace_back(86, 43, 10, 10, 22, 0);
-                }
-
-                if (!eSame)
-                {
-                    slices.emplace_back(118, 42, 10, 12, 22, 10);
-
-                    if (nSame)
-                        slices.emplace_back(118, 32, 10, 10, 22, 0);
-
-                    if (sSame)
-                        slices.emplace_back(118, 54, 10, 10, 22, 22);
-                }
-
-                if (!sSame)
-                {
-                    slices.emplace_back(74, 54, 12, 10, 10, 22);
-
-                    if (wSame)
-                        slices.emplace_back(64, 54, 10, 10, 0, 22);
-                    else
-                        slices.emplace_back(107, 32, 10, 10, 0, 22);
-
-                    if (eSame)
-                        slices.emplace_back(86, 54, 10, 10, 22, 22);
-                    else
-                        slices.emplace_back(107, 54, 10, 10, 22, 22);
-                }
-
-                if (!wSame)
-                {
-                    slices.emplace_back(96, 42, 10, 12, 0, 10);
-
-                    if (nSame)
-                        slices.emplace_back(96, 32, 10, 10, 0, 0);
-
-                    if (sSame)
-                        slices.emplace_back(96, 54, 10, 10, 0, 22);
-                }
-
-                if (nSame && eSame)
-                {
-                    if (neSame)
-                        slices.emplace_back(46, 46, 4, 4, 26, 2);
-                    else
-                        slices.emplace_back(54, 32, 10, 10, 22, 0);
-                }
-
-                if (sSame && eSame)
-                {
-                    if (seSame)
-                        slices.emplace_back(46, 46, 4, 4, 26, 26);
-                    else
-                        slices.emplace_back(54, 54, 10, 10, 22, 22);
-                }
-
-                if (sSame && wSame)
-                {
-                    if (swSame)
-                        slices.emplace_back(46, 46, 4, 4, 2, 26);
-                    else
-                        slices.emplace_back(32, 54, 10, 10, 0, 22);
-                }
-
-                if (nSame && wSame)
-                {
-                    if (nwSame)
-                        slices.emplace_back(46, 46, 4, 4, 2, 2);
-                    else
-                        slices.emplace_back(32, 32, 10, 10, 0, 0);
+                    if (valid)
+                        slices.push_back(sliceCondition.slice);
                 }
 
                 tile->SetSprite(std::make_shared<MultiSliceSprite>(slices));
             }
             else if (tileId == "WALL")
             {
+                std::vector<SliceWithConditions> sliceConditions = {
+                    {{nSame}, SpriteSlice(172, 32, 8, 12, 12, 0)},
+                    {{!nSame}, SpriteSlice(140, 32, 8, 12, 12, 0)},
+                    {{nSame}, SpriteSlice(172, 44, 8, 8, 12, 12)},
+                    {{!nSame}, SpriteSlice(140, 44, 8, 8, 12, 12)},
+                    {{eSame}, SpriteSlice(180, 44, 12, 8, 20, 12)},
+                    {{!eSame}, SpriteSlice(148, 44, 12, 8, 20, 12)},
+                    {{sSame}, SpriteSlice(172, 52, 8, 12, 12, 20)},
+                    {{!sSame}, SpriteSlice(140, 52, 8, 12, 12, 20)},
+                    {{wSame}, SpriteSlice(160, 44, 12, 8, 0, 12)},
+                    {{!wSame}, SpriteSlice(128, 44, 12, 8, 0, 12)},
+                    {{nSame, eSame}, SpriteSlice(180, 32, 12, 12, 20, 0)},
+                    {{nSame, !eSame}, SpriteSlice(212, 32, 12, 12, 20, 0)},
+                    {{!nSame, eSame}, SpriteSlice(244, 32, 12, 12, 20, 0)},
+                    {{!nSame, !eSame}, SpriteSlice(148, 32, 12, 12, 20, 0)},
+                    {{sSame, eSame}, SpriteSlice(180, 52, 12, 12, 20, 20)},
+                    {{sSame, !eSame}, SpriteSlice(212, 52, 12, 12, 20, 20)},
+                    {{!sSame, eSame}, SpriteSlice(244, 52, 12, 12, 20, 20)},
+                    {{!sSame, !eSame}, SpriteSlice(148, 52, 12, 12, 20, 20)},
+                    {{sSame, wSame}, SpriteSlice(160, 52, 12, 12, 0, 20)},
+                    {{sSame, !wSame}, SpriteSlice(192, 52, 12, 12, 0, 20)},
+                    {{!sSame, wSame}, SpriteSlice(224, 52, 12, 12, 0, 20)},
+                    {{!sSame, !wSame}, SpriteSlice(128, 52, 12, 12, 0, 20)},
+                    {{nSame, wSame}, SpriteSlice(160, 32, 12, 12, 0, 0)},
+                    {{nSame, !wSame}, SpriteSlice(192, 32, 12, 12, 0, 0)},
+                    {{!nSame, wSame}, SpriteSlice(224, 32, 12, 12, 0, 0)},
+                    {{!nSame, !wSame}, SpriteSlice(128, 32, 12, 12, 0, 0)}};
+
                 std::vector<SpriteSlice> slices;
                 slices.reserve(9);
-
-                slices.emplace_back(nSame ? 172 : 140, 32, 8, 12, 12, 0);
-                slices.emplace_back(nSame ? 172 : 140, 44, 8, 8, 12, 12);
-                slices.emplace_back(eSame ? 180 : 148, 44, 12, 8, 20, 12);
-                slices.emplace_back(sSame ? 172 : 140, 52, 8, 12, 12, 20);
-                slices.emplace_back(wSame ? 160 : 128, 44, 12, 8, 0, 12);
-
-                struct CornerCondition
+                for (const auto &sliceCondition : sliceConditions)
                 {
-                    bool condition1, condition2;
-                    int x, y;
-                };
+                    bool valid = true;
+                    for (size_t i = 0; i < sliceCondition.conditions.size(); i++)
+                    {
+                        if (!sliceCondition.conditions[i])
+                        {
+                            valid = false;
+                            break;
+                        }
+                    }
 
-                CornerCondition cornerConditions[] = {{nSame, eSame, 180, 32}, {nSame, !eSame, 212, 32}, {!nSame, eSame, 244, 32}, {!nSame, !eSame, 148, 32}, {sSame, eSame, 180, 52}, {sSame, !eSame, 212, 52}, {!sSame, eSame, 244, 52}, {!sSame, !eSame, 148, 52}, {sSame, wSame, 160, 52}, {sSame, !wSame, 192, 52}, {!sSame, wSame, 224, 52}, {!sSame, !wSame, 128, 52}, {nSame, wSame, 160, 32}, {nSame, !wSame, 192, 32}, {!nSame, wSame, 224, 32}, {!nSame, !wSame, 128, 32}};
-
-                for (const auto &corner : cornerConditions)
-                {
-                    if (corner.condition1 && corner.condition2)
-                        slices.emplace_back(corner.x, corner.y, 12, 12, (corner.x % 32), (corner.y % 32));
+                    if (valid)
+                        slices.push_back(sliceCondition.slice);
                 }
 
                 tile->SetSprite(std::make_shared<MultiSliceSprite>(slices));
