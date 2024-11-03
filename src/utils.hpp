@@ -35,6 +35,12 @@ constexpr double Oscillate(double time, double length) noexcept
     return std::fabs(std::fmod(time, length * 2.) - length);
 }
 
+template <typename T>
+constexpr int Floor(T value) noexcept
+{
+    return static_cast<int>(value) - ((value >= 0) ? 0 : 1);
+}
+
 /**
  * @brief Determines if an event occurs based on a chance per second and delta time.
  *

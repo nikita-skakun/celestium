@@ -254,9 +254,18 @@ void AddBuildToggle(std::shared_ptr<UiPanel> &buildMenu, const TileToggleConfig 
 {
     constexpr Vector2 SPACING = Vector2ScreenScale(Vector2(DEFAULT_PADDING, DEFAULT_PADDING));
     constexpr Vector2 MENU_POS = Vector2(SPACING.x, .5 - SPACING.y);
+    constexpr Vector2 MENU_SIZE = Vector2(1. / 6., .5);
     constexpr Vector2 TOGGLE_SIZE = Vector2ScreenScale(Vector2(64, 64));
+    constexpr int MAX_ITEMS_PER_ROW = Floor((MENU_SIZE.x - 2 * SPACING.x) / (TOGGLE_SIZE.x + SPACING.x));
+    constexpr float SPACING_FOR_CENTER = (MENU_SIZE.x - (MAX_ITEMS_PER_ROW * TOGGLE_SIZE.x + (MAX_ITEMS_PER_ROW + 1) * SPACING.x)) / (MAX_ITEMS_PER_ROW + 1);
 
-    Vector2 togglePos = Vector2(MENU_POS.x + SPACING.x + index * (TOGGLE_SIZE.x + SPACING.x), MENU_POS.y + SPACING.y);
+    // Calculate row and column based on index and maxItemsPerRow
+    int row = index / MAX_ITEMS_PER_ROW;
+    int column = index % MAX_ITEMS_PER_ROW;
+
+    Vector2 togglePos = Vector2(
+        MENU_POS.x + SPACING.x + SPACING_FOR_CENTER + column * (TOGGLE_SIZE.x + SPACING.x + SPACING_FOR_CENTER),
+        MENU_POS.y + SPACING.y + row * (TOGGLE_SIZE.y + SPACING.y));
 
     auto onToggle = [config](bool state)
     {
@@ -293,11 +302,16 @@ void InitializeBuildMenu()
     std::vector<TileToggleConfig> tileConfigs = {
         {"WALL", "STATION", Rectangle(4, 1, 1, 1) * TILE_SIZE},
         {"BLUE_FLOOR", "STATION", Rectangle(0, 1, 1, 1) * TILE_SIZE},
+        {"DOOR", "STATION", Rectangle(0, 5, 1, 1) * TILE_SIZE},
+        {"OXYGEN_PRODUCER", "STATION", Rectangle(6, 7, 1, 1) * TILE_SIZE},
+        {"BATTERY", "STATION", Rectangle(5, 7, 1, 1) * TILE_SIZE},
+        {"FRAME", "STATION", Rectangle(1, 0, 1, 1) * TILE_SIZE},
+        {"SOLAR_PANEL", "STATION", Rectangle(7, 7, 1, 1) * TILE_SIZE},
     };
 
     for (size_t i = 0; i < tileConfigs.size(); ++i)
     {
-        AddBuildToggle(buildMenu, tileConfigs[i], (int)i);
+        AddBuildToggle(buildMenu, tileConfigs.at(i), (int)i);
     }
 
     UiManager::AddElement("BUILD_MENU", buildMenu);
