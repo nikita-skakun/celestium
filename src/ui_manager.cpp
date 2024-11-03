@@ -243,29 +243,62 @@ void InitializeBuildWorldUi()
     UiManager::AddElement("BUILD_DELETE_BTN", buildDeleteButton);
 }
 
+struct TileToggleConfig
+{
+    std::string tileId;
+    std::string iconSpritesheetName;
+    Rectangle iconSourceRect;
+};
+
+void AddBuildToggle(std::shared_ptr<UiPanel> &buildMenu, const TileToggleConfig &config, int index)
+{
+    constexpr Vector2 SPACING = Vector2ScreenScale(Vector2(DEFAULT_PADDING, DEFAULT_PADDING));
+    constexpr Vector2 MENU_POS = Vector2(SPACING.x, .5 - SPACING.y);
+    constexpr Vector2 TOGGLE_SIZE = Vector2ScreenScale(Vector2(64, 64));
+
+    Vector2 togglePos = Vector2(MENU_POS.x + SPACING.x + index * (TOGGLE_SIZE.x + SPACING.x), MENU_POS.y + SPACING.y);
+
+    auto onToggle = [config](bool state)
+    {
+        GameManager::SetBuildTileId(state ? config.tileId : "");
+    };
+
+    auto toggle = std::make_shared<UiToggle>(Vector2ToRect(togglePos, TOGGLE_SIZE), GameManager::IsBuildTileId(config.tileId), onToggle);
+
+    std::weak_ptr<UiToggle> weakToggle = toggle;
+    auto onUpdate = [weakToggle, config]()
+    {
+        if (auto toggle = weakToggle.lock())
+            toggle->SetToggle(GameManager::IsBuildTileId(config.tileId));
+    };
+    toggle->SetOnUpdate(onUpdate);
+
+    buildMenu->AddChild(toggle);
+
+    Rectangle iconRect = Vector2ToRect(togglePos + TOGGLE_SIZE / 8., TOGGLE_SIZE * .75);
+    auto icon = std::make_shared<UiIcon>(iconRect, config.iconSpritesheetName, config.iconSourceRect, WHITE);
+    toggle->AddChild(icon);
+}
+
 void InitializeBuildMenu()
 {
-    constexpr Vector2 spacing = Vector2ScreenScale(Vector2(DEFAULT_PADDING, DEFAULT_PADDING));
-    constexpr Vector2 menuSize = Vector2(1. / 6., .5);
-    constexpr Vector2 menuPos = Vector2(spacing.x, 1. - menuSize.y - spacing.y);
+    constexpr Vector2 SPACING = Vector2ScreenScale(Vector2(DEFAULT_PADDING, DEFAULT_PADDING));
 
-    auto buildMenu = std::make_shared<UiPanel>(Vector2ToRect(menuPos, menuSize), Fade(BLACK, .5));
+    auto buildMenu = std::make_shared<UiPanel>(Rectangle(SPACING.x, .5 - SPACING.y, 1. / 6., .5), Fade(BLACK, .5));
     std::weak_ptr<UiPanel> weakBuildMenu = buildMenu;
     buildMenu->SetOnUpdate([weakBuildMenu]()
                            { if (auto buildMenu = weakBuildMenu.lock())
                              { buildMenu->SetVisible(GameManager::IsInBuildMode() && GameManager::GetCamera().IsUiClear()); } });
 
-    constexpr Vector2 toggleSize = Vector2ScreenScale(Vector2(64, 64));
-    constexpr Vector2 togglePos = Vector2(menuPos.x + spacing.x, menuPos.y + spacing.y);
+    std::vector<TileToggleConfig> tileConfigs = {
+        {"WALL", "STATION", Rectangle(4, 1, 1, 1) * TILE_SIZE},
+        {"BLUE_FLOOR", "STATION", Rectangle(0, 1, 1, 1) * TILE_SIZE},
+    };
 
-    auto buildWallToggle = std::make_shared<UiToggle>(Vector2ToRect(togglePos, toggleSize), GameManager::IsBuildTileId("WALL"), [](bool state)
-                                                      { GameManager::SetBuildTileId(state ? "WALL" : ""); });
-    buildMenu->AddChild(buildWallToggle);
-
-    Rectangle buildWallIconRect = Vector2ToRect(togglePos + toggleSize / 8., toggleSize * .75);
-
-    auto buildWallIcon = std::make_shared<UiIcon>(buildWallIconRect, "STATION", Rectangle(4, 1, 1, 1) * TILE_SIZE, WHITE);
-    buildWallToggle->AddChild(buildWallIcon);
+    for (size_t i = 0; i < tileConfigs.size(); ++i)
+    {
+        AddBuildToggle(buildMenu, tileConfigs[i], (int)i);
+    }
 
     UiManager::AddElement("BUILD_MENU", buildMenu);
 }
