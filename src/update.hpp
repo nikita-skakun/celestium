@@ -2,6 +2,7 @@
 #include "game_state.hpp"
 #include "crew.hpp"
 
+void HandleBuildMode(std::shared_ptr<Station> station);
 void HandleCrewHover(const std::vector<Crew> &crewList);
 void HandleMouseDrag(std::shared_ptr<Station> station);
 void HandleCrewSelection(const std::vector<Crew> &crewList);

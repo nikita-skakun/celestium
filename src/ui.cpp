@@ -472,69 +472,9 @@ void DrawBuildUi(std::shared_ptr<Station> station)
         if (auto sprite = moveTile->GetSprite())
             sprite->Draw(cursorPos, Fade(WHITE, .5));
     }
-    else
+    else if (auto allTiles = station->GetAllTilesAtPosition(cursorPos); !allTiles.empty())
     {
-        if (auto allTiles = station->GetAllTilesAtPosition(cursorPos); !allTiles.empty())
-        {
-            hoveredTile = allTiles.at(allTiles.size() - 1);
-            DrawTileOutline(hoveredTile, DARKPURPLE);
-        }
-    }
-
-    if (IsMouseButtonPressed(MOUSE_LEFT_BUTTON))
-    {
-        const std::string &buildTileId = GameManager::GetBuildTileId();
-        if (auto moveTile = GameManager::GetMoveTile())
-        {
-            if (moveTile->GetPosition() != cursorPos)
-            {
-                bool canMove = true;
-                auto overlappingTiles = station->GetTilesWithHeightAtPosition(cursorPos, moveTile->GetHeight());
-                for (auto &tile : overlappingTiles)
-                {
-                    if (tile->GetId() == moveTile->GetId())
-                    {
-                        canMove = false;
-                        break;
-                    }
-                    tile->DeleteTile();
-                }
-
-                if (canMove)
-                {
-                    moveTile->MoveTile(cursorPos);
-                    LogMessage(LogLevel::DEBUG, std::format("Moved tile {} to {}", moveTile->GetId(), ToString(moveTile->GetPosition())));
-                }
-            }
-            GameManager::ClearMoveTile();
-        }
-        else if (buildTileId.empty())
-            GameManager::SetSelectedTile(hoveredTile);
-        else
-        {
-            auto tileDef = DefinitionManager::GetTileDefinition(buildTileId);
-            if (!tileDef)
-                return;
-
-            bool canBuild = true;
-            auto overlappingTiles = station->GetTilesWithHeightAtPosition(cursorPos, tileDef->GetHeight());
-            for (auto &tile : overlappingTiles)
-            {
-                if (tile->GetId() == buildTileId)
-                {
-                    canBuild = false;
-                    break;
-                }
-                tile->DeleteTile();
-            }
-
-            if (canBuild && Tile::CreateTile(buildTileId, cursorPos, station))
-            {
-                station->UpdateSpriteOffsets();
-                LogMessage(LogLevel::DEBUG, std::format("Placed tile {} at {}", buildTileId, ToString(cursorPos)));
-            }
-            else
-                LogMessage(LogLevel::ERROR, std::format("Failed to place tile {} at {}", buildTileId, ToString(cursorPos)));
-        }
+        hoveredTile = allTiles.at(allTiles.size() - 1);
+        DrawTileOutline(hoveredTile, DARKPURPLE);
     }
 }

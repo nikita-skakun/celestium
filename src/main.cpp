@@ -94,7 +94,9 @@ int main()
 
         if (!UiManager::IsMouseOverUiElement())
         {
-            if (!GameManager::IsInBuildMode())
+            if (GameManager::IsInBuildMode()) {
+                HandleBuildMode(station);
+            } else
             {
                 HandleCrewHover(crewList);
                 HandleCrewSelection(crewList);

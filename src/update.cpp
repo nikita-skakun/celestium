@@ -1,5 +1,96 @@
 #include "update.hpp"
 
+void HandleMoveTile(std::shared_ptr<Station> station)
+{
+    auto moveTile = GameManager::GetMoveTile();
+    Vector2Int cursorPos = ToVector2Int(GameManager::GetWorldMousePos());
+
+    if (moveTile->GetPosition() != cursorPos)
+    {
+        bool canMove = true;
+        auto overlappingTiles = station->GetTilesWithHeightAtPosition(cursorPos, moveTile->GetHeight());
+        for (auto &tile : overlappingTiles)
+        {
+            if (tile->GetId() == moveTile->GetId())
+            {
+                canMove = false;
+                break;
+            }
+            tile->DeleteTile();
+        }
+
+        if (canMove)
+        {
+            moveTile->MoveTile(cursorPos);
+            LogMessage(LogLevel::DEBUG, std::format("Moved tile {} to {}", moveTile->GetId(), ToString(moveTile->GetPosition())));
+        }
+    }
+    GameManager::ClearMoveTile();
+}
+
+void HandleSelectTile(std::shared_ptr<Station> station)
+{
+    Vector2Int cursorPos = ToVector2Int(GameManager::GetWorldMousePos());
+
+    if (auto allTiles = station->GetAllTilesAtPosition(cursorPos); !allTiles.empty())
+    {
+        auto selectedTile = GameManager::GetSelectedTile();
+
+        for (int i = allTiles.size() - 1; i >= 0; --i)
+        {
+            if (allTiles[i] == selectedTile && i > 0)
+            {
+                GameManager::SetSelectedTile(allTiles[i - 1]);
+                break;
+            }
+            if (i == 0)
+                GameManager::SetSelectedTile(allTiles[allTiles.size() - 1]);
+        }
+    }
+    else
+        GameManager::SetSelectedTile(nullptr);
+}
+
+void HandlePlaceTile(std::shared_ptr<Station> station)
+{
+    const std::string &buildTileId = GameManager::GetBuildTileId();
+    const auto &tileDef = DefinitionManager::GetTileDefinition(buildTileId);
+    if (!tileDef)
+        return;
+
+    Vector2Int cursorPos = ToVector2Int(GameManager::GetWorldMousePos());
+    bool canBuild = true;
+    auto overlappingTiles = station->GetTilesWithHeightAtPosition(cursorPos, tileDef->GetHeight());
+    for (auto &tile : overlappingTiles)
+    {
+        if (tile->GetId() == buildTileId)
+        {
+            canBuild = false;
+            break;
+        }
+        tile->DeleteTile();
+    }
+
+    if (canBuild && Tile::CreateTile(buildTileId, cursorPos, station))
+    {
+        station->UpdateSpriteOffsets();
+        LogMessage(LogLevel::DEBUG, std::format("Placed tile {} at {}", buildTileId, ToString(cursorPos)));
+    }
+}
+
+void HandleBuildMode(std::shared_ptr<Station> station)
+{
+    if (!station || !IsMouseButtonPressed(MOUSE_LEFT_BUTTON))
+        return;
+
+    if (GameManager::GetMoveTile())
+        HandleMoveTile(station);
+    else if (GameManager::GetBuildTileId().empty())
+        HandleSelectTile(station);
+    else
+        HandlePlaceTile(station);
+}
+
 void HandleCrewHover(const std::vector<Crew> &crewList)
 {
     auto &camera = GameManager::GetCamera();

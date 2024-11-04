@@ -120,7 +120,7 @@ private:
     }
 
 public:
-    static std::shared_ptr<TileDef> GetTileDefinition(const std::string &tileId)
+    static const std::shared_ptr<TileDef> &GetTileDefinition(const std::string &tileId)
     {
         return DefinitionManager::GetInstance().tileDefinitions.at(tileId);
     }
