@@ -1,14 +1,13 @@
 #pragma once
 #include "direction.hpp"
 #include "env_effect.hpp"
-#include "room.hpp"
+#include "tile.hpp"
 #include <map>
 #include <unordered_map>
 
 struct Station
 {
     std::unordered_map<Vector2Int, std::vector<std::shared_ptr<Tile>>> tileMap;
-    std::vector<std::shared_ptr<Room>> rooms;
     std::vector<std::shared_ptr<Effect>> effects;
 
 public:
@@ -103,6 +102,6 @@ public:
     }
 };
 
-std::shared_ptr<Room> CreateRectRoom(const Vector2Int &pos, const Vector2Int &size, std::shared_ptr<Station> station);
-std::shared_ptr<Room> CreateHorizontalCorridor(const Vector2Int &startPos, int length, int width, std::shared_ptr<Station> station);
+void CreateRectRoom(const Vector2Int &pos, const Vector2Int &size, std::shared_ptr<Station> station);
+void CreateHorizontalCorridor(const Vector2Int &startPos, int length, int width, std::shared_ptr<Station> station);
 std::shared_ptr<Station> CreateStation();

@@ -185,7 +185,10 @@ void InitializeBuildWorldUi()
     constexpr double ICON_SIZE = 2. / 3.;
     constexpr Vector2 ICON_OFFSET = BUTTON_SIZE * (1. - ICON_SIZE) / 2.;
 
-    auto buildMoveButton = std::make_shared<UiButton>(Rectangle(0, 0, 1, 1), "", nullptr, TextAttrs(), nullptr, true);
+    auto moveOnPress = []()
+    { GameManager::SetMoveTile(); };
+
+    auto buildMoveButton = std::make_shared<UiButton>(Rectangle(0, 0, 1, 1), "", moveOnPress, TextAttrs(), nullptr, true);
 
     std::weak_ptr<UiButton> weakBuildMoveButton = buildMoveButton;
     buildMoveButton->SetOnUpdate([weakBuildMoveButton, BUTTON_SIZE]()

@@ -23,6 +23,7 @@ private:
     GameState state = GameState::NONE;
     PlayerCam camera = PlayerCam();
     std::weak_ptr<Tile> selectedTile;
+    std::weak_ptr<Tile> moveTile;
     bool buildMode = false;
     std::string buildTileId = "";
 
@@ -68,6 +69,15 @@ public:
     static bool IsInBuildMode() { return GetInstance().buildMode; }
     static void SetBuildModeState(bool newState) { GetInstance().buildMode = newState; }
     static void ToggleBuildGameState() { GetInstance().buildMode = !GetInstance().buildMode; }
+
+    static bool IsInMoveMode() { return !GetInstance().moveTile.expired(); }
+    static std::shared_ptr<Tile> GetMoveTile() { return GetInstance().moveTile.lock(); }
+    static void ClearMoveTile() { GetInstance().moveTile.reset(); }
+    static void SetMoveTile()
+    {
+        GetInstance().moveTile = GetSelectedTile();
+        SetSelectedTile();
+    }
 
     // Utility function for Screen to World space transformations
     static Vector2 GetWorldMousePos();

@@ -1,7 +1,6 @@
 #pragma once
 #include "def_manager.hpp"
 
-struct Room;
 struct Station;
 
 struct Tile : public std::enable_shared_from_this<Tile>
@@ -11,17 +10,16 @@ private:
     Vector2Int position;
     std::shared_ptr<Sprite> sprite;
     std::unordered_set<std::shared_ptr<Component>> components;
-    std::shared_ptr<Room> room;
     std::shared_ptr<Station> station;
 
-    Tile(const std::string &defName, const Vector2Int &position, std::shared_ptr<Station> station, std::shared_ptr<Room> room = nullptr);
+    Tile(const std::string &defName, const Vector2Int &position, std::shared_ptr<Station> station);
 
 public:
-    static std::shared_ptr<Tile> CreateTile(const std::string &defName, const Vector2Int &position, std::shared_ptr<Station> station, std::shared_ptr<Room> room = nullptr);
+    static std::shared_ptr<Tile> CreateTile(const std::string &defName, const Vector2Int &position, std::shared_ptr<Station> station);
+    void MoveTile(const Vector2Int &newPosition);
     void DeleteTile();
 
     constexpr const Vector2Int &GetPosition() const { return position; }
-    constexpr void SetPosition(const Vector2Int &newPos) { position = newPos; }
 
     constexpr TileDef::Height GetHeight() const { return tileDef->GetHeight(); }
 
@@ -29,7 +27,6 @@ public:
     void SetSprite(const std::shared_ptr<Sprite> &newSprite) { sprite = newSprite; }
 
     std::shared_ptr<TileDef> GetTileDefinition() const { return tileDef; }
-    std::shared_ptr<Room> GetRoom() const { return room; }
     std::shared_ptr<Station> GetStation() const { return station; }
 
     constexpr const std::string &GetId() const { return tileDef->GetId(); }

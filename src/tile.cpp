@@ -29,15 +29,15 @@ void MultiSliceSprite::Draw(const Vector2Int &position, const Color &tint) const
     }
 }
 
-Tile::Tile(const std::string &tileId, const Vector2Int &position, std::shared_ptr<Station> station, std::shared_ptr<Room> room)
-    : position(position), room(room), station(station)
+Tile::Tile(const std::string &tileId, const Vector2Int &position, std::shared_ptr<Station> station)
+    : position(position), station(station)
 {
     tileDef = DefinitionManager::GetTileDefinition(tileId);
 }
 
-std::shared_ptr<Tile> Tile::CreateTile(const std::string &tileId, const Vector2Int &position, std::shared_ptr<Station> station, std::shared_ptr<Room> room)
+std::shared_ptr<Tile> Tile::CreateTile(const std::string &tileId, const Vector2Int &position, std::shared_ptr<Station> station)
 {
-    std::shared_ptr<Tile> tile = std::make_shared<Tile>(Tile(tileId, position, station, room));
+    std::shared_ptr<Tile> tile = std::make_shared<Tile>(Tile(tileId, position, station));
 
     const auto &refComponents = tile->GetTileDefinition()->GetReferenceComponents();
     tile->components.reserve(refComponents.size());
@@ -63,10 +63,28 @@ std::shared_ptr<Tile> Tile::CreateTile(const std::string &tileId, const Vector2I
             door->SetOpenState(door->IsOpen());
     }
 
-    if (room)
-        room->tiles.push_back(tile);
-
     return tile;
+}
+
+void Tile::MoveTile(const Vector2Int &newPosition)
+{
+    if (!station || position == newPosition)
+        return;
+
+    auto self = shared_from_this();
+
+    auto &tilesAtOldPos = station->tileMap[position];
+    tilesAtOldPos.erase(std::remove_if(tilesAtOldPos.begin(), tilesAtOldPos.end(),
+                                    [&self](const std::shared_ptr<Tile> &tile)
+                                    { return tile == self; }),
+                     tilesAtOldPos.end());
+
+    position = newPosition;
+    auto &tilesAtPos = station->tileMap[newPosition];
+    tilesAtPos.push_back(self);
+    std::sort(tilesAtPos.begin(), tilesAtPos.end(), Tile::CompareByHeight);
+
+    station->UpdateSpriteOffsets();
 }
 
 void Tile::DeleteTile()
@@ -85,17 +103,6 @@ void Tile::DeleteTile()
                          tilesAtPos.end());
 
         station->UpdateSpriteOffsets();
-    }
-
-    if (room)
-    {
-        auto &roomTiles = room->tiles;
-        roomTiles.erase(std::remove_if(roomTiles.begin(), roomTiles.end(),
-                                       [&self](const std::weak_ptr<Tile> &weakTile)
-                                       { if (auto sharedTile = weakTile.lock())
-                                               return sharedTile == self;
-                                           return true; }),
-                        roomTiles.end());
     }
 
     components.clear();

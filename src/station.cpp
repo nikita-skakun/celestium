@@ -2,28 +2,22 @@
 #include "audio_manager.hpp"
 #include "game_state.hpp"
 
-std::shared_ptr<Room> CreateRectRoom(const Vector2Int &pos, const Vector2Int &size, std::shared_ptr<Station> station)
+void CreateRectRoom(const Vector2Int &pos, const Vector2Int &size, std::shared_ptr<Station> station)
 {
-    std::shared_ptr<Room> room = Room::CreateEmptyRoom(station);
-
     for (int y = 0; y < size.y; y++)
     {
         for (int x = 0; x < size.x; x++)
         {
             bool isWall = (x == 0 || y == 0 || x == size.x - 1 || y == size.y - 1);
-            Tile::CreateTile(isWall ? "WALL" : "BLUE_FLOOR", pos + Vector2Int(x, y), station, room);
+            Tile::CreateTile(isWall ? "WALL" : "BLUE_FLOOR", pos + Vector2Int(x, y), station);
         }
     }
-
-    return room;
 }
 
-std::shared_ptr<Room> CreateHorizontalCorridor(const Vector2Int &startPos, int length, int width, std::shared_ptr<Station> station)
+void CreateHorizontalCorridor(const Vector2Int &startPos, int length, int width, std::shared_ptr<Station> station)
 {
     if (width < 1 || length == 0)
-        return nullptr;
-
-    std::shared_ptr<Room> room = Room::CreateEmptyRoom(station);
+        return;
 
     int totalWidth = width + 2;
     int start = -(totalWidth / 2);
@@ -46,27 +40,25 @@ std::shared_ptr<Room> CreateHorizontalCorridor(const Vector2Int &startPos, int l
             if (!isWall && oldTile)
                 oldTile->DeleteTile();
 
-            Tile::CreateTile(isWall ? "WALL" : "BLUE_FLOOR", pos, station, room);
+            Tile::CreateTile(isWall ? "WALL" : "BLUE_FLOOR", pos, station);
 
             // TODO: Add larger sized doors
             if (isEnding && !isWall)
-                Tile::CreateTile("DOOR", pos, station, room);
+                Tile::CreateTile("DOOR", pos, station);
         }
     }
-
-    return room;
 }
 
 std::shared_ptr<Station> CreateStation()
 {
     std::shared_ptr<Station> station = std::make_shared<Station>();
-    std::shared_ptr<Room> room1 = CreateRectRoom(Vector2Int(-4, -4), Vector2Int(9, 9), station);
-    std::shared_ptr<Room> room2 = CreateRectRoom(Vector2Int(10, -4), Vector2Int(9, 9), station);
-    std::shared_ptr<Room> room3 = CreateHorizontalCorridor(Vector2Int(4, 0), 7, 3, station);
+    CreateRectRoom(Vector2Int(-4, -4), Vector2Int(9, 9), station);
+    CreateRectRoom(Vector2Int(10, -4), Vector2Int(9, 9), station);
+    CreateHorizontalCorridor(Vector2Int(4, 0), 7, 3, station);
 
-    auto oxygenProducer1 = Tile::CreateTile("OXYGEN_PRODUCER", Vector2Int(0, 0), station, room1);
-    auto oxygenProducer2 = Tile::CreateTile("OXYGEN_PRODUCER", Vector2Int(14, 0), station, room2);
-    auto battery = Tile::CreateTile("BATTERY", Vector2Int(3, -3), station, room1);
+    auto oxygenProducer1 = Tile::CreateTile("OXYGEN_PRODUCER", Vector2Int(0, 0), station);
+    auto oxygenProducer2 = Tile::CreateTile("OXYGEN_PRODUCER", Vector2Int(14, 0), station);
+    auto battery = Tile::CreateTile("BATTERY", Vector2Int(3, -3), station);
     Tile::CreateTile("FRAME", Vector2Int(0, -5), station);
     Tile::CreateTile("FRAME", Vector2Int(0, -6), station);
     Tile::CreateTile("FRAME", Vector2Int(-1, -6), station);

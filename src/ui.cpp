@@ -1,10 +1,12 @@
 #include "ui.hpp"
 
-Color OscillateSelectedColor(std::shared_ptr<Tile> tile)
+Color GetTileTint(std::shared_ptr<Tile> tile)
 {
     Color tint = WHITE;
     if (GameManager::IsInBuildMode() && GameManager::GetSelectedTile() == tile)
         tint = ColorLerp(WHITE, TILE_SELECTION_TINT, Oscillate(GetTime(), .5));
+    else if (GameManager::IsInBuildMode() && GameManager::GetMoveTile() == tile)
+        tint = Fade(WHITE, .5);
 
     return tint;
 }
@@ -74,7 +76,7 @@ void DrawStationTiles(std::shared_ptr<Station> station)
         for (const auto &tile : tilesAtPos.second)
         {
             if (auto sprite = tile->GetSprite())
-                sprite->Draw(tile->GetPosition(), OscillateSelectedColor(tile));
+                sprite->Draw(tile->GetPosition(), GetTileTint(tile));
 
             Vector2 startPos = GameManager::WorldToScreen(tile->GetPosition());
 
@@ -114,7 +116,7 @@ void DrawStationOverlays(std::shared_ptr<Station> station)
     {
         for (const auto &tile : tilesAtPos.second)
         {
-            Color tint = OscillateSelectedColor(tile);
+            Color tint = GetTileTint(tile);
 
             if (auto decorative = tile->GetComponent<DecorativeComponent>())
             {
@@ -465,17 +467,48 @@ void DrawBuildUi(std::shared_ptr<Station> station)
     Vector2Int cursorPos = ToVector2Int(GameManager::GetWorldMousePos());
 
     std::shared_ptr<Tile> hoveredTile = nullptr;
-    auto allTiles = station->GetAllTilesAtPosition(cursorPos);
-    if (!allTiles.empty())
+    if (auto moveTile = GameManager::GetMoveTile())
     {
-        hoveredTile = allTiles.at(allTiles.size() - 1);
-        DrawTileOutline(hoveredTile, DARKPURPLE);
+        if (auto sprite = moveTile->GetSprite())
+            sprite->Draw(cursorPos, Fade(WHITE, .5));
+    }
+    else
+    {
+        if (auto allTiles = station->GetAllTilesAtPosition(cursorPos); !allTiles.empty())
+        {
+            hoveredTile = allTiles.at(allTiles.size() - 1);
+            DrawTileOutline(hoveredTile, DARKPURPLE);
+        }
     }
 
     if (IsMouseButtonPressed(MOUSE_LEFT_BUTTON))
     {
         const std::string &buildTileId = GameManager::GetBuildTileId();
-        if (buildTileId.empty())
+        if (auto moveTile = GameManager::GetMoveTile())
+        {
+            if (moveTile->GetPosition() != cursorPos)
+            {
+                bool canMove = true;
+                auto overlappingTiles = station->GetTilesWithHeightAtPosition(cursorPos, moveTile->GetHeight());
+                for (auto &tile : overlappingTiles)
+                {
+                    if (tile->GetId() == moveTile->GetId())
+                    {
+                        canMove = false;
+                        break;
+                    }
+                    tile->DeleteTile();
+                }
+
+                if (canMove)
+                {
+                    moveTile->MoveTile(cursorPos);
+                    LogMessage(LogLevel::DEBUG, std::format("Moved tile {} to {}", moveTile->GetId(), ToString(moveTile->GetPosition())));
+                }
+            }
+            GameManager::ClearMoveTile();
+        }
+        else if (buildTileId.empty())
             GameManager::SetSelectedTile(hoveredTile);
         else
         {
