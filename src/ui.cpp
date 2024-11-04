@@ -312,6 +312,33 @@ void DrawCrew(double timeSinceFixedUpdate, const std::vector<Crew> &crewList)
     }
 }
 
+void DrawCrewTaskProgress(const std::vector<Crew> &crewList)
+{
+    for (const Crew &crew : crewList)
+    {
+        if (!crew.IsAlive() || crew.GetReadOnlyTaskQueue().empty())
+            continue;
+
+        const auto &task = crew.GetReadOnlyTaskQueue().front();
+
+        switch (task->GetType())
+        {
+        case Task::Type::EXTINGUISH:
+        {
+            const auto extinguishTask = std::dynamic_pointer_cast<ExtinguishTask>(task);
+
+            const Vector2 barSize = Vector2(extinguishTask->GetProgress() * .9, .1) * TILE_SIZE * GameManager::GetCamera().GetZoom();
+            const Vector2 barPos = GameManager::WorldToScreen(ToVector2(extinguishTask->GetTargetPosition()) + Vector2(.05, .85));
+            DrawRectangleV(barPos, barSize, Fade(RED, .8));
+        }
+        break;
+
+        default:
+            break;
+        }
+    }
+}
+
 /**
  * Draws a power connect line or a rectangle selection box based on mouse drag.
  */

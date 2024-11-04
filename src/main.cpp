@@ -120,8 +120,9 @@ int main()
 
         if (!GameManager::IsInBuildMode())
         {
-            DrawEnvironmentalEffects(station);
             DrawCrew(timeSinceFixedUpdate, crewList);
+            DrawEnvironmentalEffects(station);
+            DrawCrewTaskProgress(crewList);
         }
         else
         {

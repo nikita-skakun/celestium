@@ -24,7 +24,7 @@ struct MoveTask : Task
     Vector2Int targetPosition;
     std::deque<Vector2Int> path;
 
-    MoveTask(const Vector2Int &p) : targetPosition(p) {}
+    MoveTask(const Vector2Int &position) : targetPosition(position) {}
 
     void Update(Crew &crew) override;
 
@@ -34,12 +34,17 @@ struct MoveTask : Task
 
 struct ExtinguishTask : Task
 {
+protected:
     Vector2Int targetPosition;
     float progress;
 
-    ExtinguishTask(const Vector2Int &p) : targetPosition(p), progress(0) {}
+public:
+    ExtinguishTask(const Vector2Int &position) : targetPosition(position), progress(0) {}
 
     void Update(Crew &crew) override;
+
+    constexpr float GetProgress() const { return progress; }
+    constexpr const Vector2Int &GetTargetPosition() const { return targetPosition; }
 
     constexpr std::string GetActionName() const override { return "Extinguishing"; }
     constexpr Type GetType() const override { return Type::EXTINGUISH; }

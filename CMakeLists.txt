@@ -98,7 +98,7 @@ FetchContent_Declare(
 
 FetchContent_GetProperties(raygui)
 if(NOT raygui_POPULATED)
-    FetchContent_Populate(raygui)
+    FetchContent_MakeAvailable(raygui)
     add_subdirectory(${raygui_SOURCE_DIR}/projects/CMake ${raygui_BINARY_DIR})
 endif()
 
