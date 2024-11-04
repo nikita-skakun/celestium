@@ -483,13 +483,19 @@ void DrawBuildUi(std::shared_ptr<Station> station)
             if (!tileDef)
                 return;
 
+            bool canBuild = true;
             auto overlappingTiles = station->GetTilesWithHeightAtPosition(cursorPos, tileDef->GetHeight());
             for (auto &tile : overlappingTiles)
             {
+                if (tile->GetId() == buildTileId)
+                {
+                    canBuild = false;
+                    break;
+                }
                 tile->DeleteTile();
             }
 
-            if (Tile::CreateTile(buildTileId, cursorPos, station))
+            if (canBuild && Tile::CreateTile(buildTileId, cursorPos, station))
             {
                 station->UpdateSpriteOffsets();
                 LogMessage(LogLevel::DEBUG, std::format("Placed tile {} at {}", buildTileId, ToString(cursorPos)));
