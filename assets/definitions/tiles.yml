@@ -85,6 +85,8 @@ tiles:
     height: FLOOR | WAIST | CEILING
     components:
       - type: SOLID
+      - type: DURABILITY
+        hitpoints: 20.0
     slicedSprite:
       - conditions: NORTH_SAME
         sourceRect: (172, 32, 8, 12)
