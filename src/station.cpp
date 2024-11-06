@@ -134,8 +134,8 @@ void Station::UpdateSpriteOffsets() const
             if (tile->GetId() == "DOOR")
             {
                 auto decorative = tile->AddComponent<DecorativeComponent>(tile);
-                decorative->AddDecorativeTile(Vector2Int(0, -1), Vector2Int(0, 5));
-                decorative->AddDecorativeTile(Vector2Int(0, 1), Vector2Int(0, 6));
+                decorative->AddDecorativeTile(std::make_shared<BasicSprite>(Vector2Int(0, 5), Vector2Int(0, -1)));
+                decorative->AddDecorativeTile(std::make_shared<BasicSprite>(Vector2Int(0, 6), Vector2Int(0, 1)));
             }
         }
     }
@@ -263,7 +263,7 @@ std::vector<std::shared_ptr<Tile>> Station::GetDecorativeTilesAtPosition(const V
             {
                 for (const auto &dTiles : decorative->GetDecorativeTiles())
                 {
-                    if (pos == tile->GetPosition() + dTiles.offset)
+                    if (pos == tile->GetPosition() + dTiles->GetOffsetFromMainTile())
                     {
                         decorativeTiles.push_back(tile);
                         continue;

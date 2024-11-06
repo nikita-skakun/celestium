@@ -1,18 +1,10 @@
 #pragma once
-#include "utils.hpp"
+#include "sprite.hpp"
 #include "logging.hpp"
 #include <memory>
 #include <vector>
 
 struct Tile;
-
-struct DecorativeTile
-{
-    Vector2Int offset;
-    Vector2Int spriteOffset;
-
-    DecorativeTile(const Vector2Int &offset, const Vector2Int &spriteOffset) : offset(offset), spriteOffset(spriteOffset) {}
-};
 
 struct Component : public std::enable_shared_from_this<Component>
 {
@@ -391,17 +383,17 @@ public:
 struct DecorativeComponent : Component
 {
 private:
-    std::vector<DecorativeTile> decorativeTiles;
+    std::vector<std::shared_ptr<Sprite>> decorativeTiles;
 
 public:
     DecorativeComponent(std::shared_ptr<Tile> parent = nullptr) : Component(parent) {}
 
-    constexpr void AddDecorativeTile(const Vector2Int &offset, const Vector2Int &spriteOffset)
+    constexpr void AddDecorativeTile(const std::shared_ptr<Sprite> &sprite)
     {
-        decorativeTiles.emplace_back(offset, spriteOffset);
+        decorativeTiles.push_back(sprite);
     }
 
-    constexpr const std::vector<DecorativeTile> &GetDecorativeTiles() const
+    constexpr const std::vector<std::shared_ptr<Sprite>> &GetDecorativeTiles() const
     {
         return decorativeTiles;
     }

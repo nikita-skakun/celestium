@@ -69,15 +69,23 @@ struct MultiSliceSpriteDef : public SpriteDef
 
 struct Sprite
 {
+protected:
+    Vector2Int offsetFromMainTile;
+
+public:
+    Sprite(const Vector2Int &offsetFromMainTile = Vector2Int()) : offsetFromMainTile(offsetFromMainTile) {}
+
     virtual ~Sprite() = default;
     virtual void Draw(const Vector2Int &position, const Color &tint) const = 0;
+    constexpr const Vector2Int &GetOffsetFromMainTile() const { return offsetFromMainTile; }
 };
 
 struct BasicSprite : public Sprite
 {
     Vector2Int spriteOffset;
 
-    BasicSprite(const Vector2Int &offset) : spriteOffset(offset) {}
+    BasicSprite(const Vector2Int &spriteOffset, const Vector2Int &offsetFromMainTile = Vector2Int())
+        : Sprite(offsetFromMainTile), spriteOffset(spriteOffset) {}
 
     void Draw(const Vector2Int &position, const Color &tint) const override;
 };
@@ -86,7 +94,8 @@ struct MultiSliceSprite : public Sprite
 {
     std::vector<SpriteSlice> slices;
 
-    MultiSliceSprite(const std::vector<SpriteSlice> &slices) : slices(slices) {}
+    MultiSliceSprite(const std::vector<SpriteSlice> &slices, const Vector2Int &offsetFromMainTile = Vector2Int())
+        : Sprite(offsetFromMainTile), slices(slices) {}
 
     void Draw(const Vector2Int &position, const Color &tint) const override;
 };

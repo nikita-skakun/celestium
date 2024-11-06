@@ -120,13 +120,9 @@ void DrawStationOverlays(std::shared_ptr<Station> station)
 
             if (auto decorative = tile->GetComponent<DecorativeComponent>())
             {
-                for (const DecorativeTile &dTile : decorative->GetDecorativeTiles())
+                for (const auto &dTile : decorative->GetDecorativeTiles())
                 {
-                    Rectangle sourceRect = Rectangle(dTile.spriteOffset.x, dTile.spriteOffset.y, 1, 1) * TILE_SIZE;
-                    Vector2 startPos = GameManager::WorldToScreen(tile->GetPosition() + dTile.offset);
-                    Rectangle destRect = Rectangle(startPos.x, startPos.y, tileSize.x, tileSize.y);
-
-                    DrawTexturePro(stationTileset, sourceRect, destRect, Vector2(), 0, tint);
+                    dTile->Draw(tile->GetPosition() + dTile->GetOffsetFromMainTile(), tint);
                 }
             }
 
@@ -209,7 +205,7 @@ void DrawTileOutline(std::shared_ptr<Tile> tile, Color color)
     {
         for (const auto &dTile : decorative->GetDecorativeTiles())
         {
-            positions.insert(tile->GetPosition() + dTile.offset);
+            positions.insert(tile->GetPosition() + dTile->GetOffsetFromMainTile());
         }
     }
 
