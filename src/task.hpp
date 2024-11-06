@@ -3,6 +3,7 @@
 #include <deque>
 
 struct Crew;
+struct Tile;
 
 struct Task
 {
@@ -11,6 +12,7 @@ struct Task
         NONE,
         MOVE,
         EXTINGUISH,
+        REPAIR,
     };
 
     virtual void Update(Crew &crew) = 0;
@@ -48,4 +50,20 @@ public:
 
     constexpr std::string GetActionName() const override { return "Extinguishing"; }
     constexpr Type GetType() const override { return Type::EXTINGUISH; }
+};
+
+struct RepairTask : Task
+{
+protected:
+    std::weak_ptr<Tile> _targetTile;
+
+public:
+    RepairTask(std::shared_ptr<Tile> tile) : _targetTile(tile) {}
+
+    void Update(Crew &crew) override;
+
+    constexpr std::shared_ptr<Tile> GetTargetTile() const { return _targetTile.lock(); }
+
+    constexpr std::string GetActionName() const override { return "Repairing"; }
+    constexpr Type GetType() const override { return Type::REPAIR; }
 };

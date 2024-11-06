@@ -92,3 +92,29 @@ void ExtinguishTask::Update(Crew &crew)
 
     progress += CREW_EXTINGUISH_SPEED * FIXED_DELTA_TIME;
 }
+
+void RepairTask::Update(Crew &crew)
+{
+    auto targetTile = _targetTile.lock();
+    if (!targetTile)
+    {
+        crew.GetTaskQueue().erase(crew.GetTaskQueue().begin());
+        return;
+    }
+
+    auto durability = targetTile->GetComponent<DurabilityComponent>();
+    if (!durability)
+    {
+        crew.GetTaskQueue().erase(crew.GetTaskQueue().begin());
+        return;
+    }
+
+    float newHitpoints = std::max(durability->GetHitpoints() + CREW_REPAIR_SPEED * (float)FIXED_DELTA_TIME, durability->GetMaxHitpoints());
+    durability->SetHitpoints(newHitpoints);
+
+    if (newHitpoints >= durability->GetMaxHitpoints())
+    {
+        crew.GetTaskQueue().erase(crew.GetTaskQueue().begin());
+        return;
+    }
+}

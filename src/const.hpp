@@ -33,3 +33,4 @@ constexpr float CREW_OXYGEN_USE = 10.f;
 constexpr float CREW_OXYGEN_REFILL = 50.0f;
 constexpr float CREW_HEALTH_MAX = 10.f;
 constexpr float CREW_EXTINGUISH_SPEED = .5f;
+constexpr float CREW_REPAIR_SPEED = .5f;
