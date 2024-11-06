@@ -62,7 +62,7 @@ public:
 
     void Update(Crew &crew) override;
 
-    constexpr std::shared_ptr<Tile> GetTargetTile() const { return _targetTile.lock(); }
+    std::shared_ptr<Tile> GetTargetTile() const { return _targetTile.lock(); }
 
     constexpr std::string GetActionName() const override { return "Repairing"; }
     constexpr Type GetType() const override { return Type::REPAIR; }

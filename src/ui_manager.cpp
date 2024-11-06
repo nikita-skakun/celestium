@@ -181,67 +181,45 @@ void InitializeSidebar()
 
 void InitializeBuildWorldUi()
 {
-    constexpr Vector2 BUTTON_SIZE = Vector2(1. / 3., 1. / 3.);
-    constexpr double ICON_SIZE = 2. / 3.;
-    constexpr Vector2 ICON_OFFSET = BUTTON_SIZE * (1. - ICON_SIZE) / 2.;
+    constexpr Vector2 SPACING = Vector2ScreenScale(Vector2(DEFAULT_PADDING, DEFAULT_PADDING));
+    constexpr Vector2 BUTTON_SIZE = Vector2ScreenScale(Vector2(32, 32));
+    constexpr Vector2 ICON_SIZE = BUTTON_SIZE * 3.f / 4.f;
+    constexpr Vector2 ICON_OFFSET = (BUTTON_SIZE - ICON_SIZE) / 2.;
 
     auto moveOnPress = []()
     { GameManager::SetMoveTile(); };
-
-    auto buildMoveButton = std::make_shared<UiButton>(Rectangle(0, 0, 1, 1), "", moveOnPress, TextAttrs(), nullptr, true);
+    Vector2 buildMovePos = Vector2(SPACING.x, .5 - SPACING.y / 2. - BUTTON_SIZE.y);
+    auto buildMoveButton = std::make_shared<UiButton>(Vector2ToRect(buildMovePos, BUTTON_SIZE), "", moveOnPress);
 
     std::weak_ptr<UiButton> weakBuildMoveButton = buildMoveButton;
-    buildMoveButton->SetOnUpdate([weakBuildMoveButton, BUTTON_SIZE]()
+    buildMoveButton->SetOnUpdate([weakBuildMoveButton]()
                                  { if (auto buildMoveButton = weakBuildMoveButton.lock())
                             { 
                                 auto selectedTile = GameManager::GetSelectedTile();
-                                bool visible = GameManager::IsInBuildMode() && selectedTile;
-                                buildMoveButton->SetVisible(visible);
-                                if (visible)
-                                    buildMoveButton->SetRect(Vector2ToRect(ToVector2(selectedTile->GetPosition()) + Vector2(1 + BUTTON_SIZE.x / 2., (.5 - BUTTON_SIZE.y) / 2.), BUTTON_SIZE));
+                                buildMoveButton->SetVisible(GameManager::IsInBuildMode() && GameManager::GetCamera().IsUiClear());
+                                buildMoveButton->SetEnabled(selectedTile != nullptr);
                             } });
 
-    auto buildMoveIcon = std::make_shared<UiIcon>(Rectangle(0, 0, 1, 1), "ICON", Rectangle(2, 1, 1, 1) * TILE_SIZE, Fade(DARKGRAY, .8), nullptr, true);
-
-    std::weak_ptr<UiIcon> weakBuildMoveIcon = buildMoveIcon;
-    buildMoveIcon->SetOnUpdate([weakBuildMoveIcon, ICON_OFFSET, BUTTON_SIZE]()
-                               { if (auto buildMoveIcon = weakBuildMoveIcon.lock())
-                            { 
-                                auto selectedTile = GameManager::GetSelectedTile();
-                                if (GameManager::IsInBuildMode() && selectedTile)
-                                    buildMoveIcon->SetRect(Vector2ToRect(ToVector2(selectedTile->GetPosition()) + Vector2(1 + BUTTON_SIZE.x / 2., (.5 - BUTTON_SIZE.y) / 2.) + ICON_OFFSET, BUTTON_SIZE * ICON_SIZE));
-                            } });
-
+    auto buildMoveIcon = std::make_shared<UiIcon>(Vector2ToRect(buildMovePos + ICON_OFFSET, ICON_SIZE), "ICON", Rectangle(2, 1, 1, 1) * TILE_SIZE, Fade(DARKGRAY, .8));
     buildMoveButton->AddChild(buildMoveIcon);
     UiManager::AddElement("BUILD_MOVE_BTN", buildMoveButton);
 
-    auto buildDeleteButton = std::make_shared<UiButton>(Rectangle(0, 0, 1, 1), "", []()
-                                                        {
-        GameManager::GetSelectedTile()->DeleteTile();
-        GameManager::SetSelectedTile(nullptr); }, TextAttrs(), nullptr, true);
+    auto deleteOnPress = []()
+    {   GameManager::GetSelectedTile()->DeleteTile();
+        GameManager::SetSelectedTile(nullptr); };
+    Vector2 buildDeletePos = Vector2(SPACING.x * 2. + BUTTON_SIZE.x, .5 - SPACING.y / 2. - BUTTON_SIZE.y);
+    auto buildDeleteButton = std::make_shared<UiButton>(Vector2ToRect(buildDeletePos, BUTTON_SIZE), "", deleteOnPress);
 
     std::weak_ptr<UiButton> weakBuildDeleteButton = buildDeleteButton;
-    buildDeleteButton->SetOnUpdate([weakBuildDeleteButton, BUTTON_SIZE]()
+    buildDeleteButton->SetOnUpdate([weakBuildDeleteButton]()
                                    { if (auto buildDeleteButton = weakBuildDeleteButton.lock())
                             {
                                 auto selectedTile = GameManager::GetSelectedTile();
-                                bool visible = GameManager::IsInBuildMode() && selectedTile;
-                                buildDeleteButton->SetVisible(visible);
-                                if (visible)
-                                    buildDeleteButton->SetRect(Vector2ToRect(ToVector2(selectedTile->GetPosition()) + Vector2(1 + BUTTON_SIZE.x / 2., 1. - ((.5 + BUTTON_SIZE.y) / 2.)), BUTTON_SIZE));
+                                buildDeleteButton->SetVisible(GameManager::IsInBuildMode() && GameManager::GetCamera().IsUiClear());
+                                buildDeleteButton->SetEnabled(selectedTile != nullptr);
                             } });
 
-    auto buildDeleteIcon = std::make_shared<UiIcon>(Rectangle(0, 0, 1, 1), "ICON", Rectangle(3, 1, 1, 1) * TILE_SIZE, Fade(DARKGRAY, .8), nullptr, true);
-
-    std::weak_ptr<UiIcon> weakBuildDeleteIcon = buildDeleteIcon;
-    buildDeleteIcon->SetOnUpdate([weakBuildDeleteIcon, ICON_OFFSET, BUTTON_SIZE]()
-                                 { if (auto buildDeleteIcon = weakBuildDeleteIcon.lock())
-                            { 
-                                auto selectedTile = GameManager::GetSelectedTile();
-                                if (GameManager::IsInBuildMode() && selectedTile)
-                                    buildDeleteIcon->SetRect(Vector2ToRect(ToVector2(selectedTile->GetPosition()) + Vector2(1 + BUTTON_SIZE.x / 2., 1. - ((.5 + BUTTON_SIZE.y) / 2.)) + ICON_OFFSET, BUTTON_SIZE * ICON_SIZE));
-                            } });
-
+    auto buildDeleteIcon = std::make_shared<UiIcon>(Vector2ToRect(buildDeletePos + ICON_OFFSET, ICON_SIZE), "ICON", Rectangle(3, 1, 1, 1) * TILE_SIZE, Fade(DARKGRAY, .8));
     buildDeleteButton->AddChild(buildDeleteIcon);
     UiManager::AddElement("BUILD_DELETE_BTN", buildDeleteButton);
 }
@@ -256,7 +234,7 @@ struct TileToggleConfig
 void AddBuildToggle(std::shared_ptr<UiPanel> &buildMenu, const TileToggleConfig &config, int index)
 {
     constexpr Vector2 SPACING = Vector2ScreenScale(Vector2(DEFAULT_PADDING, DEFAULT_PADDING));
-    constexpr Vector2 MENU_POS = Vector2(SPACING.x, .5 - SPACING.y);
+    constexpr Vector2 MENU_POS = Vector2(SPACING.x, .5 + SPACING.y);
     constexpr Vector2 MENU_SIZE = Vector2(1. / 6., .5);
     constexpr Vector2 TOGGLE_SIZE = Vector2ScreenScale(Vector2(64, 64));
     constexpr int MAX_ITEMS_PER_ROW = Floor((MENU_SIZE.x - 2 * SPACING.x) / (TOGGLE_SIZE.x + SPACING.x));
@@ -296,7 +274,7 @@ void InitializeBuildMenu()
 {
     constexpr Vector2 SPACING = Vector2ScreenScale(Vector2(DEFAULT_PADDING, DEFAULT_PADDING));
 
-    auto buildMenu = std::make_shared<UiPanel>(Rectangle(SPACING.x, .5 - SPACING.y, 1. / 6., .5), Fade(BLACK, .5));
+    auto buildMenu = std::make_shared<UiPanel>(Rectangle(SPACING.x, .5 + SPACING.y / 2., 1. / 6., .5), Fade(BLACK, .5));
     std::weak_ptr<UiPanel> weakBuildMenu = buildMenu;
     buildMenu->SetOnUpdate([weakBuildMenu]()
                            { if (auto buildMenu = weakBuildMenu.lock())
