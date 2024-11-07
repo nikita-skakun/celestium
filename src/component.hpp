@@ -33,6 +33,7 @@ struct Component : public std::enable_shared_from_this<Component>
     virtual ~Component() = default;
 
     constexpr virtual Type GetType() const { return Type::NONE; }
+    constexpr virtual std::optional<std::string> GetInfo() = 0;
     constexpr std::string GetName() const { return EnumToName<Type>(GetType()); }
 
     bool operator==(const Component &other) const
@@ -72,6 +73,7 @@ struct WalkableComponent : Component
     }
 
     constexpr Type GetType() const override { return Type::WALKABLE; }
+    constexpr std::optional<std::string> GetInfo() override { return std::nullopt; }
 };
 
 struct SolidComponent : Component
@@ -84,6 +86,7 @@ struct SolidComponent : Component
     }
 
     constexpr Type GetType() const override { return Type::SOLID; }
+    constexpr std::optional<std::string> GetInfo() override { return std::nullopt; }
 };
 
 struct PowerConnectorComponent : Component
@@ -198,6 +201,10 @@ public:
     }
 
     constexpr Type GetType() const override { return Type::POWER_CONNECTOR; }
+    constexpr std::optional<std::string> GetInfo() override
+    {
+        return std::format("   + Power Connector: {} ({})", magic_enum::enum_flags_name(GetIo()), GetConnections().size());
+    }
 };
 
 struct BatteryComponent : Component
@@ -237,6 +244,7 @@ public:
     }
 
     constexpr Type GetType() const override { return Type::BATTERY; }
+    constexpr std::optional<std::string> GetInfo() override { return std::format("   + Charge Level: {:.0f} / {:.0f}", charge, maxCharge); }
 };
 
 struct PowerConsumerComponent : Component
@@ -278,6 +286,10 @@ public:
     }
 
     constexpr Type GetType() const override { return Type::POWER_CONSUMER; }
+    constexpr std::optional<std::string> GetInfo() override
+    {
+        return std::format("   + Power State: {}\n   + Power Consumption: {:.0f}", !isPoweredOn ? "OFF" : (isActive ? "POWERED" : "NOT POWERED"), powerConsumption);
+    }
 };
 
 struct PowerProducerComponent : Component
@@ -316,8 +328,10 @@ public:
     }
 
     constexpr Type GetType() const override { return Type::POWER_PRODUCER; }
+    constexpr std::optional<std::string> GetInfo() override { return std::format("   + Power Production: {:.0f}", powerProduction); }
 };
 
+// TODO: Implement occlusions for solar panels (if indoor)
 struct SolarPanelComponent : Component
 {
     SolarPanelComponent(std::shared_ptr<Tile> parent = nullptr) : Component(parent) {}
@@ -328,6 +342,7 @@ struct SolarPanelComponent : Component
     }
 
     constexpr Type GetType() const override { return Type::SOLAR_PANEL; }
+    constexpr std::optional<std::string> GetInfo() override { return std::nullopt; }
 };
 
 struct OxygenComponent : Component
@@ -357,6 +372,7 @@ public:
     }
 
     constexpr Type GetType() const override { return Type::OXYGEN; }
+    constexpr std::optional<std::string> GetInfo() override { return std::format("   + Oxygen Level: {:.0f}", oxygenLevel); }
 };
 
 struct OxygenProducerComponent : Component
@@ -378,6 +394,7 @@ public:
     }
 
     constexpr Type GetType() const override { return Type::OXYGEN_PRODUCER; }
+    constexpr std::optional<std::string> GetInfo() override { return std::format("   + Oxygen Production: {:.0f}", oxygenProduction); }
 };
 
 struct DecorativeComponent : Component
@@ -409,6 +426,7 @@ public:
     }
 
     constexpr Type GetType() const override { return Type::DECORATIVE; }
+    constexpr std::optional<std::string> GetInfo() override { return std::nullopt; }
 };
 
 struct DoorComponent : Component
@@ -479,6 +497,10 @@ public:
     }
 
     constexpr Type GetType() const override { return Type::DOOR; }
+    constexpr std::optional<std::string> GetInfo() override
+    {
+        return std::format("   + State: {}\n   + Action: {} ({:.0f}%)", isOpen ? "Open" : "Closed", GetMovementName(), progress * 100.);
+    }
 };
 
 struct DurabilityComponent : Component
@@ -502,4 +524,5 @@ public:
     }
 
     constexpr Type GetType() const override { return Type::DURABILITY; }
+    constexpr std::optional<std::string> GetInfo() override { return std::format("   + HP: {:.1f} / {:.1f}", hitpoints, maxHitpoints); }
 };

@@ -31,35 +31,7 @@ public:
 
     constexpr const std::string &GetId() const { return tileDef->GetId(); }
     constexpr std::string GetName() const { return MacroCaseToName(GetId()); }
-
-    std::string GetInfo() const
-    {
-        std::string tileInfo = " - " + GetName();
-
-        if (auto durability = GetComponent<DurabilityComponent>())
-        {
-            tileInfo += std::format("\n   + HP: {:.1f} / {:.1f}", durability->GetHitpoints(), durability->GetMaxHitpoints());
-        }
-        if (auto door = GetComponent<DoorComponent>())
-        {
-            tileInfo += std::format("\n   + {}", door->IsOpen() ? "Open" : "Closed");
-            tileInfo += std::format("\n   + State: {} ({:.0f}%)", door->GetMovementName(), door->GetProgress() * 100.);
-        }
-        if (auto oxygen = GetComponent<OxygenComponent>())
-        {
-            tileInfo += std::format("\n   + Oxygen: {:.0f}", oxygen->GetOxygenLevel());
-        }
-        if (auto battery = GetComponent<BatteryComponent>())
-        {
-            tileInfo += std::format("\n   + Energy: {:.0f} / {:.0f}", battery->GetChargeLevel(), battery->GetMaxChargeLevel());
-        }
-        if (auto powerConnector = GetComponent<PowerConnectorComponent>())
-        {
-            tileInfo += std::format("\n   + Power Connector: {} ({})", magic_enum::enum_flags_name(powerConnector->GetIo()), powerConnector->GetConnections().size());
-        }
-
-        return tileInfo;
-    }
+    std::string GetInfo() const;
 
     template <typename T>
     constexpr std::shared_ptr<T> GetComponent() const

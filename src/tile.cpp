@@ -75,9 +75,9 @@ void Tile::MoveTile(const Vector2Int &newPosition)
 
     auto &tilesAtOldPos = station->tileMap[position];
     tilesAtOldPos.erase(std::remove_if(tilesAtOldPos.begin(), tilesAtOldPos.end(),
-                                    [&self](const std::shared_ptr<Tile> &tile)
-                                    { return tile == self; }),
-                     tilesAtOldPos.end());
+                                       [&self](const std::shared_ptr<Tile> &tile)
+                                       { return tile == self; }),
+                        tilesAtOldPos.end());
 
     position = newPosition;
     auto &tilesAtPos = station->tileMap[newPosition];
@@ -106,4 +106,17 @@ void Tile::DeleteTile()
     }
 
     components.clear();
+}
+
+std::string Tile::GetInfo() const
+{
+    std::string tileInfo = " - " + GetName();
+
+    for (const auto &component : components)
+    {
+        if (auto info = component->GetInfo())
+            tileInfo += "\n" + info.value();
+    }
+
+    return tileInfo;
 }
