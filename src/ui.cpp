@@ -347,8 +347,8 @@ void DrawDragSelectBox()
     if (!camera.IsDragging())
         return;
 
-    Vector2 dragStart = GameManager::WorldToScreen(camera.GetDragStart());
-    Vector2 dragEnd = GameManager::WorldToScreen(camera.GetDragEnd());
+    Vector2 dragStart = GameManager::WorldToScreen(camera.GetDragStart() - Vector2(.5, .5));
+    Vector2 dragEnd = GameManager::WorldToScreen(camera.GetDragEnd() - Vector2(.5, .5));
 
     switch (camera.GetDragType())
     {
