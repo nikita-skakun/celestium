@@ -97,7 +97,7 @@ struct PowerConnectorComponent : Component
         OUTPUT = 1 << 1,
     };
 
-private:
+protected:
     IO io;
 
 public:
@@ -209,7 +209,7 @@ public:
 
 struct BatteryComponent : Component
 {
-private:
+protected:
     float charge;
     float maxCharge;
 
@@ -249,7 +249,7 @@ public:
 
 struct PowerConsumerComponent : Component
 {
-private:
+protected:
     bool isPoweredOn;
     bool isActive;
     float powerConsumption;
@@ -294,7 +294,7 @@ public:
 
 struct PowerProducerComponent : Component
 {
-private:
+protected:
     float powerProduction;
     float availablePower;
 
@@ -347,7 +347,7 @@ struct SolarPanelComponent : Component
 
 struct OxygenComponent : Component
 {
-private:
+protected:
     float oxygenLevel;
 
 public:
@@ -377,7 +377,7 @@ public:
 
 struct OxygenProducerComponent : Component
 {
-private:
+protected:
     float oxygenProduction;
 
 public:
@@ -399,7 +399,7 @@ public:
 
 struct DecorativeComponent : Component
 {
-private:
+protected:
     std::vector<std::shared_ptr<Sprite>> decorativeTiles;
 
 public:
@@ -439,7 +439,7 @@ struct DoorComponent : Component
         FORCED_OPEN,
     };
 
-private:
+protected:
     float movingSpeed;
     bool isOpen;
     MovingState movingState;
@@ -505,7 +505,7 @@ public:
 
 struct DurabilityComponent : Component
 {
-private:
+protected:
     float maxHitpoints;
     float hitpoints;
 
@@ -525,4 +525,26 @@ public:
 
     constexpr Type GetType() const override { return Type::DURABILITY; }
     constexpr std::optional<std::string> GetInfo() override { return std::format("   + HP: {:.1f} / {:.1f}", hitpoints, maxHitpoints); }
+};
+
+struct RotatableComponent : Component
+{
+
+protected:
+    Rotation rotation;
+
+public:
+    RotatableComponent(Rotation rotation = Rotation::UP, std::shared_ptr<Tile> parent = nullptr)
+        : Component(parent), rotation(rotation) {}
+
+    constexpr Rotation GetRotation() const { return rotation; }
+    constexpr void SetRotation(Rotation newRotation) { rotation = newRotation; }
+
+    std::shared_ptr<Component> Clone(std::shared_ptr<Tile> newParent) const override
+    {
+        return std::make_shared<RotatableComponent>(rotation, newParent);
+    }
+
+    constexpr Type GetType() const override { return Type::NONE; }
+    constexpr std::optional<std::string> GetInfo() override { return std::nullopt; }
 };

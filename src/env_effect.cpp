@@ -16,10 +16,11 @@ Effect::Effect(const std::string &defName, const Vector2Int &position, float s)
 void Effect::Render() const
 {
     Vector2 screenSize = Vector2(1, 1) * TILE_SIZE * GameManager::GetCamera().GetZoom() * GetRoundedSize();
-    Vector2 startPos = GameManager::WorldToScreen(ToVector2(GetPosition()) + Vector2(1, 1) * ((1. - GetRoundedSize()) / 2.));
-    Rectangle sourceRect = Rectangle(GetEvenlySpacedIndex(GetTime() * effectDef->GetAnimationSpeed(), effectDef->GetSpriteCount()), 0, 1, 1) * TILE_SIZE;
+    Vector2 startPos = GameManager::WorldToScreen(GetPosition());
+    int frame = GetEvenlySpacedIndex(GetTime() * effectDef->GetAnimationSpeed(), effectDef->GetSpriteCount());
+    Rectangle sourceRect = Rectangle(frame, 0, 1, 1) * TILE_SIZE;
 
-    DrawTexturePro(AssetManager::GetTexture(effectDef->GetSpriteSheet()), sourceRect, Vector2ToRect(startPos, screenSize), Vector2(), 0, WHITE);
+    DrawTexturePro(AssetManager::GetTexture(effectDef->GetSpriteSheet()), sourceRect, Vector2ToRect(startPos, screenSize), screenSize / 2., 0, WHITE);
 }
 
 std::string Effect::GetInfo() const

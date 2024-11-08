@@ -68,7 +68,7 @@ Vector2Int GameManager::ScreenToTile(const Vector2 &screenPos)
 Vector2 GameManager::WorldToScreen(const Vector2 &worldPos)
 {
     auto &camera = GetInstance().camera;
-    return (worldPos - camera.GetPosition()) * TILE_SIZE * camera.GetZoom() + (GetScreenSize() / 2.);
+    return (worldPos + Vector2(.5, .5) - camera.GetPosition()) * TILE_SIZE * camera.GetZoom() + (GetScreenSize() / 2.);
 }
 
 /**
@@ -80,7 +80,7 @@ Vector2 GameManager::WorldToScreen(const Vector2 &worldPos)
 Vector2 GameManager::WorldToScreen(const Vector2Int &worldPos)
 {
     auto &camera = GetInstance().camera;
-    return (ToVector2(worldPos) - camera.GetPosition()) * TILE_SIZE * camera.GetZoom() + (GetScreenSize() / 2.);
+    return (ToVector2(worldPos) + Vector2(.5, .5) - camera.GetPosition()) * TILE_SIZE * camera.GetZoom() + (GetScreenSize() / 2.);
 }
 
 Rectangle GameManager::WorldToScreen(const Rectangle &worldRect)

@@ -3,18 +3,18 @@
 #include "game_state.hpp"
 #include "asset_manager.hpp"
 
-void BasicSprite::Draw(const Vector2Int &position, const Color &tint) const
+void BasicSprite::Draw(const Vector2Int &position, const Color &tint, float rotation) const
 {
-    Vector2 screenPos = GameManager::WorldToScreen(position);
+    Vector2 screenPos = GameManager::WorldToScreen(position + offsetFromMainTile);
     Vector2 tileSize = Vector2(1, 1) * TILE_SIZE * GameManager::GetCamera().GetZoom();
     Rectangle sourceRect = Rectangle(spriteOffset.x, spriteOffset.y, 1, 1) * TILE_SIZE;
 
-    DrawTexturePro(AssetManager::GetTexture("STATION"), sourceRect, Vector2ToRect(screenPos, tileSize), Vector2(), 0, tint);
+    DrawTexturePro(AssetManager::GetTexture("STATION"), sourceRect, Vector2ToRect(screenPos, tileSize), tileSize / 2., rotation, tint);
 }
 
-void MultiSliceSprite::Draw(const Vector2Int &position, const Color &tint) const
+void MultiSliceSprite::Draw(const Vector2Int &position, const Color &tint, float rotation) const
 {
-    Vector2 screenPos = GameManager::WorldToScreen(position);
+    Vector2 screenPos = GameManager::WorldToScreen(position + offsetFromMainTile);
 
     for (const auto &slice : slices)
     {
@@ -22,10 +22,11 @@ void MultiSliceSprite::Draw(const Vector2Int &position, const Color &tint) const
             continue;
 
         Rectangle destRect = Vector2ToRect(slice.destOffset, RectToSize(slice.sourceRect)) * GameManager::GetCamera().GetZoom();
+        Vector2 tileSize = Vector2(1, 1) * TILE_SIZE * GameManager::GetCamera().GetZoom();
         destRect.x += screenPos.x;
         destRect.y += screenPos.y;
 
-        DrawTexturePro(AssetManager::GetTexture("STATION"), slice.sourceRect, destRect, Vector2(), 0, tint);
+        DrawTexturePro(AssetManager::GetTexture("STATION"), slice.sourceRect, destRect, tileSize / 2., rotation, tint);
     }
 }
 

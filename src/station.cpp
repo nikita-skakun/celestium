@@ -133,9 +133,13 @@ void Station::UpdateSpriteOffsets() const
 
             if (tile->GetId() == "DOOR")
             {
+                Rotation rotation = Rotation::UP;
+                if (auto rotatable = tile->GetComponent<RotatableComponent>())
+                    rotation = rotatable->GetRotation();
+
                 auto decorative = tile->AddComponent<DecorativeComponent>(tile);
-                decorative->AddDecorativeTile(std::make_shared<BasicSprite>(Vector2Int(0, 5), Vector2Int(0, -1)));
-                decorative->AddDecorativeTile(std::make_shared<BasicSprite>(Vector2Int(0, 6), Vector2Int(0, 1)));
+                decorative->AddDecorativeTile(std::make_shared<BasicSprite>(Vector2Int(0, 5), OffsetWithRotation(rotation, Vector2Int(0, -1))));
+                decorative->AddDecorativeTile(std::make_shared<BasicSprite>(Vector2Int(0, 6), OffsetWithRotation(rotation, Vector2Int(0, 1))));
             }
         }
     }

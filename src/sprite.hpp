@@ -1,5 +1,5 @@
 #pragma once
-#include "utils.hpp"
+#include "direction.hpp"
 
 struct SpriteSlice
 {
@@ -76,7 +76,7 @@ public:
     Sprite(const Vector2Int &offsetFromMainTile = Vector2Int()) : offsetFromMainTile(offsetFromMainTile) {}
 
     virtual ~Sprite() = default;
-    virtual void Draw(const Vector2Int &position, const Color &tint) const = 0;
+    virtual void Draw(const Vector2Int &position, const Color &tint, float rotation = 0) const = 0;
     constexpr const Vector2Int &GetOffsetFromMainTile() const { return offsetFromMainTile; }
 };
 
@@ -87,7 +87,7 @@ struct BasicSprite : public Sprite
     BasicSprite(const Vector2Int &spriteOffset, const Vector2Int &offsetFromMainTile = Vector2Int())
         : Sprite(offsetFromMainTile), spriteOffset(spriteOffset) {}
 
-    void Draw(const Vector2Int &position, const Color &tint) const override;
+    void Draw(const Vector2Int &position, const Color &tint, float rotation = 0) const override;
 };
 
 struct MultiSliceSprite : public Sprite
@@ -97,5 +97,5 @@ struct MultiSliceSprite : public Sprite
     MultiSliceSprite(const std::vector<SpriteSlice> &slices, const Vector2Int &offsetFromMainTile = Vector2Int())
         : Sprite(offsetFromMainTile), slices(slices) {}
 
-    void Draw(const Vector2Int &position, const Color &tint) const override;
+    void Draw(const Vector2Int &position, const Color &tint, float rotation = 0) const override;
 };

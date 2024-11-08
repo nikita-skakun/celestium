@@ -94,7 +94,7 @@ void HandleBuildMode(std::shared_ptr<Station> station)
 void HandleCrewHover(const std::vector<Crew> &crewList)
 {
     auto &camera = GameManager::GetCamera();
-    const Vector2 worldMousePos = GameManager::GetWorldMousePos() - Vector2(.5, .5);
+    const Vector2 worldMousePos = GameManager::GetWorldMousePos();
     const float crewSizeSq = CREW_RADIUS / TILE_SIZE * CREW_RADIUS / TILE_SIZE;
 
     camera.SetCrewHoverIndex(-1);
@@ -129,7 +129,7 @@ void HandleMouseDragDuring(std::shared_ptr<Station> station)
             station->GetTileWithComponentAtPosition<PowerConnectorComponent>(ToVector2Int(camera.GetDragStart())))
         {
             camera.SetDragType(PlayerCam::DragType::POWER_CONNECT);
-            camera.SetDragStart(Vector2Floor(camera.GetDragStart()) + Vector2(.5, .5));
+            camera.SetDragStart(Vector2Floor(camera.GetDragStart()));
         }
     }
 
@@ -189,7 +189,7 @@ void HandleCrewSelection(const std::vector<Crew> &crewList)
     {
         for (std::size_t i = 0; i < crewList.size(); i++)
         {
-            Vector2 crewPos = crewList[i].GetPosition() + Vector2(.5, .5);
+            Vector2 crewPos = crewList[i].GetPosition();
             if (IsVector2WithinRect(Vector2ToBoundingBox(camera.GetDragStart(), camera.GetDragEnd()), crewPos))
             {
                 camera.AddSelectedCrew(i);
@@ -385,8 +385,8 @@ void MouseDeleteExistingConnection(std::shared_ptr<Station> station)
                 if (!otherConnectorTile)
                     continue;
 
-                Vector2 start = GameManager::WorldToScreen(ToVector2(tile->GetPosition()) + Vector2(.5, .5));
-                Vector2 end = GameManager::WorldToScreen(ToVector2(otherConnectorTile->GetPosition()) + Vector2(.5, .5));
+                Vector2 start = GameManager::WorldToScreen(tile->GetPosition());
+                Vector2 end = GameManager::WorldToScreen(otherConnectorTile->GetPosition());
 
                 if (DistanceSqFromPointToLine(start, end, mousePos) > threshold * threshold)
                     continue;
