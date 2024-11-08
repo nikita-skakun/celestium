@@ -107,6 +107,9 @@ private:
         case Component::Type::DURABILITY:
             return std::make_shared<DurabilityComponent>(GetValue(node, "hitpoints", 1.f));
 
+        case Component::Type::ROTATABLE:
+            return std::make_shared<RotatableComponent>();
+
         default:
             throw std::runtime_error(std::format("Parsing of component type failed: {}", magic_enum::enum_name(type)));
             return nullptr;

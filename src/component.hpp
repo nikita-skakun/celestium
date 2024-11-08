@@ -23,6 +23,7 @@ struct Component : public std::enable_shared_from_this<Component>
         DECORATIVE,
         DOOR,
         DURABILITY,
+        ROTATABLE,
     };
 
     std::weak_ptr<Tile> _parent;
@@ -545,6 +546,6 @@ public:
         return std::make_shared<RotatableComponent>(rotation, newParent);
     }
 
-    constexpr Type GetType() const override { return Type::NONE; }
+    constexpr Type GetType() const override { return Type::ROTATABLE; }
     constexpr std::optional<std::string> GetInfo() override { return std::nullopt; }
 };

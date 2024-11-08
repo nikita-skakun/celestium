@@ -177,6 +177,7 @@ tiles:
         oxygenProduction: 100.0
       - type: DURABILITY
         hitpoints: 10.0
+      - type: ROTATABLE
     sprite: (6, 7)
   - id: BATTERY
     height: WAIST
@@ -187,6 +188,7 @@ tiles:
         maxCharge: 2000.0
       - type: DURABILITY
         hitpoints: 10.0
+      - type: ROTATABLE
     sprite: (5, 7)
   - id: SOLAR_PANEL
     height: WAIST
@@ -198,6 +200,7 @@ tiles:
       - type: SOLAR_PANEL
       - type: DURABILITY
         hitpoints: 5.0
+      - type: ROTATABLE
     sprite: (7, 7)
   - id: FRAME
     height: FLOOR
@@ -215,3 +218,4 @@ tiles:
         movingSpeed: 0.75
       - type: DURABILITY
         hitpoints: 15.0
+      - type: ROTATABLE
