@@ -88,6 +88,16 @@ void Tile::MoveTile(const Vector2Int &newPosition)
     station->UpdateSpriteOffsets();
 }
 
+void Tile::RotateTile()
+{
+    auto rotatable = GetComponent<RotatableComponent>();
+    if (!rotatable || !station)
+        return;
+
+    rotatable->RotateClockwise();
+    station->UpdateSpriteOffsets();
+}
+
 void Tile::DeleteTile()
 {
     auto self = shared_from_this();

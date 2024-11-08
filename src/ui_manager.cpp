@@ -222,6 +222,24 @@ void InitializeBuildWorldUi()
     auto buildDeleteIcon = std::make_shared<UiIcon>(Vector2ToRect(buildDeletePos + ICON_OFFSET, ICON_SIZE), "ICON", Rectangle(3, 1, 1, 1) * TILE_SIZE, Fade(DARKGRAY, .8));
     buildDeleteButton->AddChild(buildDeleteIcon);
     UiManager::AddElement("BUILD_DELETE_BTN", buildDeleteButton);
+
+    auto rotateOnPress = []()
+    { GameManager::GetSelectedTile()->RotateTile(); };
+    Vector2 buildRotatePos = Vector2(SPACING.x * 3. + BUTTON_SIZE.x * 2., .5 - SPACING.y / 2. - BUTTON_SIZE.y);
+    auto buildRotateButton = std::make_shared<UiButton>(Vector2ToRect(buildRotatePos, BUTTON_SIZE), "", rotateOnPress);
+
+    std::weak_ptr<UiButton> weakBuildRotateButton = buildRotateButton;
+    buildRotateButton->SetOnUpdate([weakBuildRotateButton]()
+                                   { if (auto buildRotateButton = weakBuildRotateButton.lock())
+                            {
+                                auto selectedTile = GameManager::GetSelectedTile();
+                                buildRotateButton->SetVisible(GameManager::IsInBuildMode() && GameManager::GetCamera().IsUiClear());
+                                buildRotateButton->SetEnabled(selectedTile != nullptr && selectedTile->HasComponent<RotatableComponent>());
+                            } });
+
+    auto buildRotateIcon = std::make_shared<UiIcon>(Vector2ToRect(buildRotatePos + ICON_OFFSET, ICON_SIZE), "ICON", Rectangle(4, 1, 1, 1) * TILE_SIZE, Fade(DARKGRAY, .8));
+    buildRotateButton->AddChild(buildRotateIcon);
+    UiManager::AddElement("BUILD_ROTATE_BTN", buildRotateButton);
 }
 
 struct TileToggleConfig

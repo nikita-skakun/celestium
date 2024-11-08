@@ -17,6 +17,7 @@ private:
 public:
     static std::shared_ptr<Tile> CreateTile(const std::string &defName, const Vector2Int &position, std::shared_ptr<Station> station);
     void MoveTile(const Vector2Int &newPosition);
+    void RotateTile();
     void DeleteTile();
 
     constexpr const Vector2Int &GetPosition() const { return position; }

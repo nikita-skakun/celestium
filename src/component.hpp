@@ -541,6 +541,15 @@ public:
     constexpr Rotation GetRotation() const { return rotation; }
     constexpr void SetRotation(Rotation newRotation) { rotation = newRotation; }
 
+    constexpr void RotateClockwise()
+    {
+        // Shift the bit, if it's at the end, reset it to the beginning
+        if (rotation == Rotation::LEFT)
+            rotation = Rotation::UP;
+        else
+            rotation = static_cast<Rotation>(static_cast<int>(rotation) << 1);
+    }
+
     std::shared_ptr<Component> Clone(std::shared_ptr<Tile> newParent) const override
     {
         return std::make_shared<RotatableComponent>(rotation, newParent);
