@@ -94,7 +94,7 @@ void HandleBuildMode(std::shared_ptr<Station> station)
 void HandleCrewHover(const std::vector<Crew> &crewList)
 {
     auto &camera = GameManager::GetCamera();
-    const Vector2 worldMousePos = GameManager::GetWorldMousePos();
+    const Vector2 worldMousePos = GameManager::GetWorldMousePos() - Vector2(.5, .5);
     const float crewSizeSq = CREW_RADIUS / TILE_SIZE * CREW_RADIUS / TILE_SIZE;
 
     camera.SetCrewHoverIndex(-1);
