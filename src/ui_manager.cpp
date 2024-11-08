@@ -1,5 +1,7 @@
-#include "ui_manager.hpp"
+#include "game_state.hpp"
 #include "tile.hpp"
+#include "ui_element.hpp"
+#include "ui_manager.hpp"
 
 void InitializeEscapeMenu()
 {
@@ -316,6 +318,27 @@ void InitializeBuildMenu()
     UiManager::AddElement("BUILD_MENU", buildMenu);
 }
 
+void UiManager::Update()
+{
+    for (const auto &pair : UiManager::GetInstance().uiElements)
+    {
+        pair.second->Update();
+    }
+}
+
+void UiManager::Render()
+{
+    for (const auto &pair : UiManager::GetInstance().uiElements)
+    {
+        const auto &element = pair.second;
+        if (element->IsVisible())
+        {
+            element->Render();
+            element->RenderChildren();
+        }
+    }
+}
+
 void UiManager::InitializeElements()
 {
     InitializeSidebar();
@@ -323,4 +346,16 @@ void UiManager::InitializeElements()
     InitializeSettingsMenu();
     InitializeBuildWorldUi();
     InitializeBuildMenu();
+}
+
+std::shared_ptr<UiElement> UiManager::FindUiElementAtPos(const Vector2 &pos)
+{
+    for (const auto &pair : UiManager::GetInstance().uiElements)
+    {
+        const auto &element = pair.second;
+        if (auto found = UiElement::FindChildAtPos(element, pos))
+            return found;
+    }
+
+    return nullptr;
 }

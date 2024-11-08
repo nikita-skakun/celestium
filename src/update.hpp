@@ -1,6 +1,8 @@
 #pragma once
-#include "game_state.hpp"
-#include "crew.hpp"
+#include "utils.hpp"
+
+struct Crew;
+struct Station;
 
 void HandleBuildMode(std::shared_ptr<Station> station);
 void HandleCrewHover(const std::vector<Crew> &crewList);

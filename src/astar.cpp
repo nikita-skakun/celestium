@@ -1,4 +1,7 @@
 #include "astar.hpp"
+#include "station.hpp"
+#include <queue>
+#include <unordered_set>
 
 /**
  * Implements the A* pathfinding algorithm to find the shortest path

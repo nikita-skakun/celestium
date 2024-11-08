@@ -1,6 +1,5 @@
 #pragma once
 #include "sprite.hpp"
-#include "logging.hpp"
 #include <memory>
 #include <vector>
 

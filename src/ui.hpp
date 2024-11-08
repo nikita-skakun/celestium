@@ -1,6 +1,10 @@
 #pragma once
-#include "crew.hpp"
-#include "ui_manager.hpp"
+#include "utils.hpp"
+#include <deque>
+
+struct Crew;
+struct Station;
+struct Tile;
 
 void DrawTileGrid();
 void DrawPath(const std::deque<Vector2Int> &path, const Vector2 &startPos);

@@ -1,7 +1,8 @@
 #include "asset_manager.hpp"
-#include "game_state.hpp"
 #include "crew.hpp"
 #include "env_effect.hpp"
+#include "game_state.hpp"
+#include "station.hpp"
 
 Effect::Effect(const std::string &defName, const Vector2Int &position, float s)
     : position(position)

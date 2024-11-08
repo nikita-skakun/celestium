@@ -1,6 +1,7 @@
 #pragma once
-#include "station.hpp"
 #include "task.hpp"
+
+struct Tile;
 
 struct Crew
 {

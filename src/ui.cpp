@@ -1,3 +1,8 @@
+#include "asset_manager.hpp"
+#include "crew.hpp"
+#include "game_state.hpp"
+#include "station.hpp"
+#include "ui_manager.hpp"
 #include "ui.hpp"
 
 Color GetTileTint(std::shared_ptr<Tile> tile)

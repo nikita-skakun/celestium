@@ -1,7 +1,8 @@
 #pragma once
-#include "station.hpp"
-#include <queue>
-#include <unordered_set>
+#include "utils.hpp"
+#include <deque>
+
+struct Station;
 
 using HeuristicFunction = std::function<float(const Vector2Int &, const Vector2Int &)>;
 

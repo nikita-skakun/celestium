@@ -1,5 +1,6 @@
 #include "astar.hpp"
 #include "crew.hpp"
+#include "station.hpp"
 #include "task.hpp"
 
 void MoveTask::Update(Crew &crew)

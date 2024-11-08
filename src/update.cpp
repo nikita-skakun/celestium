@@ -1,3 +1,7 @@
+#include "crew.hpp"
+#include "game_state.hpp"
+#include "logging.hpp"
+#include "station.hpp"
 #include "update.hpp"
 
 void HandleMoveTile(std::shared_ptr<Station> station)

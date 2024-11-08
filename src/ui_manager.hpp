@@ -1,7 +1,8 @@
 #pragma once
-#include "ui_element.hpp"
-#include "game_state.hpp"
+#include "utils.hpp"
 #include <unordered_map>
+
+struct UiElement;
 
 struct UiManager
 {
@@ -30,26 +31,8 @@ public:
         return UiManager::GetInstance().uiElements.at(key);
     }
 
-    static void Update()
-    {
-        for (const auto &pair : UiManager::GetInstance().uiElements)
-        {
-            pair.second->Update();
-        }
-    }
-
-    static void Render()
-    {
-        for (const auto &pair : UiManager::GetInstance().uiElements)
-        {
-            const auto &element = pair.second;
-            if (element->IsVisible())
-            {
-                element->Render();
-                element->RenderChildren();
-            }
-        }
-    }
+    static void Update();
+    static void Render();
 
     static void ClearAllElements()
     {
@@ -58,17 +41,7 @@ public:
 
     static void InitializeElements();
 
-    static std::shared_ptr<UiElement> FindUiElementAtPos(const Vector2 &pos)
-    {
-        for (const auto &pair : UiManager::GetInstance().uiElements)
-        {
-            const auto &element = pair.second;
-            if (auto found = UiElement::FindChildAtPos(element, pos))
-                return found;
-        }
-
-        return nullptr;
-    }
+    static std::shared_ptr<UiElement> FindUiElementAtPos(const Vector2 &pos);
 
     static bool IsMouseOverUiElement()
     {

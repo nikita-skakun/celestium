@@ -1,3 +1,10 @@
+#include "asset_manager.hpp"
+#include "audio_manager.hpp"
+#include "crew.hpp"
+#include "game_state.hpp"
+#include "logging.hpp"
+#include "station.hpp"
+#include "ui_manager.hpp"
 #include "ui.hpp"
 #include "update.hpp"
 #include <condition_variable>
