@@ -529,7 +529,6 @@ public:
 
 struct RotatableComponent : Component
 {
-
 protected:
     Rotation rotation;
 

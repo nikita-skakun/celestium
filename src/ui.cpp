@@ -105,6 +105,54 @@ void DrawStationTiles()
     }
 }
 
+void DrawPowerOverlays(const std::shared_ptr<Tile> &tile)
+{
+    auto &camera = GameManager::GetCamera();
+    const Texture2D &iconTileset = AssetManager::GetTexture("ICON");
+    const Vector2 tileSize = Vector2(1, 1) * TILE_SIZE * camera.GetZoom();
+
+    if (auto powerConsumer = tile->GetComponent<PowerConsumerComponent>())
+    {
+        if (!powerConsumer->IsActive())
+        {
+            Vector2 startScreenPos = GameManager::WorldToScreen(ToVector2(tile->GetPosition()) + Vector2(2. / 3., 0));
+            Rectangle destRect = Vector2ToRect(startScreenPos, tileSize / 3.);
+            Rectangle sourceRect = Rectangle(0, 1, 1, 1) * TILE_SIZE;
+
+            DrawTexturePro(iconTileset, sourceRect, destRect, tileSize / 2., 0, Fade(YELLOW, .8));
+        }
+    }
+
+    if (!camera.IsOverlay(PlayerCam::Overlay::POWER))
+        return;
+    if (auto battery = tile->GetComponent<BatteryComponent>())
+    {
+        float barProgress = battery->GetChargeLevel() / battery->GetMaxChargeLevel();
+        Vector2 topLeftPos = GameManager::WorldToScreen(ToVector2(tile->GetPosition()) - Vector2(.5 - 1. / 16., .5));
+        Vector2 barStartPos = GameManager::WorldToScreen(ToVector2(tile->GetPosition()) - Vector2(.5 - 1. / 16., barProgress - .5));
+
+        Vector2 totalSize = Vector2(1. / 8., 1) * TILE_SIZE * camera.GetZoom();
+        Vector2 barSize = Vector2(1. / 8., barProgress) * TILE_SIZE * camera.GetZoom();
+
+        DrawRectangleV(topLeftPos, totalSize, Color(25, 25, 25, 200));
+        DrawRectangleV(barStartPos, barSize, Fade(YELLOW, .8));
+    }
+
+    if (auto powerConnector = tile->GetComponent<PowerConnectorComponent>())
+    {
+        auto connections = powerConnector->GetConnections();
+        for (auto &&connection : connections)
+        {
+            if (auto connectionTile = connection->_parent.lock())
+            {
+                DrawLineEx(GameManager::WorldToScreen(tile->GetPosition()),
+                           GameManager::WorldToScreen(connectionTile->GetPosition()),
+                           POWER_CONNECTION_WIDTH * std::max(camera.GetZoom(), 1.f), POWER_CONNECTION_COLOR);
+            }
+        }
+    }
+}
+
 /**
  * Draws the indirect visual overlays.
  */
@@ -114,10 +162,9 @@ void DrawStationOverlays()
     if (!station)
         return;
 
-    auto &camera = GameManager::GetCamera();
-    const Vector2 tileSize = Vector2(1, 1) * TILE_SIZE * camera.GetZoom();
+    float zoom = GameManager::GetCamera().GetZoom();
+    const Vector2 tileSize = Vector2(1, 1) * TILE_SIZE * zoom;
     const Texture2D &stationTileset = AssetManager::GetTexture("STATION");
-    const Texture2D &iconTileset = AssetManager::GetTexture("ICON");
 
     for (const auto &tilesAtPos : station->tileMap)
     {
@@ -141,11 +188,11 @@ void DrawStationOverlays()
             {
                 Vector2 startPos = GameManager::WorldToScreen(tile->GetPosition());
                 Rectangle destRect = Vector2ToRect(startPos, tileSize);
-                destRect.height = std::max(25. * door->GetProgress(), 1.) * camera.GetZoom();
+                destRect.height = std::max(25. * door->GetProgress(), 1.) * zoom;
                 Rectangle doorSourceRect = Rectangle(0, 7, 1, 1) * TILE_SIZE;
                 doorSourceRect.height = std::max(25. * door->GetProgress(), 1.);
 
-                Vector2 pivot = Vector2(tileSize.x / 2., destRect.height - 25. * camera.GetZoom());
+                Vector2 pivot = Vector2(tileSize.x / 2., destRect.height - 25. * zoom);
 
                 DrawTexturePro(stationTileset, doorSourceRect, destRect, pivot, rotation, tint);
 
@@ -155,47 +202,7 @@ void DrawStationOverlays()
                 DrawTexturePro(stationTileset, doorSourceRect2, destRect, pivot, rotation + 180., tint);
             }
 
-            if (auto powerConsumer = tile->GetComponent<PowerConsumerComponent>())
-            {
-                if (!powerConsumer->IsActive())
-                {
-                    Vector2 startScreenPos = GameManager::WorldToScreen(ToVector2(tile->GetPosition()) + Vector2(2. / 3., 0));
-                    Rectangle destRect = Vector2ToRect(startScreenPos, tileSize / 3.);
-                    Rectangle sourceRect = Rectangle(0, 1, 1, 1) * TILE_SIZE;
-
-                    DrawTexturePro(iconTileset, sourceRect, destRect, tileSize / 2., 0, Fade(YELLOW, .8));
-                }
-            }
-
-            if (camera.IsOverlay(PlayerCam::Overlay::POWER))
-            {
-                if (auto battery = tile->GetComponent<BatteryComponent>())
-                {
-                    float barProgress = battery->GetChargeLevel() / battery->GetMaxChargeLevel();
-                    Vector2 topLeftPos = GameManager::WorldToScreen(ToVector2(tile->GetPosition()) - Vector2(.5 - 1. / 16., .5));
-                    Vector2 barStartPos = GameManager::WorldToScreen(ToVector2(tile->GetPosition()) - Vector2(.5 - 1. / 16., barProgress - .5));
-
-                    Vector2 totalSize = Vector2(1. / 8., 1) * TILE_SIZE * camera.GetZoom();
-                    Vector2 barSize = Vector2(1. / 8., barProgress) * TILE_SIZE * camera.GetZoom();
-
-                    DrawRectangleV(topLeftPos, totalSize, Color(25, 25, 25, 200));
-                    DrawRectangleV(barStartPos, barSize, Fade(YELLOW, .8));
-                }
-
-                if (auto powerConnector = tile->GetComponent<PowerConnectorComponent>())
-                {
-                    auto connections = powerConnector->GetConnections();
-                    for (auto &&connection : connections)
-                    {
-                        if (auto connectionTile = connection->_parent.lock())
-                        {
-                            DrawLineEx(GameManager::WorldToScreen(tile->GetPosition()),
-                                       GameManager::WorldToScreen(connectionTile->GetPosition()),
-                                       POWER_CONNECTION_WIDTH * std::max(camera.GetZoom(), 1.f), POWER_CONNECTION_COLOR);
-                        }
-                    }
-                }
-            }
+            DrawPowerOverlays(tile);
         }
     }
 }
