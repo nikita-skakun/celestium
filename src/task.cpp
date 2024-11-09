@@ -13,7 +13,7 @@ void MoveTask::Update(std::shared_ptr<Crew> crew)
 
     if (path.empty())
     {
-        path = AStar(floorCrewPos, targetPosition, station);
+        path = AStar(floorCrewPos, targetPosition);
 
         if (path.size() <= 0)
         {
@@ -48,7 +48,7 @@ void MoveTask::Update(std::shared_ptr<Crew> crew)
         }
 
         // If there are any tiles are in the way, clear path for recalculation
-        if (DoesPathHaveObstacles(path, station))
+        if (DoesPathHaveObstacles(path))
         {
             path = {};
             return;

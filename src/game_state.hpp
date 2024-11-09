@@ -48,18 +48,8 @@ public:
     static GameState GetGameState() { return GetInstance().state; }
     static bool IsGameRunning() { return magic_enum::enum_flags_test(GetGameState(), GameState::RUNNING); }
     static bool IsGamePaused() { return magic_enum::enum_flags_test_any(GetGameState(), GameState::PAUSED | GameState::FORCE_PAUSED); }
-    static void SetGameState(GameState mask, bool bitState = true)
-    {
-        if (bitState)
-            GetInstance().state |= mask;
-        else
-            GetInstance().state &= ~mask;
-    }
-
-    static void ToggleGameState(GameState mask)
-    {
-        GetInstance().state ^= mask;
-    }
+    static void SetGameState(GameState mask, bool bitState = true);
+    static void ToggleGameState(GameState mask) { GetInstance().state ^= mask; }
 
     static PlayerCam &GetCamera() { return GetInstance().camera; }
     static void HandleStateInputs();
@@ -76,7 +66,7 @@ public:
 
     static const std::vector<std::weak_ptr<Crew>> &GetSelectedCrew() { return GetInstance().selectedCrewList; }
     static void ClearSelectedCrew() { GetInstance().selectedCrewList.clear(); }
-    static void AddSelectedCrew(const std::weak_ptr<Crew> &crew) { GetInstance().selectedCrewList.push_back(crew); }
+    static void AddSelectedCrew(std::weak_ptr<Crew> crew) { GetInstance().selectedCrewList.push_back(crew); }
     static void ToggleSelectedCrew(const std::shared_ptr<Crew> &crew);
 
     static std::shared_ptr<Tile> GetSelectedTile() { return GetInstance().selectedTile.lock(); }

@@ -2,6 +2,14 @@
 #include "game_state.hpp"
 #include "station.hpp"
 
+void GameManager::SetGameState(GameState mask, bool bitState)
+{
+    if (bitState)
+        GetInstance().state |= mask;
+    else
+        GetInstance().state &= ~mask;
+}
+
 /**
  * Toggles camera state based on user key input.
  */
@@ -51,7 +59,7 @@ void GameManager::Initialize()
 void GameManager::ToggleSelectedCrew(const std::shared_ptr<Crew> &crew)
 {
     auto &selectedCrewList = GetInstance().selectedCrewList;
-    const auto crewIter = std::find_if(selectedCrewList.begin(), selectedCrewList.end(), [crew](const std::weak_ptr<Crew> &_crew)
+    const auto crewIter = std::find_if(selectedCrewList.begin(), selectedCrewList.end(), [crew](std::weak_ptr<Crew> _crew)
                                        { return !_crew.expired() && _crew.lock() == crew; });
 
     if (crewIter == selectedCrewList.end())

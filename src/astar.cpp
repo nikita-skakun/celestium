@@ -1,4 +1,5 @@
 #include "astar.hpp"
+#include "game_state.hpp"
 #include "station.hpp"
 #include <queue>
 #include <unordered_set>
@@ -9,13 +10,12 @@
  *
  * @param start    The starting position as a Vector2Int.
  * @param end      The target position as a Vector2Int.
- * @param station  A shared pointer to the Station.
  * @param heuristic A function that estimates the cost between two points.
  * @return         A queue of Vector2Int positions representing the path.
  */
-std::deque<Vector2Int> AStar(const Vector2Int &start, const Vector2Int &end,
-                             std::shared_ptr<Station> station, const HeuristicFunction &heuristic)
+std::deque<Vector2Int> AStar(const Vector2Int &start, const Vector2Int &end, const HeuristicFunction &heuristic)
 {
+    auto station = GameManager::GetStation();
     if (start == end || !station)
         return {};
 
@@ -110,12 +110,12 @@ std::deque<Vector2Int> AStar(const Vector2Int &start, const Vector2Int &end,
  * Checks if there are any obstacles along the given path.
  *
  * @param path            The queue of Vector2Int positions representing the path.
- * @param station         Shared pointer to the Station containing the tiles.
  *
  * @return                True if an obstacle is found or station is null, false otherwise.
  */
-bool DoesPathHaveObstacles(const std::deque<Vector2Int> &path, std::shared_ptr<Station> station)
+bool DoesPathHaveObstacles(const std::deque<Vector2Int> &path)
 {
+    auto station = GameManager::GetStation();
     // Return that obstacle is found if station is null
     if (!station)
         return true;

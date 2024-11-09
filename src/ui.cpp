@@ -310,7 +310,7 @@ void DrawCrew(double timeSinceFixedUpdate)
         }
 
         const auto &selectedCrewList = GameManager::GetSelectedCrew();
-        bool isSelected = std::find_if(selectedCrewList.begin(), selectedCrewList.end(), [crew](const std::weak_ptr<Crew> &_crew)
+        bool isSelected = std::find_if(selectedCrewList.begin(), selectedCrewList.end(), [crew](std::weak_ptr<Crew> _crew)
                                        { return !_crew.expired() && _crew.lock() == crew; }) != selectedCrewList.end();
         DrawCrewCircle(crew, drawPosition, isSelected);
     }
