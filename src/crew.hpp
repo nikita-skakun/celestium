@@ -1,6 +1,7 @@
 #pragma once
-#include "task.hpp"
+#include "utils.hpp"
 
+struct Task;
 struct Tile;
 
 struct Crew
@@ -62,31 +63,8 @@ public:
             Die();
     }
 
-    constexpr std::string GetActionName() const
-    {
-        if (taskQueue.empty())
-            return "Idle";
-
-        return taskQueue.at(0)->GetActionName();
-    }
-
-    constexpr std::string GetInfo() const
-    {
-        std::string info = " - " + GetName();
-
-        if (IsAlive())
-        {
-            info += std::format("\n   + Health: {:.1f}", GetHealth());
-            info += std::format("\n   + Oxygen: {:.0f}", GetOxygen());
-            info += std::format("\n   + Action: {}", GetActionName());
-        }
-        else
-        {
-            info += "\n   + DEAD";
-        }
-
-        return info;
-    }
+    std::string GetActionName() const;
+    std::string GetInfo() const;
 
     constexpr void Die()
     {

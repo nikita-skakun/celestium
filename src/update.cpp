@@ -2,6 +2,7 @@
 #include "game_state.hpp"
 #include "logging.hpp"
 #include "station.hpp"
+#include "task.hpp"
 #include "update.hpp"
 
 void HandleMoveTile(const std::shared_ptr<Station> &station)

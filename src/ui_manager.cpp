@@ -1,3 +1,4 @@
+#include "audio_manager.hpp"
 #include "game_state.hpp"
 #include "tile.hpp"
 #include "ui_element.hpp"

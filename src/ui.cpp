@@ -2,6 +2,7 @@
 #include "crew.hpp"
 #include "game_state.hpp"
 #include "station.hpp"
+#include "task.hpp"
 #include "ui_manager.hpp"
 #include "ui.hpp"
 

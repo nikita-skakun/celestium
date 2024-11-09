@@ -1,6 +1,5 @@
 #pragma once
 #include "utils.hpp"
-#include <memory>
 #include <opus/opusfile.h>
 #include <rtaudio/RtAudio.h>
 #include <unordered_set>

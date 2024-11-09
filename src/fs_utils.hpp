@@ -2,8 +2,6 @@
 #include <filesystem>
 #include <format>
 #include <fstream>
-#include <stdexcept>
-#include <vector>
 
 constexpr std::uintmax_t MAX_FILE_SIZE = 100 * 1024 * 1024; // 100 MB limit
 
