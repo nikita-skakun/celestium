@@ -21,7 +21,7 @@ private:
     }
 
 public:
-    static void AddElement(const std::string &key, std::shared_ptr<UiElement> element)
+    static void AddElement(const std::string &key, const std::shared_ptr<UiElement> &element)
     {
         UiManager::GetInstance().uiElements.emplace(key, element);
     }

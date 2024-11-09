@@ -5,7 +5,7 @@
 #include <map>
 #include <unordered_map>
 
-struct Station
+struct Station : public std::enable_shared_from_this<Station>
 {
     std::unordered_map<Vector2Int, std::vector<std::shared_ptr<Tile>>> tileMap;
     std::vector<std::shared_ptr<Effect>> effects;
@@ -100,8 +100,9 @@ public:
 
         return result;
     }
+
+    void CreateRectRoom(const Vector2Int &pos, const Vector2Int &size);
+    void CreateHorizontalCorridor(const Vector2Int &startPos, int length, int width);
 };
 
-void CreateRectRoom(const Vector2Int &pos, const Vector2Int &size, std::shared_ptr<Station> station);
-void CreateHorizontalCorridor(const Vector2Int &startPos, int length, int width, std::shared_ptr<Station> station);
 std::shared_ptr<Station> CreateStation();

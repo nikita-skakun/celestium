@@ -4,7 +4,7 @@
 #include "station.hpp"
 #include "update.hpp"
 
-void HandleMoveTile(std::shared_ptr<Station> station)
+void HandleMoveTile(const std::shared_ptr<Station> &station)
 {
     auto moveTile = GameManager::GetMoveTile();
     Vector2Int cursorPos = ToVector2Int(GameManager::GetWorldMousePos());
@@ -32,7 +32,7 @@ void HandleMoveTile(std::shared_ptr<Station> station)
     GameManager::ClearMoveTile();
 }
 
-void HandleSelectTile(std::shared_ptr<Station> station)
+void HandleSelectTile(const std::shared_ptr<Station> &station)
 {
     Vector2Int cursorPos = ToVector2Int(GameManager::GetWorldMousePos());
 
@@ -55,7 +55,7 @@ void HandleSelectTile(std::shared_ptr<Station> station)
         GameManager::SetSelectedTile(nullptr);
 }
 
-void HandlePlaceTile(std::shared_ptr<Station> station)
+void HandlePlaceTile(const std::shared_ptr<Station> &station)
 {
     const std::string &buildTileId = GameManager::GetBuildTileId();
     const auto &tileDef = DefinitionManager::GetTileDefinition(buildTileId);

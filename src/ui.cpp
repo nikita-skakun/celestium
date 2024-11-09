@@ -5,7 +5,7 @@
 #include "ui_manager.hpp"
 #include "ui.hpp"
 
-Color GetTileTint(std::shared_ptr<Tile> tile)
+Color GetTileTint(const std::shared_ptr<Tile> &tile)
 {
     Color tint = WHITE;
     if (GameManager::IsInBuildMode() && GameManager::GetSelectedTile() == tile)
@@ -200,7 +200,7 @@ void DrawStationOverlays()
     }
 }
 
-void DrawTileOutline(std::shared_ptr<Tile> tile, Color color)
+void DrawTileOutline(const std::shared_ptr<Tile> &tile, Color color)
 {
     if (!tile)
         return;

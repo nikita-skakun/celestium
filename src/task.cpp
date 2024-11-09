@@ -3,7 +3,7 @@
 #include "station.hpp"
 #include "task.hpp"
 
-void MoveTask::Update(std::shared_ptr<Crew> crew)
+void MoveTask::Update(const std::shared_ptr<Crew> &crew)
 {
     if (!crew)
         return;
@@ -72,7 +72,7 @@ void MoveTask::Update(std::shared_ptr<Crew> crew)
     crew->SetPosition(crew->GetPosition() + Vector2Normalize(stepPos - crew->GetPosition()) * distanceToTravel);
 }
 
-void ExtinguishTask::Update(std::shared_ptr<Crew> crew)
+void ExtinguishTask::Update(const std::shared_ptr<Crew> &crew)
 {
     if (!crew)
         return;
@@ -101,7 +101,7 @@ void ExtinguishTask::Update(std::shared_ptr<Crew> crew)
     progress += CREW_EXTINGUISH_SPEED * FIXED_DELTA_TIME;
 }
 
-void RepairTask::Update(std::shared_ptr<Crew> crew)
+void RepairTask::Update(const std::shared_ptr<Crew> &crew)
 {
     if (!crew)
         return;

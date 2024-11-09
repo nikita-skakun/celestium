@@ -10,7 +10,7 @@ void DrawTileGrid();
 void DrawPath(const std::deque<Vector2Int> &path, const Vector2 &startPos);
 void DrawStationTiles();
 void DrawStationOverlays();
-void DrawTileOutline(std::shared_ptr<Tile> tile, Color color);
+void DrawTileOutline(const std::shared_ptr<Tile> &tile, Color color);
 void DrawEnvironmentalEffects();
 void DrawCrew(double timeSinceFixedUpdate);
 void DrawCrewTaskProgress();

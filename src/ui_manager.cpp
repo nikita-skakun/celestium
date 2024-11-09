@@ -251,7 +251,7 @@ struct TileToggleConfig
     Rectangle iconSourceRect;
 };
 
-void AddBuildToggle(std::shared_ptr<UiPanel> &buildMenu, const TileToggleConfig &config, int index)
+void AddBuildToggle(const std::shared_ptr<UiPanel> &buildMenu, const TileToggleConfig &config, int index)
 {
     constexpr Vector2 SPACING = Vector2ScreenScale(Vector2(DEFAULT_PADDING, DEFAULT_PADDING));
     constexpr Vector2 MENU_POS = Vector2(SPACING.x, .5 + SPACING.y);

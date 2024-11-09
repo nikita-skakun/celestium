@@ -2,19 +2,20 @@
 #include "audio_manager.hpp"
 #include "game_state.hpp"
 
-void CreateRectRoom(const Vector2Int &pos, const Vector2Int &size, std::shared_ptr<Station> station)
+void Station::CreateRectRoom(const Vector2Int &pos, const Vector2Int &size)
 {
+    auto self = shared_from_this();
     for (int y = 0; y < size.y; y++)
     {
         for (int x = 0; x < size.x; x++)
         {
             bool isWall = (x == 0 || y == 0 || x == size.x - 1 || y == size.y - 1);
-            Tile::CreateTile(isWall ? "WALL" : "BLUE_FLOOR", pos + Vector2Int(x, y), station);
+            Tile::CreateTile(isWall ? "WALL" : "BLUE_FLOOR", pos + Vector2Int(x, y), self);
         }
     }
 }
 
-void CreateHorizontalCorridor(const Vector2Int &startPos, int length, int width, std::shared_ptr<Station> station)
+void Station::CreateHorizontalCorridor(const Vector2Int &startPos, int length, int width)
 {
     if (width < 1 || length == 0)
         return;
@@ -26,6 +27,8 @@ void CreateHorizontalCorridor(const Vector2Int &startPos, int length, int width,
     int direction = (length > 0) ? 1 : -1;
     int absLength = std::abs(length);
 
+    auto self = shared_from_this();
+
     for (int i = 0; i < absLength; i++)
     {
         for (int y = start; y < end; y++)
@@ -33,18 +36,18 @@ void CreateHorizontalCorridor(const Vector2Int &startPos, int length, int width,
             bool isEnding = (i == 0 || i == absLength - 1);
             bool isWall = isEnding ? (y != 0) : (y == start || y == end - 1);
             Vector2Int pos = startPos + Vector2Int(i * direction, y);
-            std::shared_ptr<Tile> oldTile = station->GetTileAtPosition(pos);
+            std::shared_ptr<Tile> oldTile = GetTileAtPosition(pos);
             if (isWall && oldTile)
                 continue;
 
             if (!isWall && oldTile)
                 oldTile->DeleteTile();
 
-            Tile::CreateTile(isWall ? "WALL" : "BLUE_FLOOR", pos, station);
+            Tile::CreateTile(isWall ? "WALL" : "BLUE_FLOOR", pos, self);
 
             // TODO: Add larger sized doors
             if (isEnding && !isWall)
-                Tile::CreateTile("DOOR", pos, station);
+                Tile::CreateTile("DOOR", pos, self);
         }
     }
 }
@@ -52,9 +55,9 @@ void CreateHorizontalCorridor(const Vector2Int &startPos, int length, int width,
 std::shared_ptr<Station> CreateStation()
 {
     std::shared_ptr<Station> station = std::make_shared<Station>();
-    CreateRectRoom(Vector2Int(-4, -4), Vector2Int(9, 9), station);
-    CreateRectRoom(Vector2Int(10, -4), Vector2Int(9, 9), station);
-    CreateHorizontalCorridor(Vector2Int(4, 0), 7, 3, station);
+    station->CreateRectRoom(Vector2Int(-4, -4), Vector2Int(9, 9));
+    station->CreateRectRoom(Vector2Int(10, -4), Vector2Int(9, 9));
+    station->CreateHorizontalCorridor(Vector2Int(4, 0), 7, 3);
 
     auto oxygenProducer1 = Tile::CreateTile("OXYGEN_PRODUCER", Vector2Int(0, 0), station);
     auto oxygenProducer2 = Tile::CreateTile("OXYGEN_PRODUCER", Vector2Int(14, 0), station);
