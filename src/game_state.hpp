@@ -1,6 +1,8 @@
 #pragma once
 #include "camera.hpp"
 
+struct Crew;
+struct Station;
 struct Tile;
 
 enum class GameState : u_int8_t
@@ -22,6 +24,10 @@ struct GameManager
 private:
     GameState state = GameState::NONE;
     PlayerCam camera = PlayerCam();
+    std::vector<std::shared_ptr<Crew>> crewList;
+    std::vector<std::weak_ptr<Crew>> hoveredCrewList;
+    std::vector<std::weak_ptr<Crew>> selectedCrewList;
+    std::shared_ptr<Station> station;
     std::weak_ptr<Tile> selectedTile;
     std::weak_ptr<Tile> moveTile;
     bool buildMode = false;
@@ -57,6 +63,21 @@ public:
 
     static PlayerCam &GetCamera() { return GetInstance().camera; }
     static void HandleStateInputs();
+
+    static void Initialize();
+
+    static const std::vector<std::shared_ptr<Crew>> &GetCrewList() { return GetInstance().crewList; }
+
+    static std::shared_ptr<Station> GetStation() { return GetInstance().station; }
+
+    static const std::vector<std::weak_ptr<Crew>> &GetHoveredCrew() { return GetInstance().hoveredCrewList; }
+    static void ClearHoveredCrew() { GetInstance().hoveredCrewList.clear(); }
+    static void AddHoveredCrew(const std::shared_ptr<Crew> &crew) { GetInstance().hoveredCrewList.push_back(crew); }
+
+    static const std::vector<std::weak_ptr<Crew>> &GetSelectedCrew() { return GetInstance().selectedCrewList; }
+    static void ClearSelectedCrew() { GetInstance().selectedCrewList.clear(); }
+    static void AddSelectedCrew(const std::weak_ptr<Crew> &crew) { GetInstance().selectedCrewList.push_back(crew); }
+    static void ToggleSelectedCrew(const std::shared_ptr<Crew> &crew);
 
     static std::shared_ptr<Tile> GetSelectedTile() { return GetInstance().selectedTile.lock(); }
     static void SetSelectedTile(const std::shared_ptr<Tile> &selection = nullptr) { GetInstance().selectedTile = selection; }

@@ -177,11 +177,10 @@ public:
     static void Update()
     {
         AudioManager &audio = GetInstance();
-        for (auto &sound : audio.sounds)
+        for (const auto &sound : audio.sounds)
         {
-            if (sound->onUpdate)
-                if (sound->onUpdate())
-                    audio.sounds.erase(sound);
+            if (!sound || (sound->onUpdate && sound->onUpdate()))
+                audio.sounds.erase(sound);
         }
     }
 

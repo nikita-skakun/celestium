@@ -32,9 +32,9 @@ std::string Effect::GetInfo() const
     return effectInfo;
 }
 
-void FireEffect::EffectCrew(Crew &crew, float deltaTime) const
+void FireEffect::EffectCrew(std::shared_ptr<Crew> crew, float deltaTime) const
 {
-    crew.SetHealth(crew.GetHealth() - DAMAGE_PER_SECOND * deltaTime);
+    crew->SetHealth(crew->GetHealth() - DAMAGE_PER_SECOND * deltaTime);
 }
 
 void FireEffect::Update(const std::shared_ptr<Station> &station, int index)

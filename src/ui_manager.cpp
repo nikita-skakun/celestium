@@ -322,7 +322,8 @@ void UiManager::Update()
 {
     for (const auto &pair : UiManager::GetInstance().uiElements)
     {
-        pair.second->Update();
+        if (pair.second)
+            pair.second->Update();
     }
 }
 
@@ -331,11 +332,11 @@ void UiManager::Render()
     for (const auto &pair : UiManager::GetInstance().uiElements)
     {
         const auto &element = pair.second;
-        if (element->IsVisible())
-        {
-            element->Render();
-            element->RenderChildren();
-        }
+        if (!element || !element->IsVisible())
+            continue;
+
+        element->Render();
+        element->RenderChildren();
     }
 }
 

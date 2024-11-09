@@ -1,4 +1,6 @@
+#include "crew.hpp"
 #include "game_state.hpp"
+#include "station.hpp"
 
 /**
  * Toggles camera state based on user key input.
@@ -24,6 +26,38 @@ void GameManager::HandleStateInputs()
 
     if (IsKeyPressed(KEY_B))
         GetInstance().ToggleBuildGameState();
+}
+
+void GameManager::Initialize()
+{
+    auto &manager = GetInstance();
+
+    manager.camera = PlayerCam();
+    manager.station = CreateStation();
+    manager.crewList = {
+        std::make_shared<Crew>("ALICE", Vector2(-2, 2), RED),
+        std::make_shared<Crew>("BOB", Vector2(3, 2), GREEN),
+        std::make_shared<Crew>("CHARLIE", Vector2(-3, -3), ORANGE)};
+    manager.selectedCrewList.clear();
+    manager.hoveredCrewList.clear();
+    manager.selectedTile.reset();
+    manager.moveTile.reset();
+    manager.buildMode = false;
+    manager.buildTileId = "";
+
+    manager.state = GameState::RUNNING;
+}
+
+void GameManager::ToggleSelectedCrew(const std::shared_ptr<Crew> &crew)
+{
+    auto &selectedCrewList = GetInstance().selectedCrewList;
+    const auto crewIter = std::find_if(selectedCrewList.begin(), selectedCrewList.end(), [crew](const std::weak_ptr<Crew> &_crew)
+                                       { return !_crew.expired() && _crew.lock() == crew; });
+
+    if (crewIter == selectedCrewList.end())
+        selectedCrewList.push_back(crew);
+    else
+        selectedCrewList.erase(crewIter);
 }
 
 /**

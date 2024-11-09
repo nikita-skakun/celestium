@@ -82,10 +82,10 @@ std::shared_ptr<Station> CreateStation()
     station->effects.push_back(std::make_shared<FoamEffect>(Vector2Int(13, 0)));
 
     auto fireAlarm = AudioManager::LoadSoundEffect("../assets/audio/fire_alarm.opus", SoundEffect::Type::EFFECT, false, true, .05);
-    std::weak_ptr<SoundEffect> fireAlarmWeak = fireAlarm;
-    fireAlarm->onUpdate = [fireAlarmWeak, &station]()
+    std::weak_ptr<SoundEffect> _fireAlarm = fireAlarm;
+    fireAlarm->onUpdate = [_fireAlarm, station]()
     {
-        auto fireAlarm = fireAlarmWeak.lock();
+        auto fireAlarm = _fireAlarm.lock();
         if (!station || !fireAlarm)
             return true;
 

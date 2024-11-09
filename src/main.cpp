@@ -14,7 +14,7 @@
 std::mutex updateMutex;
 std::condition_variable fixedUpdateCondition;
 
-void FixedUpdate(std::shared_ptr<Station> station, std::vector<Crew> &crewList, double &timeSinceFixedUpdate)
+void FixedUpdate(double &timeSinceFixedUpdate)
 {
     double previousTime = GetTime();
 
@@ -33,11 +33,11 @@ void FixedUpdate(std::shared_ptr<Station> station, std::vector<Crew> &crewList, 
                 std::unique_lock<std::mutex> lock(updateMutex);
 
                 // Perform the fixed updates
-                HandleCrewTasks(crewList);
-                HandleCrewEnvironment(crewList);
-                UpdateCrewCurrentTile(crewList, station);
-                UpdateEnvironmentalEffects(station);
-                UpdateTiles(station);
+                HandleCrewTasks();
+                HandleCrewEnvironment();
+                UpdateCrewCurrentTile();
+                UpdateEnvironmentalEffects();
+                UpdateTiles();
                 fixedUpdateCondition.notify_all();
 
                 timeSinceFixedUpdate -= FIXED_DELTA_TIME;
@@ -60,23 +60,16 @@ int main()
     SetTargetFPS(GetMonitorRefreshRate(GetCurrentMonitor()));
     SetExitKey(0);
 
-    GameManager::SetGameState(GameState::RUNNING);
-    GameManager::SetBuildModeState(true);
-
     AssetManager::Initialize();
     DefinitionManager::ParseTilesFromFile("../assets/definitions/tiles.yml");
     DefinitionManager::ParseEffectsFromFile("../assets/definitions/env_effects.yml");
 
     AudioManager::Initialize();
 
+    GameManager::Initialize();
+    GameManager::SetBuildModeState(true); // Done temporarily to test build mode
+
     auto &camera = GameManager::GetCamera();
-
-    std::vector<Crew> crewList{
-        Crew("ALICE", {-2, 2}, RED),
-        Crew("BOB", {3, 2}, GREEN),
-        Crew("CHARLIE", {-3, -3}, ORANGE)};
-
-    std::shared_ptr<Station> station = CreateStation();
 
     UiManager::InitializeElements();
 
@@ -84,7 +77,7 @@ int main()
 
     double timeSinceFixedUpdate = 0;
     // Start the update thread
-    std::thread updateThread(FixedUpdate, station, std::ref(crewList), std::ref(timeSinceFixedUpdate));
+    std::thread updateThread(FixedUpdate, std::ref(timeSinceFixedUpdate));
 
     double deltaTime = 0;
 
@@ -101,17 +94,19 @@ int main()
 
         if (!UiManager::IsMouseOverUiElement())
         {
-            if (GameManager::IsInBuildMode()) {
-                HandleBuildMode(station);
-            } else
+            if (GameManager::IsInBuildMode())
             {
-                HandleCrewHover(crewList);
-                HandleCrewSelection(crewList);
-                AssignCrewTasks(crewList);
+                HandleBuildMode();
+            }
+            else
+            {
+                HandleCrewHover();
+                HandleCrewSelection();
+                AssignCrewTasks();
             }
 
-            HandleMouseDrag(station);
-            MouseDeleteExistingConnection(station);
+            HandleMouseDrag();
+            MouseDeleteExistingConnection();
         }
 
         if (IsKeyPressed(KEY_SPACE))
@@ -122,25 +117,25 @@ int main()
         ClearBackground(Color(31, 40, 45));
 
         DrawTileGrid();
-        DrawStationTiles(station);
-        DrawStationOverlays(station);
+        DrawStationTiles();
+        DrawStationOverlays();
 
         if (!GameManager::IsInBuildMode())
         {
-            DrawCrew(timeSinceFixedUpdate, crewList);
-            DrawEnvironmentalEffects(station);
-            DrawCrewTaskProgress(crewList);
+            DrawCrew(timeSinceFixedUpdate);
+            DrawEnvironmentalEffects();
+            DrawCrewTaskProgress();
         }
         else
         {
-            DrawBuildUi(station);
+            DrawBuildUi();
         }
 
         if (camera.IsUiClear())
         {
             DrawDragSelectBox();
-            DrawMainTooltip(crewList, station);
-            DrawFpsCounter(deltaTime, 12, DEFAULT_FONT_SIZE);
+            DrawMainTooltip();
+            DrawFpsCounter(deltaTime);
         }
 
         UiManager::Update();

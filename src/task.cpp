@@ -3,10 +3,13 @@
 #include "station.hpp"
 #include "task.hpp"
 
-void MoveTask::Update(Crew &crew)
+void MoveTask::Update(std::shared_ptr<Crew> crew)
 {
-    auto station = crew.GetCurrentTile()->GetStation();
-    Vector2Int floorCrewPos = ToVector2Int(crew.GetPosition());
+    if (!crew)
+        return;
+
+    auto station = crew->GetCurrentTile()->GetStation();
+    Vector2Int floorCrewPos = ToVector2Int(crew->GetPosition());
 
     if (path.empty())
     {
@@ -14,9 +17,9 @@ void MoveTask::Update(Crew &crew)
 
         if (path.size() <= 0)
         {
-            if (ToVector2(targetPosition) == crew.GetPosition())
+            if (ToVector2(targetPosition) == crew->GetPosition())
             {
-                crew.GetTaskQueue().erase(crew.GetTaskQueue().begin());
+                crew->RemoveFirstTask();
                 return;
             }
 
@@ -27,20 +30,20 @@ void MoveTask::Update(Crew &crew)
     }
 
     constexpr float moveDelta = CREW_MOVE_SPEED * FIXED_DELTA_TIME;
-    const Vector2 stepPos = ToVector2(path.front());
-    const float distanceLeftSq = Vector2DistanceSq(crew.GetPosition(), stepPos) - moveDelta * moveDelta;
+    Vector2 stepPos = ToVector2(path.front());
+    const float distanceLeftSq = Vector2DistanceSq(crew->GetPosition(), stepPos) - moveDelta * moveDelta;
     float distanceToTravel = moveDelta;
     if (distanceLeftSq <= 0)
     {
         if (auto doorTile = station->GetTileWithComponentAtPosition<DoorComponent>(floorCrewPos))
             doorTile->GetComponent<DoorComponent>()->SetMovingState(DoorComponent::MovingState::IDLE);
 
-        crew.SetPosition(stepPos);
+        crew->SetPosition(stepPos);
         path.pop_front();
 
         if (path.empty())
         {
-            crew.GetTaskQueue().erase(crew.GetTaskQueue().begin());
+            crew->RemoveFirstTask();
             return;
         }
 
@@ -52,6 +55,7 @@ void MoveTask::Update(Crew &crew)
         }
 
         distanceToTravel = sqrtf(-distanceLeftSq);
+        stepPos = ToVector2(path.front());
     }
     else
     {
@@ -65,48 +69,54 @@ void MoveTask::Update(Crew &crew)
         }
     }
 
-    crew.SetPosition(crew.GetPosition() + Vector2Normalize(stepPos - crew.GetPosition()) * distanceToTravel);
+    crew->SetPosition(crew->GetPosition() + Vector2Normalize(stepPos - crew->GetPosition()) * distanceToTravel);
 }
 
-void ExtinguishTask::Update(Crew &crew)
+void ExtinguishTask::Update(std::shared_ptr<Crew> crew)
 {
-    auto station = crew.GetCurrentTile()->GetStation();
+    if (!crew)
+        return;
+
+    auto station = crew->GetCurrentTile()->GetStation();
     if (!station)
     {
-        crew.GetTaskQueue().erase(crew.GetTaskQueue().begin());
+        crew->RemoveFirstTask();
         return;
     }
 
     auto fire = station->GetEffectOfTypeAtPosition<FireEffect>(targetPosition);
     if (!fire)
     {
-        crew.GetTaskQueue().erase(crew.GetTaskQueue().begin());
+        crew->RemoveFirstTask();
         return;
     }
 
     if (progress > 1.)
     {
         station->RemoveEffect(fire);
-        crew.GetTaskQueue().erase(crew.GetTaskQueue().begin());
+        crew->RemoveFirstTask();
         return;
     }
 
     progress += CREW_EXTINGUISH_SPEED * FIXED_DELTA_TIME;
 }
 
-void RepairTask::Update(Crew &crew)
+void RepairTask::Update(std::shared_ptr<Crew> crew)
 {
+    if (!crew)
+        return;
+
     auto targetTile = _targetTile.lock();
     if (!targetTile)
     {
-        crew.GetTaskQueue().erase(crew.GetTaskQueue().begin());
+        crew->RemoveFirstTask();
         return;
     }
 
     auto durability = targetTile->GetComponent<DurabilityComponent>();
     if (!durability)
     {
-        crew.GetTaskQueue().erase(crew.GetTaskQueue().begin());
+        crew->RemoveFirstTask();
         return;
     }
 
@@ -115,7 +125,7 @@ void RepairTask::Update(Crew &crew)
 
     if (newHitpoints >= durability->GetMaxHitpoints())
     {
-        crew.GetTaskQueue().erase(crew.GetTaskQueue().begin());
+        crew->RemoveFirstTask();
         return;
     }
 }

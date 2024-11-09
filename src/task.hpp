@@ -15,7 +15,7 @@ struct Task
         REPAIR,
     };
 
-    virtual void Update(Crew &crew) = 0;
+    virtual void Update(std::shared_ptr<Crew> crew) = 0;
     virtual constexpr std::string GetActionName() const = 0;
     virtual constexpr Type GetType() const = 0;
     virtual ~Task() = default;
@@ -28,7 +28,7 @@ struct MoveTask : Task
 
     MoveTask(const Vector2Int &position) : targetPosition(position) {}
 
-    void Update(Crew &crew) override;
+    void Update(std::shared_ptr<Crew> crew) override;
 
     constexpr std::string GetActionName() const override { return "Moving"; }
     constexpr Type GetType() const override { return Type::MOVE; }
@@ -43,7 +43,7 @@ protected:
 public:
     ExtinguishTask(const Vector2Int &position) : targetPosition(position), progress(0) {}
 
-    void Update(Crew &crew) override;
+    void Update(std::shared_ptr<Crew> crew) override;
 
     constexpr float GetProgress() const { return progress; }
     constexpr const Vector2Int &GetTargetPosition() const { return targetPosition; }
@@ -60,7 +60,7 @@ protected:
 public:
     RepairTask(std::shared_ptr<Tile> tile) : _targetTile(tile) {}
 
-    void Update(Crew &crew) override;
+    void Update(std::shared_ptr<Crew> crew) override;
 
     std::shared_ptr<Tile> GetTargetTile() const { return _targetTile.lock(); }
 

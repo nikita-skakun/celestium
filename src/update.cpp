@@ -82,8 +82,10 @@ void HandlePlaceTile(std::shared_ptr<Station> station)
     }
 }
 
-void HandleBuildMode(std::shared_ptr<Station> station)
+void HandleBuildMode()
 {
+    auto station = GameManager::GetStation();
+
     if (!station || !IsMouseButtonPressed(MOUSE_LEFT_BUTTON))
         return;
 
@@ -95,20 +97,20 @@ void HandleBuildMode(std::shared_ptr<Station> station)
         HandlePlaceTile(station);
 }
 
-void HandleCrewHover(const std::vector<Crew> &crewList)
+void HandleCrewHover()
 {
-    auto &camera = GameManager::GetCamera();
+    const auto &crewList = GameManager::GetCrewList();
     const Vector2 worldMousePos = GameManager::GetWorldMousePos() - Vector2(.5, .5);
     const float crewSizeSq = CREW_RADIUS / TILE_SIZE * CREW_RADIUS / TILE_SIZE;
 
-    camera.SetCrewHoverIndex(-1);
-    for (int i = crewList.size() - 1; i >= 0; --i)
+    GameManager::ClearHoveredCrew();
+
+    for (const auto &crew : crewList)
     {
-        if (Vector2DistanceSq(worldMousePos, crewList[i].GetPosition()) <= crewSizeSq)
-        {
-            camera.SetCrewHoverIndex(i);
-            break;
-        }
+        if (!crew || Vector2DistanceSq(worldMousePos, crew->GetPosition()) > crewSizeSq)
+            continue;
+
+        GameManager::AddHoveredCrew(crew);
     }
 }
 
@@ -118,7 +120,7 @@ void HandleMouseDragStart()
         GameManager::GetCamera().SetDragStart(GameManager::GetWorldMousePos());
 }
 
-void HandleMouseDragDuring(std::shared_ptr<Station> station)
+void HandleMouseDragDuring()
 {
     if (!IsMouseButtonDown(MOUSE_LEFT_BUTTON))
         return;
@@ -129,6 +131,7 @@ void HandleMouseDragDuring(std::shared_ptr<Station> station)
     {
         camera.SetDragType(PlayerCam::DragType::SELECT);
 
+        auto station = GameManager::GetStation();
         if (camera.IsOverlay(PlayerCam::Overlay::POWER) && station &&
             station->GetTileWithComponentAtPosition<PowerConnectorComponent>(ToVector2Int(camera.GetDragStart())))
         {
@@ -141,12 +144,13 @@ void HandleMouseDragDuring(std::shared_ptr<Station> station)
         camera.SetDragEnd(GameManager::GetWorldMousePos());
 }
 
-void HandleMouseDragEnd(std::shared_ptr<Station> station)
+void HandleMouseDragEnd()
 {
     auto &camera = GameManager::GetCamera();
     if (!IsMouseButtonReleased(MOUSE_LEFT_BUTTON) || !camera.IsDragging())
         return;
 
+    auto station = GameManager::GetStation();
     if (camera.GetDragType() == PlayerCam::DragType::POWER_CONNECT && station)
     {
         Vector2Int dragStart = ToVector2Int(camera.GetDragStart());
@@ -171,14 +175,14 @@ void HandleMouseDragEnd(std::shared_ptr<Station> station)
     camera.SetDragType(PlayerCam::DragType::NONE);
 }
 
-void HandleMouseDrag(std::shared_ptr<Station> station)
+void HandleMouseDrag()
 {
     HandleMouseDragStart();
-    HandleMouseDragDuring(station);
-    HandleMouseDragEnd(station);
+    HandleMouseDragDuring();
+    HandleMouseDragEnd();
 }
 
-void HandleCrewSelection(const std::vector<Crew> &crewList)
+void HandleCrewSelection()
 {
     if (!IsMouseButtonReleased(MOUSE_LEFT_BUTTON))
         return;
@@ -188,56 +192,60 @@ void HandleCrewSelection(const std::vector<Crew> &crewList)
         return;
 
     if (!IsKeyDown(KEY_LEFT_SHIFT))
-        camera.ClearSelectedCrew();
+        GameManager::ClearSelectedCrew();
     if (camera.GetDragType() == PlayerCam::DragType::SELECT)
     {
-        for (std::size_t i = 0; i < crewList.size(); i++)
+        auto &crewList = GameManager::GetCrewList();
+        for (const auto &crew : crewList)
         {
-            Vector2 crewPos = crewList[i].GetPosition();
-            if (IsVector2WithinRect(Vector2ToBoundingBox(camera.GetDragStart(), camera.GetDragEnd()), crewPos))
-            {
-                camera.AddSelectedCrew(i);
-            }
+            if (!crew || !IsVector2WithinRect(camera.GetDragRect(), crew->GetPosition() + Vector2(.5, .5)))
+                continue;
+
+            GameManager::AddSelectedCrew(crew);
         }
+
+        return;
     }
-    else
-    {
-        if (camera.GetCrewHoverIndex() >= 0)
-            camera.ToggleSelectedCrew(camera.GetCrewHoverIndex());
-    }
+
+    const auto &hoveredCrew = GameManager::GetHoveredCrew();
+    if (hoveredCrew.empty())
+        return;
+
+    if (auto nextHoveredCrew = hoveredCrew.at(0).lock())
+        GameManager::ToggleSelectedCrew(nextHoveredCrew);
 }
 
-void AssignCrewTasks(std::vector<Crew> &crewList)
+void AssignCrewTasks()
 {
-    auto &camera = GameManager::GetCamera();
-    if (IsMouseButtonPressed(MOUSE_RIGHT_BUTTON) && camera.GetSelectedCrew().size() > 0)
+    const auto &selectedCrew = GameManager::GetSelectedCrew();
+    if (IsMouseButtonPressed(MOUSE_RIGHT_BUTTON) && !selectedCrew.empty())
     {
         Vector2Int worldPos = ToVector2Int(GameManager::GetWorldMousePos());
-        for (int crewId : camera.GetSelectedCrew())
+        for (const auto &_crew : selectedCrew)
         {
-            Crew &crew = crewList[crewId];
-            if (!crew.IsAlive() || !crew.GetCurrentTile())
+            auto crew = _crew.lock();
+            if (!crew || !crew->IsAlive() || !crew->GetCurrentTile())
                 continue;
 
             if (!IsKeyDown(KEY_LEFT_SHIFT))
-                crew.GetTaskQueue().clear();
+                crew->GetTaskQueue().clear();
 
-            // Modify this to be adaptive to the selected tile (ie. move, operate, build)
-            crew.GetTaskQueue().push_back(std::make_shared<MoveTask>(worldPos));
+            crew->GetTaskQueue().push_back(std::make_shared<MoveTask>(worldPos));
         }
     }
 
-    for (Crew &crew : crewList)
+    const auto &crewList = GameManager::GetCrewList();
+    for (const auto &crew : crewList)
     {
-        if (!crew.IsAlive() || !crew.GetTaskQueue().empty() || !crew.GetCurrentTile())
+        if (!crew->IsAlive() || !crew->GetTaskQueue().empty() || !crew->GetCurrentTile())
             continue;
 
-        auto station = crew.GetCurrentTile()->GetStation();
-        Vector2Int crewPos = ToVector2Int(crew.GetPosition());
+        auto station = crew->GetCurrentTile()->GetStation();
+        Vector2Int crewPos = ToVector2Int(crew->GetPosition());
 
         if (station->GetEffectOfTypeAtPosition<FireEffect>(crewPos))
         {
-            crew.GetTaskQueue().push_back(std::make_shared<ExtinguishTask>(crewPos));
+            crew->GetTaskQueue().push_back(std::make_shared<ExtinguishTask>(crewPos));
             continue;
         }
 
@@ -246,37 +254,39 @@ void AssignCrewTasks(std::vector<Crew> &crewList)
             Vector2Int neighborPos = crewPos + DirectionToVector2Int(direction);
             if (station->GetEffectOfTypeAtPosition<FireEffect>(neighborPos))
             {
-                crew.GetTaskQueue().push_back(std::make_shared<ExtinguishTask>(neighborPos));
+                crew->GetTaskQueue().push_back(std::make_shared<ExtinguishTask>(neighborPos));
                 break;
             }
         }
     }
 }
 
-void HandleCrewTasks(std::vector<Crew> &crewList)
+void HandleCrewTasks()
 {
-    for (Crew &crew : crewList)
+    const auto &crewList = GameManager::GetCrewList();
+    for (const auto &crew : crewList)
     {
-        if (!crew.IsAlive() || crew.GetTaskQueue().empty())
+        if (!crew->IsAlive() || crew->GetTaskQueue().empty())
             continue;
 
-        std::shared_ptr<Task> task = crew.GetTaskQueue().at(0);
+        std::shared_ptr<Task> task = crew->GetTaskQueue().at(0);
         task->Update(crew);
     }
 }
 
-void HandleCrewEnvironment(std::vector<Crew> &crewList)
+void HandleCrewEnvironment()
 {
-    for (Crew &crew : crewList)
+    const auto &crewList = GameManager::GetCrewList();
+    for (const auto &crew : crewList)
     {
-        if (!crew.IsAlive())
+        if (!crew->IsAlive())
             continue;
 
-        crew.ConsumeOxygen(FIXED_DELTA_TIME);
-        if (auto tile = crew.GetCurrentTile())
+        crew->ConsumeOxygen(FIXED_DELTA_TIME);
+        if (auto tile = crew->GetCurrentTile())
         {
             if (auto oxygen = tile->GetComponent<OxygenComponent>())
-                crew.RefillOxygen(FIXED_DELTA_TIME, oxygen->GetOxygenLevel());
+                crew->RefillOxygen(FIXED_DELTA_TIME, oxygen->GetOxygenLevel());
 
             auto effects = tile->GetStation()->GetEffectsAtPosition(tile->GetPosition());
             for (const auto &effect : effects)
@@ -287,27 +297,30 @@ void HandleCrewEnvironment(std::vector<Crew> &crewList)
     }
 }
 
-void UpdateCrewCurrentTile(std::vector<Crew> &crewList, std::shared_ptr<Station> station)
+void UpdateCrewCurrentTile()
 {
+    auto station = GameManager::GetStation();
     if (!station || station->tileMap.empty())
         return;
 
-    for (Crew &crew : crewList)
+    const auto &crewList = GameManager::GetCrewList();
+    for (const auto &crew : crewList)
     {
-        if (!crew.IsAlive())
+        if (!crew->IsAlive())
             continue;
 
-        Vector2Int floorCrewPos = ToVector2Int(crew.GetPosition());
+        Vector2Int floorCrewPos = ToVector2Int(crew->GetPosition());
 
-        if (crew.GetCurrentTile() && crew.GetCurrentTile()->GetPosition() == floorCrewPos)
+        if (crew->GetCurrentTile() && crew->GetCurrentTile()->GetPosition() == floorCrewPos)
             continue;
 
-        crew.SetCurrentTile(station->GetTileAtPosition(floorCrewPos, TileDef::Height::FLOOR));
+        crew->SetCurrentTile(station->GetTileAtPosition(floorCrewPos, TileDef::Height::FLOOR));
     }
 }
 
-void UpdateTiles(std::shared_ptr<Station> station)
+void UpdateTiles()
 {
+    auto station = GameManager::GetStation();
     if (!station)
         return;
 
@@ -349,8 +362,9 @@ void UpdateTiles(std::shared_ptr<Station> station)
     }
 }
 
-void UpdateEnvironmentalEffects(std::shared_ptr<Station> station)
+void UpdateEnvironmentalEffects()
 {
+    auto station = GameManager::GetStation();
     if (!station)
         return;
 
@@ -361,9 +375,10 @@ void UpdateEnvironmentalEffects(std::shared_ptr<Station> station)
     }
 }
 
-void MouseDeleteExistingConnection(std::shared_ptr<Station> station)
+void MouseDeleteExistingConnection()
 {
     auto &camera = GameManager::GetCamera();
+    auto station = GameManager::GetStation();
     if (!station || !IsMouseButtonPressed(MOUSE_BUTTON_RIGHT) || !camera.IsOverlay(PlayerCam::Overlay::POWER) || !GameManager::IsInBuildMode())
         return;
 

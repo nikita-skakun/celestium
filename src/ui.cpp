@@ -65,11 +65,10 @@ void DrawPath(const std::deque<Vector2Int> &path, const Vector2 &startPos)
 
 /**
  * Draws the station tiles and direct overlays.
- *
- * @param station The station to draw the tiles of.
  */
-void DrawStationTiles(std::shared_ptr<Station> station)
+void DrawStationTiles()
 {
+    auto station = GameManager::GetStation();
     if (!station)
         return;
 
@@ -108,11 +107,10 @@ void DrawStationTiles(std::shared_ptr<Station> station)
 
 /**
  * Draws the indirect visual overlays.
- *
- * @param station The station to draw the overlays of.
  */
-void DrawStationOverlays(std::shared_ptr<Station> station)
+void DrawStationOverlays()
 {
+    auto station = GameManager::GetStation();
     if (!station)
         return;
 
@@ -241,11 +239,10 @@ void DrawTileOutline(std::shared_ptr<Tile> tile, Color color)
 
 /**
  * Draws the station's environmental effects (such as fire or foam).
- *
- * @param station The station to draw the overlays of.
  */
-void DrawEnvironmentalEffects(std::shared_ptr<Station> station)
+void DrawEnvironmentalEffects()
 {
+    auto station = GameManager::GetStation();
     if (!station)
         return;
 
@@ -255,7 +252,7 @@ void DrawEnvironmentalEffects(std::shared_ptr<Station> station)
     }
 }
 
-void DrawCrewCircle(const Crew &crew, const Vector2 &drawPosition, bool isSelected)
+void DrawCrewCircle(const std::shared_ptr<Crew> &crew, const Vector2 &drawPosition, bool isSelected)
 {
     auto &camera = GameManager::GetCamera();
     Vector2 crewScreenPos = GameManager::WorldToScreen(drawPosition);
@@ -263,21 +260,21 @@ void DrawCrewCircle(const Crew &crew, const Vector2 &drawPosition, bool isSelect
     if (isSelected)
         DrawCircleV(crewScreenPos, (CREW_RADIUS + OUTLINE_SIZE) * camera.GetZoom(), OUTLINE_COLOR);
 
-    DrawCircleV(crewScreenPos, CREW_RADIUS * camera.GetZoom(), crew.IsAlive() ? crew.GetColor() : GRAY);
+    DrawCircleV(crewScreenPos, CREW_RADIUS * camera.GetZoom(), crew->IsAlive() ? crew->GetColor() : GRAY);
 }
 
 /**
  * Draws the crew members on the screen, accounting for their movement.
  *
  * @param timeSinceFixedUpdate The elapsed time since the last fixed update.
- * @param crewList             List of crew members to be drawn.
  */
-void DrawCrew(double timeSinceFixedUpdate, const std::vector<Crew> &crewList)
+void DrawCrew(double timeSinceFixedUpdate)
 {
-    for (const Crew &crew : crewList)
+    auto &crewList = GameManager::GetCrewList();
+    for (const auto &crew : crewList)
     {
-        Vector2 drawPosition = crew.GetPosition();
-        auto &taskQueue = crew.GetReadOnlyTaskQueue();
+        Vector2 drawPosition = crew->GetPosition();
+        auto &taskQueue = crew->GetReadOnlyTaskQueue();
 
         if (!taskQueue.empty() && taskQueue.front()->GetType() == Task::Type::MOVE)
         {
@@ -285,11 +282,11 @@ void DrawCrew(double timeSinceFixedUpdate, const std::vector<Crew> &crewList)
 
             if (!GameManager::IsInBuildMode() && !moveTask->path.empty())
             {
-                DrawPath(moveTask->path, crew.GetPosition());
+                DrawPath(moveTask->path, crew->GetPosition());
                 Vector2 nextPosition = ToVector2(moveTask->path.front());
 
                 const float moveDelta = timeSinceFixedUpdate * CREW_MOVE_SPEED;
-                const float distanceLeftSq = Vector2DistanceSq(crew.GetPosition(), nextPosition) - moveDelta * moveDelta;
+                const float distanceLeftSq = Vector2DistanceSq(crew->GetPosition(), nextPosition) - moveDelta * moveDelta;
                 if (distanceLeftSq <= 0)
                 {
                     drawPosition = nextPosition;
@@ -303,27 +300,31 @@ void DrawCrew(double timeSinceFixedUpdate, const std::vector<Crew> &crewList)
                 else
                 {
                     bool canPath = true;
-                    if (std::shared_ptr<Station> station = crew.GetCurrentTile()->GetStation())
+                    if (std::shared_ptr<Station> station = crew->GetCurrentTile()->GetStation())
                         canPath = station->IsDoorFullyOpenAtPos(moveTask->path.front());
 
                     if (canPath)
-                        drawPosition += Vector2Normalize(nextPosition - crew.GetPosition()) * moveDelta;
+                        drawPosition += Vector2Normalize(nextPosition - crew->GetPosition()) * moveDelta;
                 }
             }
         }
 
-        DrawCrewCircle(crew, drawPosition, GameManager::GetCamera().GetSelectedCrew().contains(&crew - &crewList[0]));
+        const auto &selectedCrewList = GameManager::GetSelectedCrew();
+        bool isSelected = std::find_if(selectedCrewList.begin(), selectedCrewList.end(), [crew](const std::weak_ptr<Crew> &_crew)
+                                       { return !_crew.expired() && _crew.lock() == crew; }) != selectedCrewList.end();
+        DrawCrewCircle(crew, drawPosition, isSelected);
     }
 }
 
-void DrawCrewTaskProgress(const std::vector<Crew> &crewList)
+void DrawCrewTaskProgress()
 {
-    for (const Crew &crew : crewList)
+    const auto &crewList = GameManager::GetCrewList();
+    for (const auto &crew : crewList)
     {
-        if (!crew.IsAlive() || crew.GetReadOnlyTaskQueue().empty())
+        if (!crew->IsAlive() || crew->GetReadOnlyTaskQueue().empty())
             continue;
 
-        const auto &task = crew.GetReadOnlyTaskQueue().front();
+        const auto &task = crew->GetReadOnlyTaskQueue().front();
 
         switch (task->GetType())
         {
@@ -331,8 +332,8 @@ void DrawCrewTaskProgress(const std::vector<Crew> &crewList)
         {
             const auto extinguishTask = std::dynamic_pointer_cast<ExtinguishTask>(task);
 
+            const Vector2 barPos = GameManager::WorldToScreen(ToVector2(extinguishTask->GetTargetPosition()) - Vector2(.5 - .05, .5 - .85));
             const Vector2 barSize = Vector2(extinguishTask->GetProgress() * .9, .1) * TILE_SIZE * GameManager::GetCamera().GetZoom();
-            const Vector2 barPos = GameManager::WorldToScreen(ToVector2(extinguishTask->GetTargetPosition()) + Vector2(.05, .85));
             DrawRectangleV(barPos, barSize, Fade(RED, .8));
         }
         break;
@@ -430,35 +431,30 @@ void DrawTooltip(const std::string &tooltip, const Vector2 &pos, float padding, 
 
 /**
  * Draws a tooltip about the crew member or station tile under the mouse cursor.
- *
- * @param crewList A vector of Crew objects, used to retrieve the hovered crew member's information.
- * @param station  A shared pointer to the Station, used to fetch tiles and their components.
  */
-void DrawMainTooltip(const std::vector<Crew> &crewList, std::shared_ptr<Station> station)
+void DrawMainTooltip()
 {
     std::string hoverText;
     const Vector2 mousePos = GetMousePosition();
-    auto &camera = GameManager::GetCamera();
 
-    // Add crew info we are hovering over
-    if (!GameManager::IsInBuildMode() && camera.GetCrewHoverIndex() >= 0)
+    if (!GameManager::IsInBuildMode())
     {
-        const Crew &crew = crewList[camera.GetCrewHoverIndex()];
-        hoverText += " - " + crew.GetName();
-        if (crew.IsAlive())
+        auto &hoveredCrew = GameManager::GetHoveredCrew();
+
+        for (const auto &_crew : hoveredCrew)
         {
-            hoverText += std::format("\n   + Health: {:.1f}", crew.GetHealth());
-            hoverText += std::format("\n   + Oxygen: {:.0f}", crew.GetOxygen());
-            hoverText += std::format("\n   + Action: {}", crew.GetActionName());
-        }
-        else
-        {
-            hoverText += "\n   + DEAD";
+            auto crew = _crew.lock();
+            if (!crew)
+                continue;
+
+            if (!hoverText.empty())
+                hoverText += "\n";
+
+            hoverText += crew->GetInfo();
         }
     }
 
-    // Add tile info we are hovering over
-    if (station)
+    if (auto station = GameManager::GetStation())
     {
         Vector2Int tileHoverPos = GameManager::ScreenToTile(mousePos);
         auto allTiles = station->GetAllTilesAtPosition(tileHoverPos);
@@ -490,8 +486,9 @@ void DrawMainTooltip(const std::vector<Crew> &crewList, std::shared_ptr<Station>
     DrawTooltip(hoverText, mousePos);
 }
 
-void DrawBuildUi(std::shared_ptr<Station> station)
+void DrawBuildUi()
 {
+    auto station = GameManager::GetStation();
     if (!station || UiManager::IsMouseOverUiElement())
         return;
 

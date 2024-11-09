@@ -25,6 +25,7 @@ public:
     constexpr Color GetColor() const { return color; }
     constexpr const std::vector<std::shared_ptr<Task>> &GetReadOnlyTaskQueue() const { return taskQueue; }
     constexpr std::vector<std::shared_ptr<Task>> &GetTaskQueue() { return taskQueue; }
+    constexpr void RemoveFirstTask() { taskQueue.erase(taskQueue.begin()); }
     constexpr float GetOxygen() const { return oxygen; }
     constexpr float GetHealth() const { return health; }
     constexpr bool IsAlive() const { return isAlive; }
@@ -65,8 +66,26 @@ public:
     {
         if (taskQueue.empty())
             return "Idle";
-        
+
         return taskQueue.at(0)->GetActionName();
+    }
+
+    constexpr std::string GetInfo() const
+    {
+        std::string info = " - " + GetName();
+
+        if (IsAlive())
+        {
+            info += std::format("\n   + Health: {:.1f}", GetHealth());
+            info += std::format("\n   + Oxygen: {:.0f}", GetOxygen());
+            info += std::format("\n   + Action: {}", GetActionName());
+        }
+        else
+        {
+            info += "\n   + DEAD";
+        }
+
+        return info;
     }
 
     constexpr void Die()
