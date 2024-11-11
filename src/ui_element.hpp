@@ -17,6 +17,10 @@ public:
 
     Rectangle GetRect() const;
     constexpr void SetRect(const Rectangle &r) { rect = r; }
+    constexpr Vector2 GetPosition() const { return RectToPos(rect); }
+    constexpr void SetPosition(const Vector2 &pos) { rect.x = pos.x; rect.y = pos.y; }
+    constexpr Vector2 GetSize() const { return RectToSize(rect); }
+    constexpr void SetSize(const Vector2 &size) { rect.width = size.x; rect.height = size.y; }
     constexpr bool IsEnabled() const { return enabled; }
     constexpr void SetEnabled(bool state) { enabled = state; }
     constexpr bool IsVisible() const { return visible; }

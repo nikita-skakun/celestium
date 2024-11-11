@@ -89,6 +89,7 @@ int main()
 
         // Handle all real-time input and camera logic in the main thread
         camera.HandleMovement();
+        UiManager::Update();
         GameManager::HandleStateInputs();
 
         if (!UiManager::IsMouseOverUiElement())
@@ -137,7 +138,6 @@ int main()
             DrawFpsCounter(deltaTime);
         }
 
-        UiManager::Update();
         UiManager::Render();
 
         AudioManager::Update();
