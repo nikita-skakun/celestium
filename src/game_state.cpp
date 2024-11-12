@@ -23,6 +23,9 @@ void GameManager::HandleStateInputs()
     if (!camera.IsUiState(PlayerCam::UiState::NONE))
         return;
 
+    if (IsKeyPressed(KEY_SPACE) && !IsInBuildMode())
+        ToggleGameState(GameState::PAUSED);
+
     if (IsKeyPressed(KEY_O))
         camera.ToggleOverlay(PlayerCam::Overlay::OXYGEN);
 
@@ -33,7 +36,7 @@ void GameManager::HandleStateInputs()
         camera.ToggleOverlay(PlayerCam::Overlay::POWER);
 
     if (IsKeyPressed(KEY_B))
-        GetInstance().ToggleBuildGameState();
+        ToggleBuildGameState();
 }
 
 void GameManager::Initialize()

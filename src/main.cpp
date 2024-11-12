@@ -109,9 +109,6 @@ int main()
             MouseDeleteExistingConnection();
         }
 
-        if (IsKeyPressed(KEY_SPACE))
-            GameManager::ToggleGameState(GameState::PAUSED);
-
         // Render logic
         BeginDrawing();
         ClearBackground(Color(31, 40, 45));
