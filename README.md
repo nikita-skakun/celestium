@@ -25,7 +25,19 @@ This is a passion project, created as a way to explore advanced programming conc
 | Resources and Usage               | :white_large_square: | Require resources to build new tiles, and the building process should require crew to work on it, instead of being instant                  |
 | A lot more...                     | :white_large_square: | This project is under active development! Feel free to [suggest a feature](https://github.com/nikita-skakun/celestium/issues/new).          |
 
+## Progress Snapshots
+
+If you are here, you probably came for the pretty pictures, so here you go!
+
+### November 11, 2024
+
+![progress-update-2024-11-11](https://github.com/user-attachments/assets/0a84e0ca-16ba-426c-a119-fe7602ed5e3c)
+
+### October 14, 2024
+
 ![progress-update-2024-10-14](https://github.com/user-attachments/assets/2b5e5327-fdcc-4765-b26d-074e8e610307)
+
+### September 29, 2024
 
 [progress-update-2024-09-29](https://github.com/user-attachments/assets/4367d366-b55f-4bcb-a2c6-ae5160bae2b7)
 
