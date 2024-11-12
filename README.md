@@ -5,17 +5,25 @@
 **Celestium** is a 2D space station simulation and management game that explores procedural generation, simulation mechanics, and AI pathfinding.
 This is a passion project, created as a way to explore advanced programming concepts and to unify them in a coherent and engaging game.
 
-## Progress Update
+## Feature Progress
 
-Exciting new features have been added to **Celestium**! Here's a quick look at the latest developments:
-
-- **A\* Pathfinding**: Crew members can now navigate the station using A\* pathfinding, ensuring efficient movement and intelligent routing around obstacles, bringing crew interactions to life.
-
-- **Air Diffusion Simulation**: Oxygen management has become a key aspect of station life. Oxygen production systems can now be installed, and crew members consume oxygen as they go about their tasks. Maintaining a steady supply of breathable air is critical to keeping your crew alive and the station functional.
-
-- **Power Storage and Connections**: Energy is now a crucial resource. Batteries can store and distribute power throughout the station, ensuring that critical life support systems stay online.
-
-These features bring the station to life and enhance player interaction, setting the stage for deeper simulation gameplay. Stay tuned for more!
+| Feature Name                      | Progress             | Description                                                                                                                                 |
+| :-------------------------------- | :------------------- | :------------------------------------------------------------------------------------------------------------------------------------------ |
+| Component-based Tiles             | :white_check_mark:   | Each tile is made from a number of components, each changing the behavior of the tile and it's effect on the environment                    |
+| Station Tile Rendering            | :white_check_mark:   | The station tile sprites are made from a number of sub-sprites, which are pieced together to dynamically respond to their neighbors         |
+| Crew Pathfinding                  | :white_check_mark:   | Crew pathfinding is done with A\* algorithm, which allows for pathing over complex station designs                                          |
+| Air Diffusion                     | :white_check_mark:   | Oxygen spreads from high concentration to low, simulating real-life processes. Crew and fire consume oxygen, while certain tiles produce it |
+| Dynamic Doors                     | :white_check_mark:   | Doors now dynamically separate rooms, only allowing air to spread when it is open                                                           |
+| Definitions for Core Game Aspects | :construction:       | The goal is to allow for easy modifications to core game features, (such as what components a tile is composed of)                          |
+| Environmental Effects             | :construction:       | Environmental hazards and objects (like fire and foam), which can effect the crew and the station                                           |
+| Power Storage and Connections     | :construction:       | A rework is necessary to make power connections be part of the physical game world                                                          |
+| Player Station Design             | :construction:       | Currently the player can add, move, rotate and delete tiles. Better build tools and warnings are still necessary                            |
+| Settings Menu                     | :construction:       | Some basic settings are available, but more work is necessary (key re-binding, FPS selection, etc)                                          |
+| Music and Sound Effects           | :construction:       | A basic implementation of sound effects is available, but more sounds and testing is still required                                         |
+| Main Menu                         | :white_large_square: | A main menu to start a new game, and load existing game                                                                                     |
+| Saving and Loading Game State     | :white_large_square: | Serializing the game state should be relatively straightforward, as tiles already have a tile definition file                               |
+| Resources and Usage               | :white_large_square: | Require resources to build new tiles, and the building process should require crew to work on it, instead of being instant                  |
+| A lot more...                     | :white_large_square: | This project is under active development! Feel free to [suggest a feature](https://github.com/nikita-skakun/celestium/issues/new).          |
 
 ![progress-update-2024-10-14](https://github.com/user-attachments/assets/2b5e5327-fdcc-4765-b26d-074e8e610307)
 
@@ -26,17 +34,24 @@ These features bring the station to life and enhance player interaction, setting
 Before you can start building Celestium, you will need to have Nix installed. If you don't already have it, please follow the [installation instructions](https://nixos.org/download/) for your operating system.
 
 Once you have Nix installed, navigate to the root directory of this project and run:
+
 ```
 nix-shell
 ```
+
 This will create a new shell environment, and download all necessary dependencies. Then, create a new build directory by running:
+
 ```
 mkdir build && cd build
 ```
+
 Now, you should be in the newly created `build` directory. To configure and build Celestium, run:
+
 ```
 cmake .. && make -j$(nproc) && ./celestium
 ```
+
+If something doesn't work, feel free to [leave an issue](https://github.com/nikita-skakun/celestium/issues/new).
 
 ## License
 
