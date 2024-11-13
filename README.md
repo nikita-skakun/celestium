@@ -47,19 +47,19 @@ Before you can start building Celestium, you will need to have Nix installed. If
 
 Once you have Nix installed, navigate to the root directory of this project and run:
 
-```
+```bash
 nix-shell
 ```
 
 This will create a new shell environment, and download all necessary dependencies. Then, create a new build directory by running:
 
-```
+```bash
 mkdir build && cd build
 ```
 
 Now, you should be in the newly created `build` directory. To configure and build Celestium, run:
 
-```
+```bash
 cmake .. && make -j$(nproc) && ./celestium
 ```
 
