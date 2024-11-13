@@ -80,3 +80,9 @@ Celestium is an source available project licensed under the [CC BY-NC 4.0 Licens
 - Visual assets inspired by [Jonik9i's Space Station Game Asset](https://jonik9i.itch.io/free-space-station-game-asset), licensed under the [Creative Commons Zero v1.0 Universal (CC0)](https://creativecommons.org/publicdomain/zero/1.0/).
 
 - [Jersey25](https://github.com/scfried/soft-type-jersey) font, licensed under the [SIL Open Font License, Version 1.1](assets/fonts/OFL.txt).
+
+- [Opusfile](https://github.com/xiph/opusfile) library, licensed under the [BSD (3-clause) License](https://github.com/xiph/opusfile?tab=BSD-3-Clause-1-ov-file#readme).
+
+- [RtAudio](https://github.com/thestk/rtaudio) library, licensed under the [MIT-like License](https://github.com/thestk/rtaudio/blob/master/LICENSE).
+
+- [Rapid YAML](https://github.com/biojppm/rapidyaml) library, licensed under the [MIT License](https://github.com/biojppm/rapidyaml/blob/master/LICENSE.txt).
