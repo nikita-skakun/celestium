@@ -112,20 +112,18 @@ void DrawPowerOverlays(const std::shared_ptr<Tile> &tile)
     const Texture2D &iconTileset = AssetManager::GetTexture("ICON");
     const Vector2 tileSize = Vector2(1, 1) * TILE_SIZE * camera.GetZoom();
 
-    if (auto powerConsumer = tile->GetComponent<PowerConsumerComponent>())
+    if (tile->HasComponent<PowerConsumerComponent>() && !tile->IsActive())
     {
-        if (!powerConsumer->IsActive())
-        {
-            Vector2 startScreenPos = GameManager::WorldToScreen(ToVector2(tile->GetPosition()) + Vector2(2. / 3., 0));
-            Rectangle destRect = Vector2ToRect(startScreenPos, tileSize / 3.);
-            Rectangle sourceRect = Rectangle(0, 1, 1, 1) * TILE_SIZE;
+        Vector2 startScreenPos = GameManager::WorldToScreen(ToVector2(tile->GetPosition()) + Vector2(2. / 3., 0));
+        Rectangle destRect = Vector2ToRect(startScreenPos, tileSize / 3.);
+        Rectangle sourceRect = Rectangle(0, 1, 1, 1) * TILE_SIZE;
 
-            DrawTexturePro(iconTileset, sourceRect, destRect, tileSize / 2., 0, Fade(YELLOW, .8));
-        }
+        DrawTexturePro(iconTileset, sourceRect, destRect, tileSize / 2., 0, Fade(YELLOW, .8));
     }
 
     if (!camera.IsOverlay(PlayerCam::Overlay::POWER))
         return;
+
     if (auto battery = tile->GetComponent<BatteryComponent>())
     {
         float barProgress = battery->GetChargeLevel() / battery->GetMaxChargeLevel();

@@ -12,7 +12,7 @@ void BatteryComponent::Charge()
     if (charge >= maxCharge)
         return;
 
-    std::shared_ptr<Tile> parent = _parent.lock();
+    auto parent = _parent.lock();
     if (!parent)
         return;
 
@@ -30,9 +30,9 @@ void BatteryComponent::Charge()
 
         if (auto connectedProducer = connectedTile->GetComponent<PowerProducerComponent>())
         {
-            float transferredCharge = std::clamp(connectedProducer->GetAvailablePower(), 0.f, maxCharge - charge);
-            charge += transferredCharge;
-            connectedProducer->UseAvailablePower(transferredCharge);
+            float chargeToTransfer = std::clamp(connectedProducer->GetAvailablePower(), 0.f, maxCharge - charge);
+            charge += chargeToTransfer;
+            connectedProducer->UseAvailablePower(chargeToTransfer);
         }
 
         if (charge >= maxCharge)
@@ -81,6 +81,7 @@ void PowerConsumerComponent::ConsumePower(float deltaTime)
         }
     }
 
+    // Sort batteries by charge level in descending order
     std::sort(connectedBatteries.begin(), connectedBatteries.end(),
               [](const std::shared_ptr<BatteryComponent> &a, const std::shared_ptr<BatteryComponent> &b)
               { return a->GetChargeLevel() > b->GetChargeLevel(); });
@@ -126,12 +127,11 @@ void PowerConsumerComponent::ConsumePower(float deltaTime)
 void OxygenProducerComponent::ProduceOxygen(float deltaTime) const
 {
     auto parent = _parent.lock();
-    if (!parent || !parent->GetStation())
+    if (!parent || !parent->GetStation() || !parent->IsActive())
         return;
 
     auto oxygenTile = parent->GetStation()->GetTileWithComponentAtPosition<OxygenComponent>(parent->GetPosition());
-    auto powerConsumer = parent->GetComponent<PowerConsumerComponent>();
-    if (!oxygenTile || (powerConsumer && !powerConsumer->IsActive()))
+    if (!oxygenTile)
         return;
 
     auto oxygen = oxygenTile->GetComponent<OxygenComponent>();
@@ -160,12 +160,9 @@ void DoorComponent::Animate(float deltaTime)
     if (movingState == MovingState::IDLE)
         return;
 
-    if (auto parent = _parent.lock())
-    {
-        auto powerConsumer = parent->GetComponent<PowerConsumerComponent>();
-        if (powerConsumer && !powerConsumer->IsActive())
-            return;
-    }
+    auto parent = _parent.lock();
+    if (!parent->IsActive())
+        return;
 
     float direction = movingState == MovingState::CLOSING ? 1.f : -1.f;
 

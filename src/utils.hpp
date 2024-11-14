@@ -422,7 +422,7 @@ constexpr std::string StringToTitleCase(const std::string &a) noexcept
 
 constexpr void StringRemoveSpaces(std::string &s) noexcept
 {
-    s.erase(std::remove_if(s.begin(), s.end(), ::isspace), s.end());
+    std::erase_if(s, ::isspace);
 }
 
 constexpr std::string MacroCaseToName(const std::string &s) noexcept

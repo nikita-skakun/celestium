@@ -40,10 +40,11 @@ void FireEffect::EffectCrew(const std::shared_ptr<Crew> &crew, float deltaTime) 
 void FireEffect::Update(const std::shared_ptr<Station> &station, int index)
 {
     auto tileWithOxygen = station->GetTileWithComponentAtPosition<OxygenComponent>(GetPosition());
-    bool isFoamOnTile = station->GetEffectOfTypeAtPosition<FoamEffect>(GetPosition()) != nullptr;
-    if (!tileWithOxygen || isFoamOnTile)
+    bool foamPresentOnTile = station->GetEffectOfTypeAtPosition<FoamEffect>(GetPosition()) != nullptr;
+    if (!tileWithOxygen || foamPresentOnTile)
     {
-        station->effects.erase(station->effects.begin() + index);
+        if (index >= 0 && index < station->effects.size())
+            station->effects.erase(station->effects.begin() + index);
         return;
     }
 
@@ -65,7 +66,8 @@ void FireEffect::Update(const std::shared_ptr<Station> &station, int index)
     if (oxygen->GetOxygenLevel() < oxygenToConsume)
     {
         oxygen->SetOxygenLevel(0);
-        station->effects.erase(station->effects.begin() + index);
+        if (index >= 0 && index < station->effects.size())
+            station->effects.erase(station->effects.begin() + index);
         return;
     }
 

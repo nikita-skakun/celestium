@@ -216,10 +216,8 @@ std::vector<std::shared_ptr<Effect>> Station::GetEffectsAtPosition(const Vector2
 
 void Station::RemoveEffect(const std::shared_ptr<Effect> &effect)
 {
-    effects.erase(std::remove_if(effects.begin(), effects.end(),
-                                 [effect](const std::shared_ptr<Effect> &other)
-                                 { return effect == other; }),
-                  effects.end());
+    std::erase_if(effects, [effect](const std::shared_ptr<Effect> &other)
+                  { return effect == other; });
 }
 
 std::shared_ptr<Tile> Station::GetTileAtPosition(const Vector2Int &pos, TileDef::Height height) const

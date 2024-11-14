@@ -5,7 +5,7 @@
 #include "task.hpp"
 #include "update.hpp"
 
-void HandleMoveTile(const std::shared_ptr<Station> &station)
+void HandleTileMovement(const std::shared_ptr<Station> &station)
 {
     auto moveTile = GameManager::GetMoveTile();
     Vector2Int cursorPos = ToVector2Int(GameManager::GetWorldMousePos());
@@ -30,6 +30,7 @@ void HandleMoveTile(const std::shared_ptr<Station> &station)
             LogMessage(LogLevel::DEBUG, std::format("Moved tile {} to {}", moveTile->GetId(), ToString(moveTile->GetPosition())));
         }
     }
+    // Clear the move tile to prevent further movement actions until a new tile is selected
     GameManager::ClearMoveTile();
 }
 
@@ -48,7 +49,7 @@ void HandleSelectTile(const std::shared_ptr<Station> &station)
                 GameManager::SetSelectedTile(allTiles[i - 1]);
                 break;
             }
-            if (i == 0)
+            else if (i == 0)
                 GameManager::SetSelectedTile(allTiles[allTiles.size() - 1]);
         }
     }
@@ -58,17 +59,17 @@ void HandleSelectTile(const std::shared_ptr<Station> &station)
 
 void HandlePlaceTile(const std::shared_ptr<Station> &station)
 {
-    const std::string &buildTileId = GameManager::GetBuildTileId();
-    const auto &tileDef = DefinitionManager::GetTileDefinition(buildTileId);
-    if (!tileDef)
+    const std::string &tileIdToPlace = GameManager::GetBuildTileId();
+    const auto &tileDefinition = DefinitionManager::GetTileDefinition(tileIdToPlace);
+    if (!tileDefinition)
         return;
 
     Vector2Int cursorPos = ToVector2Int(GameManager::GetWorldMousePos());
     bool canBuild = true;
-    auto overlappingTiles = station->GetTilesWithHeightAtPosition(cursorPos, tileDef->GetHeight());
+    auto overlappingTiles = station->GetTilesWithHeightAtPosition(cursorPos, tileDefinition->GetHeight());
     for (auto &tile : overlappingTiles)
     {
-        if (tile->GetId() == buildTileId)
+        if (tile->GetId() == tileIdToPlace)
         {
             canBuild = false;
             break;
@@ -76,10 +77,10 @@ void HandlePlaceTile(const std::shared_ptr<Station> &station)
         tile->DeleteTile();
     }
 
-    if (canBuild && Tile::CreateTile(buildTileId, cursorPos, station))
+    if (canBuild && Tile::CreateTile(tileIdToPlace, cursorPos, station))
     {
         station->UpdateSpriteOffsets();
-        LogMessage(LogLevel::DEBUG, std::format("Placed tile {} at {}", buildTileId, ToString(cursorPos)));
+        LogMessage(LogLevel::DEBUG, std::format("Placed tile {} at {}", tileIdToPlace, ToString(cursorPos)));
     }
 }
 
@@ -91,7 +92,7 @@ void HandleBuildMode()
         return;
 
     if (GameManager::GetMoveTile())
-        HandleMoveTile(station);
+        HandleTileMovement(station);
     else if (GameManager::GetBuildTileId().empty())
         HandleSelectTile(station);
     else
@@ -102,7 +103,8 @@ void HandleCrewHover()
 {
     const auto &crewList = GameManager::GetCrewList();
     const Vector2 worldMousePos = GameManager::GetWorldMousePos() - Vector2(.5, .5);
-    const float crewSizeSq = CREW_RADIUS / TILE_SIZE * CREW_RADIUS / TILE_SIZE;
+    const float crewSize = CREW_RADIUS / TILE_SIZE;
+    const float crewSizeSq = crewSize * crewSize;
 
     GameManager::ClearHoveredCrew();
 
@@ -154,21 +156,21 @@ void HandleMouseDragEnd()
     auto station = GameManager::GetStation();
     if (camera.GetDragType() == PlayerCam::DragType::POWER_CONNECT && station)
     {
-        Vector2Int dragStart = ToVector2Int(camera.GetDragStart());
-        Vector2Int dragEnd = ToVector2Int(camera.GetDragEnd());
+        Vector2Int startPos = ToVector2Int(camera.GetDragStart());
+        Vector2Int endPos = ToVector2Int(camera.GetDragEnd());
 
-        if (dragStart == dragEnd)
+        if (startPos == endPos)
             return;
 
-        auto startTile = station->GetTileWithComponentAtPosition<PowerConnectorComponent>(dragStart);
-        auto endTile = station->GetTileWithComponentAtPosition<PowerConnectorComponent>(dragEnd);
+        auto startTile = station->GetTileWithComponentAtPosition<PowerConnectorComponent>(startPos);
+        auto endTile = station->GetTileWithComponentAtPosition<PowerConnectorComponent>(endPos);
 
         if (startTile && endTile)
         {
-            auto start = startTile->GetComponent<PowerConnectorComponent>();
-            auto end = endTile->GetComponent<PowerConnectorComponent>();
+            auto startConnector = startTile->GetComponent<PowerConnectorComponent>();
+            auto endConnector = endTile->GetComponent<PowerConnectorComponent>();
 
-            if (PowerConnectorComponent::AddConnection(start, end))
+            if (PowerConnectorComponent::AddConnection(startConnector, endConnector))
                 LogMessage(LogLevel::DEBUG, std::format("{} connected to {}!", startTile->GetName(), endTile->GetName()));
         }
     }
@@ -199,7 +201,8 @@ void HandleCrewSelection()
         auto &crewList = GameManager::GetCrewList();
         for (const auto &crew : crewList)
         {
-            if (!crew || !IsVector2WithinRect(camera.GetDragRect(), crew->GetPosition() + Vector2(.5, .5)))
+            bool isWithinRect = IsVector2WithinRect(camera.GetDragRect(), crew->GetPosition() + Vector2(.5, .5));
+            if (!crew || !isWithinRect)
                 continue;
 
             GameManager::AddSelectedCrew(crew);
@@ -270,8 +273,8 @@ void HandleCrewTasks()
         if (!crew->IsAlive() || crew->GetTaskQueue().empty())
             continue;
 
-        std::shared_ptr<Task> task = crew->GetTaskQueue().at(0);
-        task->Update(crew);
+        std::shared_ptr<Task> currentTask = crew->GetTaskQueue().front();
+        currentTask->Update(crew);
     }
 }
 
@@ -284,16 +287,18 @@ void HandleCrewEnvironment()
             continue;
 
         crew->ConsumeOxygen(FIXED_DELTA_TIME);
-        if (auto tile = crew->GetCurrentTile())
-        {
-            if (auto oxygen = tile->GetComponent<OxygenComponent>())
-                crew->RefillOxygen(FIXED_DELTA_TIME, oxygen->GetOxygenLevel());
+        auto tile = crew->GetCurrentTile();
+        if (!tile)
+            continue;
 
-            auto effects = tile->GetStation()->GetEffectsAtPosition(tile->GetPosition());
-            for (const auto &effect : effects)
-            {
-                effect->EffectCrew(crew, FIXED_DELTA_TIME);
-            }
+        auto oxygen = tile->GetComponent<OxygenComponent>();
+        if (oxygen)
+            crew->RefillOxygen(FIXED_DELTA_TIME, oxygen->GetOxygenLevel());
+
+        auto effects = tile->GetStation()->GetEffectsAtPosition(tile->GetPosition());
+        for (const auto &effect : effects)
+        {
+            effect->EffectCrew(crew, FIXED_DELTA_TIME);
         }
     }
 }

@@ -34,12 +34,20 @@ struct SoundEffect
 struct AudioManager
 {
 private:
+#ifdef __linux__
     RtAudio audioStream = RtAudio(RtAudio::Api::LINUX_PULSE);
+#elif _WIN32
+    RtAudio audioStream = RtAudio(RtAudio::Api::WINDOWS_ASIO);
+#elif __APPLE__
+    RtAudio audioStream = RtAudio(RtAudio::Api::MACOSX_CORE);
+#else
+    RtAudio audioStream = RtAudio();
+#endif
     RtAudio::StreamParameters outputParams;
     RtAudio::StreamOptions options;
     uint32_t bufferFrames = 32;
 
-    std::unordered_set<std::shared_ptr<SoundEffect>> sounds;
+    std::vector<std::shared_ptr<SoundEffect>> sounds;
 
     float masterVolume = 1.f;
     float musicVolume = 1.f;
@@ -53,7 +61,7 @@ private:
     static constexpr uint8_t CHANNELS = 2;
     static constexpr uint32_t SAMPLE_RATE = 48000;
 
-    static AudioManager &GetInstance()
+    static AudioManager &GetInstance() noexcept
     {
         static AudioManager instance;
         return instance;
@@ -73,10 +81,8 @@ private:
             return volume * audio.effectsVolume;
 
         default:
-            break;
+            return volume;
         }
-
-        return volume;
     }
 
     static int AudioCallback(void *outputBuffer, void * /*inputBuffer*/, uint32_t nBufferFrames,
@@ -118,10 +124,8 @@ private:
                 sound->isPlaying = false;
         }
 
-        for (uint32_t i = 0; i < nBufferFrames * CHANNELS; ++i)
-        {
-            output[i] = std::clamp(output[i], -1.f, 1.f);
-        }
+        std::transform(output, output + nBufferFrames * CHANNELS, output, [](float sample)
+                       { return std::clamp(sample, -1.f, 1.f); });
 
         return 0;
     }
@@ -144,7 +148,7 @@ public:
             throw std::runtime_error(std::format("Error opening Opus file: {}", error));
 
         auto sound = std::make_shared<SoundEffect>(soundFile, type, startPlaying, loop, volume);
-        audio.sounds.insert(sound);
+        audio.sounds.push_back(sound);
         return sound;
     }
 
@@ -176,11 +180,8 @@ public:
     static void Update()
     {
         AudioManager &audio = GetInstance();
-        for (const auto &sound : audio.sounds)
-        {
-            if (!sound || (sound->onUpdate && sound->onUpdate()))
-                audio.sounds.erase(sound);
-        }
+        std::erase_if(audio.sounds, [](const auto &sound)
+                  { return !sound || (sound->onUpdate && sound->onUpdate()); });
     }
 
     static void CleanUp()
@@ -195,7 +196,8 @@ public:
 
         for (auto &sound : audio.sounds)
         {
-            op_free(sound->file);
+            if (sound->file)
+                op_free(sound->file);
         }
 
         audio.sounds.clear();

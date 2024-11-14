@@ -62,7 +62,7 @@ void GameManager::Initialize()
 void GameManager::ToggleSelectedCrew(const std::shared_ptr<Crew> &crew)
 {
     auto &selectedCrewList = GetInstance().selectedCrewList;
-    const auto crewIter = std::find_if(selectedCrewList.begin(), selectedCrewList.end(), [crew](std::weak_ptr<Crew> _crew)
+    const auto crewIter = std::find_if(selectedCrewList.begin(), selectedCrewList.end(), [&crew](std::weak_ptr<Crew> _crew)
                                        { return !_crew.expired() && _crew.lock() == crew; });
 
     if (crewIter == selectedCrewList.end())

@@ -66,7 +66,6 @@ int main()
     AudioManager::Initialize();
 
     GameManager::Initialize();
-    GameManager::SetBuildModeState(true); // Done temporarily to test build mode
 
     auto &camera = GameManager::GetCamera();
 
@@ -76,14 +75,15 @@ int main()
 
     double timeSinceFixedUpdate = 0;
     // Start the update thread
-    std::thread updateThread(FixedUpdate, std::ref(timeSinceFixedUpdate));
-
+    std::thread updateThread([&]() {
+        FixedUpdate(timeSinceFixedUpdate);
+    });
     double deltaTime = 0;
 
     while (GameManager::IsGameRunning())
     {
-        bool forcePaused = camera.GetUiState() != PlayerCam::UiState::NONE || GameManager::IsInBuildMode();
-        GameManager::SetGameState(GameState::FORCE_PAUSED, forcePaused);
+        bool isForcePaused = camera.GetUiState() != PlayerCam::UiState::NONE || GameManager::IsInBuildMode();
+        GameManager::SetGameState(GameState::FORCE_PAUSED, isForcePaused);
 
         deltaTime = GetFrameTime();
 

@@ -53,6 +53,7 @@ std::shared_ptr<Tile> Tile::CreateTile(const std::string &tileId, const Vector2I
         auto &tilesAtPos = station->tileMap[position];
         for (const auto &existingTile : tilesAtPos)
         {
+            // Check if the existing tile and the new tile have overlapping heights
             if (existingTile && (magic_enum::enum_integer(existingTile->GetHeight() & tile->GetHeight()) > 0))
                 throw std::runtime_error(std::format("A tile {} already exists at {} with overlapping height.", existingTile->GetName(), ToString(position)));
         }
@@ -75,10 +76,8 @@ void Tile::MoveTile(const Vector2Int &newPosition)
     auto self = shared_from_this();
 
     auto &tilesAtOldPos = station->tileMap[position];
-    tilesAtOldPos.erase(std::remove_if(tilesAtOldPos.begin(), tilesAtOldPos.end(),
-                                       [&self](const std::shared_ptr<Tile> &tile)
-                                       { return tile == self; }),
-                        tilesAtOldPos.end());
+    std::erase_if(tilesAtOldPos, [&self](const std::shared_ptr<Tile> &tile)
+                  { return tile == self; });
 
     position = newPosition;
     auto &tilesAtPos = station->tileMap[newPosition];
@@ -108,15 +107,21 @@ void Tile::DeleteTile()
     if (station)
     {
         auto &tilesAtPos = station->tileMap[position];
-        tilesAtPos.erase(std::remove_if(tilesAtPos.begin(), tilesAtPos.end(),
-                                        [&self](const std::shared_ptr<Tile> &tile)
-                                        { return tile == self; }),
-                         tilesAtPos.end());
+        std::erase_if(tilesAtPos, [&self](const std::shared_ptr<Tile> &tile)
+                      { return tile == self; });
 
         station->UpdateSpriteOffsets();
     }
 
     components.clear();
+}
+
+bool Tile::IsActive() const
+{
+    if (auto powerConsumer = GetComponent<PowerConsumerComponent>())
+        return powerConsumer->IsActive();
+
+    return true;
 }
 
 std::string Tile::GetInfo() const

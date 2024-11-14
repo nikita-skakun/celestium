@@ -30,6 +30,8 @@ public:
     std::shared_ptr<TileDef> GetTileDefinition() const { return tileDef; }
     std::shared_ptr<Station> GetStation() const { return station; }
 
+    bool IsActive() const;
+
     constexpr const std::string &GetId() const { return tileDef->GetId(); }
     constexpr std::string GetName() const { return MacroCaseToName(GetId()); }
     std::string GetInfo() const;

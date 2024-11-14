@@ -8,10 +8,10 @@
  * Implements the A* pathfinding algorithm to find the shortest path
  * from a start position to an end position in a grid-based environment.
  *
- * @param start    The starting position as a Vector2Int.
- * @param end      The target position as a Vector2Int.
+ * @param start     The starting position as a Vector2Int.
+ * @param end       The target position as a Vector2Int.
  * @param heuristic A function that estimates the cost between two points.
- * @return         A queue of Vector2Int positions representing the path.
+ * @return          A deque of Vector2Int positions representing the path.
  */
 std::deque<Vector2Int> AStar(const Vector2Int &start, const Vector2Int &end, const HeuristicFunction &heuristic)
 {
@@ -52,9 +52,13 @@ std::deque<Vector2Int> AStar(const Vector2Int &start, const Vector2Int &end, con
         if (current == end)
         {
             std::deque<Vector2Int> path;
-            for (auto [step, prev] = std::tuple{end, cameFrom[end]}; step != start; std::tie(step, prev) = std::tuple{prev, cameFrom[prev]})
+            Vector2Int step = end;
+            Vector2Int prev = cameFrom[end];
+            while (step != start)
             {
                 path.push_front(step);
+                step = prev;
+                prev = cameFrom[step];
             }
             return path;
         }
@@ -69,7 +73,7 @@ std::deque<Vector2Int> AStar(const Vector2Int &start, const Vector2Int &end, con
             Vector2Int neighborPos = current + offset;
 
             // Check if the move is diagonal
-            if (offset.x != 0.f && offset.y != 0.f)
+            if (offset.x != 0 && offset.y != 0)
             {
                 // Ensure both adjacent sides are walkable for diagonals
                 if (!station->IsPositionPathable(Vector2Int(current.x + offset.x, current.y)) ||
@@ -83,7 +87,8 @@ std::deque<Vector2Int> AStar(const Vector2Int &start, const Vector2Int &end, con
                 // Calculate tentative G cost
                 float tentativeGCost = costMap[current].x + heuristic(current, neighborPos);
                 // Insert or get existing cost
-                auto [iter, inserted] = costMap.try_emplace(neighborPos, Vector2(std::numeric_limits<float>::infinity(), std::numeric_limits<float>::infinity()));
+                float inf = std::numeric_limits<float>::infinity();
+                auto [iter, inserted] = costMap.try_emplace(neighborPos, Vector2(inf, inf));
 
                 // If the new cost is lower, update costs and path tracking
                 if (tentativeGCost < iter->second.x)
@@ -96,7 +101,7 @@ std::deque<Vector2Int> AStar(const Vector2Int &start, const Vector2Int &end, con
                     cameFrom[neighborPos] = current;
 
                     // Add neighbor to the open list
-                    openQueue.emplace(neighborPos);
+                    openQueue.push(neighborPos);
                 }
             }
         }
