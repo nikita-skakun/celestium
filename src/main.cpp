@@ -32,7 +32,7 @@ void FixedUpdate(double &timeSinceFixedUpdate)
                 std::unique_lock<std::mutex> lock(updateMutex);
 
                 // Perform the fixed updates
-                HandleCrewTasks();
+                HandleCrewActions();
                 HandleCrewEnvironment();
                 UpdateCrewCurrentTile();
                 UpdateEnvironmentalEffects();
@@ -102,7 +102,7 @@ int main()
             {
                 HandleCrewHover();
                 HandleCrewSelection();
-                AssignCrewTasks();
+                AssignCrewActions();
             }
 
             HandleMouseDrag();
@@ -121,7 +121,7 @@ int main()
         {
             DrawCrew(timeSinceFixedUpdate);
             DrawEnvironmentalEffects();
-            DrawCrewTaskProgress();
+            DrawCrewActionProgress();
         }
         else
         {

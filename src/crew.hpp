@@ -1,7 +1,7 @@
 #pragma once
 #include "utils.hpp"
 
-struct Task;
+struct Action;
 struct Tile;
 
 struct Crew
@@ -10,7 +10,7 @@ protected:
     std::string name;
     Vector2 position;
     Color color;
-    std::vector<std::shared_ptr<Task>> taskQueue;
+    std::vector<std::shared_ptr<Action>> actionQueue;
     float oxygen;
     float health;
     bool isAlive;
@@ -24,9 +24,9 @@ public:
     constexpr const Vector2 &GetPosition() const { return position; }
     constexpr void SetPosition(const Vector2 &newPosition) { position = newPosition; }
     constexpr Color GetColor() const { return color; }
-    constexpr const std::vector<std::shared_ptr<Task>> &GetReadOnlyTaskQueue() const { return taskQueue; }
-    constexpr std::vector<std::shared_ptr<Task>> &GetTaskQueue() { return taskQueue; }
-    constexpr void RemoveFirstTask() { taskQueue.erase(taskQueue.begin()); }
+    constexpr const std::vector<std::shared_ptr<Action>> &GetReadOnlyActionQueue() const { return actionQueue; }
+    constexpr std::vector<std::shared_ptr<Action>> &GetActionQueue() { return actionQueue; }
+    constexpr void RemoveFirstAction() { actionQueue.erase(actionQueue.begin()); }
     constexpr float GetOxygen() const { return oxygen; }
     constexpr float GetHealth() const { return health; }
     constexpr bool IsAlive() const { return isAlive; }
@@ -69,7 +69,7 @@ public:
     constexpr void Die()
     {
         isAlive = false;
-        taskQueue.clear();
+        actionQueue.clear();
         oxygen = 0;
         health = 0;
     }

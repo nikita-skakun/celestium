@@ -1,8 +1,8 @@
+#include "action.hpp"
 #include "asset_manager.hpp"
 #include "crew.hpp"
 #include "game_state.hpp"
 #include "station.hpp"
-#include "task.hpp"
 #include "ui_manager.hpp"
 #include "ui.hpp"
 
@@ -280,16 +280,16 @@ void DrawCrew(double timeSinceFixedUpdate)
     for (const auto &crew : crewList)
     {
         Vector2 drawPosition = crew->GetPosition();
-        auto &taskQueue = crew->GetReadOnlyTaskQueue();
+        auto &actionQueue = crew->GetReadOnlyActionQueue();
 
-        if (!taskQueue.empty() && taskQueue.front()->GetType() == Task::Type::MOVE)
+        if (!actionQueue.empty() && actionQueue.front()->GetType() == Action::Type::MOVE)
         {
-            const std::shared_ptr<MoveTask> moveTask = std::dynamic_pointer_cast<MoveTask>(taskQueue.front());
+            const std::shared_ptr<MoveAction> moveAction = std::dynamic_pointer_cast<MoveAction>(actionQueue.front());
 
-            if (!GameManager::IsInBuildMode() && !moveTask->path.empty())
+            if (!GameManager::IsInBuildMode() && !moveAction->path.empty())
             {
-                DrawPath(moveTask->path, crew->GetPosition());
-                Vector2 nextPosition = ToVector2(moveTask->path.front());
+                DrawPath(moveAction->path, crew->GetPosition());
+                Vector2 nextPosition = ToVector2(moveAction->path.front());
 
                 const float moveDelta = timeSinceFixedUpdate * CREW_MOVE_SPEED;
                 const float distanceLeftSq = Vector2DistanceSq(crew->GetPosition(), nextPosition) - moveDelta * moveDelta;
@@ -297,9 +297,9 @@ void DrawCrew(double timeSinceFixedUpdate)
                 {
                     drawPosition = nextPosition;
 
-                    if (moveTask->path.size() > 1)
+                    if (moveAction->path.size() > 1)
                     {
-                        Vector2 futurePosition = ToVector2(moveTask->path.at(1));
+                        Vector2 futurePosition = ToVector2(moveAction->path.at(1));
                         drawPosition += Vector2Normalize(futurePosition - drawPosition) * sqrtf(-distanceLeftSq);
                     }
                 }
@@ -307,7 +307,7 @@ void DrawCrew(double timeSinceFixedUpdate)
                 {
                     bool canPath = true;
                     if (std::shared_ptr<Station> station = crew->GetCurrentTile()->GetStation())
-                        canPath = station->IsDoorFullyOpenAtPos(moveTask->path.front());
+                        canPath = station->IsDoorFullyOpenAtPos(moveAction->path.front());
 
                     if (canPath)
                         drawPosition += Vector2Normalize(nextPosition - crew->GetPosition()) * moveDelta;
@@ -322,24 +322,24 @@ void DrawCrew(double timeSinceFixedUpdate)
     }
 }
 
-void DrawCrewTaskProgress()
+void DrawCrewActionProgress()
 {
     const auto &crewList = GameManager::GetCrewList();
     for (const auto &crew : crewList)
     {
-        if (!crew->IsAlive() || crew->GetReadOnlyTaskQueue().empty())
+        if (!crew->IsAlive() || crew->GetReadOnlyActionQueue().empty())
             continue;
 
-        const auto &task = crew->GetReadOnlyTaskQueue().front();
+        const auto &action = crew->GetReadOnlyActionQueue().front();
 
-        switch (task->GetType())
+        switch (action->GetType())
         {
-        case Task::Type::EXTINGUISH:
+        case Action::Type::EXTINGUISH:
         {
-            const auto extinguishTask = std::dynamic_pointer_cast<ExtinguishTask>(task);
+            const auto extinguishAction = std::dynamic_pointer_cast<ExtinguishAction>(action);
 
-            const Vector2 barPos = GameManager::WorldToScreen(ToVector2(extinguishTask->GetTargetPosition()) - Vector2(.5 - .05, .5 - .85));
-            const Vector2 barSize = Vector2(extinguishTask->GetProgress() * .9, .1) * TILE_SIZE * GameManager::GetCamera().GetZoom();
+            const Vector2 barPos = GameManager::WorldToScreen(ToVector2(extinguishAction->GetTargetPosition()) - Vector2(.5 - .05, .5 - .85));
+            const Vector2 barSize = Vector2(extinguishAction->GetProgress() * .9, .1) * TILE_SIZE * GameManager::GetCamera().GetZoom();
             DrawRectangleV(barPos, barSize, Fade(RED, .8));
         }
         break;

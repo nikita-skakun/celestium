@@ -5,7 +5,7 @@
 struct Crew;
 struct Tile;
 
-struct Task
+struct Action
 {
     enum class Type : u_int8_t
     {
@@ -18,15 +18,15 @@ struct Task
     virtual void Update(const std::shared_ptr<Crew> &crew) = 0;
     virtual constexpr std::string GetActionName() const = 0;
     virtual constexpr Type GetType() const = 0;
-    virtual ~Task() = default;
+    virtual ~Action() = default;
 };
 
-struct MoveTask : Task
+struct MoveAction : Action
 {
     Vector2Int targetPosition;
     std::deque<Vector2Int> path;
 
-    MoveTask(const Vector2Int &position) : targetPosition(position) {}
+    MoveAction(const Vector2Int &position) : targetPosition(position) {}
 
     void Update(const std::shared_ptr<Crew> &crew) override;
 
@@ -34,14 +34,14 @@ struct MoveTask : Task
     constexpr Type GetType() const override { return Type::MOVE; }
 };
 
-struct ExtinguishTask : Task
+struct ExtinguishAction : Action
 {
 protected:
     Vector2Int targetPosition;
     float progress;
 
 public:
-    ExtinguishTask(const Vector2Int &position) : targetPosition(position), progress(0) {}
+    ExtinguishAction(const Vector2Int &position) : targetPosition(position), progress(0) {}
 
     void Update(const std::shared_ptr<Crew> &crew) override;
 
@@ -52,13 +52,13 @@ public:
     constexpr Type GetType() const override { return Type::EXTINGUISH; }
 };
 
-struct RepairTask : Task
+struct RepairAction : Action
 {
 protected:
     std::weak_ptr<Tile> _targetTile;
 
 public:
-    RepairTask(std::shared_ptr<Tile> tile) : _targetTile(tile) {}
+    RepairAction(std::shared_ptr<Tile> tile) : _targetTile(tile) {}
 
     void Update(const std::shared_ptr<Crew> &crew) override;
 

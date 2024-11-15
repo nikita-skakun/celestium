@@ -1,9 +1,9 @@
+#include "action.hpp"
 #include "astar.hpp"
 #include "crew.hpp"
 #include "station.hpp"
-#include "task.hpp"
 
-void MoveTask::Update(const std::shared_ptr<Crew> &crew)
+void MoveAction::Update(const std::shared_ptr<Crew> &crew)
 {
     if (!crew)
         return;
@@ -19,7 +19,7 @@ void MoveTask::Update(const std::shared_ptr<Crew> &crew)
         {
             if (ToVector2(targetPosition) == crew->GetPosition())
             {
-                crew->RemoveFirstTask();
+                crew->RemoveFirstAction();
                 return;
             }
 
@@ -43,7 +43,7 @@ void MoveTask::Update(const std::shared_ptr<Crew> &crew)
 
         if (path.empty())
         {
-            crew->RemoveFirstTask();
+            crew->RemoveFirstAction();
             return;
         }
 
@@ -72,7 +72,7 @@ void MoveTask::Update(const std::shared_ptr<Crew> &crew)
     crew->SetPosition(crew->GetPosition() + Vector2Normalize(stepPos - crew->GetPosition()) * distanceToTravel);
 }
 
-void ExtinguishTask::Update(const std::shared_ptr<Crew> &crew)
+void ExtinguishAction::Update(const std::shared_ptr<Crew> &crew)
 {
     if (!crew)
         return;
@@ -80,28 +80,28 @@ void ExtinguishTask::Update(const std::shared_ptr<Crew> &crew)
     auto station = crew->GetCurrentTile()->GetStation();
     if (!station)
     {
-        crew->RemoveFirstTask();
+        crew->RemoveFirstAction();
         return;
     }
 
     auto fire = station->GetEffectOfTypeAtPosition<FireEffect>(targetPosition);
     if (!fire)
     {
-        crew->RemoveFirstTask();
+        crew->RemoveFirstAction();
         return;
     }
 
     if (progress > 1.)
     {
         station->RemoveEffect(fire);
-        crew->RemoveFirstTask();
+        crew->RemoveFirstAction();
         return;
     }
 
     progress += CREW_EXTINGUISH_SPEED * FIXED_DELTA_TIME;
 }
 
-void RepairTask::Update(const std::shared_ptr<Crew> &crew)
+void RepairAction::Update(const std::shared_ptr<Crew> &crew)
 {
     if (!crew)
         return;
@@ -109,14 +109,14 @@ void RepairTask::Update(const std::shared_ptr<Crew> &crew)
     auto targetTile = _targetTile.lock();
     if (!targetTile)
     {
-        crew->RemoveFirstTask();
+        crew->RemoveFirstAction();
         return;
     }
 
     auto durability = targetTile->GetComponent<DurabilityComponent>();
     if (!durability)
     {
-        crew->RemoveFirstTask();
+        crew->RemoveFirstAction();
         return;
     }
 
@@ -125,7 +125,7 @@ void RepairTask::Update(const std::shared_ptr<Crew> &crew)
 
     if (newHitpoints >= durability->GetMaxHitpoints())
     {
-        crew->RemoveFirstTask();
+        crew->RemoveFirstAction();
         return;
     }
 }

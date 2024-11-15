@@ -13,7 +13,7 @@ void DrawStationOverlays();
 void DrawTileOutline(const std::shared_ptr<Tile> &tile, Color color);
 void DrawEnvironmentalEffects();
 void DrawCrew(double timeSinceFixedUpdate);
-void DrawCrewTaskProgress();
+void DrawCrewActionProgress();
 void DrawDragSelectBox();
 void DrawFpsCounter(float deltaTime, float padding = DEFAULT_PADDING, int fontSize = DEFAULT_FONT_SIZE);
 void DrawTooltip(const std::string &tooltip, const Vector2 &pos, float padding = DEFAULT_PADDING, int fontSize = DEFAULT_FONT_SIZE);

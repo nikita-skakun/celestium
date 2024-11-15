@@ -1,12 +1,12 @@
+#include "action.hpp"
 #include "crew.hpp"
-#include "task.hpp"
 
 std::string Crew::GetActionName() const
 {
-    if (taskQueue.empty())
+    if (actionQueue.empty())
         return "Idle";
 
-    return taskQueue.at(0)->GetActionName();
+    return actionQueue.front()->GetActionName();
 }
 
 std::string Crew::GetInfo() const

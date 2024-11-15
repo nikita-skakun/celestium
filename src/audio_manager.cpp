@@ -11,9 +11,9 @@ void AudioManager::CleanUp()
         if (audioStream.isStreamRunning())
             audioStream.stopStream();
     }
-    catch (const RtAudioError &e)
+    catch (const RtAudioErrorType &e)
     {
-        LogMessage(LogLevel::ERROR, std::format("Error stopping audio stream: {}", e.getMessage()));
+        LogMessage(LogLevel::ERROR, std::format("Error stopping audio stream: {}", (int)e));
     }
 
     try
@@ -21,9 +21,9 @@ void AudioManager::CleanUp()
         if (audioStream.isStreamOpen())
             audioStream.closeStream();
     }
-    catch (const RtAudioError &e)
+    catch (const RtAudioErrorType &e)
     {
-        LogMessage(LogLevel::ERROR, std::format("Error closing audio stream: {}", e.getMessage()));
+        LogMessage(LogLevel::ERROR, std::format("Error closing audio stream: {}", (int)e));
     }
 
     for (auto &sound : audio.sounds)

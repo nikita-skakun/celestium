@@ -1,8 +1,8 @@
+#include "action.hpp"
 #include "crew.hpp"
 #include "game_state.hpp"
 #include "logging.hpp"
 #include "station.hpp"
-#include "task.hpp"
 #include "update.hpp"
 
 void HandleTileMovement(const std::shared_ptr<Station> &station)
@@ -219,7 +219,7 @@ void HandleCrewSelection()
         GameManager::ToggleSelectedCrew(nextHoveredCrew);
 }
 
-void AssignCrewTasks()
+void AssignCrewActions()
 {
     const auto &selectedCrew = GameManager::GetSelectedCrew();
     if (IsMouseButtonPressed(MOUSE_RIGHT_BUTTON) && !selectedCrew.empty())
@@ -232,16 +232,16 @@ void AssignCrewTasks()
                 continue;
 
             if (!IsKeyDown(KEY_LEFT_SHIFT))
-                crew->GetTaskQueue().clear();
+                crew->GetActionQueue().clear();
 
-            crew->GetTaskQueue().push_back(std::make_shared<MoveTask>(worldPos));
+            crew->GetActionQueue().push_back(std::make_shared<MoveAction>(worldPos));
         }
     }
 
     const auto &crewList = GameManager::GetCrewList();
     for (const auto &crew : crewList)
     {
-        if (!crew->IsAlive() || !crew->GetTaskQueue().empty() || !crew->GetCurrentTile())
+        if (!crew->IsAlive() || !crew->GetActionQueue().empty() || !crew->GetCurrentTile())
             continue;
 
         auto station = crew->GetCurrentTile()->GetStation();
@@ -249,7 +249,7 @@ void AssignCrewTasks()
 
         if (station->GetEffectOfTypeAtPosition<FireEffect>(crewPos))
         {
-            crew->GetTaskQueue().push_back(std::make_shared<ExtinguishTask>(crewPos));
+            crew->GetActionQueue().push_back(std::make_shared<ExtinguishAction>(crewPos));
             continue;
         }
 
@@ -258,23 +258,23 @@ void AssignCrewTasks()
             Vector2Int neighborPos = crewPos + DirectionToVector2Int(direction);
             if (station->GetEffectOfTypeAtPosition<FireEffect>(neighborPos))
             {
-                crew->GetTaskQueue().push_back(std::make_shared<ExtinguishTask>(neighborPos));
+                crew->GetActionQueue().push_back(std::make_shared<ExtinguishAction>(neighborPos));
                 break;
             }
         }
     }
 }
 
-void HandleCrewTasks()
+void HandleCrewActions()
 {
     const auto &crewList = GameManager::GetCrewList();
     for (const auto &crew : crewList)
     {
-        if (!crew->IsAlive() || crew->GetTaskQueue().empty())
+        if (!crew->IsAlive() || crew->GetActionQueue().empty())
             continue;
 
-        std::shared_ptr<Task> currentTask = crew->GetTaskQueue().front();
-        currentTask->Update(crew);
+        std::shared_ptr<Action> currentAction = crew->GetActionQueue().front();
+        currentAction->Update(crew);
     }
 }
 
