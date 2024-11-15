@@ -28,7 +28,7 @@ public:
     std::string GetInfo() const;
 
     virtual void EffectCrew(const std::shared_ptr<Crew> &crew, float deltaTime) const = 0;
-    virtual void Update(const std::shared_ptr<Station> &station, int index) = 0;
+    virtual void Update(const std::shared_ptr<Station> &station, size_t index) = 0;
 
     constexpr float GetRoundedSize() const { return std::ceil(size * effectDef->GetSizeIncrements()) / (float)effectDef->GetSizeIncrements(); }
     constexpr const std::string &GetId() const { return effectDef->GetId(); }
@@ -45,7 +45,7 @@ struct FireEffect : Effect
     FireEffect(const Vector2Int &position, float size = 0) : Effect("FIRE", position, size) {}
 
     void EffectCrew(const std::shared_ptr<Crew> &crew, float deltaTime) const override;
-    void Update(const std::shared_ptr<Station> &station, int index) override;
+    void Update(const std::shared_ptr<Station> &station, size_t index) override;
 
     constexpr float GetOxygenConsumption() const { return OXYGEN_CONSUMPTION_PER_SECOND * GetRoundedSize(); }
 };
@@ -57,5 +57,5 @@ struct FoamEffect : Effect
     FoamEffect(const Vector2Int &position, float size = 0) : Effect("FOAM", position, size) {}
 
     void EffectCrew(const std::shared_ptr<Crew> &, float) const override {}
-    void Update(const std::shared_ptr<Station> &, int) override {}
+    void Update(const std::shared_ptr<Station> &, size_t) override {}
 };

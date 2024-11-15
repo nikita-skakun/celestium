@@ -37,13 +37,13 @@ void FireEffect::EffectCrew(const std::shared_ptr<Crew> &crew, float deltaTime) 
     crew->SetHealth(crew->GetHealth() - DAMAGE_PER_SECOND * deltaTime);
 }
 
-void FireEffect::Update(const std::shared_ptr<Station> &station, int index)
+void FireEffect::Update(const std::shared_ptr<Station> &station, size_t index)
 {
     auto tileWithOxygen = station->GetTileWithComponentAtPosition<OxygenComponent>(GetPosition());
     bool foamPresentOnTile = station->GetEffectOfTypeAtPosition<FoamEffect>(GetPosition()) != nullptr;
     if (!tileWithOxygen || foamPresentOnTile)
     {
-        if (index >= 0 && index < station->effects.size())
+        if (index < station->effects.size())
             station->effects.erase(station->effects.begin() + index);
         return;
     }
@@ -93,8 +93,8 @@ void FireEffect::Update(const std::shared_ptr<Station> &station, int index)
         if (possibleOffsets.empty())
             return;
 
-        int directionSelected = RandomIntWithRange(0, (int)possibleOffsets.size() - 1);
-        Vector2Int newFirePos = GetPosition() + possibleOffsets[directionSelected];
+        int selectedDirection = RandomIntWithRange(0, (int)possibleOffsets.size() - 1);
+        Vector2Int newFirePos = GetPosition() + possibleOffsets[selectedDirection];
         station->effects.push_back(std::make_shared<FireEffect>(newFirePos));
     }
 }

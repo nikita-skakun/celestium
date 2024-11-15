@@ -9,28 +9,57 @@
 using namespace magic_enum::bitwise_operators;
 
 // Utility functions for numbers
+
+/**
+ * @brief Computes an evenly spaced index based on a given value and index.
+ *
+ * @param value A double value used to compute the index.
+ * @param index An integer index used in the computation.
+ * @return An integer representing the evenly spaced index.
+ */
 constexpr int GetEvenlySpacedIndex(double value, int index) noexcept
 {
     return static_cast<int>((value - std::floor(value)) * index);
 }
 
+/**
+ * @brief Generates a random integer within a specified range.
+ *
+ * @param min The minimum value of the range.
+ * @param max The maximum value of the range.
+ * @return A random integer between min and max, inclusive.
+ */
 inline int RandomIntWithRange(int min, int max) noexcept
 {
     if (max <= min)
         return min;
-
-    static std::random_device rd; // TODO: Switch to shared seed for multiplayer
-    static std::mt19937 generator(rd());
+    thread_local static std::random_device rd; // TODO: Switch to shared seed for multiplayer
+    thread_local static std::mt19937 generator(rd());
     std::uniform_int_distribution<int> distribution(min, max);
 
     return distribution(generator);
 }
 
+/**
+ * @brief Oscillates a value between 0 and the specified length.
+ *
+ * @param time The current time or value to oscillate.
+ * @param length The length of the oscillation period.
+ * @return The oscillated value.
+ */
 constexpr double Oscillate(double time, double length) noexcept
 {
     return std::fabs(std::fmod(time, length * 2.) - length);
 }
 
+/**
+ * @brief Clamps a value between a minimum and maximum value.
+ *
+ * @param value The value to clamp.
+ * @param min The minimum value.
+ * @param max The maximum value.
+ * @return The clamped value.
+ */
 template <typename T>
 constexpr int Floor(T value) noexcept
 {
@@ -46,8 +75,8 @@ constexpr int Floor(T value) noexcept
  */
 inline bool CheckIfEventHappens(double chancePerSecond, double deltaTime) noexcept
 {
-    static std::random_device rd; // TODO: Switch to shared seed for multiplayer
-    static std::mt19937 gen(rd());
+    thread_local static std::random_device rd; // TODO: Switch to shared seed for multiplayer
+    thread_local static std::mt19937 gen(rd());
     std::uniform_real_distribution<> dis(0.0, 1.0);
 
     double expectedEvents = chancePerSecond * deltaTime;
@@ -59,6 +88,15 @@ inline bool CheckIfEventHappens(double chancePerSecond, double deltaTime) noexce
 }
 
 // Utility functions for booleans
+
+/**
+ * @brief Sets a bit in a value to a specified state.
+ *
+ * @tparam T The type of the value.
+ * @param value The value to modify.
+ * @param bitState The state to set the bit to.
+ * @param mask The mask of the bit to set.
+ */
 template <typename T>
 constexpr void SetBit(T &value, bool bitState, T mask) noexcept
 {
@@ -68,6 +106,13 @@ constexpr void SetBit(T &value, bool bitState, T mask) noexcept
         value &= ~mask;
 }
 
+/**
+ * @brief Toggles a bit in a value.
+ *
+ * @tparam T The type of the value.
+ * @param value The value to modify.
+ * @param mask The mask of the bit to toggle.
+ */
 template <typename T>
 constexpr void ToggleBit(T &value, T mask) noexcept
 {
@@ -146,12 +191,12 @@ struct Vector2Equal
 
 constexpr Vector2 Vector2Normalize(const Vector2 &a) noexcept
 {
-    float length = std::sqrt(a.x * a.x + a.y * a.y);
-    if (length == 0)
+    float lengthSq = a.x * a.x + a.y * a.y;
+    if (lengthSq == 0)
     {
         return a;
     }
-    return a / length;
+    return a / std::sqrt(lengthSq);
 }
 
 constexpr float Vector2LengthSq(const Vector2 &a) noexcept
@@ -201,7 +246,7 @@ inline int Vector2ToRandomInt(const Vector2 &a, int min, int max) noexcept
 {
     Vector2Hash vectorHash;
     std::size_t seed = vectorHash(a);
-    std::mt19937 generator(seed);
+    thread_local static std::mt19937 generator(seed);
     std::uniform_int_distribution<int> distribution(min, max);
 
     return distribution(generator);
@@ -269,7 +314,7 @@ inline int Vector2IntToRandomInt(const Vector2Int &a, int min, int max) noexcept
 {
     std::hash<Vector2Int> hash;
     std::size_t seed = hash(a);
-    std::mt19937 generator(seed);
+    thread_local static std::mt19937 generator(seed);
     std::uniform_int_distribution<int> distribution(min, max);
 
     return distribution(generator);
@@ -373,7 +418,11 @@ constexpr float DistanceSqFromPointToLine(const Vector2 &a, const Vector2 &b, co
     float abLengthSquared = Vector2LengthSq(ab);
 
     // Project point P onto line AB, computing parameterized position t
-    float t = std::clamp((ap.x * ab.x + ap.y * ab.y) / abLengthSquared, 0.f, 1.f);
+    float t = (ap.x * ab.x + ap.y * ab.y) / abLengthSquared;
+    if (t < 0)
+        t = 0;
+    else if (t > 1)
+        t = 1;
 
     // Compute the closest point on the line segment to P
     Vector2 closestPoint = a + ab * t;

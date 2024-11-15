@@ -181,25 +181,8 @@ public:
     {
         AudioManager &audio = GetInstance();
         std::erase_if(audio.sounds, [](const auto &sound)
-                  { return !sound || (sound->onUpdate && sound->onUpdate()); });
+                      { return !sound || (sound->onUpdate && sound->onUpdate()); });
     }
 
-    static void CleanUp()
-    {
-        AudioManager &audio = GetInstance();
-        auto &audioStream = audio.audioStream;
-
-        if (audioStream.isStreamRunning())
-            audioStream.stopStream();
-        if (audioStream.isStreamOpen())
-            audioStream.closeStream();
-
-        for (auto &sound : audio.sounds)
-        {
-            if (sound->file)
-                op_free(sound->file);
-        }
-
-        audio.sounds.clear();
-    }
+    static void CleanUp();
 };
