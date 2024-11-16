@@ -11,7 +11,6 @@ pkgs.mkShell {
     clang # Clang compiler
     cmake # CMake for configuring the project
     git # Git for version control
-    glew # GLEW for handling OpenGL extensions
     glfw # GLFW3 for creating windows and OpenGL contexts
     gnumake # Make for building the project
     jack2 # JACK for audio handling
