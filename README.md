@@ -14,6 +14,7 @@ This is a passion project, created as a way to explore advanced programming conc
 | Crew Pathfinding                  | :white_check_mark:   | Crew pathfinding is done with A\* algorithm, which allows for pathing over complex station designs                                          |
 | Air Diffusion                     | :white_check_mark:   | Oxygen spreads from high concentration to low, simulating real-life processes. Crew and fire consume oxygen, while certain tiles produce it |
 | Dynamic Doors                     | :white_check_mark:   | Doors now dynamically separate rooms, only allowing air to spread when it is open                                                           |
+| Cross-Platform Builds             | :construction:       | Implement cross-platform for Linux (Done) and Windows (WIP). MacOS is currently unplanned.                                                  |
 | Definitions for Core Game Aspects | :construction:       | The goal is to allow for easy modifications to core game features, (such as what components a tile is composed of)                          |
 | Environmental Effects             | :construction:       | Environmental hazards and objects (like fire and foam), which can effect the crew and the station                                           |
 | Power Storage and Connections     | :construction:       | A rework is necessary to make power connections be part of the physical game world                                                          |
