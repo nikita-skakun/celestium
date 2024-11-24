@@ -56,7 +56,7 @@ int main()
     SetConfigFlags(FLAG_FULLSCREEN_MODE);
     InitWindow(0, 0, "Celestium");
 
-    SetTargetFPS(GetMonitorRefreshRate(GetCurrentMonitor()));
+    GameManager::GetCamera().SetFps(GetMonitorRefreshRate(GetCurrentMonitor()));
     SetExitKey(0);
 
     AssetManager::Initialize();
