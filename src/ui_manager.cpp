@@ -87,6 +87,36 @@ void InitializeSettingsMenu()
                                                       {  SetWindowMonitor(monitor); SetTargetFPS(GetMonitorRefreshRate(monitor)); });
     menuBackground->AddChild(monitorSelect);
 
+    Rectangle monitorFpsTextRect = Rectangle(menuPos.x + spacing.x, monitorTextRect.y + settingHeight + spacing.y, halfPanelWidth, settingHeight);
+    auto monitorFpsText = std::make_shared<UiStatusBar>(monitorFpsTextRect, "Monitor FPS:");
+    menuBackground->AddChild(monitorFpsText);
+
+    int monitorFps = GetMonitorRefreshRate(selectedMonitor);
+    std::vector<int> fpsValues = {30, 60, 75, 120, 144, 240, 360};
+    std::string availableFpsOptions;
+
+    for (int fps : fpsValues)
+    {
+        if (fps <= monitorFps)
+        {
+            if (!availableFpsOptions.empty())
+                availableFpsOptions += ";";
+            availableFpsOptions += fps;
+        }
+    }
+
+    if (!Contains(fpsValues, monitorFps))
+    {
+        if (!availableFpsOptions.empty())
+            availableFpsOptions += ";";
+        availableFpsOptions += monitorFps;
+    }
+
+    Rectangle fpsSelectRect = Rectangle(monitorFpsTextRect.x + halfPanelWidth + spacing.x, monitorFpsTextRect.y, halfPanelWidth, settingHeight);
+    auto fpsSelect = std::make_shared<UiComboBox>(fpsSelectRect, availableFpsOptions, GameManager::GetCamera().GetFps(), [](int fps)
+                                                  { GameManager::GetCamera().SetFps(fps); });
+    menuBackground->AddChild(fpsSelect);
+
     Rectangle masterVolumeTextRect = Rectangle(menuPos.x + spacing.x, monitorTextRect.y + settingHeight + spacing.y, halfPanelWidth, settingHeight);
     auto masterVolumeText = std::make_shared<UiStatusBar>(masterVolumeTextRect, "Master Volume:");
     menuBackground->AddChild(masterVolumeText);

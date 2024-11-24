@@ -33,6 +33,7 @@ private:
     float zoom = 1.f;
     Overlay overlay = Overlay::NONE;
     UiState uiState = UiState::NONE;
+    uint fps = 0;
 
 public:
     PlayerCam() {}
@@ -62,6 +63,13 @@ public:
     constexpr void ToggleUiState(UiState targetUiState) { uiState = (uiState != targetUiState) ? targetUiState : UiState::NONE; }
     constexpr bool IsUiState(UiState other) const { return uiState == other; }
     constexpr bool IsUiClear() const { return uiState == UiState::NONE; }
+
+    constexpr uint GetFps() const { return fps; }
+    constexpr void SetFps(uint newFps)
+    {
+        fps = newFps;
+        SetTargetFPS(newFps);
+    }
 
     void HandleMovement();
 };
