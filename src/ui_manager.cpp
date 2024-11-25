@@ -19,10 +19,10 @@ void InitializeEscapeMenu()
 
     // Darken the background to draw focus to the UI
     auto escMenu = std::make_shared<UiPanel>(Rectangle(0, 0, 1, 1), Fade(BLACK, .2));
-    std::weak_ptr<UiPanel> weakEscMenu = escMenu;
-    escMenu->SetOnUpdate([weakEscMenu]()
-                         { if (auto escMenu = weakEscMenu.lock())
-                             { escMenu->SetVisible(GameManager::GetCamera().IsUiState(PlayerCam::UiState::ESC_MENU)); } });
+    std::weak_ptr<UiPanel> _escMenu = escMenu;
+    escMenu->SetOnUpdate([_escMenu]()
+                         { if (auto escMenu = _escMenu.lock())
+                            escMenu->SetVisible(GameManager::GetCamera().IsUiState(PlayerCam::UiState::ESC_MENU)); });
 
     // Draw a rectangle for the menu background
     auto menuBackground = std::make_shared<UiPanel>(Vector2ToRect(menuPos, menuSize), Fade(BLACK, .5));
@@ -60,9 +60,9 @@ void InitializeSettingsMenu()
 
     // Darken the background to draw focus to the UI
     auto settingsMenu = std::make_shared<UiPanel>(Rectangle(0, 0, 1, 1), Fade(BLACK, .2));
-    std::weak_ptr<UiPanel> weakSettingsMenu = settingsMenu;
-    settingsMenu->SetOnUpdate([weakSettingsMenu]()
-                              { if (auto settingsMenu = weakSettingsMenu.lock())
+    std::weak_ptr<UiPanel> _settingsMenu = settingsMenu;
+    settingsMenu->SetOnUpdate([_settingsMenu]()
+                              { if (auto settingsMenu = _settingsMenu.lock())
                              { settingsMenu->SetVisible(GameManager::GetCamera().IsUiState(PlayerCam::UiState::SETTINGS_MENU)); } });
 
     // Draw a rectangle for the menu background
@@ -83,50 +83,43 @@ void InitializeSettingsMenu()
 
     int selectedMonitor = GetCurrentMonitor();
     Rectangle monitorSelectRect = Rectangle(monitorTextRect.x + halfPanelWidth + spacing.x, menuPos.y + spacing.y, halfPanelWidth, settingHeight);
-    auto monitorSelect = std::make_shared<UiComboBox>(monitorSelectRect, monitorNames, selectedMonitor, [](int monitor)
-                                                      {  SetWindowMonitor(monitor); SetTargetFPS(GetMonitorRefreshRate(monitor)); });
+    auto monitorSelect = std::make_shared<UiComboBox>(monitorSelectRect, monitorNames, selectedMonitor);
     menuBackground->AddChild(monitorSelect);
 
-    Rectangle monitorFpsTextRect = Rectangle(menuPos.x + spacing.x, monitorTextRect.y + settingHeight + spacing.y, halfPanelWidth, settingHeight);
-    auto monitorFpsText = std::make_shared<UiStatusBar>(monitorFpsTextRect, "Monitor FPS:");
-    menuBackground->AddChild(monitorFpsText);
+    Rectangle fpsSelectTextRect = Rectangle(menuPos.x + spacing.x, monitorTextRect.y + settingHeight + spacing.y, halfPanelWidth, settingHeight);
+    auto fpsSelectText = std::make_shared<UiStatusBar>(fpsSelectTextRect, "Monitor FPS:");
+    menuBackground->AddChild(fpsSelectText);
 
-    int monitorFps = GetMonitorRefreshRate(selectedMonitor);
-    std::vector<int> fpsValues = {30, 60, 75, 120, 144, 240, 360};
-    std::string availableFpsOptions;
+    const std::string availableFpsOptions = GameManager::GetCamera().GetFpsOptions();
 
-    for (int fps : fpsValues)
-    {
-        if (fps <= monitorFps)
-        {
-            if (!availableFpsOptions.empty())
-                availableFpsOptions += ";";
-            availableFpsOptions += fps;
-        }
-    }
-
-    if (!Contains(fpsValues, monitorFps))
-    {
-        if (!availableFpsOptions.empty())
-            availableFpsOptions += ";";
-        availableFpsOptions += monitorFps;
-    }
-
-    Rectangle fpsSelectRect = Rectangle(monitorFpsTextRect.x + halfPanelWidth + spacing.x, monitorFpsTextRect.y, halfPanelWidth, settingHeight);
-    auto fpsSelect = std::make_shared<UiComboBox>(fpsSelectRect, availableFpsOptions, GameManager::GetCamera().GetFps(), [](int fps)
-                                                  { GameManager::GetCamera().SetFps(fps); });
+    Rectangle fpsSelectRect = Rectangle(fpsSelectTextRect.x + halfPanelWidth + spacing.x, fpsSelectTextRect.y, halfPanelWidth, settingHeight);
+    auto fpsSelect = std::make_shared<UiComboBox>(fpsSelectRect, availableFpsOptions, GameManager::GetCamera().GetFpsIndex(), [](int fpsIndex)
+                                                  { GameManager::GetCamera().SetFpsIndex(fpsIndex); });
     menuBackground->AddChild(fpsSelect);
 
-    Rectangle masterVolumeTextRect = Rectangle(menuPos.x + spacing.x, monitorTextRect.y + settingHeight + spacing.y, halfPanelWidth, settingHeight);
+    std::weak_ptr<UiComboBox> _fpsSelect = fpsSelect;
+    auto monitorSelectOnPress = [_fpsSelect](int monitor)
+    {
+        SetWindowMonitor(monitor);
+        GameManager::GetCamera().SetFps(GetMonitorRefreshRate(monitor));
+        if (auto fpsSelect = _fpsSelect.lock()) {
+            std::string availableFpsOptions = GameManager::GetCamera().GetFpsOptions();
+            fpsSelect->SetText(availableFpsOptions);
+            fpsSelect->SetState(GameManager::GetCamera().GetFpsIndex());
+        }
+    };
+    monitorSelect->SetOnPress(monitorSelectOnPress);
+
+    Rectangle masterVolumeTextRect = Rectangle(menuPos.x + spacing.x, fpsSelectRect.y + settingHeight + spacing.y, halfPanelWidth, settingHeight);
     auto masterVolumeText = std::make_shared<UiStatusBar>(masterVolumeTextRect, "Master Volume:");
     menuBackground->AddChild(masterVolumeText);
 
     Rectangle masterVolumeSliderRect = Rectangle(masterVolumeTextRect.x + halfPanelWidth + spacing.x, masterVolumeTextRect.y, halfPanelWidth, settingHeight);
     auto masterVolumeSlider = std::make_shared<UiSlider>(masterVolumeSliderRect, AudioManager::GetMasterVolume(), 0, 1, [](float volume)
                                                          { AudioManager::SetMasterVolume(volume); });
-    std::weak_ptr<UiSlider> weakMasterVolumeSlider = masterVolumeSlider;
-    masterVolumeSlider->SetOnUpdate([weakMasterVolumeSlider]()
-                                    { if (auto masterVolumeSlider = weakMasterVolumeSlider.lock())
+    std::weak_ptr<UiSlider> _masterVolumeSlider = masterVolumeSlider;
+    masterVolumeSlider->SetOnUpdate([_masterVolumeSlider]()
+                                    { if (auto masterVolumeSlider = _masterVolumeSlider.lock())
                              { masterVolumeSlider->SetValue(AudioManager::GetMasterVolume()); } });
     menuBackground->AddChild(masterVolumeSlider);
 
@@ -137,9 +130,9 @@ void InitializeSettingsMenu()
     Rectangle musicVolumeSliderRect = Rectangle(musicVolumeTextRect.x + halfPanelWidth + spacing.x, musicVolumeTextRect.y, halfPanelWidth, settingHeight);
     auto musicVolumeSlider = std::make_shared<UiSlider>(musicVolumeSliderRect, AudioManager::GetMusicVolume(), 0, 1, [](float volume)
                                                         { AudioManager::SetMusicVolume(volume); });
-    std::weak_ptr<UiSlider> weakMusicVolumeSlider = musicVolumeSlider;
-    musicVolumeSlider->SetOnUpdate([weakMusicVolumeSlider]()
-                                   { if (auto musicVolumeSlider = weakMusicVolumeSlider.lock())
+    std::weak_ptr<UiSlider> _musicVolumeSlider = musicVolumeSlider;
+    musicVolumeSlider->SetOnUpdate([_musicVolumeSlider]()
+                                   { if (auto musicVolumeSlider = _musicVolumeSlider.lock())
                              { musicVolumeSlider->SetValue(AudioManager::GetMusicVolume()); } });
     menuBackground->AddChild(musicVolumeSlider);
 
@@ -150,9 +143,9 @@ void InitializeSettingsMenu()
     Rectangle effectsVolumeSliderRect = Rectangle(effectsVolumeTextRect.x + halfPanelWidth + spacing.x, effectsVolumeTextRect.y, halfPanelWidth, settingHeight);
     auto effectsVolumeSlider = std::make_shared<UiSlider>(effectsVolumeSliderRect, AudioManager::GetEffectsVolume(), 0, 1, [](float volume)
                                                           { AudioManager::SetEffectsVolume(volume); });
-    std::weak_ptr<UiSlider> weakEffectsVolumeSlider = effectsVolumeSlider;
-    effectsVolumeSlider->SetOnUpdate([weakEffectsVolumeSlider]()
-                                     { if (auto effectsVolumeSlider = weakEffectsVolumeSlider.lock())
+    std::weak_ptr<UiSlider> _effectsVolumeSlider = effectsVolumeSlider;
+    effectsVolumeSlider->SetOnUpdate([_effectsVolumeSlider]()
+                                     { if (auto effectsVolumeSlider = _effectsVolumeSlider.lock())
                              { effectsVolumeSlider->SetValue(AudioManager::GetEffectsVolume()); } });
     menuBackground->AddChild(effectsVolumeSlider);
 
@@ -173,9 +166,9 @@ void InitializeSidebar()
     constexpr Rectangle buildIconRect = Vector2ToRect(Vector2(buildButtonRect.x, buildButtonRect.y) + largeButtonSize / 8., largeButtonSize * .75);
     buildToggle->AddChild(std::make_shared<UiIcon>(buildIconRect, "ICON", Rectangle(1, 1, 1, 1) * TILE_SIZE, Fade(DARKGRAY, .8)));
 
-    std::weak_ptr<UiToggle> weakBuildToggle = buildToggle;
-    buildToggle->SetOnUpdate([weakBuildToggle]()
-                             { if (auto buildToggle = weakBuildToggle.lock())
+    std::weak_ptr<UiToggle> _buildToggle = buildToggle;
+    buildToggle->SetOnUpdate([_buildToggle]()
+                             { if (auto buildToggle = _buildToggle.lock())
         { 
             buildToggle->SetVisible(GameManager::GetCamera().IsUiClear());
             buildToggle->SetToggle(GameManager::IsInBuildMode());
@@ -198,9 +191,9 @@ void InitializeSidebar()
         float iconIndex = (float)(magic_enum::enum_underlying<PlayerCam::Overlay>(overlay) - 1);
         overlayToggle->AddChild(std::make_shared<UiIcon>(iconRect, "ICON", Rectangle(iconIndex, 0, 1, 1) * TILE_SIZE, Fade(DARKGRAY, .8)));
 
-        std::weak_ptr<UiToggle> weakOverlayToggle = overlayToggle;
-        overlayToggle->SetOnUpdate([weakOverlayToggle, overlay]()
-                                   { if (auto overlayToggle = weakOverlayToggle.lock())
+        std::weak_ptr<UiToggle> _overlayToggle = overlayToggle;
+        overlayToggle->SetOnUpdate([_overlayToggle, overlay]()
+                                   { if (auto overlayToggle = _overlayToggle.lock())
                              { 
                                 overlayToggle->SetVisible(GameManager::GetCamera().IsUiClear());
                                 overlayToggle->SetToggle(GameManager::GetCamera().IsOverlay(overlay));
@@ -224,9 +217,9 @@ void InitializeBuildWorldUi()
     Vector2 buildMovePos = Vector2(SPACING.x, .5 - SPACING.y / 2. - BUTTON_SIZE.y);
     auto buildMoveButton = std::make_shared<UiButton>(Vector2ToRect(buildMovePos, BUTTON_SIZE), "", moveOnPress);
 
-    std::weak_ptr<UiButton> weakBuildMoveButton = buildMoveButton;
-    buildMoveButton->SetOnUpdate([weakBuildMoveButton]()
-                                 { if (auto buildMoveButton = weakBuildMoveButton.lock())
+    std::weak_ptr<UiButton> _buildMoveButton = buildMoveButton;
+    buildMoveButton->SetOnUpdate([_buildMoveButton]()
+                                 { if (auto buildMoveButton = _buildMoveButton.lock())
                             { 
                                 auto selectedTile = GameManager::GetSelectedTile();
                                 buildMoveButton->SetVisible(GameManager::IsInBuildMode() && GameManager::GetCamera().IsUiClear());
@@ -243,9 +236,9 @@ void InitializeBuildWorldUi()
     Vector2 buildDeletePos = Vector2(SPACING.x * 2. + BUTTON_SIZE.x, .5 - SPACING.y / 2. - BUTTON_SIZE.y);
     auto buildDeleteButton = std::make_shared<UiButton>(Vector2ToRect(buildDeletePos, BUTTON_SIZE), "", deleteOnPress);
 
-    std::weak_ptr<UiButton> weakBuildDeleteButton = buildDeleteButton;
-    buildDeleteButton->SetOnUpdate([weakBuildDeleteButton]()
-                                   { if (auto buildDeleteButton = weakBuildDeleteButton.lock())
+    std::weak_ptr<UiButton> _buildDeleteButton = buildDeleteButton;
+    buildDeleteButton->SetOnUpdate([_buildDeleteButton]()
+                                   { if (auto buildDeleteButton = _buildDeleteButton.lock())
                             {
                                 auto selectedTile = GameManager::GetSelectedTile();
                                 buildDeleteButton->SetVisible(GameManager::IsInBuildMode() && GameManager::GetCamera().IsUiClear());
@@ -261,9 +254,9 @@ void InitializeBuildWorldUi()
     Vector2 buildRotatePos = Vector2(SPACING.x * 3. + BUTTON_SIZE.x * 2., .5 - SPACING.y / 2. - BUTTON_SIZE.y);
     auto buildRotateButton = std::make_shared<UiButton>(Vector2ToRect(buildRotatePos, BUTTON_SIZE), "", rotateOnPress);
 
-    std::weak_ptr<UiButton> weakBuildRotateButton = buildRotateButton;
-    buildRotateButton->SetOnUpdate([weakBuildRotateButton]()
-                                   { if (auto buildRotateButton = weakBuildRotateButton.lock())
+    std::weak_ptr<UiButton> _buildRotateButton = buildRotateButton;
+    buildRotateButton->SetOnUpdate([_buildRotateButton]()
+                                   { if (auto buildRotateButton = _buildRotateButton.lock())
                             {
                                 auto selectedTile = GameManager::GetSelectedTile();
                                 buildRotateButton->SetVisible(GameManager::IsInBuildMode() && GameManager::GetCamera().IsUiClear());
@@ -306,10 +299,10 @@ void AddBuildToggle(const std::shared_ptr<UiPanel> &buildMenu, const TileToggleC
 
     auto toggle = std::make_shared<UiToggle>(Vector2ToRect(togglePos, TOGGLE_SIZE), GameManager::IsBuildTileId(config.tileId), onToggle);
 
-    std::weak_ptr<UiToggle> weakToggle = toggle;
-    auto onUpdate = [weakToggle, config]()
+    std::weak_ptr<UiToggle> _toggle = toggle;
+    auto onUpdate = [_toggle, config]()
     {
-        if (auto toggle = weakToggle.lock())
+        if (auto toggle = _toggle.lock())
             toggle->SetToggle(GameManager::IsBuildTileId(config.tileId));
     };
     toggle->SetOnUpdate(onUpdate);
@@ -326,9 +319,9 @@ void InitializeBuildMenu()
     constexpr Vector2 SPACING = Vector2ScreenScale(Vector2(DEFAULT_PADDING, DEFAULT_PADDING));
 
     auto buildMenu = std::make_shared<UiPanel>(Rectangle(SPACING.x, .5 + SPACING.y / 2., 1. / 6., .5), Fade(BLACK, .5));
-    std::weak_ptr<UiPanel> weakBuildMenu = buildMenu;
-    buildMenu->SetOnUpdate([weakBuildMenu]()
-                           { if (auto buildMenu = weakBuildMenu.lock())
+    std::weak_ptr<UiPanel> _buildMenu = buildMenu;
+    buildMenu->SetOnUpdate([_buildMenu]()
+                           { if (auto buildMenu = _buildMenu.lock())
                              { buildMenu->SetVisible(GameManager::IsInBuildMode() && GameManager::GetCamera().IsUiClear()); } });
 
     std::vector<TileToggleConfig> tileConfigs = {

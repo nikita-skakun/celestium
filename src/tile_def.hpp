@@ -5,7 +5,7 @@
 
 struct TileDef
 {
-    enum class Height : u_int8_t
+    enum class Height : uint8_t
     {
         NONE = 0,
         FLOOR = 1 << 0,

@@ -5,7 +5,7 @@ struct Tile;
 
 struct Component : public std::enable_shared_from_this<Component>
 {
-    enum class Type : u_int8_t
+    enum class Type : uint8_t
     {
         NONE,
         WALKABLE,
@@ -89,7 +89,7 @@ struct SolidComponent : Component
 
 struct PowerConnectorComponent : Component
 {
-    enum class IO : u_int8_t
+    enum class IO : uint8_t
     {
         INPUT = 1 << 0,
         OUTPUT = 1 << 1,
@@ -429,7 +429,7 @@ public:
 
 struct DoorComponent : Component
 {
-    enum class MovingState : u_int8_t
+    enum class MovingState : uint8_t
     {
         IDLE,
         OPENING,

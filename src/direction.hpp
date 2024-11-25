@@ -34,7 +34,7 @@ constexpr Vector2Int DirectionToVector2Int(Direction direction)
 
 constexpr std::array<Direction, 4> CARDINAL_DIRECTIONS = {Direction::N, Direction::E, Direction::S, Direction::W};
 
-enum class Rotation : u_int8_t
+enum class Rotation : uint8_t
 {
     UP = 1 << 0,    // No rotation
     RIGHT = 1 << 1, // 90 degrees clockwise

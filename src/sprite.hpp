@@ -12,7 +12,7 @@ struct SpriteSlice
         : sourceRect(Rectangle(x, y, width, height)), destOffset(Vector2(offsetX, offsetY)) {}
 };
 
-enum class SpriteCondition : u_int32_t
+enum class SpriteCondition : uint32_t
 {
     NONE = 0,
     NORTH_SAME = 1 << 0,

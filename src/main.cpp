@@ -47,7 +47,7 @@ void FixedUpdate(double &timeSinceFixedUpdate)
             previousTime = GetTime();
         }
 
-        std::this_thread::sleep_for(std::chrono::milliseconds(1));
+        std::this_thread::sleep_for(std::chrono::milliseconds(std::max(1, (int)(1000 * (FIXED_DELTA_TIME - timeSinceFixedUpdate)))));
     }
 }
 
@@ -69,15 +69,17 @@ int main()
 
     auto &camera = GameManager::GetCamera();
 
+    uint16_t currentFpsIndex = GameManager::GetCamera().GetFpsIndex();
+    LogMessage(LogLevel::DEBUG, std::format("Target FPS: {}", FPS_OPTIONS.at(currentFpsIndex)));
+
     UiManager::InitializeElements();
 
     LogMessage(LogLevel::INFO, "Initialization Complete");
 
-    double timeSinceFixedUpdate = 0;
+    double timeSinceFixedUpdate = 0; // Elapsed time since the last fixed update in seconds
     // Start the update thread
-    std::thread updateThread([&]() {
-        FixedUpdate(timeSinceFixedUpdate);
-    });
+    std::thread updateThread([&]()
+                             { FixedUpdate(timeSinceFixedUpdate); });
     double deltaTime = 0;
 
     while (GameManager::IsGameRunning())

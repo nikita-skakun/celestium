@@ -1,7 +1,11 @@
 #pragma once
+#include <array>
+#include <cstdint>
 #include <raylib.h>
 
 constexpr double FIXED_DELTA_TIME = 1. / 45.;
+
+constexpr std::array<uint16_t, 7> FPS_OPTIONS{30, 60, 75, 120, 144, 240, 360};
 
 constexpr float MIN_ZOOM = .25f;
 constexpr float MAX_ZOOM = 5.f;

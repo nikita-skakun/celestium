@@ -3,7 +3,7 @@
 
 struct PlayerCam
 {
-    enum class Overlay : u_int8_t
+    enum class Overlay : uint8_t
     {
         NONE,
         OXYGEN,
@@ -11,14 +11,14 @@ struct PlayerCam
         POWER,
     };
 
-    enum class DragType : u_int8_t
+    enum class DragType : uint8_t
     {
         NONE,
         SELECT,
         POWER_CONNECT,
     };
 
-    enum class UiState : u_int8_t
+    enum class UiState : uint8_t
     {
         NONE,
         ESC_MENU,
@@ -33,7 +33,7 @@ private:
     float zoom = 1.f;
     Overlay overlay = Overlay::NONE;
     UiState uiState = UiState::NONE;
-    uint fps = 0;
+    uint16_t fpsIndex;
 
 public:
     PlayerCam() {}
@@ -64,12 +64,15 @@ public:
     constexpr bool IsUiState(UiState other) const { return uiState == other; }
     constexpr bool IsUiClear() const { return uiState == UiState::NONE; }
 
-    constexpr uint GetFps() const { return fps; }
-    constexpr void SetFps(uint newFps)
+    constexpr uint16_t GetFpsIndex() const { return fpsIndex; }
+    constexpr void SetFpsIndex(uint16_t newFpsIndex)
     {
-        fps = newFps;
-        SetTargetFPS(newFps);
+        fpsIndex = std::min(newFpsIndex, (uint16_t)(FPS_OPTIONS.size() - 1));
+        SetTargetFPS(FPS_OPTIONS.at(fpsIndex));
     }
+    constexpr void SetFps(uint16_t newFps) { SetFpsIndex(std::ranges::find(FPS_OPTIONS, newFps) - FPS_OPTIONS.begin()); }
+    
+    std::string GetFpsOptions() const;
 
     void HandleMovement();
 };

@@ -18,9 +18,17 @@ public:
     Rectangle GetRect() const;
     constexpr void SetRect(const Rectangle &r) { rect = r; }
     constexpr Vector2 GetPosition() const { return RectToPos(rect); }
-    constexpr void SetPosition(const Vector2 &pos) { rect.x = pos.x; rect.y = pos.y; }
+    constexpr void SetPosition(const Vector2 &pos)
+    {
+        rect.x = pos.x;
+        rect.y = pos.y;
+    }
     constexpr Vector2 GetSize() const { return RectToSize(rect); }
-    constexpr void SetSize(const Vector2 &size) { rect.width = size.x; rect.height = size.y; }
+    constexpr void SetSize(const Vector2 &size)
+    {
+        rect.width = size.x;
+        rect.height = size.y;
+    }
     constexpr bool IsEnabled() const { return enabled; }
     constexpr void SetEnabled(bool state) { enabled = state; }
     constexpr bool IsVisible() const { return visible; }
@@ -46,10 +54,7 @@ public:
         }
     }
 
-    void SetOnUpdate(std::function<void()> callback)
-    {
-        onUpdate = callback;
-    }
+    void SetOnUpdate(std::function<void()> callback) { onUpdate = callback; }
 
     constexpr void Update()
     {
@@ -171,6 +176,10 @@ public:
     UiComboBox(const Rectangle &rect, std::string text, int startingState, std::function<void(int)> onPress = nullptr, const TextAttrs &textAttrs = TextAttrs(),
                std::function<void()> onUpdate = nullptr, bool inWorldSpace = false)
         : UiElement(rect, onUpdate, inWorldSpace), text(text), state(startingState), onPress(onPress), textAttrs(textAttrs) {}
+
+    constexpr void SetText(const std::string &newText) { text = newText; }
+    constexpr void SetState(int newState) { state = newState; }
+    void SetOnPress(std::function<void(int)> callback) { onPress = callback; }
 
     void Render() override;
 };

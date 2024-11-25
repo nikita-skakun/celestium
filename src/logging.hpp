@@ -3,7 +3,7 @@
 #include <termcolor/termcolor.hpp>
 
 // Enum for log levels
-enum class LogLevel : u_int8_t
+enum class LogLevel : uint8_t
 {
     DEBUG,
     INFO,

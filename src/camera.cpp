@@ -1,5 +1,30 @@
 #include "camera.hpp"
 
+std::string PlayerCam::GetFpsOptions() const
+{
+    unsigned int monitorFps = GetMonitorRefreshRate(GetCurrentMonitor());
+    std::string availableFpsOptions;
+    for (unsigned int fpsOption : FPS_OPTIONS)
+    {
+        if (fpsOption > monitorFps)
+        {
+            if (!availableFpsOptions.empty())
+                availableFpsOptions += ";";
+            availableFpsOptions.append(std::to_string(monitorFps));
+            break;
+        }
+
+        if (!availableFpsOptions.empty())
+            availableFpsOptions += ";";
+        availableFpsOptions.append(std::to_string(fpsOption));
+
+        if (fpsOption == monitorFps)
+            break;
+    }
+
+    return availableFpsOptions;
+}
+
 /**
  * Handles camera movement and zoom based on user input.
  */

@@ -159,8 +159,8 @@ public:
             if (spritesheet.empty())
                 throw std::runtime_error(std::format("Parsing of effect spritesheet string failed: {}", spritesheet));
 
-            uint sizeIncrements = GetValue<uint>(effectNode, "sizeIncrements", 1);
-            uint spriteCount = GetValue<uint>(effectNode, "spriteCount", 1);
+            uint16_t sizeIncrements = GetValue<uint16_t>(effectNode, "sizeIncrements", 1);
+            uint16_t spriteCount = GetValue<uint16_t>(effectNode, "spriteCount", 1);
             float animationSpeed = GetValue<float>(effectNode, "animationSpeed", 0);
 
             DefinitionManager::GetInstance().effectDefinitions[effectId] = std::make_shared<EffectDef>(effectId, spritesheet, sizeIncrements, spriteCount, animationSpeed);

@@ -5,7 +5,7 @@ struct Crew;
 struct Station;
 struct Tile;
 
-enum class GameState : u_int8_t
+enum class GameState : uint8_t
 {
     NONE = 0,
     RUNNING = 1 << 0,
