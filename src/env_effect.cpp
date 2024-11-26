@@ -48,25 +48,21 @@ void FireEffect::Update(const std::shared_ptr<Station> &station, size_t index)
         return;
     }
 
-    auto tilesWithDurability = station->GetTilesWithComponentAtPosition<DurabilityComponent>(GetPosition());
-    if (!tilesWithDurability.empty())
+    for (auto &tileWithDurability : station->GetTilesWithComponentAtPosition<DurabilityComponent>(GetPosition()))
     {
-        for (auto &tileWithDurability : tilesWithDurability)
-        {
-            auto durability = tileWithDurability->GetComponent<DurabilityComponent>();
-            durability->SetHitpoints(durability->GetHitpoints() - FireEffect::DAMAGE_PER_SECOND * FIXED_DELTA_TIME);
-        }
+        auto durability = tileWithDurability->GetComponent<DurabilityComponent>();
+        durability->SetHitpoints(durability->GetHitpoints() - FireEffect::DAMAGE_PER_SECOND * FIXED_DELTA_TIME);
     }
 
     auto oxygen = tileWithOxygen->GetComponent<OxygenComponent>();
     if (oxygen->GetOxygenLevel() < GetOxygenConsumption() * FIXED_DELTA_TIME * 2.)
-        SetSize(GetSize() / 3. * 2.);
+        SetSize(GetSize() * (2. / 3.));
 
     float oxygenToConsume = GetOxygenConsumption() * FIXED_DELTA_TIME;
     if (oxygen->GetOxygenLevel() < oxygenToConsume)
     {
         oxygen->SetOxygenLevel(0);
-        if (index >= 0 && index < station->effects.size())
+        if (index < station->effects.size())
             station->effects.erase(station->effects.begin() + index);
         return;
     }
@@ -93,8 +89,8 @@ void FireEffect::Update(const std::shared_ptr<Station> &station, size_t index)
         if (possibleOffsets.empty())
             return;
 
-        int selectedDirection = RandomIntWithRange(0, (int)possibleOffsets.size() - 1);
-        Vector2Int newFirePos = GetPosition() + possibleOffsets[selectedDirection];
+        int selectedDirectionIndex = RandomIntWithRange(0, static_cast<int>(possibleOffsets.size()) - 1);
+        Vector2Int newFirePos = GetPosition() + possibleOffsets[selectedDirectionIndex];
         station->effects.push_back(std::make_shared<FireEffect>(newFirePos));
     }
 }
