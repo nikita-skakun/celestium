@@ -19,7 +19,7 @@ This is a passion project, created as a way to explore advanced programming conc
 | Environmental Effects             | :construction:       | Environmental hazards and objects (like fire and foam), which can effect the crew and the station                                           |
 | Power Storage and Connections     | :construction:       | A rework is necessary to make power connections be part of the physical game world                                                          |
 | Player Station Design             | :construction:       | Currently the player can add, move, rotate and delete tiles. Better build tools and warnings are still necessary                            |
-| Settings Menu                     | :construction:       | Some basic settings are available, but more work is necessary (key re-binding, FPS selection, etc)                                          |
+| Settings Menu                     | :construction:       | Some basic settings are available, but more work is necessary (key re-binding, etc)                                                         |
 | Music and Sound Effects           | :construction:       | A basic implementation of sound effects is available, but more sounds and testing is still required                                         |
 | Main Menu                         | :white_large_square: | A main menu to start a new game, and load existing game                                                                                     |
 | Saving and Loading Game State     | :white_large_square: | Serializing the game state should be relatively straightforward, as tiles already have a tile definition file                               |

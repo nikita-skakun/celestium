@@ -116,22 +116,14 @@ std::deque<Vector2Int> AStar(const Vector2Int &start, const Vector2Int &end, con
  *
  * @param path            The queue of Vector2Int positions representing the path.
  *
- * @return                True if an obstacle is found or station is null, false otherwise.
+ * @return                True if an obstacle is found, false otherwise.
  */
 bool DoesPathHaveObstacles(const std::deque<Vector2Int> &path)
 {
     auto station = GameManager::GetStation();
-    // Return that obstacle is found if station is null
     if (!station)
-        return true;
+        return false;
 
-    for (const Vector2Int &step : path)
-    {
-        // Return that an obstacle is found if the tile is solid or not walkable
-        if (!station->IsPositionPathable(step))
-            return true;
-    }
-
-    // No obstacles found
-    return false;
+    return std::ranges::any_of(path, [station](const Vector2Int &step)
+                               { return !station->IsPositionPathable(step); });
 }

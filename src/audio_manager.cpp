@@ -13,7 +13,7 @@ void AudioManager::CleanUp()
     }
     catch (const RtAudioErrorType &e)
     {
-        LogMessage(LogLevel::ERROR, std::format("Error stopping audio stream: {}", (int)e));
+        LogMessage(LogLevel::ERROR, std::format("Error stopping audio stream: {}", static_cast<int>(e)));
     }
 
     try
@@ -23,7 +23,7 @@ void AudioManager::CleanUp()
     }
     catch (const RtAudioErrorType &e)
     {
-        LogMessage(LogLevel::ERROR, std::format("Error closing audio stream: {}", (int)e));
+        LogMessage(LogLevel::ERROR, std::format("Error closing audio stream: {}", static_cast<int>(e)));
     }
 
     for (auto &sound : audio.sounds)
@@ -31,5 +31,5 @@ void AudioManager::CleanUp()
         if (sound->file)
             op_free(sound->file);
     }
-    std::vector<std::shared_ptr<SoundEffect>>().swap(audio.sounds);
+    audio.sounds.clear();
 }
