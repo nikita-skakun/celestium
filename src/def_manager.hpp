@@ -73,12 +73,9 @@ private:
             return std::make_shared<SolidComponent>();
 
         case Component::Type::POWER_CONNECTOR:
-        {
-            auto io = ParseIO(node);
-            if (!io.has_value())
-                return nullptr;
-            return std::make_shared<PowerConnectorComponent>(io.value());
-        }
+            if (auto io = ParseIO(node); io.has_value())
+                return std::make_shared<PowerConnectorComponent>(io.value());
+            return nullptr;
 
         case Component::Type::BATTERY:
             return std::make_shared<BatteryComponent>(GetValue(node, "maxCharge", 0.f));
@@ -112,7 +109,6 @@ private:
 
         default:
             throw std::runtime_error(std::format("Parsing of component type failed: {}", magic_enum::enum_name(type)));
-            return nullptr;
         }
     }
 
