@@ -8,6 +8,7 @@ struct Station : public std::enable_shared_from_this<Station>
 {
     std::unordered_map<Vector2Int, std::vector<std::shared_ptr<Tile>>> tileMap;
     std::vector<std::shared_ptr<Effect>> effects;
+    bool horizontalSymmetry = true;
 
 public:
     std::shared_ptr<Tile> GetTileAtPosition(const Vector2Int &pos, TileDef::Height height = TileDef::Height::NONE) const;

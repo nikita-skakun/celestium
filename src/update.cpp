@@ -65,22 +65,36 @@ void HandlePlaceTile(const std::shared_ptr<Station> &station)
         return;
 
     Vector2Int cursorPos = ToVector2Int(GameManager::GetWorldMousePos());
+
+    std::vector<Vector2Int> posListToPlace;
+    posListToPlace.push_back(cursorPos);
+    if (station->horizontalSymmetry)
+        posListToPlace.push_back(Vector2Int(cursorPos.x, -cursorPos.y - 1));
+
     bool canBuild = true;
-    auto overlappingTiles = station->GetTilesWithHeightAtPosition(cursorPos, tileDefinition->GetHeight());
-    for (auto &tile : overlappingTiles)
+    for (const auto &pos : posListToPlace)
     {
-        if (tile->GetId() == tileIdToPlace)
+        auto overlappingTiles = station->GetTilesWithHeightAtPosition(pos, tileDefinition->GetHeight());
+        for (auto &tile : overlappingTiles)
         {
-            canBuild = false;
-            break;
+            if (tile->GetId() == tileIdToPlace)
+            {
+                canBuild = false;
+                break;
+            }
+            tile->DeleteTile();
         }
-        tile->DeleteTile();
     }
 
-    if (canBuild && Tile::CreateTile(tileIdToPlace, cursorPos, station))
+    if (canBuild)
     {
+        for (const auto &pos : posListToPlace)
+        {
+            auto newTile = Tile::CreateTile(tileIdToPlace, pos, station);
+            LogMessage(LogLevel::DEBUG, std::format("Placed tile {} at {}", tileIdToPlace, ToString(pos)));
+        }
+
         station->UpdateSpriteOffsets();
-        LogMessage(LogLevel::DEBUG, std::format("Placed tile {} at {}", tileIdToPlace, ToString(cursorPos)));
     }
 }
 
