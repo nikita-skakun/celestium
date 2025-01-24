@@ -404,7 +404,7 @@ void DrawTooltip(const std::string &tooltip, const Vector2 &pos, float padding, 
 {
     Vector2 screenSize = GetScreenSize();
     int lineCount = 0;
-    const char **lines = TextSplit(tooltip.c_str(), '\n', &lineCount);
+    char **lines = TextSplit(tooltip.c_str(), '\n', &lineCount);
     const Font &font = AssetManager::GetFont("DEFAULT");
 
     float textWidth = 0;
