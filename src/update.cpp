@@ -5,56 +5,59 @@
 #include "station.hpp"
 #include "update.hpp"
 
-void HandleTileMovement(const std::shared_ptr<Station> &station)
-{
-    auto moveTile = GameManager::GetMoveTile();
-    Vector2Int cursorPos = ToVector2Int(GameManager::GetWorldMousePos());
+// void HandleTileMovement(const std::shared_ptr<Station> &station)
+// {
+//     auto moveTile = GameManager::GetMoveTile();
+//     Vector2Int cursorPos = ToVector2Int(GameManager::GetWorldMousePos());
 
-    if (moveTile->GetPosition() != cursorPos)
-    {
-        bool canMove = true;
-        auto overlappingTiles = station->GetTilesWithHeightAtPosition(cursorPos, moveTile->GetHeight());
-        for (auto &tile : overlappingTiles)
-        {
-            if (tile->GetId() == moveTile->GetId())
-            {
-                canMove = false;
-                break;
-            }
-            tile->DeleteTile();
-        }
+//     if (moveTile->GetPosition() != cursorPos)
+//     {
+//         bool canMove = true;
+//         auto overlappingTiles = station->GetTilesWithHeightAtPosition(cursorPos, moveTile->GetHeight());
+//         for (auto &tile : overlappingTiles)
+//         {
+//             if (tile->GetId() == moveTile->GetId())
+//             {
+//                 canMove = false;
+//                 break;
+//             }
+//             tile->DeleteTile();
+//         }
 
-        if (canMove)
-        {
-            moveTile->MoveTile(cursorPos);
-            LogMessage(LogLevel::DEBUG, std::format("Moved tile {} to {}", moveTile->GetId(), ToString(moveTile->GetPosition())));
-        }
-    }
-    // Clear the move tile to prevent further movement actions until a new tile is selected
-    GameManager::ClearMoveTile();
-}
+//         if (canMove)
+//         {
+//             moveTile->MoveTile(cursorPos);
+//             LogMessage(LogLevel::DEBUG, std::format("Moved tile {} to {}", moveTile->GetId(), ToString(moveTile->GetPosition())));
+//         }
+//     }
+//     // Clear the move tile to prevent further movement actions until a new tile is selected
+//     GameManager::ClearMoveTile();
+// }
 
 void HandleSelectTile(const std::shared_ptr<Station> &station)
 {
     Vector2Int cursorPos = ToVector2Int(GameManager::GetWorldMousePos());
 
-    if (auto allTiles = station->GetAllTilesAtPosition(cursorPos); !allTiles.empty())
-    {
-        auto selectedTile = GameManager::GetSelectedTile();
+    if (!IsKeyDown(KEY_LEFT_SHIFT))
+        GameManager::ClearSelectedTiles();
 
-        for (int i = allTiles.size() - 1; i >= 0; --i)
-        {
-            if (allTiles[i] == selectedTile && i > 0)
-            {
-                GameManager::SetSelectedTile(allTiles[i - 1]);
-                break;
-            }
-            else if (i == 0)
-                GameManager::SetSelectedTile(allTiles[allTiles.size() - 1]);
-        }
+    if (auto allTiles = station->GetTilesWithHeightAtPosition(cursorPos, GameManager::GetSelectedHeight()); !allTiles.empty())
+    {
+        auto selectedTile = GameManager::GetSelectedTiles();
+
+        GameManager::ToggleSelectedTile(allTiles[0]);
+
+        // for (int i = allTiles.size() - 1; i >= 0; --i)
+        // {
+        //     if (allTiles[i] == selectedTile && i > 0)
+        //     {
+        //         GameManager::SetSelectedTile(allTiles[i - 1]);
+        //         break;
+        //     }
+        //     else if (i == 0)
+        //         GameManager::SetSelectedTile(allTiles[allTiles.size() - 1]);
+        // }
     }
-    else
-        GameManager::SetSelectedTile(nullptr);
 }
 
 void HandlePlaceTile(const std::shared_ptr<Station> &station)
@@ -105,9 +108,10 @@ void HandleBuildMode()
     if (!station || !IsMouseButtonPressed(MOUSE_LEFT_BUTTON))
         return;
 
-    if (GameManager::GetMoveTile())
-        HandleTileMovement(station);
-    else if (GameManager::GetBuildTileId().empty())
+    // if (GameManager::GetMoveTile())
+    //     HandleTileMovement(station);
+    // else 
+    if (GameManager::GetBuildTileId().empty())
         HandleSelectTile(station);
     else
         HandlePlaceTile(station);

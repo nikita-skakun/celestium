@@ -9,10 +9,10 @@
 Color GetTileTint(const std::shared_ptr<Tile> &tile)
 {
     Color tint = WHITE;
-    if (GameManager::IsInBuildMode() && GameManager::GetSelectedTile() == tile)
+    if (GameManager::IsInBuildMode() && GameManager::IsTileSelected(tile))
         tint = ColorLerp(WHITE, TILE_SELECTION_TINT, Oscillate(GetTime(), .5));
-    else if (GameManager::IsInBuildMode() && GameManager::GetMoveTile() == tile)
-        tint = Fade(WHITE, .5);
+    // else if (GameManager::IsInBuildMode() && GameManager::GetMoveTile() == tile)
+    //     tint = Fade(WHITE, .5);
 
     return tint;
 }
@@ -508,12 +508,13 @@ void DrawBuildUi()
     Vector2Int cursorPos = ToVector2Int(GameManager::GetWorldMousePos());
 
     std::shared_ptr<Tile> hoveredTile = nullptr;
-    if (auto moveTile = GameManager::GetMoveTile())
-    {
-        if (auto sprite = moveTile->GetSprite())
-            sprite->Draw(cursorPos, Fade(WHITE, .5));
-    }
-    else if (auto allTiles = station->GetAllTilesAtPosition(cursorPos); !allTiles.empty())
+    // if (auto moveTile = GameManager::GetMoveTile())
+    // {
+    //     if (auto sprite = moveTile->GetSprite())
+    //         sprite->Draw(cursorPos, Fade(WHITE, .5));
+    // }
+    // else 
+    if (auto allTiles = station->GetAllTilesAtPosition(cursorPos); !allTiles.empty())
     {
         hoveredTile = allTiles.at(allTiles.size() - 1);
         DrawTileOutline(hoveredTile, DARKPURPLE);
