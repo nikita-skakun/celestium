@@ -82,7 +82,7 @@ tiles:
         sourceRect: (32, 32, 10, 10)
         destOffset: (0, 0)
   - id: WALL
-    height: FLOOR | WAIST | CEILING
+    height: FLOOR | KNEE | WAIST | CHEST | HEAD
     components:
       - type: SOLID
       - type: DURABILITY
@@ -167,7 +167,7 @@ tiles:
         sourceRect: (128, 32, 12, 12)
         destOffset: (0, 0)
   - id: OXYGEN_PRODUCER
-    height: WAIST
+    height: KNEE | WAIST | CHEST
     components:
       - type: POWER_CONNECTOR
         io: INPUT
@@ -180,7 +180,7 @@ tiles:
       - type: ROTATABLE
     sprite: (6, 7)
   - id: BATTERY
-    height: WAIST
+    height: KNEE | WAIST
     components:
       - type: POWER_CONNECTOR
         io: INPUT | OUTPUT
@@ -191,7 +191,7 @@ tiles:
       - type: ROTATABLE
     sprite: (5, 7)
   - id: SOLAR_PANEL
-    height: WAIST
+    height: KNEE
     components:
       - type: POWER_CONNECTOR
         io: OUTPUT
@@ -208,7 +208,7 @@ tiles:
       - type: WALKABLE
     sprite: (1, 0)
   - id: DOOR
-    height: WAIST | CEILING
+    height: KNEE | WAIST | CHEST | HEAD
     components:
       - type: POWER_CONNECTOR
         io: INPUT

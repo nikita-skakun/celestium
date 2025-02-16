@@ -9,8 +9,10 @@ struct TileDef
     {
         NONE = 0,
         FLOOR = 1 << 0,
-        WAIST = 1 << 1,
-        CEILING = 1 << 2,
+        KNEE = 1 << 1,
+        WAIST = 1 << 2,
+        CHEST = 1 << 3,
+        HEAD = 1 << 4,
     };
 
 private:
