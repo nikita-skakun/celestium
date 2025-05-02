@@ -293,6 +293,13 @@ std::vector<std::shared_ptr<Tile>> Station::GetAllTilesAtPosition(const Vector2I
 std::shared_ptr<Tile> Station::GetTileWithHeightAtPosition(const Vector2Int &pos, TileDef::Height height) const
 {
     const auto &tilesAtPos = GetTilesAtPosition(pos);
+    if (height == TileDef::Height::NONE)
+    {
+        if (tilesAtPos.empty())
+            return nullptr;
+
+        return tilesAtPos[0];
+    }
     for (const auto &tile : tilesAtPos)
     {
         if (magic_enum::enum_flags_test_any(tile->GetHeight(), height))
@@ -307,6 +314,9 @@ std::vector<std::shared_ptr<Tile>> Station::GetTilesWithHeightAtPosition(const V
     std::vector<std::shared_ptr<Tile>> foundTiles;
 
     const auto &tilesAtPos = GetTilesAtPosition(pos);
+    if (height == TileDef::Height::NONE)
+        return tilesAtPos;
+
     for (const auto &tile : tilesAtPos)
     {
         if (magic_enum::enum_flags_test_any(tile->GetHeight(), height))

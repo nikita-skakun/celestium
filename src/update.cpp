@@ -5,57 +5,75 @@
 #include "station.hpp"
 #include "update.hpp"
 
-void HandleTileMovement(const std::shared_ptr<Station> &station)
-{
-    auto moveTile = GameManager::GetMoveTile();
-    Vector2Int cursorPos = ToVector2Int(GameManager::GetWorldMousePos());
+// void HandleTileMovement(const std::shared_ptr<Station> &station)
+// {
+//     auto moveTile = GameManager::GetMoveTile();
+//     Vector2Int cursorPos = ToVector2Int(GameManager::GetWorldMousePos());
 
-    if (moveTile->GetPosition() != cursorPos)
-    {
-        bool canMove = true;
-        auto overlappingTiles = station->GetTilesWithHeightAtPosition(cursorPos, moveTile->GetHeight());
-        for (auto &tile : overlappingTiles)
-        {
-            if (tile->GetId() == moveTile->GetId())
-            {
-                canMove = false;
-                break;
-            }
-            tile->DeleteTile();
-        }
+//     if (moveTile->GetPosition() != cursorPos)
+//     {
+//         bool canMove = true;
+//         auto overlappingTiles = station->GetTilesWithHeightAtPosition(cursorPos, moveTile->GetHeight());
+//         for (auto &tile : overlappingTiles)
+//         {
+//             if (tile->GetId() == moveTile->GetId())
+//             {
+//                 canMove = false;
+//                 break;
+//             }
+//             tile->DeleteTile();
+//         }
 
-        if (canMove)
-        {
-            moveTile->MoveTile(cursorPos);
-            LogMessage(LogLevel::DEBUG, std::format("Moved tile {} to {}", moveTile->GetId(), ToString(moveTile->GetPosition())));
-        }
-    }
-    // Clear the move tile to prevent further movement actions until a new tile is selected
-    GameManager::ClearMoveTile();
-}
+//         if (canMove)
+//         {
+//             moveTile->MoveTile(cursorPos);
+//             LogMessage(LogLevel::DEBUG, std::format("Moved tile {} to {}", moveTile->GetId(), ToString(moveTile->GetPosition())));
+//         }
+//     }
+//     // Clear the move tile to prevent further movement actions until a new tile is selected
+//     GameManager::ClearMoveTile();
+// }
 
-void HandleSelectTile(const std::shared_ptr<Station> &station)
-{
-    Vector2Int cursorPos = ToVector2Int(GameManager::GetWorldMousePos());
+// void HandleSelectTile(const std::shared_ptr<Station> &station)
+// {
+//     Vector2Int cursorPos = ToVector2Int(GameManager::GetWorldMousePos());
+//     auto allTiles = station->GetTilesWithHeightAtPosition(cursorPos, GameManager::GetSelectedHeight());
 
-    if (auto allTiles = station->GetAllTilesAtPosition(cursorPos); !allTiles.empty())
-    {
-        auto selectedTile = GameManager::GetSelectedTile();
+//     if (allTiles.empty())
+//     {
+//         if (!IsKeyDown(KEY_LEFT_SHIFT))
+//         {
+//             GameManager::ClearSelectedTiles();
+//         }
+//         return;
+//     }
 
-        for (int i = allTiles.size() - 1; i >= 0; --i)
-        {
-            if (allTiles[i] == selectedTile && i > 0)
-            {
-                GameManager::SetSelectedTile(allTiles[i - 1]);
-                break;
-            }
-            else if (i == 0)
-                GameManager::SetSelectedTile(allTiles[allTiles.size() - 1]);
-        }
-    }
-    else
-        GameManager::SetSelectedTile(nullptr);
-}
+//     auto clickedTile = allTiles[0];
+//     bool isSelectedTile = false;
+
+//     for (const auto &weakTile : GameManager::GetSelectedTiles())
+//     {
+//         if (auto selectedTile = weakTile.lock(); selectedTile && selectedTile == clickedTile)
+//         {
+//             isSelectedTile = true;
+//             break;
+//         }
+//     }
+
+//     if (IsKeyDown(KEY_LEFT_SHIFT))
+//     {
+//         GameManager::ToggleSelectedTile(clickedTile);
+//     }
+//     else if (isSelectedTile && GameManager::GetSelectedTiles().size() == 1)
+//     {
+//         GameManager::ClearSelectedTiles();
+//     }
+//     else
+//     {
+//         GameManager::ClearSelectedTiles();
+//         GameManager::SetSelectedTile(clickedTile);
+//     }
+// }
 
 void HandlePlaceTile(const std::shared_ptr<Station> &station)
 {
@@ -105,11 +123,12 @@ void HandleBuildMode()
     if (!station || !IsMouseButtonPressed(MOUSE_LEFT_BUTTON))
         return;
 
-    if (GameManager::GetMoveTile())
-        HandleTileMovement(station);
-    else if (GameManager::GetBuildTileId().empty())
-        HandleSelectTile(station);
-    else
+    // if (GameManager::GetMoveTile())
+    //     HandleTileMovement(station);
+    // else
+    // if (GameManager::GetBuildTileId().empty())
+    //     HandleSelectTile(station);
+    // else
         HandlePlaceTile(station);
 }
 

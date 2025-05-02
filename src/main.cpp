@@ -105,9 +105,9 @@ int main()
                 HandleCrewHover();
                 HandleCrewSelection();
                 AssignCrewActions();
+                HandleMouseDrag();
             }
 
-            HandleMouseDrag();
             MouseDeleteExistingConnection();
         }
 

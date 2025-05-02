@@ -1,5 +1,6 @@
 #pragma once
 #include "camera.hpp"
+#include "tile_def.hpp"
 
 struct Crew;
 struct Station;
@@ -27,9 +28,10 @@ private:
     std::vector<std::shared_ptr<Crew>> crewList;
     std::vector<std::weak_ptr<Crew>> hoveredCrewList;
     std::vector<std::weak_ptr<Crew>> selectedCrewList;
+    std::vector<std::weak_ptr<Tile>> selectedTileList;
+    TileDef::Height selectedHeight = TileDef::Height::NONE;
     std::shared_ptr<Station> station;
-    std::weak_ptr<Tile> selectedTile;
-    std::weak_ptr<Tile> moveTile;
+    // std::weak_ptr<Tile> moveTile;
     bool buildMode = false;
     std::string buildTileId = "";
 
@@ -69,8 +71,15 @@ public:
     static void AddSelectedCrew(std::weak_ptr<Crew> crew) { GetInstance().selectedCrewList.push_back(crew); }
     static void ToggleSelectedCrew(const std::shared_ptr<Crew> &crew);
 
-    static std::shared_ptr<Tile> GetSelectedTile() { return GetInstance().selectedTile.lock(); }
-    static void SetSelectedTile(const std::shared_ptr<Tile> &selection = nullptr) { GetInstance().selectedTile = selection; }
+    static TileDef::Height GetSelectedHeight() { return GetInstance().selectedHeight; }
+    static void ToggleSelectedHeight(TileDef::Height height) { GetInstance().selectedHeight ^= height; }
+    static void ClearSelectedHeight() { GetInstance().selectedHeight = TileDef::Height::NONE; }
+
+    // static const std::vector<std::weak_ptr<Tile>> &GetSelectedTiles() { return GetInstance().selectedTileList; }
+    // static void ClearSelectedTiles() { GetInstance().selectedTileList.clear(); }
+    // static void ToggleSelectedTile(const std::shared_ptr<Tile> &tile);
+    // static void SetSelectedTile(const std::shared_ptr<Tile> &tile, bool select = true);
+    // static bool IsTileSelected(const std::shared_ptr<Tile> &tile);
 
     static const std::string &GetBuildTileId() { return GetInstance().buildTileId; }
     static void SetBuildTileId(const std::string &tileId) { GetInstance().buildTileId = tileId; }
@@ -81,14 +90,14 @@ public:
     static void SetBuildModeState(bool newState) { GetInstance().buildMode = newState; }
     static void ToggleBuildGameState() { GetInstance().buildMode = !GetInstance().buildMode; }
 
-    static bool IsInMoveMode() { return !GetInstance().moveTile.expired(); }
-    static std::shared_ptr<Tile> GetMoveTile() { return GetInstance().moveTile.lock(); }
-    static void ClearMoveTile() { GetInstance().moveTile.reset(); }
-    static void SetMoveTile()
-    {
-        GetInstance().moveTile = GetSelectedTile();
-        SetSelectedTile();
-    }
+    // static bool IsInMoveMode() { return !GetInstance().moveTile.expired(); }
+    // static std::shared_ptr<Tile> GetMoveTile() { return GetInstance().moveTile.lock(); }
+    // static void ClearMoveTile() { GetInstance().moveTile.reset(); }
+    // static void SetMoveTile()
+    // {
+    //     GetInstance().moveTile = GetSelectedTile();
+    //     SetSelectedTile();
+    // }
 
     // Utility function for Screen to World space transformations
     static Vector2 GetWorldMousePos();
