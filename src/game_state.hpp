@@ -28,11 +28,12 @@ private:
     std::vector<std::shared_ptr<Crew>> crewList;
     std::vector<std::weak_ptr<Crew>> hoveredCrewList;
     std::vector<std::weak_ptr<Crew>> selectedCrewList;
-    std::vector<std::weak_ptr<Tile>> selectedTileList;
-    TileDef::Height selectedHeight = TileDef::Height::NONE;
+    // std::vector<std::weak_ptr<Tile>> selectedTileList;
+    // TileDef::Height selectedHeight = TileDef::Height::NONE;
     std::shared_ptr<Station> station;
     // std::weak_ptr<Tile> moveTile;
     bool buildMode = false;
+    bool horizontalSymmetry = true;
     std::string buildTileId = "";
 
     GameManager() = default;
@@ -71,9 +72,9 @@ public:
     static void AddSelectedCrew(std::weak_ptr<Crew> crew) { GetInstance().selectedCrewList.push_back(crew); }
     static void ToggleSelectedCrew(const std::shared_ptr<Crew> &crew);
 
-    static TileDef::Height GetSelectedHeight() { return GetInstance().selectedHeight; }
-    static void ToggleSelectedHeight(TileDef::Height height) { GetInstance().selectedHeight ^= height; }
-    static void ClearSelectedHeight() { GetInstance().selectedHeight = TileDef::Height::NONE; }
+    // static TileDef::Height GetSelectedHeight() { return GetInstance().selectedHeight; }
+    // static void ToggleSelectedHeight(TileDef::Height height) { GetInstance().selectedHeight ^= height; }
+    // static void ClearSelectedHeight() { GetInstance().selectedHeight = TileDef::Height::NONE; }
 
     // static const std::vector<std::weak_ptr<Tile>> &GetSelectedTiles() { return GetInstance().selectedTileList; }
     // static void ClearSelectedTiles() { GetInstance().selectedTileList.clear(); }
@@ -89,6 +90,10 @@ public:
     static bool IsInBuildMode() { return GetInstance().buildMode; }
     static void SetBuildModeState(bool newState) { GetInstance().buildMode = newState; }
     static void ToggleBuildGameState() { GetInstance().buildMode = !GetInstance().buildMode; }
+
+    static bool IsHorizontalSymmetry() { return GetInstance().horizontalSymmetry; }
+    static void SetHorizontalSymmetry(bool newState) { GetInstance().horizontalSymmetry = newState; }
+    static void ToggleHorizontalSymmetry() { GetInstance().horizontalSymmetry = !GetInstance().horizontalSymmetry; }
 
     // static bool IsInMoveMode() { return !GetInstance().moveTile.expired(); }
     // static std::shared_ptr<Tile> GetMoveTile() { return GetInstance().moveTile.lock(); }

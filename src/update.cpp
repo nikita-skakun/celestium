@@ -86,7 +86,7 @@ void HandlePlaceTile(const std::shared_ptr<Station> &station)
 
     std::vector<Vector2Int> posListToPlace;
     posListToPlace.push_back(cursorPos);
-    if (station->horizontalSymmetry)
+    if (GameManager::IsHorizontalSymmetry())
         posListToPlace.push_back(Vector2Int(cursorPos.x, -cursorPos.y - 1));
 
     bool canBuild = true;

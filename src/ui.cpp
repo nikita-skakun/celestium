@@ -205,7 +205,7 @@ void DrawStationOverlays()
         }
     }
 
-    if (GameManager::IsInBuildMode() && station->horizontalSymmetry)
+    if (GameManager::IsInBuildMode() && GameManager::IsHorizontalSymmetry())
     {
         Vector2 screenPos = GameManager::WorldToScreen(Vector2(0, 0));
         screenPos.y -= .5 * TILE_SIZE * zoom;

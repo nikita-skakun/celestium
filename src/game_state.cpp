@@ -51,8 +51,8 @@ void GameManager::Initialize()
         std::make_shared<Crew>("CHARLIE", Vector2(-3, -3), ORANGE)};
     manager.selectedCrewList.clear();
     manager.hoveredCrewList.clear();
-    manager.selectedTileList.clear();
-    manager.selectedHeight = TileDef::Height::NONE;
+    // manager.selectedTileList.clear();
+    // manager.selectedHeight = TileDef::Height::NONE;
     // manager.moveTile.reset();
     manager.buildMode = false;
     manager.buildTileId = "";

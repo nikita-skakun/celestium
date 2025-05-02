@@ -102,7 +102,8 @@ void InitializeSettingsMenu()
     {
         SetWindowMonitor(monitor);
         GameManager::GetCamera().SetFps(GetMonitorRefreshRate(monitor));
-        if (auto fpsSelect = _fpsSelect.lock()) {
+        if (auto fpsSelect = _fpsSelect.lock())
+        {
             std::string availableFpsOptions = GameManager::GetCamera().GetFpsOptions();
             fpsSelect->SetText(availableFpsOptions);
             fpsSelect->SetState(GameManager::GetCamera().GetFpsIndex());
@@ -205,68 +206,32 @@ void InitializeSidebar()
     }
 }
 
-// void InitializeBuildWorldUi()
-// {
-//     constexpr Vector2 SPACING = Vector2ScreenScale(Vector2(DEFAULT_PADDING, DEFAULT_PADDING));
-//     constexpr Vector2 BUTTON_SIZE = Vector2ScreenScale(Vector2(32, 32));
-//     constexpr Vector2 ICON_SIZE = BUTTON_SIZE * 3.f / 4.f;
-//     constexpr Vector2 ICON_OFFSET = (BUTTON_SIZE - ICON_SIZE) / 2.;
+void InitializeBuildWorldUi()
+{
+    constexpr Vector2 SPACING = Vector2ScreenScale(Vector2(DEFAULT_PADDING, DEFAULT_PADDING));
+    constexpr Vector2 BUTTON_SIZE = Vector2ScreenScale(Vector2(32, 32));
+    constexpr Vector2 ICON_SIZE = BUTTON_SIZE * 3.f / 4.f;
+    constexpr Vector2 ICON_OFFSET = (BUTTON_SIZE - ICON_SIZE) / 2.;
 
-//     auto moveOnPress = []()
-//     { GameManager::SetMoveTile(); };
-//     Vector2 buildMovePos = Vector2(SPACING.x, .5 - SPACING.y / 2. - BUTTON_SIZE.y);
-//     auto buildMoveButton = std::make_shared<UiButton>(Vector2ToRect(buildMovePos, BUTTON_SIZE), "", moveOnPress);
+    auto onToggle = [](bool _)
+    {
+        GameManager::ToggleHorizontalSymmetry();
+    };
+    Vector2 buildMovePos = Vector2(SPACING.x, .5 - SPACING.y / 2. - BUTTON_SIZE.y);
+    auto horizonalSymmetryToggle = std::make_shared<UiToggle>(Vector2ToRect(buildMovePos, BUTTON_SIZE), GameManager::IsHorizontalSymmetry(), onToggle);
 
-//     std::weak_ptr<UiButton> _buildMoveButton = buildMoveButton;
-//     buildMoveButton->SetOnUpdate([_buildMoveButton]()
-//                                  { if (auto buildMoveButton = _buildMoveButton.lock())
-//                             { 
-//                                 auto selectedTile = GameManager::GetSelectedTile();
-//                                 buildMoveButton->SetVisible(GameManager::IsInBuildMode() && GameManager::GetCamera().IsUiClear());
-//                                 buildMoveButton->SetEnabled(selectedTile != nullptr);
-//                             } });
+    std::weak_ptr<UiToggle> _horizontalSymmetryToggle = horizonalSymmetryToggle;
+    horizonalSymmetryToggle->SetOnUpdate([_horizontalSymmetryToggle]()
+                                         { if (auto horizonalSymmetryToggle = _horizontalSymmetryToggle.lock())
+                                    { 
+                                        horizonalSymmetryToggle->SetVisible(GameManager::IsInBuildMode() && GameManager::GetCamera().IsUiClear());
+                                        horizonalSymmetryToggle->SetToggle(GameManager::IsHorizontalSymmetry());
+                                    } });
 
-//     auto buildMoveIcon = std::make_shared<UiIcon>(Vector2ToRect(buildMovePos + ICON_OFFSET, ICON_SIZE), "ICON", Rectangle(2, 1, 1, 1) * TILE_SIZE, Fade(DARKGRAY, .8));
-//     buildMoveButton->AddChild(buildMoveIcon);
-//     UiManager::AddElement("BUILD_MOVE_BTN", buildMoveButton);
-
-//     auto deleteOnPress = []()
-//     {   GameManager::GetSelectedTile()->DeleteTile();
-//         GameManager::SetSelectedTile(nullptr); };
-//     Vector2 buildDeletePos = Vector2(SPACING.x * 2. + BUTTON_SIZE.x, .5 - SPACING.y / 2. - BUTTON_SIZE.y);
-//     auto buildDeleteButton = std::make_shared<UiButton>(Vector2ToRect(buildDeletePos, BUTTON_SIZE), "", deleteOnPress);
-
-//     std::weak_ptr<UiButton> _buildDeleteButton = buildDeleteButton;
-//     buildDeleteButton->SetOnUpdate([_buildDeleteButton]()
-//                                    { if (auto buildDeleteButton = _buildDeleteButton.lock())
-//                             {
-//                                 auto selectedTile = GameManager::GetSelectedTile();
-//                                 buildDeleteButton->SetVisible(GameManager::IsInBuildMode() && GameManager::GetCamera().IsUiClear());
-//                                 buildDeleteButton->SetEnabled(selectedTile != nullptr);
-//                             } });
-
-//     auto buildDeleteIcon = std::make_shared<UiIcon>(Vector2ToRect(buildDeletePos + ICON_OFFSET, ICON_SIZE), "ICON", Rectangle(3, 1, 1, 1) * TILE_SIZE, Fade(DARKGRAY, .8));
-//     buildDeleteButton->AddChild(buildDeleteIcon);
-//     UiManager::AddElement("BUILD_DELETE_BTN", buildDeleteButton);
-
-//     auto rotateOnPress = []()
-//     { GameManager::GetSelectedTile()->RotateTile(); };
-//     Vector2 buildRotatePos = Vector2(SPACING.x * 3. + BUTTON_SIZE.x * 2., .5 - SPACING.y / 2. - BUTTON_SIZE.y);
-//     auto buildRotateButton = std::make_shared<UiButton>(Vector2ToRect(buildRotatePos, BUTTON_SIZE), "", rotateOnPress);
-
-//     std::weak_ptr<UiButton> _buildRotateButton = buildRotateButton;
-//     buildRotateButton->SetOnUpdate([_buildRotateButton]()
-//                                    { if (auto buildRotateButton = _buildRotateButton.lock())
-//                             {
-//                                 auto selectedTile = GameManager::GetSelectedTile();
-//                                 buildRotateButton->SetVisible(GameManager::IsInBuildMode() && GameManager::GetCamera().IsUiClear());
-//                                 buildRotateButton->SetEnabled(selectedTile != nullptr && selectedTile->HasComponent<RotatableComponent>());
-//                             } });
-
-//     auto buildRotateIcon = std::make_shared<UiIcon>(Vector2ToRect(buildRotatePos + ICON_OFFSET, ICON_SIZE), "ICON", Rectangle(4, 1, 1, 1) * TILE_SIZE, Fade(DARKGRAY, .8));
-//     buildRotateButton->AddChild(buildRotateIcon);
-//     UiManager::AddElement("BUILD_ROTATE_BTN", buildRotateButton);
-// }
+    auto buildMoveIcon = std::make_shared<UiIcon>(Vector2ToRect(buildMovePos + ICON_OFFSET, ICON_SIZE), "ICON", Rectangle(6, 1, 1, 1) * TILE_SIZE, Fade(DARKGRAY, .8));
+    horizonalSymmetryToggle->AddChild(buildMoveIcon);
+    UiManager::AddElement("BUILD_HOR_SYM_BTN", horizonalSymmetryToggle);
+}
 
 struct TileToggleConfig
 {
@@ -369,7 +334,7 @@ void UiManager::InitializeElements()
     InitializeSidebar();
     InitializeEscapeMenu();
     InitializeSettingsMenu();
-    // InitializeBuildWorldUi();
+    InitializeBuildWorldUi();
     InitializeBuildMenu();
 }
 
