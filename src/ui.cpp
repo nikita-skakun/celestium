@@ -9,8 +9,8 @@
 Color GetTileTint(const std::shared_ptr<Tile> &tile)
 {
     Color tint = WHITE;
-    if (GameManager::IsInBuildMode() && GameManager::IsTileSelected(tile))
-        tint = ColorLerp(WHITE, TILE_SELECTION_TINT, Oscillate(GetTime(), .5));
+    // if (GameManager::IsInBuildMode() && GameManager::IsTileSelected(tile))
+    //     tint = ColorLerp(WHITE, TILE_SELECTION_TINT, Oscillate(GetTime(), .5));
     // else if (GameManager::IsInBuildMode() && GameManager::GetMoveTile() == tile)
     //     tint = Fade(WHITE, .5);
 

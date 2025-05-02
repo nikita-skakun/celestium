@@ -34,31 +34,46 @@
 //     GameManager::ClearMoveTile();
 // }
 
-void HandleSelectTile(const std::shared_ptr<Station> &station)
-{
-    Vector2Int cursorPos = ToVector2Int(GameManager::GetWorldMousePos());
+// void HandleSelectTile(const std::shared_ptr<Station> &station)
+// {
+//     Vector2Int cursorPos = ToVector2Int(GameManager::GetWorldMousePos());
+//     auto allTiles = station->GetTilesWithHeightAtPosition(cursorPos, GameManager::GetSelectedHeight());
 
-    if (!IsKeyDown(KEY_LEFT_SHIFT))
-        GameManager::ClearSelectedTiles();
+//     if (allTiles.empty())
+//     {
+//         if (!IsKeyDown(KEY_LEFT_SHIFT))
+//         {
+//             GameManager::ClearSelectedTiles();
+//         }
+//         return;
+//     }
 
-    if (auto allTiles = station->GetTilesWithHeightAtPosition(cursorPos, GameManager::GetSelectedHeight()); !allTiles.empty())
-    {
-        auto selectedTile = GameManager::GetSelectedTiles();
+//     auto clickedTile = allTiles[0];
+//     bool isSelectedTile = false;
 
-        GameManager::ToggleSelectedTile(allTiles[0]);
+//     for (const auto &weakTile : GameManager::GetSelectedTiles())
+//     {
+//         if (auto selectedTile = weakTile.lock(); selectedTile && selectedTile == clickedTile)
+//         {
+//             isSelectedTile = true;
+//             break;
+//         }
+//     }
 
-        // for (int i = allTiles.size() - 1; i >= 0; --i)
-        // {
-        //     if (allTiles[i] == selectedTile && i > 0)
-        //     {
-        //         GameManager::SetSelectedTile(allTiles[i - 1]);
-        //         break;
-        //     }
-        //     else if (i == 0)
-        //         GameManager::SetSelectedTile(allTiles[allTiles.size() - 1]);
-        // }
-    }
-}
+//     if (IsKeyDown(KEY_LEFT_SHIFT))
+//     {
+//         GameManager::ToggleSelectedTile(clickedTile);
+//     }
+//     else if (isSelectedTile && GameManager::GetSelectedTiles().size() == 1)
+//     {
+//         GameManager::ClearSelectedTiles();
+//     }
+//     else
+//     {
+//         GameManager::ClearSelectedTiles();
+//         GameManager::SetSelectedTile(clickedTile);
+//     }
+// }
 
 void HandlePlaceTile(const std::shared_ptr<Station> &station)
 {
@@ -110,10 +125,10 @@ void HandleBuildMode()
 
     // if (GameManager::GetMoveTile())
     //     HandleTileMovement(station);
-    // else 
-    if (GameManager::GetBuildTileId().empty())
-        HandleSelectTile(station);
-    else
+    // else
+    // if (GameManager::GetBuildTileId().empty())
+    //     HandleSelectTile(station);
+    // else
         HandlePlaceTile(station);
 }
 

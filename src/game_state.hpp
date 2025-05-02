@@ -75,10 +75,11 @@ public:
     static void ToggleSelectedHeight(TileDef::Height height) { GetInstance().selectedHeight ^= height; }
     static void ClearSelectedHeight() { GetInstance().selectedHeight = TileDef::Height::NONE; }
 
-    static const std::vector<std::weak_ptr<Tile>> &GetSelectedTiles() { return GetInstance().selectedTileList; }
-    static void ClearSelectedTiles() { GetInstance().selectedTileList.clear(); }
-    static void ToggleSelectedTile(const std::shared_ptr<Tile> &tile);
-    static bool IsTileSelected(const std::shared_ptr<Tile> &tile);
+    // static const std::vector<std::weak_ptr<Tile>> &GetSelectedTiles() { return GetInstance().selectedTileList; }
+    // static void ClearSelectedTiles() { GetInstance().selectedTileList.clear(); }
+    // static void ToggleSelectedTile(const std::shared_ptr<Tile> &tile);
+    // static void SetSelectedTile(const std::shared_ptr<Tile> &tile, bool select = true);
+    // static bool IsTileSelected(const std::shared_ptr<Tile> &tile);
 
     static const std::string &GetBuildTileId() { return GetInstance().buildTileId; }
     static void SetBuildTileId(const std::string &tileId) { GetInstance().buildTileId = tileId; }

@@ -72,27 +72,39 @@ void GameManager::ToggleSelectedCrew(const std::shared_ptr<Crew> &crew)
         selectedCrewList.erase(crewIter);
 }
 
-void GameManager::ToggleSelectedTile(const std::shared_ptr<Tile> &tile)
-{
-    auto &selectedTileList = GetInstance().selectedTileList;
-    const auto tileIter = std::find_if(selectedTileList.begin(), selectedTileList.end(), [&tile](std::weak_ptr<Tile> _tile)
-                                       { return !_tile.expired() && _tile.lock() == tile; });
+// void GameManager::ToggleSelectedTile(const std::shared_ptr<Tile> &tile)
+// {
+//     auto &selectedTileList = GetInstance().selectedTileList;
+//     const auto tileIter = std::find_if(selectedTileList.begin(), selectedTileList.end(), [&tile](std::weak_ptr<Tile> _tile)
+//                                        { return !_tile.expired() && _tile.lock() == tile; });
 
-    if (tileIter == selectedTileList.end())
-        selectedTileList.push_back(tile);
-    else
-        selectedTileList.erase(tileIter);
-}
+//     if (tileIter == selectedTileList.end())
+//         selectedTileList.push_back(tile);
+//     else
+//         selectedTileList.erase(tileIter);
+// }
 
-bool GameManager::IsTileSelected(const std::shared_ptr<Tile> &tile)
-{
-    for (const auto &selectedTile : GetSelectedTiles())
-    {
-        if (selectedTile.lock() == tile)
-            return true;
-    }
-    return false;
-}
+// void GameManager::SetSelectedTile(const std::shared_ptr<Tile> &tile, bool select)
+// {
+//     auto &selectedTileList = GetInstance().selectedTileList;
+//     const auto tileIter = std::find_if(selectedTileList.begin(), selectedTileList.end(), [&tile](std::weak_ptr<Tile> _tile)
+//                                        { return !_tile.expired() && _tile.lock() == tile; });
+
+//     if (select && tileIter == selectedTileList.end())
+//         selectedTileList.push_back(tile);
+//     else if (!select && tileIter != selectedTileList.end())
+//         selectedTileList.erase(tileIter);
+// }
+
+// bool GameManager::IsTileSelected(const std::shared_ptr<Tile> &tile)
+// {
+//     for (const auto &selectedTile : GetSelectedTiles())
+//     {
+//         if (selectedTile.lock() == tile)
+//             return true;
+//     }
+//     return false;
+// }
 
 /**
  * Converts the current mouse position from screen coordinates to world coordinates.
