@@ -209,7 +209,7 @@ void DrawStationOverlays()
     {
         Vector2 screenPos = GameManager::WorldToScreen(Vector2(0, 0));
         screenPos.y -= .5 * TILE_SIZE * zoom;
-        DrawLineEx(Vector2(0, screenPos.y), Vector2(GetScreenWidth(), screenPos.y), 2, BLUE);
+        DrawLineEx(Vector2(0, screenPos.y), Vector2(GetScreenSize().x, screenPos.y), 2, BLUE);
     }
 }
 
@@ -396,7 +396,7 @@ void DrawFpsCounter(float deltaTime, float padding, int fontSize)
     const Font &font = AssetManager::GetFont("DEFAULT");
     std::string fpsText = std::format("FPS: {:} ({:.2f}ms)", GetFPS(), deltaTime * 1000.);
     const char *text = fpsText.c_str();
-    DrawTextEx(font, text, Vector2(GetMonitorWidth(GetCurrentMonitor()) - MeasureTextEx(font, text, fontSize, 1).x - padding, padding), fontSize, 1, UI_TEXT_COLOR);
+    DrawTextEx(font, text, Vector2(GetScreenSize().x - MeasureTextEx(font, text, fontSize, 1).x - padding, padding), fontSize, 1, UI_TEXT_COLOR);
 }
 
 /**
