@@ -129,6 +129,7 @@ void HandleBuildMode()
     // if (GameManager::GetBuildTileId().empty())
     //     HandleSelectTile(station);
     // else
+    if (!GameManager::GetBuildTileId().empty())
         HandlePlaceTile(station);
 }
 
