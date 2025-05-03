@@ -89,29 +89,45 @@ void HandlePlaceTile(const std::shared_ptr<Station> &station)
     if (GameManager::IsHorizontalSymmetry())
         posListToPlace.push_back(Vector2Int(cursorPos.x, -cursorPos.y - 1));
 
-    bool canBuild = true;
+    if (GameManager::IsVerticalSymmetry())
+        posListToPlace.push_back(Vector2Int(-cursorPos.x - 1, cursorPos.y));
+
+    if (GameManager::IsHorizontalSymmetry() && GameManager::IsVerticalSymmetry())
+        posListToPlace.push_back(Vector2Int(-cursorPos.x - 1, -cursorPos.y - 1));
+
+    bool tilesPlaced = false;
     for (const auto &pos : posListToPlace)
     {
+        bool canBuildAtPos = true;
         auto overlappingTiles = station->GetTilesWithHeightAtPosition(pos, tileDefinition->GetHeight());
+
+        // First check if we can build at this position
         for (auto &tile : overlappingTiles)
         {
             if (tile->GetId() == tileIdToPlace)
             {
-                canBuild = false;
+                canBuildAtPos = false;
                 break;
             }
-            tile->DeleteTile();
+        }
+
+        if (canBuildAtPos)
+        {
+            // Only delete overlapping tiles if we can build here
+            for (auto &tile : overlappingTiles)
+            {
+                tile->DeleteTile();
+            }
+
+            // Create the new tile
+            auto newTile = Tile::CreateTile(tileIdToPlace, pos, station);
+            LogMessage(LogLevel::DEBUG, std::format("Placed tile {} at {}", tileIdToPlace, ToString(pos)));
+            tilesPlaced = true;
         }
     }
 
-    if (canBuild)
+    if (tilesPlaced)
     {
-        for (const auto &pos : posListToPlace)
-        {
-            auto newTile = Tile::CreateTile(tileIdToPlace, pos, station);
-            LogMessage(LogLevel::DEBUG, std::format("Placed tile {} at {}", tileIdToPlace, ToString(pos)));
-        }
-
         station->UpdateSpriteOffsets();
     }
 }

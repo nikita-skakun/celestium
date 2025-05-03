@@ -213,12 +213,12 @@ void InitializeBuildWorldUi()
     constexpr Vector2 ICON_SIZE = BUTTON_SIZE * 3.f / 4.f;
     constexpr Vector2 ICON_OFFSET = (BUTTON_SIZE - ICON_SIZE) / 2.;
 
-    auto onToggle = [](bool _)
+    auto onHorizontalSymmetryToggle = [](bool _)
     {
         GameManager::ToggleHorizontalSymmetry();
     };
     Vector2 buildMovePos = Vector2(SPACING.x, .5 - SPACING.y / 2. - BUTTON_SIZE.y);
-    auto horizonalSymmetryToggle = std::make_shared<UiToggle>(Vector2ToRect(buildMovePos, BUTTON_SIZE), GameManager::IsHorizontalSymmetry(), onToggle);
+    auto horizonalSymmetryToggle = std::make_shared<UiToggle>(Vector2ToRect(buildMovePos, BUTTON_SIZE), GameManager::IsHorizontalSymmetry(), onHorizontalSymmetryToggle);
 
     std::weak_ptr<UiToggle> _horizontalSymmetryToggle = horizonalSymmetryToggle;
     horizonalSymmetryToggle->SetOnUpdate([_horizontalSymmetryToggle]()
@@ -231,6 +231,25 @@ void InitializeBuildWorldUi()
     auto buildMoveIcon = std::make_shared<UiIcon>(Vector2ToRect(buildMovePos + ICON_OFFSET, ICON_SIZE), "ICON", Rectangle(6, 1, 1, 1) * TILE_SIZE, Fade(DARKGRAY, .8));
     horizonalSymmetryToggle->AddChild(buildMoveIcon);
     UiManager::AddElement("BUILD_HOR_SYM_BTN", horizonalSymmetryToggle);
+
+    auto onVerticalSymmetryToggle = [](bool _)
+    {
+        GameManager::ToggleVerticalSymmetry();
+    };
+    Vector2 verticalTogglePos = Vector2(SPACING.x + BUTTON_SIZE.x + SPACING.x, .5 - SPACING.y / 2. - BUTTON_SIZE.y);
+    auto verticalSymmetryToggle = std::make_shared<UiToggle>(Vector2ToRect(verticalTogglePos, BUTTON_SIZE), GameManager::IsVerticalSymmetry(), onVerticalSymmetryToggle);
+
+    std::weak_ptr<UiToggle> _verticalSymmetryToggle = verticalSymmetryToggle;
+    verticalSymmetryToggle->SetOnUpdate([_verticalSymmetryToggle]()
+                                        { if (auto verticalSymmetryToggle = _verticalSymmetryToggle.lock())
+                                    { 
+                                        verticalSymmetryToggle->SetVisible(GameManager::IsInBuildMode() && GameManager::GetCamera().IsUiClear());
+                                        verticalSymmetryToggle->SetToggle(GameManager::IsVerticalSymmetry());
+                                    } });
+
+    auto verticalSymIcon = std::make_shared<UiIcon>(Vector2ToRect(verticalTogglePos + ICON_OFFSET, ICON_SIZE), "ICON", Rectangle(5, 1, 1, 1) * TILE_SIZE, Fade(DARKGRAY, .8));
+    verticalSymmetryToggle->AddChild(verticalSymIcon);
+    UiManager::AddElement("BUILD_VER_SYM_BTN", verticalSymmetryToggle);
 }
 
 struct TileToggleConfig

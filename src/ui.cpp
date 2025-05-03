@@ -211,6 +211,13 @@ void DrawStationOverlays()
         screenPos.y -= .5 * TILE_SIZE * zoom;
         DrawLineEx(Vector2(0, screenPos.y), Vector2(GetScreenSize().x, screenPos.y), 2, BLUE);
     }
+    
+    if (GameManager::IsInBuildMode() && GameManager::IsVerticalSymmetry())
+    {
+        Vector2 screenPos = GameManager::WorldToScreen(Vector2(0, 0));
+        screenPos.x -= .5 * TILE_SIZE * zoom;
+        DrawLineEx(Vector2(screenPos.x, 0), Vector2(screenPos.x, GetScreenSize().y), 2, BLUE);
+    }
 }
 
 void DrawTileOutline(const std::shared_ptr<Tile> &tile, Color color)

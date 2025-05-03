@@ -34,6 +34,7 @@ private:
     // std::weak_ptr<Tile> moveTile;
     bool buildMode = false;
     bool horizontalSymmetry = true;
+    bool verticalSymmetry = false;
     std::string buildTileId = "";
 
     GameManager() = default;
@@ -95,6 +96,10 @@ public:
     static void SetHorizontalSymmetry(bool newState) { GetInstance().horizontalSymmetry = newState; }
     static void ToggleHorizontalSymmetry() { GetInstance().horizontalSymmetry = !GetInstance().horizontalSymmetry; }
 
+    static bool IsVerticalSymmetry() { return GetInstance().verticalSymmetry; }
+    static void SetVerticalSymmetry(bool newState) { GetInstance().verticalSymmetry = newState; }
+    static void ToggleVerticalSymmetry() { GetInstance().verticalSymmetry = !GetInstance().verticalSymmetry; }
+    
     // static bool IsInMoveMode() { return !GetInstance().moveTile.expired(); }
     // static std::shared_ptr<Tile> GetMoveTile() { return GetInstance().moveTile.lock(); }
     // static void ClearMoveTile() { GetInstance().moveTile.reset(); }
