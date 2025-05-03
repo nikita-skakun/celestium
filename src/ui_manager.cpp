@@ -218,19 +218,19 @@ void InitializeBuildWorldUi()
         GameManager::ToggleHorizontalSymmetry();
     };
     Vector2 buildMovePos = Vector2(SPACING.x, .5 - SPACING.y / 2. - BUTTON_SIZE.y);
-    auto horizonalSymmetryToggle = std::make_shared<UiToggle>(Vector2ToRect(buildMovePos, BUTTON_SIZE), GameManager::IsHorizontalSymmetry(), onHorizontalSymmetryToggle);
+    auto horizontalSymmetryToggle = std::make_shared<UiToggle>(Vector2ToRect(buildMovePos, BUTTON_SIZE), GameManager::IsHorizontalSymmetry(), onHorizontalSymmetryToggle);
 
-    std::weak_ptr<UiToggle> _horizontalSymmetryToggle = horizonalSymmetryToggle;
-    horizonalSymmetryToggle->SetOnUpdate([_horizontalSymmetryToggle]()
-                                         { if (auto horizonalSymmetryToggle = _horizontalSymmetryToggle.lock())
+    std::weak_ptr<UiToggle> _horizontalSymmetryToggle = horizontalSymmetryToggle;
+    horizontalSymmetryToggle->SetOnUpdate([_horizontalSymmetryToggle]()
+                                         { if (auto horizontalSymmetryToggle = _horizontalSymmetryToggle.lock())
                                     { 
-                                        horizonalSymmetryToggle->SetVisible(GameManager::IsInBuildMode() && GameManager::GetCamera().IsUiClear());
-                                        horizonalSymmetryToggle->SetToggle(GameManager::IsHorizontalSymmetry());
+                                        horizontalSymmetryToggle->SetVisible(GameManager::IsInBuildMode() && GameManager::GetCamera().IsUiClear());
+                                        horizontalSymmetryToggle->SetToggle(GameManager::IsHorizontalSymmetry());
                                     } });
 
     auto buildMoveIcon = std::make_shared<UiIcon>(Vector2ToRect(buildMovePos + ICON_OFFSET, ICON_SIZE), "ICON", Rectangle(6, 1, 1, 1) * TILE_SIZE, Fade(DARKGRAY, .8));
-    horizonalSymmetryToggle->AddChild(buildMoveIcon);
-    UiManager::AddElement("BUILD_HOR_SYM_BTN", horizonalSymmetryToggle);
+    horizontalSymmetryToggle->AddChild(buildMoveIcon);
+    UiManager::AddElement("BUILD_HOR_SYM_BTN", horizontalSymmetryToggle);
 
     auto onVerticalSymmetryToggle = [](bool _)
     {
