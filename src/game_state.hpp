@@ -9,9 +9,10 @@ struct Tile;
 enum class GameState : uint8_t
 {
     NONE = 0,
-    RUNNING = 1 << 0,
-    PAUSED = 1 << 1,
-    FORCE_PAUSED = 1 << 2,
+    GAME_SIM = 1 << 0,     // Game simulation is running
+    MAIN_MENU = 1 << 1,    // Main menu is open
+    PAUSED = 1 << 2,       // Pauses the game based on user input
+    FORCE_PAUSED = 1 << 3, // Pauses the game when the UI is open
 };
 
 template <>
@@ -50,7 +51,8 @@ private:
 
 public:
     static GameState GetGameState() { return GetInstance().state; }
-    static bool IsGameRunning() { return magic_enum::enum_flags_test(GetGameState(), GameState::RUNNING); }
+    static bool IsInGameSim() { return magic_enum::enum_flags_test(GetGameState(), GameState::GAME_SIM); }
+    static bool IsInMainMenu() { return magic_enum::enum_flags_test(GetGameState(), GameState::MAIN_MENU); }
     static bool IsGamePaused() { return magic_enum::enum_flags_test_any(GetGameState(), GameState::PAUSED | GameState::FORCE_PAUSED); }
     static void SetGameState(GameState mask, bool bitState = true);
     static void ToggleGameState(GameState mask) { GetInstance().state ^= mask; }
@@ -99,7 +101,7 @@ public:
     static bool IsVerticalSymmetry() { return GetInstance().verticalSymmetry; }
     static void SetVerticalSymmetry(bool newState) { GetInstance().verticalSymmetry = newState; }
     static void ToggleVerticalSymmetry() { GetInstance().verticalSymmetry = !GetInstance().verticalSymmetry; }
-    
+
     // static bool IsInMoveMode() { return !GetInstance().moveTile.expired(); }
     // static std::shared_ptr<Tile> GetMoveTile() { return GetInstance().moveTile.lock(); }
     // static void ClearMoveTile() { GetInstance().moveTile.reset(); }

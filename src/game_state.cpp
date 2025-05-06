@@ -57,7 +57,7 @@ void GameManager::Initialize()
     manager.buildMode = false;
     manager.buildTileId = "";
 
-    manager.state = GameState::RUNNING;
+    manager.state = GameState::GAME_SIM;
 }
 
 void GameManager::ToggleSelectedCrew(const std::shared_ptr<Crew> &crew)

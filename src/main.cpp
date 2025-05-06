@@ -1,55 +1,13 @@
 #include "asset_manager.hpp"
 #include "audio_manager.hpp"
 #include "def_manager.hpp"
+#include "fixed_update.hpp"
 #include "game_state.hpp"
 #include "logging.hpp"
 #include "ui_manager.hpp"
 #include "ui.hpp"
 #include "update.hpp"
-#include <condition_variable>
-#include <mutex>
 #include <thread>
-
-std::mutex updateMutex;
-std::condition_variable fixedUpdateCondition;
-
-void FixedUpdate(double &timeSinceFixedUpdate)
-{
-    double previousTime = GetTime();
-
-    while (GameManager::IsGameRunning())
-    {
-        if (!GameManager::IsGamePaused())
-        {
-            double currentTime = GetTime();
-            double deltaTime = currentTime - previousTime;
-            previousTime = currentTime;
-
-            timeSinceFixedUpdate += deltaTime;
-
-            while (timeSinceFixedUpdate >= FIXED_DELTA_TIME)
-            {
-                std::unique_lock<std::mutex> lock(updateMutex);
-
-                // Perform the fixed updates
-                HandleCrewActions();
-                HandleCrewEnvironment();
-                UpdateCrewCurrentTile();
-                UpdateEnvironmentalEffects();
-                UpdateTiles();
-                fixedUpdateCondition.notify_all();
-
-                timeSinceFixedUpdate -= FIXED_DELTA_TIME;
-            }
-        }
-        else
-        {
-            previousTime = GetTime();
-        }
-
-        std::this_thread::sleep_for(std::chrono::milliseconds(std::max(1, (int)(1000 * (FIXED_DELTA_TIME - timeSinceFixedUpdate)))));
-    }
-}
 
 int main()
 {
@@ -82,7 +40,7 @@ int main()
                              { FixedUpdate(timeSinceFixedUpdate); });
     double deltaTime = 0;
 
-    while (GameManager::IsGameRunning())
+    while (GameManager::IsInGameSim())
     {
         bool isForcePaused = camera.GetUiState() != PlayerCam::UiState::NONE || GameManager::IsInBuildMode();
         GameManager::SetGameState(GameState::FORCE_PAUSED, isForcePaused);
@@ -144,7 +102,7 @@ int main()
         EndDrawing();
 
         if (WindowShouldClose())
-            GameManager::SetGameState(GameState::RUNNING, false);
+            GameManager::SetGameState(GameState::GAME_SIM, false);
     }
 
     updateThread.join();

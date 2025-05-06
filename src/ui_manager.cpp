@@ -44,7 +44,7 @@ void InitializeEscapeMenu()
 
     constexpr Rectangle exitButtonRect = Rectangle(buttonPosX, firstButtonPosY + 2. * (buttonHeight + spacing.y), buttonWidth, buttonHeight);
     auto exitButton = std::make_shared<UiButton>(exitButtonRect, "Exit", []()
-                                                 { GameManager::SetGameState(GameState::RUNNING, false); });
+                                                 { GameManager::SetGameState(GameState::GAME_SIM, false); });
     menuBackground->AddChild(exitButton);
 
     UiManager::AddElement("ESC_MENU", escMenu);
