@@ -38,14 +38,11 @@ int main()
     // Start the update thread
     std::thread updateThread([&]()
                              { FixedUpdate(timeSinceFixedUpdate); });
-    double deltaTime = 0;
 
     while (GameManager::IsInGameSim())
     {
         bool isForcePaused = camera.GetUiState() != PlayerCam::UiState::NONE || GameManager::IsInBuildMode();
         GameManager::SetGameState(GameState::FORCE_PAUSED, isForcePaused);
-
-        deltaTime = GetFrameTime();
 
         // Handle all real-time input and camera logic in the main thread
         camera.HandleMovement();
@@ -92,7 +89,7 @@ int main()
         {
             DrawDragSelectBox();
             DrawMainTooltip();
-            DrawFpsCounter(deltaTime);
+            DrawFpsCounter();
         }
 
         UiManager::Render();

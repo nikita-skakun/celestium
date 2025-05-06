@@ -15,7 +15,7 @@ void DrawEnvironmentalEffects();
 void DrawCrew(double timeSinceFixedUpdate);
 void DrawCrewActionProgress();
 void DrawDragSelectBox();
-void DrawFpsCounter(float deltaTime, float padding = DEFAULT_PADDING, int fontSize = DEFAULT_FONT_SIZE);
+void DrawFpsCounter();
 void DrawTooltip(const std::string &tooltip, const Vector2 &pos, float padding = DEFAULT_PADDING, int fontSize = DEFAULT_FONT_SIZE);
 void DrawMainTooltip();
 void DrawBuildUi();
