@@ -1,6 +1,7 @@
 #pragma once
 #include "camera.hpp"
 #include "tile_def.hpp"
+#include <thread>
 
 struct Crew;
 struct Station;
@@ -8,23 +9,15 @@ struct Tile;
 
 enum class GameState : uint8_t
 {
-    NONE = 0,
-    GAME_SIM = 1 << 0,     // Game simulation is running
-    MAIN_MENU = 1 << 1,    // Main menu is open
-    PAUSED = 1 << 2,       // Pauses the game based on user input
-    FORCE_PAUSED = 1 << 3, // Pauses the game when the UI is open
-};
-
-template <>
-struct magic_enum::customize::enum_range<GameState>
-{
-    static constexpr bool is_flags = true;
+    NONE,
+    MAIN_MENU, // Main menu is open
+    GAME_SIM,  // Game simulation is running
 };
 
 struct GameManager
 {
 private:
-    GameState state = GameState::NONE;
+    GameState state = GameState::MAIN_MENU;
     PlayerCam camera = PlayerCam();
     std::vector<std::shared_ptr<Crew>> crewList;
     std::vector<std::weak_ptr<Crew>> hoveredCrewList;
@@ -34,9 +27,14 @@ private:
     std::shared_ptr<Station> station;
     // std::weak_ptr<Tile> moveTile;
     bool buildMode = false;
+    bool paused = false;
+    bool forcePaused = false;
     bool horizontalSymmetry = true;
     bool verticalSymmetry = false;
     std::string buildTileId = "";
+
+    double timeSinceFixedUpdate = 0;
+    std::thread updateThread;
 
     GameManager() = default;
     ~GameManager() = default;
@@ -51,16 +49,23 @@ private:
 
 public:
     static GameState GetGameState() { return GetInstance().state; }
-    static bool IsInGameSim() { return magic_enum::enum_flags_test(GetGameState(), GameState::GAME_SIM); }
-    static bool IsInMainMenu() { return magic_enum::enum_flags_test(GetGameState(), GameState::MAIN_MENU); }
-    static bool IsGamePaused() { return magic_enum::enum_flags_test_any(GetGameState(), GameState::PAUSED | GameState::FORCE_PAUSED); }
-    static void SetGameState(GameState mask, bool bitState = true);
-    static void ToggleGameState(GameState mask) { GetInstance().state ^= mask; }
+    static bool IsGameRunning() { return GetInstance().state != GameState::NONE; }
+    static bool IsInGameSim() { return GetGameState() == GameState::GAME_SIM; }
+    static bool IsInMainMenu() { return GetGameState() == GameState::MAIN_MENU; }
+    static void SetGameState(GameState state);
+
+    static bool IsGamePaused() { return GetInstance().paused || GetInstance().forcePaused; }
+    static void SetGamePaused(bool newState) { GetInstance().paused = newState; }
+    static void ToggleGamePaused() { GetInstance().paused = !GetInstance().paused; }
+    static void SetForcePaused(bool newState) { GetInstance().forcePaused = newState; }
+
+    static double GetTimeSinceFixedUpdate() { return GetInstance().timeSinceFixedUpdate; }
 
     static PlayerCam &GetCamera() { return GetInstance().camera; }
     static void HandleStateInputs();
 
     static void Initialize();
+    static void PrepareTestWorld();
 
     static const std::vector<std::shared_ptr<Crew>> &GetCrewList() { return GetInstance().crewList; }
 

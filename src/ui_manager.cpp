@@ -44,7 +44,7 @@ void InitializeEscapeMenu()
 
     constexpr Rectangle exitButtonRect = Rectangle(buttonPosX, firstButtonPosY + 2. * (buttonHeight + spacing.y), buttonWidth, buttonHeight);
     auto exitButton = std::make_shared<UiButton>(exitButtonRect, "Exit", []()
-                                                 { GameManager::SetGameState(GameState::GAME_SIM, false); });
+                                                 { GameManager::SetGameState(GameState::NONE); });
     menuBackground->AddChild(exitButton);
 
     UiManager::AddElement("ESC_MENU", escMenu);
@@ -222,7 +222,7 @@ void InitializeBuildWorldUi()
 
     std::weak_ptr<UiToggle> _horizontalSymmetryToggle = horizontalSymmetryToggle;
     horizontalSymmetryToggle->SetOnUpdate([_horizontalSymmetryToggle]()
-                                         { if (auto horizontalSymmetryToggle = _horizontalSymmetryToggle.lock())
+                                          { if (auto horizontalSymmetryToggle = _horizontalSymmetryToggle.lock())
                                     { 
                                         horizontalSymmetryToggle->SetVisible(GameManager::IsInBuildMode() && GameManager::GetCamera().IsUiClear());
                                         horizontalSymmetryToggle->SetToggle(GameManager::IsHorizontalSymmetry());

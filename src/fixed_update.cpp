@@ -1,10 +1,7 @@
 #include "fixed_update.hpp"
 #include "game_state.hpp"
 #include "update.hpp"
-#include "logging.hpp"
 #include <chrono>
-#include <thread>
-#include <algorithm>
 
 std::mutex updateMutex;
 std::condition_variable fixedUpdateCondition;

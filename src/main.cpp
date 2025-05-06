@@ -1,13 +1,11 @@
 #include "asset_manager.hpp"
 #include "audio_manager.hpp"
 #include "def_manager.hpp"
-#include "fixed_update.hpp"
 #include "game_state.hpp"
 #include "logging.hpp"
 #include "ui_manager.hpp"
 #include "ui.hpp"
 #include "update.hpp"
-#include <thread>
 
 int main()
 {
@@ -24,6 +22,7 @@ int main()
     AudioManager::Initialize();
 
     GameManager::Initialize();
+    GameManager::SetGameState(GameState::GAME_SIM);
 
     auto &camera = GameManager::GetCamera();
 
@@ -34,15 +33,10 @@ int main()
 
     LogMessage(LogLevel::INFO, "Initialization Complete");
 
-    double timeSinceFixedUpdate = 0; // Elapsed time since the last fixed update in seconds
-    // Start the update thread
-    std::thread updateThread([&]()
-                             { FixedUpdate(timeSinceFixedUpdate); });
-
-    while (GameManager::IsInGameSim())
+    while (GameManager::IsGameRunning())
     {
         bool isForcePaused = camera.GetUiState() != PlayerCam::UiState::NONE || GameManager::IsInBuildMode();
-        GameManager::SetGameState(GameState::FORCE_PAUSED, isForcePaused);
+        GameManager::SetForcePaused(isForcePaused);
 
         // Handle all real-time input and camera logic in the main thread
         camera.HandleMovement();
@@ -76,7 +70,7 @@ int main()
 
         if (!GameManager::IsInBuildMode())
         {
-            DrawCrew(timeSinceFixedUpdate);
+            DrawCrew();
             DrawEnvironmentalEffects();
             DrawCrewActionProgress();
         }
@@ -99,10 +93,8 @@ int main()
         EndDrawing();
 
         if (WindowShouldClose())
-            GameManager::SetGameState(GameState::GAME_SIM, false);
+            GameManager::SetGameState(GameState::NONE);
     }
-
-    updateThread.join();
 
     AssetManager::CleanUp();
     AudioManager::CleanUp();

@@ -1,13 +1,40 @@
 #include "crew.hpp"
 #include "game_state.hpp"
 #include "station.hpp"
+#include "fixed_update.hpp"
 
-void GameManager::SetGameState(GameState mask, bool bitState)
+void GameManager::SetGameState(GameState state)
 {
-    if (bitState)
-        GetInstance().state |= mask;
-    else
-        GetInstance().state &= ~mask;
+    auto &manager = GetInstance();
+    if (state == GameManager::GetGameState())
+        return;
+
+    manager.state = state;
+
+    if (state != GameState::GAME_SIM && manager.updateThread.joinable())
+    {
+        manager.updateThread.join();
+        manager.timeSinceFixedUpdate = 0;
+    }
+
+    switch (state)
+    {
+    case GameState::MAIN_MENU:
+    {
+        Initialize();
+        break;
+    }
+    case GameState::GAME_SIM:
+    {
+        PrepareTestWorld();
+
+        manager.updateThread = std::thread([&]()
+                                           { FixedUpdate(manager.timeSinceFixedUpdate); });
+        break;
+    }
+    default:
+        break;
+    }
 }
 
 /**
@@ -24,7 +51,7 @@ void GameManager::HandleStateInputs()
         return;
 
     if (IsKeyPressed(KEY_SPACE) && !IsInBuildMode())
-        ToggleGameState(GameState::PAUSED);
+        ToggleGamePaused();
 
     if (IsKeyPressed(KEY_O))
         camera.ToggleOverlay(PlayerCam::Overlay::OXYGEN);
@@ -44,6 +71,23 @@ void GameManager::Initialize()
     auto &manager = GetInstance();
 
     manager.camera = PlayerCam();
+    manager.crewList.empty();
+    manager.hoveredCrewList.empty();
+    manager.selectedCrewList.empty();
+    manager.station = nullptr;
+    manager.buildMode = false;
+    manager.paused = false;
+    manager.forcePaused = false;
+    manager.horizontalSymmetry = true;
+    manager.verticalSymmetry = false;
+    manager.buildTileId = "";
+}
+
+void GameManager::PrepareTestWorld()
+{
+    auto &manager = GetInstance();
+
+    manager.camera = PlayerCam();
     manager.station = CreateStation();
     manager.crewList = {
         std::make_shared<Crew>("ALICE", Vector2(-2, 2), RED),
@@ -51,13 +95,8 @@ void GameManager::Initialize()
         std::make_shared<Crew>("CHARLIE", Vector2(-3, -3), ORANGE)};
     manager.selectedCrewList.clear();
     manager.hoveredCrewList.clear();
-    // manager.selectedTileList.clear();
-    // manager.selectedHeight = TileDef::Height::NONE;
-    // manager.moveTile.reset();
     manager.buildMode = false;
     manager.buildTileId = "";
-
-    manager.state = GameState::GAME_SIM;
 }
 
 void GameManager::ToggleSelectedCrew(const std::shared_ptr<Crew> &crew)

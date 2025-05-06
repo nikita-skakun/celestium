@@ -285,10 +285,8 @@ void DrawCrewCircle(const std::shared_ptr<Crew> &crew, const Vector2 &drawPositi
 
 /**
  * Draws the crew members on the screen, accounting for their movement.
- *
- * @param timeSinceFixedUpdate The elapsed time since the last fixed update.
  */
-void DrawCrew(double timeSinceFixedUpdate)
+void DrawCrew()
 {
     auto &crewList = GameManager::GetCrewList();
     for (const auto &crew : crewList)
@@ -305,7 +303,7 @@ void DrawCrew(double timeSinceFixedUpdate)
                 DrawPath(moveAction->path, crew->GetPosition());
                 Vector2 nextPosition = ToVector2(moveAction->path.front());
 
-                const float moveDelta = timeSinceFixedUpdate * CREW_MOVE_SPEED;
+                const float moveDelta = GameManager::GetTimeSinceFixedUpdate() * CREW_MOVE_SPEED;
                 const float distanceLeftSq = Vector2DistanceSq(crew->GetPosition(), nextPosition) - moveDelta * moveDelta;
                 if (distanceLeftSq <= 0)
                 {

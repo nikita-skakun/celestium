@@ -12,7 +12,7 @@ void DrawStationTiles();
 void DrawStationOverlays();
 void DrawTileOutline(const std::shared_ptr<Tile> &tile, Color color);
 void DrawEnvironmentalEffects();
-void DrawCrew(double timeSinceFixedUpdate);
+void DrawCrew();
 void DrawCrewActionProgress();
 void DrawDragSelectBox();
 void DrawFpsCounter();
