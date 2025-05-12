@@ -18,6 +18,7 @@ struct GameManager
 {
 private:
     GameState state = GameState::MAIN_MENU;
+    std::optional<GameState> pendingState = std::nullopt;
     PlayerCam camera = PlayerCam();
     std::vector<std::shared_ptr<Crew>> crewList;
     std::vector<std::weak_ptr<Crew>> hoveredCrewList;
@@ -53,6 +54,17 @@ public:
     static bool IsInGameSim() { return GetGameState() == GameState::GAME_SIM; }
     static bool IsInMainMenu() { return GetGameState() == GameState::MAIN_MENU; }
     static void SetGameState(GameState state);
+
+    static void RequestStateChange(GameState newState) { GetInstance().pendingState = newState; }
+    static void ApplyPendingState()
+    {
+        auto &instance = GetInstance();
+        if (instance.pendingState.has_value())
+        {
+            SetGameState(instance.pendingState.value());
+            instance.pendingState.reset();
+        }
+    }
 
     static bool IsGamePaused() { return GetInstance().paused || GetInstance().forcePaused; }
     static void SetGamePaused(bool newState) { GetInstance().paused = newState; }

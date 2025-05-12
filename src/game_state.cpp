@@ -1,7 +1,8 @@
 #include "crew.hpp"
+#include "fixed_update.hpp"
 #include "game_state.hpp"
 #include "station.hpp"
-#include "fixed_update.hpp"
+#include "ui_manager.hpp"
 
 void GameManager::SetGameState(GameState state)
 {
@@ -17,6 +18,8 @@ void GameManager::SetGameState(GameState state)
         manager.timeSinceFixedUpdate = 0;
     }
 
+    UiManager::ClearAllElements();
+
     switch (state)
     {
     case GameState::MAIN_MENU:
@@ -27,6 +30,7 @@ void GameManager::SetGameState(GameState state)
     case GameState::GAME_SIM:
     {
         PrepareTestWorld();
+        UiManager::InitializeGameSim();
 
         manager.updateThread = std::thread([&]()
                                            { FixedUpdate(manager.timeSinceFixedUpdate); });
@@ -71,9 +75,9 @@ void GameManager::Initialize()
     auto &manager = GetInstance();
 
     manager.camera = PlayerCam();
-    manager.crewList.empty();
-    manager.hoveredCrewList.empty();
-    manager.selectedCrewList.empty();
+    manager.crewList.clear();
+    manager.hoveredCrewList.clear();
+    manager.selectedCrewList.clear();
     manager.station = nullptr;
     manager.buildMode = false;
     manager.paused = false;

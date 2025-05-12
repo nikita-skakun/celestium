@@ -6,7 +6,7 @@
 
 void InitializeEscapeMenu()
 {
-    constexpr int buttonCount = 3;
+    constexpr int buttonCount = 4;
     constexpr double buttonWidth = 1. / 12.;
     constexpr Vector2 spacing = Vector2ScreenScale(Vector2(DEFAULT_PADDING, DEFAULT_PADDING));
     constexpr double buttonHeight = 1. / 24.;
@@ -42,9 +42,14 @@ void InitializeEscapeMenu()
                                                      { GameManager::GetCamera().SetUiState(PlayerCam::UiState::SETTINGS_MENU); });
     menuBackground->AddChild(settingsButton);
 
-    constexpr Rectangle exitButtonRect = Rectangle(buttonPosX, firstButtonPosY + 2. * (buttonHeight + spacing.y), buttonWidth, buttonHeight);
+    constexpr Rectangle mainMenuButtonRect = Rectangle(buttonPosX, firstButtonPosY + 2. * (buttonHeight + spacing.y), buttonWidth, buttonHeight);
+    auto mainMenuButton = std::make_shared<UiButton>(mainMenuButtonRect, "Main Menu", []()
+                                                     { GameManager::RequestStateChange(GameState::MAIN_MENU); });
+    menuBackground->AddChild(mainMenuButton);
+
+    constexpr Rectangle exitButtonRect = Rectangle(buttonPosX, firstButtonPosY + 3. * (buttonHeight + spacing.y), buttonWidth, buttonHeight);
     auto exitButton = std::make_shared<UiButton>(exitButtonRect, "Exit", []()
-                                                 { GameManager::SetGameState(GameState::NONE); });
+                                                 { GameManager::RequestStateChange(GameState::NONE); });
     menuBackground->AddChild(exitButton);
 
     UiManager::AddElement("ESC_MENU", escMenu);
@@ -348,7 +353,7 @@ void UiManager::Render()
     }
 }
 
-void UiManager::InitializeElements()
+void UiManager::InitializeGameSim()
 {
     InitializeSidebar();
     InitializeEscapeMenu();
