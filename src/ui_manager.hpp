@@ -39,6 +39,7 @@ public:
         UiManager::GetInstance().uiElements.clear();
     }
 
+    static void InitializeMainMenu();
     static void InitializeGameSim();
 
     static std::shared_ptr<UiElement> FindUiElementAtPos(const Vector2 &pos);

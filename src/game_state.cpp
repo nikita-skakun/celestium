@@ -25,6 +25,7 @@ void GameManager::SetGameState(GameState state)
     case GameState::MAIN_MENU:
     {
         Initialize();
+        UiManager::InitializeMainMenu();
         break;
     }
     case GameState::GAME_SIM:
@@ -49,25 +50,30 @@ void GameManager::HandleStateInputs()
     auto &camera = GetInstance().camera;
 
     if (IsKeyPressed(KEY_ESCAPE))
-        camera.ToggleUiState(PlayerCam::UiState::ESC_MENU);
+    {
+        if (IsInGameSim())
+            camera.ToggleUiState(PlayerCam::UiState::ESC_MENU);
+        else
+            camera.ToggleUiState(PlayerCam::UiState::NONE);
+    }
 
-    if (!camera.IsUiState(PlayerCam::UiState::NONE))
-        return;
+    if (camera.IsUiState(PlayerCam::UiState::NONE) && IsInGameSim())
+    {
+        if (IsKeyPressed(KEY_SPACE) && !IsInBuildMode())
+            ToggleGamePaused();
 
-    if (IsKeyPressed(KEY_SPACE) && !IsInBuildMode())
-        ToggleGamePaused();
+        if (IsKeyPressed(KEY_O))
+            camera.ToggleOverlay(PlayerCam::Overlay::OXYGEN);
 
-    if (IsKeyPressed(KEY_O))
-        camera.ToggleOverlay(PlayerCam::Overlay::OXYGEN);
+        if (IsKeyPressed(KEY_W))
+            camera.ToggleOverlay(PlayerCam::Overlay::WALL);
 
-    if (IsKeyPressed(KEY_W))
-        camera.ToggleOverlay(PlayerCam::Overlay::WALL);
+        if (IsKeyPressed(KEY_P))
+            camera.ToggleOverlay(PlayerCam::Overlay::POWER);
 
-    if (IsKeyPressed(KEY_P))
-        camera.ToggleOverlay(PlayerCam::Overlay::POWER);
-
-    if (IsKeyPressed(KEY_B))
-        ToggleBuildGameState();
+        if (IsKeyPressed(KEY_B))
+            ToggleBuildGameState();
+    }
 }
 
 void GameManager::Initialize()

@@ -21,8 +21,7 @@ int main()
 
     AudioManager::Initialize();
 
-    GameManager::Initialize();
-    GameManager::SetGameState(GameState::GAME_SIM);
+    GameManager::SetGameState(GameState::MAIN_MENU);
 
     auto &camera = GameManager::GetCamera();
 
@@ -33,6 +32,7 @@ int main()
         BeginDrawing();
         ClearBackground(Color(31, 40, 45));
 
+        GameManager::HandleStateInputs();
         UiManager::Update();
 
         if (GameManager::IsInGameSim())
@@ -41,7 +41,6 @@ int main()
             GameManager::SetForcePaused(shouldForcePause);
 
             camera.HandleMovement();
-            GameManager::HandleStateInputs();
 
             if (!UiManager::IsMouseOverUiElement())
             {
@@ -83,13 +82,13 @@ int main()
             }
         }
 
-        GameManager::ApplyPendingState();
-
         UiManager::Render();
 
         AudioManager::Update();
 
         EndDrawing();
+
+        GameManager::ApplyPendingState();
 
         if (WindowShouldClose())
             GameManager::SetGameState(GameState::NONE);

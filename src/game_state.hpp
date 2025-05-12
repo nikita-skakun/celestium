@@ -17,7 +17,7 @@ enum class GameState : uint8_t
 struct GameManager
 {
 private:
-    GameState state = GameState::MAIN_MENU;
+    GameState state = GameState::NONE;
     std::optional<GameState> pendingState = std::nullopt;
     PlayerCam camera = PlayerCam();
     std::vector<std::shared_ptr<Crew>> crewList;
