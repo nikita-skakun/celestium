@@ -14,14 +14,14 @@ This is a passion project, created as a way to explore advanced programming conc
 | Crew Pathfinding                  | :white_check_mark:   | Crew pathfinding is done with A\* algorithm, which allows for pathing over complex station designs                                          |
 | Air Diffusion                     | :white_check_mark:   | Oxygen spreads from high concentration to low, simulating real-life processes. Crew and fire consume oxygen, while certain tiles produce it |
 | Dynamic Doors                     | :white_check_mark:   | Doors now dynamically separate rooms, only allowing air to spread when it is open                                                           |
-| Cross-Platform Builds             | :construction:       | Implement cross-platform for Linux (Done) and Windows (WIP). MacOS is currently unplanned.                                                  |
+| Main Menu                         | :white_check_mark:   | A basic main menu to start a new game and edit settings                                                                                     |
+| Power Storage and Connections     | :construction:       | A rework is necessary to make power connections be part of the physical game world                                                          |
 | Definitions for Core Game Aspects | :construction:       | The goal is to allow for easy modifications to core game features, (such as what components a tile is composed of)                          |
 | Environmental Effects             | :construction:       | Environmental hazards and objects (like fire and foam), which can effect the crew and the station                                           |
-| Power Storage and Connections     | :construction:       | A rework is necessary to make power connections be part of the physical game world                                                          |
-| Player Station Design             | :construction:       | Currently the player can add, move, rotate and delete tiles. Better build tools and warnings are still necessary                            |
+| Player Station Design             | :construction:       | Currently the player can add and delete tiles. Better build tools and warnings are still necessary                                          |
 | Settings Menu                     | :construction:       | Some basic settings are available, but more work is necessary (key re-binding, etc)                                                         |
 | Music and Sound Effects           | :construction:       | A basic implementation of sound effects is available, but more sounds and testing is still required                                         |
-| Main Menu                         | :white_large_square: | A main menu to start a new game, and load existing game                                                                                     |
+| Cross-Platform Builds             | :construction:       | Implement cross-platform for Linux (Done) and Windows (WIP). MacOS is currently unplanned                                                   |
 | Saving and Loading Game State     | :white_large_square: | Serializing the game state should be relatively straightforward, as tiles already have a tile definition file                               |
 | Resources and Usage               | :white_large_square: | Require resources to build new tiles, and the building process should require crew to work on it, instead of being instant                  |
 | A lot more...                     | :white_large_square: | This project is under active development! Feel free to [suggest a feature](https://github.com/nikita-skakun/celestium/issues/new).          |
