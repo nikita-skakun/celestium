@@ -2,6 +2,7 @@ tiles:
   - id: BLUE_FLOOR
     height: FLOOR
     components:
+      - type: STRUCTURE
       - type: WALKABLE
       - type: OXYGEN
         oxygenLevel: 100.0
@@ -84,6 +85,7 @@ tiles:
   - id: WALL
     height: FLOOR | KNEE | WAIST | CHEST | HEAD
     components:
+      - type: STRUCTURE
       - type: SOLID
       - type: DURABILITY
         hitpoints: 20.0
@@ -205,6 +207,7 @@ tiles:
   - id: FRAME
     height: FLOOR
     components:
+      - type: STRUCTURE
       - type: WALKABLE
     sprite: (1, 0)
   - id: DOOR

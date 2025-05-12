@@ -21,6 +21,7 @@ struct Component : public std::enable_shared_from_this<Component>
         DOOR,
         DURABILITY,
         ROTATABLE,
+        STRUCTURE,
     };
 
     std::weak_ptr<Tile> _parent;
@@ -552,5 +553,18 @@ public:
     }
 
     constexpr Type GetType() const override { return Type::ROTATABLE; }
+    constexpr std::optional<std::string> GetInfo() override { return std::nullopt; }
+};
+
+struct StructureComponent : Component
+{
+    StructureComponent(std::shared_ptr<Tile> parent = nullptr) : Component(parent) {}
+
+    std::shared_ptr<Component> Clone(std::shared_ptr<Tile> newParent) const override
+    {
+        return std::make_shared<StructureComponent>(newParent);
+    }
+
+    constexpr Type GetType() const override { return Type::STRUCTURE; }
     constexpr std::optional<std::string> GetInfo() override { return std::nullopt; }
 };
