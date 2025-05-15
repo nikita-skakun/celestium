@@ -107,6 +107,9 @@ private:
         case Component::Type::ROTATABLE:
             return std::make_shared<RotatableComponent>();
 
+        case Component::Type::STRUCTURE:
+            return std::make_shared<StructureComponent>();
+
         default:
             throw std::runtime_error(std::format("Parsing of component type failed: {}", magic_enum::enum_name(type)));
         }
