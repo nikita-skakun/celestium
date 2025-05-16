@@ -84,6 +84,14 @@ std::shared_ptr<Station> CreateStation()
     station->effects.push_back(std::make_shared<FireEffect>(Vector2Int(12, 0)));
     station->effects.push_back(std::make_shared<FoamEffect>(Vector2Int(13, 0)));
 
+    station->AddPowerWire(Vector2Int(-1, 0));
+    station->AddPowerWire(Vector2Int(1, 0));
+    station->AddPowerWire(Vector2Int(0, -1));
+    station->AddPowerWire(Vector2Int(0, 1));
+
+    // Testing merging power grids
+    station->AddPowerWire(Vector2Int(0, 0));
+
     auto fireAlarm = AudioManager::LoadSoundEffect("../assets/audio/fire_alarm.opus", SoundEffect::Type::EFFECT, false, true, .05);
     std::weak_ptr<SoundEffect> _fireAlarm = fireAlarm;
     fireAlarm->onUpdate = [_fireAlarm, station]()
@@ -328,37 +336,56 @@ std::vector<std::shared_ptr<Tile>> Station::GetTilesWithHeightAtPosition(const V
 
 bool Station::AddPowerWire(const Vector2Int &pos)
 {
-    std::shared_ptr<PowerGrid> joinedGrid = nullptr;
+    std::shared_ptr<PowerGrid> finalGrid = nullptr;
+    std::vector<std::shared_ptr<PowerGrid>> gridsToRemove;
 
-    for (const auto &grid : powerGrids)
+    // Iterate through existing power grids
+    for (auto it = powerGrids.begin(); it != powerGrids.end(); ++it)
     {
-        // Check if can connect to any existing power grid
-        u_int8_t state = grid->GetWireProximityState(pos);
+        auto &currentGrid = *it;
+        // Check if can connect to the current grid
+        u_int8_t state = currentGrid->GetWireProximityState(pos);
 
+        // Wire already exists in this grid
         if (state == 1)
-            return false; // Already connected to this grid
+            return false;
 
+        // Not connectable to this grid
         if (state == 0)
-            continue; // Not close to this grid
+            continue;
 
-        if (!joinedGrid)
-            // Add wire to the grid
-            grid->AddWire(pos);
+        // Current grid is connectable
+        if (!finalGrid)
+        {
+            // This is the first connectable grid found, make it the finalGrid
+            finalGrid = currentGrid;
+            finalGrid->AddWire(pos);
+        }
         else
         {
-            // Merge with the joined grid
-            grid->MergeGrid(joinedGrid);
-            // Remove the joined grid from the list
-            powerGrids.erase(std::remove(powerGrids.begin(), powerGrids.end(), joinedGrid), powerGrids.end());
+            // Another connectable grid found, merge it into finalGrid
+            if (currentGrid != finalGrid)
+            {
+                finalGrid->MergeGrid(currentGrid);
+                // Mark currentGrid for removal
+                gridsToRemove.push_back(currentGrid);
+            }
         }
-
-        // Set the joined grid to the current grid
-        joinedGrid = grid;
     }
 
-    if (!joinedGrid)
+    // Remove all grids that were merged into finalGrid
+    if (!gridsToRemove.empty())
     {
-        // Create a new grid
+        std::erase_if(powerGrids,
+                      [&](const std::shared_ptr<PowerGrid> &g)
+                      {
+                          return std::find(gridsToRemove.begin(), gridsToRemove.end(), g) != gridsToRemove.end();
+                      });
+    }
+
+    // If no existing grid was connectable, create a new one
+    if (!finalGrid)
+    {
         auto newGrid = std::make_shared<PowerGrid>();
         newGrid->AddWire(pos);
         powerGrids.push_back(newGrid);
