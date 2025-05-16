@@ -325,3 +325,44 @@ std::vector<std::shared_ptr<Tile>> Station::GetTilesWithHeightAtPosition(const V
 
     return foundTiles;
 }
+
+bool Station::AddPowerWire(const Vector2Int &pos)
+{
+    std::shared_ptr<PowerGrid> joinedGrid = nullptr;
+
+    for (const auto &grid : powerGrids)
+    {
+        // Check if can connect to any existing power grid
+        u_int8_t state = grid->GetWireProximityState(pos);
+
+        if (state == 1)
+            return false; // Already connected to this grid
+
+        if (state == 0)
+            continue; // Not close to this grid
+
+        if (!joinedGrid)
+            // Add wire to the grid
+            grid->AddWire(pos);
+        else
+        {
+            // Merge with the joined grid
+            grid->MergeGrid(joinedGrid);
+            // Remove the joined grid from the list
+            powerGrids.erase(std::remove(powerGrids.begin(), powerGrids.end(), joinedGrid), powerGrids.end());
+        }
+
+        // Set the joined grid to the current grid
+        joinedGrid = grid;
+    }
+
+    if (!joinedGrid)
+    {
+        // Create a new grid
+        auto newGrid = std::make_shared<PowerGrid>();
+        newGrid->AddWire(pos);
+        powerGrids.push_back(newGrid);
+    }
+
+    return true;
+}

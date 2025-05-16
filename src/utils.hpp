@@ -310,6 +310,11 @@ constexpr float Vector2IntDistanceSq(const Vector2Int &a, const Vector2Int &b) n
     return float(b.x - a.x) * float(b.x - a.x) + float(b.y - a.y) * float(b.y - a.y);
 }
 
+constexpr bool Vector2IntTouching(const Vector2Int &a, const Vector2Int &b) noexcept
+{
+    return (a.x == b.x && std::abs(a.y - b.y) == 1) || (a.y == b.y && std::abs(a.x - b.x) == 1);
+}
+
 inline int Vector2IntToRandomInt(const Vector2Int &a, int min, int max) noexcept
 {
     std::hash<Vector2Int> hash;

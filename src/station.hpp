@@ -1,6 +1,6 @@
 #pragma once
-#include "direction.hpp"
 #include "env_effect.hpp"
+#include "power_grid.hpp"
 #include "tile.hpp"
 #include <unordered_map>
 
@@ -8,6 +8,7 @@ struct Station : public std::enable_shared_from_this<Station>
 {
     std::unordered_map<Vector2Int, std::vector<std::shared_ptr<Tile>>> tileMap;
     std::vector<std::shared_ptr<Effect>> effects;
+    std::vector<std::shared_ptr<PowerGrid>> powerGrids;
 
 public:
     std::shared_ptr<Tile> GetTileAtPosition(const Vector2Int &pos, TileDef::Height height = TileDef::Height::NONE) const;
@@ -99,6 +100,9 @@ public:
 
         return result;
     }
+
+    bool AddPowerWire(const Vector2Int &pos);
+    // bool RemovePowerWire(const Vector2Int &pos);
 
     void CreateRectRoom(const Vector2Int &pos, const Vector2Int &size);
     void CreateHorizontalCorridor(const Vector2Int &startPos, int length, int width);
