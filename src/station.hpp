@@ -102,7 +102,16 @@ public:
     }
 
     bool AddPowerWire(const Vector2Int &pos);
-    // bool RemovePowerWire(const Vector2Int &pos);
+    bool RemovePowerWire(const Vector2Int &pos);
+    std::shared_ptr<PowerGrid> GetPowerGridAt(const Vector2Int &pos) const
+    {
+        for (const auto &grid : powerGrids)
+        {
+            if (grid->GetWireProximityState(pos) == 1)
+                return grid;
+        }
+        return nullptr;
+    }
 
     void CreateRectRoom(const Vector2Int &pos, const Vector2Int &size);
     void CreateHorizontalCorridor(const Vector2Int &startPos, int length, int width);

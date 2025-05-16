@@ -27,9 +27,20 @@ struct PowerGrid
         return 0; // No wire at or adjacent to the given position
     }
 
+    bool ContainsWire(Vector2Int pos) const
+    {
+        return Contains(powerWires, pos);
+    }
+
     void AddWire(Vector2Int pos)
     {
         powerWires.insert(pos);
+        dirty = true;
+    }
+
+    void RemoveWire(Vector2Int pos)
+    {
+        powerWires.erase(pos);
         dirty = true;
     }
 

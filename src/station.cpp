@@ -1,6 +1,7 @@
 #include "station.hpp"
 #include "audio_manager.hpp"
 #include "game_state.hpp"
+#include <queue>
 
 void Station::CreateRectRoom(const Vector2Int &pos, const Vector2Int &size)
 {
@@ -91,6 +92,9 @@ std::shared_ptr<Station> CreateStation()
 
     // Testing merging power grids
     station->AddPowerWire(Vector2Int(0, 0));
+
+    // Testing removing power wires
+    station->RemovePowerWire(Vector2Int(0, 0));
 
     auto fireAlarm = AudioManager::LoadSoundEffect("../assets/audio/fire_alarm.opus", SoundEffect::Type::EFFECT, false, true, .05);
     std::weak_ptr<SoundEffect> _fireAlarm = fireAlarm;
@@ -388,6 +392,93 @@ bool Station::AddPowerWire(const Vector2Int &pos)
     {
         auto newGrid = std::make_shared<PowerGrid>();
         newGrid->AddWire(pos);
+        powerGrids.push_back(newGrid);
+    }
+
+    return true;
+}
+
+bool Station::RemovePowerWire(const Vector2Int &pos)
+{
+    // Find the grid that owns this wire
+    std::shared_ptr<PowerGrid> originalGrid = GetPowerGridAt(pos);
+
+    // Wire not part of any grid
+    if (!originalGrid)
+        return false;
+
+    // Remove the wire from the grid
+    originalGrid->RemoveWire(pos);
+
+    // If the grid is now empty after removing the wire
+    if (originalGrid->powerWires.empty())
+    {
+        // Remove the empty grid
+        std::erase(powerGrids, originalGrid);
+        return true;
+    }
+
+    // Perform flood fill to find all connected components in the potentially fragmented grid
+    std::vector<std::unordered_set<Vector2Int>> foundComponents;
+    // Tracks wires already assigned to a component
+    std::unordered_set<Vector2Int> visitedWires;
+
+    // Iterate over all wires remaining in the original grid to find components
+    for (const auto &startWirePos : originalGrid->powerWires)
+    {
+        // This wire is already part of a found component
+        if (visitedWires.contains(startWirePos))
+            continue;
+
+        // Start a new BFS for a new component
+        std::unordered_set<Vector2Int> currentComponent;
+        std::queue<Vector2Int> toVisitQueue;
+        toVisitQueue.push(startWirePos);
+
+        while (!toVisitQueue.empty())
+        {
+            Vector2Int currentWire = toVisitQueue.front();
+            toVisitQueue.pop();
+
+            // Already processed
+            if (visitedWires.contains(currentWire))
+                continue;
+
+            visitedWires.insert(currentWire);
+            currentComponent.insert(currentWire);
+
+            for (const auto &dir : CARDINAL_DIRECTIONS)
+            {
+                Vector2Int neighborPos = currentWire + DirectionToVector2Int(dir);
+
+                // Check if neighbor is a wire in this grid and not yet visited
+                if (originalGrid->ContainsWire(neighborPos) && !visitedWires.contains(neighborPos))
+                    toVisitQueue.push(neighborPos);
+            }
+        }
+
+        if (!currentComponent.empty())
+            foundComponents.push_back(std::move(currentComponent));
+    }
+
+    // If the grid did not split, no need to replace it in powerGrids
+    if (foundComponents.size() <= 1)
+        return true;
+
+    // Grid split into multiple components, remove the original grid object
+    std::erase(powerGrids, originalGrid);
+
+    // Create new grid objects for each identified component
+    for (const auto &componentWires : foundComponents)
+    {
+        auto newGrid = std::make_shared<PowerGrid>();
+        for (const Vector2Int &wirePosInComponent : componentWires)
+        {
+            // Populate the new grid
+            newGrid->AddWire(wirePosInComponent);
+        }
+
+        // Add the new grid to the station's list
         powerGrids.push_back(newGrid);
     }
 
