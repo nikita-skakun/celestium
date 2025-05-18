@@ -60,9 +60,9 @@ std::shared_ptr<Station> CreateStation()
     station->CreateRectRoom(Vector2Int(10, -4), Vector2Int(9, 9));
     station->CreateHorizontalCorridor(Vector2Int(4, 0), 7, 3);
 
-    auto oxygenProducer1 = Tile::CreateTile("OXYGEN_PRODUCER", Vector2Int(0, 0), station);
-    auto oxygenProducer2 = Tile::CreateTile("OXYGEN_PRODUCER", Vector2Int(14, 0), station);
-    auto battery = Tile::CreateTile("BATTERY", Vector2Int(3, -3), station);
+    auto oxygen = Tile::CreateTile("OXYGEN_PRODUCER", Vector2Int(0, 0), station);
+    Tile::CreateTile("OXYGEN_PRODUCER", Vector2Int(14, 0), station);
+    Tile::CreateTile("BATTERY", Vector2Int(0, -1), station);
     Tile::CreateTile("FRAME", Vector2Int(0, -5), station);
     Tile::CreateTile("FRAME", Vector2Int(0, -6), station);
     Tile::CreateTile("FRAME", Vector2Int(-1, -6), station);
@@ -70,31 +70,24 @@ std::shared_ptr<Station> CreateStation()
     Tile::CreateTile("FRAME", Vector2Int(0, -7), station);
     Tile::CreateTile("FRAME", Vector2Int(-1, -7), station);
     Tile::CreateTile("FRAME", Vector2Int(1, -7), station);
-    auto panel1 = Tile::CreateTile("SOLAR_PANEL", Vector2Int(0, -7), station);
-    auto panel2 = Tile::CreateTile("SOLAR_PANEL", Vector2Int(-1, -7), station);
-    auto panel3 = Tile::CreateTile("SOLAR_PANEL", Vector2Int(1, -7), station);
-
-    PowerConnectorComponent::AddConnection(battery->GetComponent<PowerConnectorComponent>(), panel1->GetComponent<PowerConnectorComponent>());
-    PowerConnectorComponent::AddConnection(battery->GetComponent<PowerConnectorComponent>(), panel2->GetComponent<PowerConnectorComponent>());
-    PowerConnectorComponent::AddConnection(battery->GetComponent<PowerConnectorComponent>(), panel3->GetComponent<PowerConnectorComponent>());
-    PowerConnectorComponent::AddConnection(battery->GetComponent<PowerConnectorComponent>(), oxygenProducer1->GetComponent<PowerConnectorComponent>());
-    PowerConnectorComponent::AddConnection(battery->GetComponent<PowerConnectorComponent>(), oxygenProducer2->GetComponent<PowerConnectorComponent>());
+    Tile::CreateTile("SOLAR_PANEL", Vector2Int(0, -7), station);
+    Tile::CreateTile("SOLAR_PANEL", Vector2Int(-1, -7), station);
+    Tile::CreateTile("SOLAR_PANEL", Vector2Int(1, -7), station);
 
     station->UpdateSpriteOffsets();
 
     station->effects.push_back(std::make_shared<FireEffect>(Vector2Int(12, 0)));
     station->effects.push_back(std::make_shared<FoamEffect>(Vector2Int(13, 0)));
 
-    station->AddPowerWire(Vector2Int(-1, 0));
-    station->AddPowerWire(Vector2Int(1, 0));
-    station->AddPowerWire(Vector2Int(0, -1));
-    station->AddPowerWire(Vector2Int(0, 1));
-
-    // Testing merging power grids
     station->AddPowerWire(Vector2Int(0, 0));
+    station->AddPowerWire(Vector2Int(0, -1));
 
-    // Testing removing power wires
-    station->RemovePowerWire(Vector2Int(0, 0));
+    oxygen->DeleteTile();
+
+    for (auto powerGrid : station->powerGrids)
+    {
+        powerGrid->Print();
+    }
 
     auto fireAlarm = AudioManager::LoadSoundEffect("../assets/audio/fire_alarm.opus", SoundEffect::Type::EFFECT, false, true, .05);
     std::weak_ptr<SoundEffect> _fireAlarm = fireAlarm;
@@ -380,11 +373,8 @@ bool Station::AddPowerWire(const Vector2Int &pos)
     // Remove all grids that were merged into finalGrid
     if (!gridsToRemove.empty())
     {
-        std::erase_if(powerGrids,
-                      [&](const std::shared_ptr<PowerGrid> &g)
-                      {
-                          return std::find(gridsToRemove.begin(), gridsToRemove.end(), g) != gridsToRemove.end();
-                      });
+        std::erase_if(powerGrids, [&](const std::shared_ptr<PowerGrid> &g)
+                      { return Contains(gridsToRemove, g); });
     }
 
     // If no existing grid was connectable, create a new one
@@ -393,7 +383,49 @@ bool Station::AddPowerWire(const Vector2Int &pos)
         auto newGrid = std::make_shared<PowerGrid>();
         newGrid->AddWire(pos);
         powerGrids.push_back(newGrid);
+        finalGrid = newGrid;
     }
+
+    auto powerConsumerTile = GetTileWithComponentAtPosition<PowerConsumerComponent>(pos);
+    if (powerConsumerTile)
+    {
+        auto powerConsumerComponent = powerConsumerTile->GetComponent<PowerConsumerComponent>();
+        auto powerConnectorComponent = powerConsumerTile->GetComponent<PowerConnectorComponent>();
+        // Add the consumer to the grid
+        if (powerConsumerComponent && powerConnectorComponent)
+        {
+            finalGrid->consumers[pos] = powerConsumerComponent;
+            powerConnectorComponent->SetPowerGrid(finalGrid);
+        }
+    }
+
+    auto powerProducerTile = GetTileWithComponentAtPosition<PowerProducerComponent>(pos);
+    if (powerProducerTile)
+    {
+        auto powerProducerComponent = powerProducerTile->GetComponent<PowerProducerComponent>();
+        auto powerConnectorComponent = powerProducerTile->GetComponent<PowerConnectorComponent>();
+        // Add the producer to the grid
+        if (powerProducerComponent && powerConnectorComponent)
+        {
+            finalGrid->producers[pos] = powerProducerComponent;
+            powerConnectorComponent->SetPowerGrid(finalGrid);
+        }
+    }
+
+    auto batteryTile = GetTileWithComponentAtPosition<BatteryComponent>(pos);
+    if (batteryTile)
+    {
+        auto batteryComponent = batteryTile->GetComponent<BatteryComponent>();
+        auto powerConnectorComponent = batteryTile->GetComponent<PowerConnectorComponent>();
+        // Add the battery to the grid
+        if (batteryComponent && powerConnectorComponent)
+        {
+            finalGrid->batteries[pos] = batteryComponent;
+            powerConnectorComponent->SetPowerGrid(finalGrid);
+        }
+    }
+
+    finalGrid->Print();
 
     return true;
 }

@@ -2,9 +2,14 @@
 #include "sprite.hpp"
 
 struct Tile;
+struct PowerGrid;
 
 struct Component : public std::enable_shared_from_this<Component>
 {
+protected:
+    std::weak_ptr<Tile> _parent;
+
+public:
     enum class Type : uint8_t
     {
         NONE,
@@ -24,8 +29,6 @@ struct Component : public std::enable_shared_from_this<Component>
         STRUCTURE,
     };
 
-    std::weak_ptr<Tile> _parent;
-
     Component(std::shared_ptr<Tile> parent = nullptr) : _parent(parent) {}
 
     virtual std::shared_ptr<Component> Clone(std::shared_ptr<Tile> newParent) const = 0;
@@ -33,7 +36,9 @@ struct Component : public std::enable_shared_from_this<Component>
 
     constexpr virtual Type GetType() const { return Type::NONE; }
     constexpr virtual std::optional<std::string> GetInfo() = 0;
+
     constexpr std::string GetName() const { return EnumToName<Type>(GetType()); }
+    constexpr std::shared_ptr<Tile> GetParent() const { return _parent.lock(); }
 
     bool operator==(const Component &other) const
     {
@@ -90,120 +95,22 @@ struct SolidComponent : Component
 
 struct PowerConnectorComponent : Component
 {
-    enum class IO : uint8_t
-    {
-        INPUT = 1 << 0,
-        OUTPUT = 1 << 1,
-    };
-
 protected:
-    IO io;
+    std::weak_ptr<PowerGrid> _powerGrid;
 
 public:
-    std::vector<std::weak_ptr<PowerConnectorComponent>> _connections;
-    PowerConnectorComponent(IO io, std::shared_ptr<Tile> parent = nullptr) : Component(parent), io(io) {}
-
-    constexpr IO GetIo() const
-    {
-        return io;
-    }
-
-    std::vector<std::shared_ptr<PowerConnectorComponent>> GetConnections()
-    {
-        std::vector<std::shared_ptr<PowerConnectorComponent>> connections;
-
-        for (int i = _connections.size() - 1; i >= 0; --i)
-        {
-            if (auto connection = _connections[i].lock())
-            {
-                connections.push_back(connection);
-            }
-            else
-                _connections.erase(_connections.begin() + i);
-        }
-
-        return connections;
-    }
-
-    void DisconnectFromAll()
-    {
-        // Cast into PowerConnectorComponent
-        auto self = std::dynamic_pointer_cast<PowerConnectorComponent>(shared_from_this());
-
-        for (int i = _connections.size() - 1; i >= 0; --i)
-        {
-            if (auto connection = _connections[i].lock())
-            {
-                DeleteConnection(self, connection);
-            }
-            else
-                _connections.erase(_connections.begin() + i);
-        }
-    }
-
-    static bool AddConnection(std::shared_ptr<PowerConnectorComponent> a, std::shared_ptr<PowerConnectorComponent> b)
-    {
-        for (int i = a->_connections.size() - 1; i >= 0; --i)
-        {
-            if (auto connection = a->_connections[i].lock())
-            {
-                if (connection == b)
-                    return false;
-            }
-            else
-                a->_connections.erase(a->_connections.begin() + i);
-        }
-
-        if ((a->io | b->io) == (IO::INPUT | IO::OUTPUT))
-        {
-            a->_connections.push_back(b);
-            b->_connections.push_back(a);
-            return true;
-        }
-        return false;
-    }
-
-    static void DeleteConnection(std::shared_ptr<PowerConnectorComponent> a, std::shared_ptr<PowerConnectorComponent> b)
-    {
-        for (int i = a->_connections.size() - 1; i >= 0; --i)
-        {
-            if (auto connection = a->_connections[i].lock())
-            {
-                if (connection == b)
-                {
-                    a->_connections.erase(a->_connections.begin() + i);
-                    break;
-                }
-            }
-            else
-                a->_connections.erase(a->_connections.begin() + i);
-        }
-
-        for (int i = b->_connections.size() - 1; i >= 0; --i)
-        {
-            if (auto connection = b->_connections[i].lock())
-            {
-                if (connection == a)
-                {
-                    b->_connections.erase(b->_connections.begin() + i);
-                    break;
-                }
-            }
-            else
-                b->_connections.erase(b->_connections.begin() + i);
-        }
-    }
+    PowerConnectorComponent(std::shared_ptr<Tile> parent = nullptr) : Component(parent) {}
 
     std::shared_ptr<Component> Clone(std::shared_ptr<Tile> newParent) const override
     {
-        return std::make_shared<PowerConnectorComponent>(io, newParent);
+        return std::make_shared<PowerConnectorComponent>(newParent);
     }
 
+    constexpr void SetPowerGrid(std::shared_ptr<PowerGrid> powerGrid) { _powerGrid = powerGrid; }
+    constexpr std::shared_ptr<PowerGrid> GetPowerGrid() const { return _powerGrid.lock(); }
+
     constexpr Type GetType() const override { return Type::POWER_CONNECTOR; }
-    constexpr std::optional<std::string> GetInfo() override
-    {
-        return std::format("   + Power Connector: {} ({})", magic_enum::enum_flags_name(GetIo()), GetConnections().size());
-    }
+    constexpr std::optional<std::string> GetInfo() override { return std::nullopt; } // return std::format("   + Power Connector: {} ({})", magic_enum::enum_flags_name(GetIo()), GetConnections().size());
 };
 
 struct BatteryComponent : Component

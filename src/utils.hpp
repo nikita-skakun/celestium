@@ -4,6 +4,7 @@
 #include <magic_enum/magic_enum_flags.hpp>
 #include <magic_enum/magic_enum.hpp>
 #include <memory>
+#include <optional>
 #include <random>
 
 using namespace magic_enum::bitwise_operators;
@@ -441,6 +442,17 @@ template <typename Container, typename T>
 constexpr bool Contains(const Container &container, const T &value) noexcept
 {
     return std::find(container.begin(), container.end(), value) != container.end();
+}
+
+template <typename Container, typename T>
+constexpr std::optional<typename Container::const_iterator> Find(const Container &container, const T &value) noexcept
+{
+    auto it = std::find(container.begin(), container.end(), value);
+    if (it != container.end())
+    {
+        return it;
+    }
+    return std::nullopt;
 }
 
 // Utility functions for std::string

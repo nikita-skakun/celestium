@@ -1,127 +1,121 @@
 #include "component.hpp"
 #include "station.hpp"
 
-template <>
-struct magic_enum::customize::enum_range<PowerConnectorComponent::IO>
-{
-    static constexpr bool is_flags = true;
-};
-
 void BatteryComponent::Charge()
 {
-    if (charge >= maxCharge)
-        return;
+    // if (charge >= maxCharge)
+    //     return;
 
-    auto parent = _parent.lock();
-    if (!parent)
-        return;
+    // auto parent = _parent.lock();
+    // if (!parent)
+    //     return;
 
-    auto powerConnector = parent->GetComponent<PowerConnectorComponent>();
-    if (!powerConnector)
-        return;
+    // auto powerConnector = parent->GetComponent<PowerConnectorComponent>();
+    // if (!powerConnector)
+    //     return;
 
-    auto connections = powerConnector->GetConnections();
+    // auto connections = powerConnector->GetConnections();
 
-    for (auto &connection : connections)
-    {
-        auto connectedTile = connection->_parent.lock();
-        if (!connectedTile)
-            continue;
+    // for (auto &connection : connections)
+    // {
+    //     auto connectedTile = connection->_parent.lock();
+    //     if (!connectedTile)
+    //         continue;
 
-        if (auto connectedProducer = connectedTile->GetComponent<PowerProducerComponent>())
-        {
-            float chargeToTransfer = std::clamp(connectedProducer->GetAvailablePower(), 0.f, maxCharge - charge);
-            charge += chargeToTransfer;
-            connectedProducer->UseAvailablePower(chargeToTransfer);
-        }
+    //     if (auto connectedProducer = connectedTile->GetComponent<PowerProducerComponent>())
+    //     {
+    //         float chargeToTransfer = std::clamp(connectedProducer->GetAvailablePower(), 0.f, maxCharge - charge);
+    //         charge += chargeToTransfer;
+    //         connectedProducer->UseAvailablePower(chargeToTransfer);
+    //     }
 
-        if (charge >= maxCharge)
-            return;
-    }
+    //     if (charge >= maxCharge)
+    //         return;
+    // }
 }
 
 void PowerConsumerComponent::ConsumePower(float deltaTime)
 {
-    std::shared_ptr<Tile> parent = _parent.lock();
-    if (!isPoweredOn || !parent)
-    {
-        isActive = false;
-        return;
-    }
+    // std::shared_ptr<Tile> parent = _parent.lock();
+    // if (!isPoweredOn || !parent)
+    // {
+    //     isActive = false;
+    //     return;
+    // }
 
-    auto powerConnector = parent->GetComponent<PowerConnectorComponent>();
+    // auto powerConnector = parent->GetComponent<PowerConnectorComponent>();
 
-    if (!powerConnector)
-    {
-        isActive = false;
-        return;
-    }
+    // if (!powerConnector)
+    // {
+    //     isActive = false;
+    //     return;
+    // }
 
-    auto connections = powerConnector->GetConnections();
-    std::vector<std::shared_ptr<PowerProducerComponent>> connectedProducers;
-    std::vector<std::shared_ptr<BatteryComponent>> connectedBatteries;
-    float totalAvailablePower = 0.f;
+    // auto connections = powerConnector->GetConnections();
+    // std::vector<std::shared_ptr<PowerProducerComponent>> connectedProducers;
+    // std::vector<std::shared_ptr<BatteryComponent>> connectedBatteries;
+    // float totalAvailablePower = 0.f;
 
-    for (auto &connection : connections)
-    {
-        auto connectedTile = connection->_parent.lock();
-        if (!connectedTile)
-            continue;
+    // for (auto &connection : connections)
+    // {
+    //     auto connectedTile = connection->_parent.lock();
+    //     if (!connectedTile)
+    //         continue;
 
-        if (auto producer = connectedTile->GetComponent<PowerProducerComponent>())
-        {
-            connectedProducers.push_back(producer);
-            totalAvailablePower += producer->GetAvailablePower();
-        }
+    //     if (auto producer = connectedTile->GetComponent<PowerProducerComponent>())
+    //     {
+    //         connectedProducers.push_back(producer);
+    //         totalAvailablePower += producer->GetAvailablePower();
+    //     }
 
-        if (auto battery = connectedTile->GetComponent<BatteryComponent>())
-        {
-            connectedBatteries.push_back(battery);
-            totalAvailablePower += battery->GetChargeLevel();
-        }
-    }
+    //     if (auto battery = connectedTile->GetComponent<BatteryComponent>())
+    //     {
+    //         connectedBatteries.push_back(battery);
+    //         totalAvailablePower += battery->GetChargeLevel();
+    //     }
+    // }
 
-    // Sort batteries by charge level in descending order
-    std::sort(connectedBatteries.begin(), connectedBatteries.end(),
-              [](const std::shared_ptr<BatteryComponent> &a, const std::shared_ptr<BatteryComponent> &b)
-              { return a->GetChargeLevel() > b->GetChargeLevel(); });
+    // // Sort batteries by charge level in descending order
+    // std::sort(connectedBatteries.begin(), connectedBatteries.end(),
+    //           [](const std::shared_ptr<BatteryComponent> &a, const std::shared_ptr<BatteryComponent> &b)
+    //           { return a->GetChargeLevel() > b->GetChargeLevel(); });
 
-    float consumeAccount = GetPowerConsumption() * deltaTime;
+    // float consumeAccount = GetPowerConsumption() * deltaTime;
 
-    if (totalAvailablePower < consumeAccount)
-    {
-        isActive = false;
-        return;
-    }
+    // if (totalAvailablePower < consumeAccount)
+    // {
+    //     isActive = false;
+    //     return;
+    // }
 
-    float totalConsumed = 0.f;
-    for (auto &producers : connectedProducers)
-    {
-        float consumed = std::min(producers->GetAvailablePower(), consumeAccount);
-        producers->UseAvailablePower(consumed);
-        totalConsumed += consumed;
+    // float totalConsumed = 0.f;
+    // for (auto &producers : connectedProducers)
+    // {
+    //     float consumed = std::min(producers->GetAvailablePower(), consumeAccount);
+    //     producers->UseAvailablePower(consumed);
+    //     totalConsumed += consumed;
 
-        if (totalConsumed >= consumeAccount)
-        {
-            isActive = true;
-            return;
-        }
-    }
+    //     if (totalConsumed >= consumeAccount)
+    //     {
+    //         isActive = true;
+    //         return;
+    //     }
+    // }
 
-    for (auto &battery : connectedBatteries)
-    {
-        float consumed = std::min(battery->GetChargeLevel(), consumeAccount);
-        battery->Drain(consumed);
-        totalConsumed += consumed;
+    // for (auto &battery : connectedBatteries)
+    // {
+    //     float consumed = std::min(battery->GetChargeLevel(), consumeAccount);
+    //     battery->Drain(consumed);
+    //     totalConsumed += consumed;
 
-        if (totalConsumed >= consumeAccount)
-        {
-            isActive = true;
-            return;
-        }
-    }
+    //     if (totalConsumed >= consumeAccount)
+    //     {
+    //         isActive = true;
+    //         return;
+    //     }
+    // }
 
-    isActive = false;
+    // isActive = false;
 }
 
 void OxygenProducerComponent::ProduceOxygen(float deltaTime) const

@@ -50,18 +50,6 @@ private:
         return defaultValue;
     }
 
-    std::optional<PowerConnectorComponent::IO> ParseIO(const ryml::ConstNodeRef &node)
-    {
-        std::string ioStr;
-        node["io"] >> ioStr;
-        StringRemoveSpaces(ioStr);
-
-        auto io = magic_enum::enum_flags_cast<PowerConnectorComponent::IO>(ioStr, magic_enum::case_insensitive);
-        if (!io.has_value())
-            throw std::runtime_error(std::format("Parsing of IO string failed: {}", ioStr));
-        return io;
-    }
-
     std::shared_ptr<Component> CreateComponent(Component::Type type, const ryml::ConstNodeRef &node)
     {
         switch (type)
@@ -73,9 +61,7 @@ private:
             return std::make_shared<SolidComponent>();
 
         case Component::Type::POWER_CONNECTOR:
-            if (auto io = ParseIO(node); io.has_value())
-                return std::make_shared<PowerConnectorComponent>(io.value());
-            return nullptr;
+            return std::make_shared<PowerConnectorComponent>();
 
         case Component::Type::BATTERY:
             return std::make_shared<BatteryComponent>(GetValue(node, "maxCharge", 0.f));

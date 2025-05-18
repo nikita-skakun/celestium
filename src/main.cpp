@@ -56,7 +56,7 @@ int main()
                     HandleMouseDrag();
                 }
 
-                MouseDeleteExistingConnection();
+                // MouseDeleteExistingConnection();
             }
 
             DrawTileGrid();

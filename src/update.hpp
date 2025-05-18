@@ -10,4 +10,4 @@ void HandleCrewEnvironment();
 void UpdateCrewCurrentTile();
 void UpdateTiles();
 void UpdateEnvironmentalEffects();
-void MouseDeleteExistingConnection();
+// void MouseDeleteExistingConnection();

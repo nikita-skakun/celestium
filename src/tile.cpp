@@ -102,7 +102,10 @@ void Tile::DeleteTile()
     auto self = shared_from_this();
 
     if (auto powerConnector = GetComponent<PowerConnectorComponent>())
-        powerConnector->DisconnectFromAll();
+    {
+        if (auto powerGrid = powerConnector->GetPowerGrid())
+            powerGrid->Disconnect(self);
+    }
 
     if (station)
     {

@@ -137,19 +137,19 @@ void DrawPowerOverlays(const std::shared_ptr<Tile> &tile)
         DrawRectangleV(barStartPos, barSize, Fade(YELLOW, .8));
     }
 
-    if (auto powerConnector = tile->GetComponent<PowerConnectorComponent>())
-    {
-        auto connections = powerConnector->GetConnections();
-        for (auto &&connection : connections)
-        {
-            if (auto connectionTile = connection->_parent.lock())
-            {
-                DrawLineEx(GameManager::WorldToScreen(tile->GetPosition()),
-                           GameManager::WorldToScreen(connectionTile->GetPosition()),
-                           POWER_CONNECTION_WIDTH * std::max(camera.GetZoom(), 1.f), POWER_CONNECTION_COLOR);
-            }
-        }
-    }
+    // if (auto powerConnector = tile->GetComponent<PowerConnectorComponent>())
+    // {
+    //     auto connections = powerConnector->GetConnections();
+    //     for (auto &&connection : connections)
+    //     {
+    //         if (auto connectionTile = connection->_parent.lock())
+    //         {
+    //             DrawLineEx(GameManager::WorldToScreen(tile->GetPosition()),
+    //                        GameManager::WorldToScreen(connectionTile->GetPosition()),
+    //                        POWER_CONNECTION_WIDTH * std::max(camera.GetZoom(), 1.f), POWER_CONNECTION_COLOR);
+    //         }
+    //     }
+    // }
 }
 
 /**

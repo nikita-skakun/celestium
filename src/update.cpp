@@ -203,27 +203,27 @@ void HandleMouseDragEnd()
     if (!IsMouseButtonReleased(MOUSE_LEFT_BUTTON) || !camera.IsDragging())
         return;
 
-    auto station = GameManager::GetStation();
-    if (camera.GetDragType() == PlayerCam::DragType::POWER_CONNECT && station)
-    {
-        Vector2Int startPos = ToVector2Int(camera.GetDragStart());
-        Vector2Int endPos = ToVector2Int(camera.GetDragEnd());
+    // auto station = GameManager::GetStation();
+    // if (camera.GetDragType() == PlayerCam::DragType::POWER_CONNECT && station)
+    // {
+    //     Vector2Int startPos = ToVector2Int(camera.GetDragStart());
+    //     Vector2Int endPos = ToVector2Int(camera.GetDragEnd());
 
-        if (startPos == endPos)
-            return;
+    //     if (startPos == endPos)
+    //         return;
 
-        auto startTile = station->GetTileWithComponentAtPosition<PowerConnectorComponent>(startPos);
-        auto endTile = station->GetTileWithComponentAtPosition<PowerConnectorComponent>(endPos);
+    //     auto startTile = station->GetTileWithComponentAtPosition<PowerConnectorComponent>(startPos);
+    //     auto endTile = station->GetTileWithComponentAtPosition<PowerConnectorComponent>(endPos);
 
-        if (startTile && endTile)
-        {
-            auto startConnector = startTile->GetComponent<PowerConnectorComponent>();
-            auto endConnector = endTile->GetComponent<PowerConnectorComponent>();
+    //     if (startTile && endTile)
+    //     {
+    //         auto startConnector = startTile->GetComponent<PowerConnectorComponent>();
+    //         auto endConnector = endTile->GetComponent<PowerConnectorComponent>();
 
-            if (PowerConnectorComponent::AddConnection(startConnector, endConnector))
-                LogMessage(LogLevel::DEBUG, std::format("{} connected to {}!", startTile->GetName(), endTile->GetName()));
-        }
-    }
+    //         if (PowerConnectorComponent::AddConnection(startConnector, endConnector))
+    //             LogMessage(LogLevel::DEBUG, std::format("{} connected to {}!", startTile->GetName(), endTile->GetName()));
+    //     }
+    // }
 
     camera.SetDragType(PlayerCam::DragType::NONE);
 }
@@ -431,45 +431,45 @@ void UpdateEnvironmentalEffects()
     }
 }
 
-void MouseDeleteExistingConnection()
-{
-    auto &camera = GameManager::GetCamera();
-    auto station = GameManager::GetStation();
-    if (!station || !IsMouseButtonPressed(MOUSE_BUTTON_RIGHT) || !camera.IsOverlay(PlayerCam::Overlay::POWER) || !GameManager::IsInBuildMode())
-        return;
+// void MouseDeleteExistingConnection()
+// {
+//     auto &camera = GameManager::GetCamera();
+//     auto station = GameManager::GetStation();
+//     if (!station || !IsMouseButtonPressed(MOUSE_BUTTON_RIGHT) || !camera.IsOverlay(PlayerCam::Overlay::POWER) || !GameManager::IsInBuildMode())
+//         return;
 
-    Vector2 mousePos = GetMousePosition();
+//     Vector2 mousePos = GetMousePosition();
 
-    const float threshold = std::max(POWER_CONNECTION_WIDTH * camera.GetZoom(), 2.f);
+//     const float threshold = std::max(POWER_CONNECTION_WIDTH * camera.GetZoom(), 2.f);
 
-    for (const auto &tilesAtPos : station->tileMap)
-    {
-        for (const auto &tile : tilesAtPos.second)
-        {
-            auto powerConnector = tile->GetComponent<PowerConnectorComponent>();
-            if (!powerConnector)
-                continue;
+//     for (const auto &tilesAtPos : station->tileMap)
+//     {
+//         for (const auto &tile : tilesAtPos.second)
+//         {
+//             auto powerConnector = tile->GetComponent<PowerConnectorComponent>();
+//             if (!powerConnector)
+//                 continue;
 
-            for (const auto &connection : powerConnector->_connections)
-            {
-                auto otherConnector = connection.lock();
-                if (!otherConnector)
-                    continue;
+//             for (const auto &connection : powerConnector->_connections)
+//             {
+//                 auto otherConnector = connection.lock();
+//                 if (!otherConnector)
+//                     continue;
 
-                auto otherConnectorTile = otherConnector->_parent.lock();
-                if (!otherConnectorTile)
-                    continue;
+//                 auto otherConnectorTile = otherConnector->_parent.lock();
+//                 if (!otherConnectorTile)
+//                     continue;
 
-                Vector2 start = GameManager::WorldToScreen(tile->GetPosition());
-                Vector2 end = GameManager::WorldToScreen(otherConnectorTile->GetPosition());
+//                 Vector2 start = GameManager::WorldToScreen(tile->GetPosition());
+//                 Vector2 end = GameManager::WorldToScreen(otherConnectorTile->GetPosition());
 
-                if (DistanceSqFromPointToLine(start, end, mousePos) > threshold * threshold)
-                    continue;
+//                 if (DistanceSqFromPointToLine(start, end, mousePos) > threshold * threshold)
+//                     continue;
 
-                LogMessage(LogLevel::DEBUG, std::format("Deleting connection between {} and {}!", tile->GetName(), otherConnectorTile->GetName()));
-                PowerConnectorComponent::DeleteConnection(powerConnector, otherConnector);
-                return;
-            }
-        }
-    }
-}
+//                 LogMessage(LogLevel::DEBUG, std::format("Deleting connection between {} and {}!", tile->GetName(), otherConnectorTile->GetName()));
+//                 PowerConnectorComponent::DeleteConnection(powerConnector, otherConnector);
+//                 return;
+//             }
+//         }
+//     }
+// }

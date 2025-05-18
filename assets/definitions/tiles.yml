@@ -172,7 +172,6 @@ tiles:
     height: KNEE | WAIST | CHEST
     components:
       - type: POWER_CONNECTOR
-        io: INPUT
       - type: POWER_CONSUMER
         powerConsumption: 20.0
       - type: OXYGEN_PRODUCER
@@ -185,7 +184,6 @@ tiles:
     height: KNEE | WAIST
     components:
       - type: POWER_CONNECTOR
-        io: INPUT | OUTPUT
       - type: BATTERY
         maxCharge: 2000.0
       - type: DURABILITY
@@ -196,7 +194,6 @@ tiles:
     height: KNEE
     components:
       - type: POWER_CONNECTOR
-        io: OUTPUT
       - type: POWER_PRODUCER
         powerProduction: 20.0
       - type: SOLAR_PANEL
@@ -214,7 +211,6 @@ tiles:
     height: KNEE | WAIST | CHEST | HEAD
     components:
       - type: POWER_CONNECTOR
-        io: INPUT
       - type: POWER_CONSUMER
         powerConsumption: 5.0
       - type: DOOR
