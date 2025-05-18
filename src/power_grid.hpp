@@ -1,8 +1,7 @@
 #pragma once
-#include "direction.hpp"
 #include "tile.hpp"
 #include <unordered_set>
-#include "logging.hpp"
+#include "logging.hpp" // For testing only
 
 struct PowerGrid
 {

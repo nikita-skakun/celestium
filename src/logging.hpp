@@ -1,5 +1,4 @@
 #pragma once
-#include <format>
 #include <termcolor/termcolor.hpp>
 
 // Enum for log levels
