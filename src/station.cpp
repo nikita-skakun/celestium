@@ -394,7 +394,7 @@ bool Station::AddPowerWire(const Vector2Int &pos)
         // Add the consumer to the grid
         if (powerConsumerComponent && powerConnectorComponent)
         {
-            finalGrid->consumers[pos] = powerConsumerComponent;
+            finalGrid->AddConsumer(pos, powerConsumerComponent);
             powerConnectorComponent->SetPowerGrid(finalGrid);
         }
     }
@@ -407,7 +407,7 @@ bool Station::AddPowerWire(const Vector2Int &pos)
         // Add the producer to the grid
         if (powerProducerComponent && powerConnectorComponent)
         {
-            finalGrid->producers[pos] = powerProducerComponent;
+            finalGrid->AddProducer(pos, powerProducerComponent);
             powerConnectorComponent->SetPowerGrid(finalGrid);
         }
     }
@@ -420,7 +420,7 @@ bool Station::AddPowerWire(const Vector2Int &pos)
         // Add the battery to the grid
         if (batteryComponent && powerConnectorComponent)
         {
-            finalGrid->batteries[pos] = batteryComponent;
+            finalGrid->AddBattery(pos, batteryComponent);
             powerConnectorComponent->SetPowerGrid(finalGrid);
         }
     }
@@ -443,7 +443,7 @@ bool Station::RemovePowerWire(const Vector2Int &pos)
     originalGrid->RemoveWire(pos);
 
     // If the grid is now empty after removing the wire
-    if (originalGrid->powerWires.empty())
+    if (originalGrid->GetWires().empty())
     {
         // Remove the empty grid
         std::erase(powerGrids, originalGrid);
@@ -456,7 +456,7 @@ bool Station::RemovePowerWire(const Vector2Int &pos)
     std::unordered_set<Vector2Int> visitedWires;
 
     // Iterate over all wires remaining in the original grid to find components
-    for (const auto &startWirePos : originalGrid->powerWires)
+    for (const auto &startWirePos : originalGrid->GetWires())
     {
         // This wire is already part of a found component
         if (visitedWires.contains(startWirePos))

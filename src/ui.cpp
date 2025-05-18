@@ -210,24 +210,24 @@ void DrawStationOverlays()
         if (!powerGrid)
             continue;
 
-        std::hash<void *> ptr_hasher;
-        size_t seed = ptr_hasher(powerGrid.get());
+        std::hash<void *> ptrHasher;
+        size_t seed = ptrHasher(powerGrid.get());
 
         // Derive color components from the seed hash
-        unsigned char r_base = static_cast<unsigned char>((seed & 0xFF0000) >> 16);
-        unsigned char g_base = static_cast<unsigned char>((seed & 0x00FF00) >> 8);
-        unsigned char b_base = static_cast<unsigned char>(seed & 0x0000FF);
+        unsigned char rBase = static_cast<unsigned char>((seed & 0xFF0000) >> 16);
+        unsigned char gBase = static_cast<unsigned char>((seed & 0x00FF00) >> 8);
+        unsigned char bBase = static_cast<unsigned char>(seed & 0x0000FF);
 
         // Adjust components to make colors more visually distinct and avoid very dark colors
-        unsigned char r = 50 + (r_base % 206);
-        unsigned char g = 50 + (g_base % 206);
-        unsigned char b = 50 + (b_base % 206);
+        unsigned char r = 50 + (rBase % 206);
+        unsigned char g = 50 + (gBase % 206);
+        unsigned char b = 50 + (bBase % 206);
 
         Color gridColor = {r, g, b, 192};
 
-        for (const auto &wire_node_position : powerGrid->powerWires)
+        for (const auto &wirePos : powerGrid->GetWires())
         {
-            DrawCircleV(GameManager::WorldToScreen(wire_node_position), 3.0f * zoom, gridColor);
+            DrawCircleV(GameManager::WorldToScreen(wirePos), 3.0f * zoom, gridColor);
         }
     }
 

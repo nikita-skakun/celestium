@@ -6,6 +6,7 @@
 
 struct PowerGrid
 {
+protected:
     std::unordered_set<Vector2Int> powerWires;
     std::unordered_map<Vector2Int, std::weak_ptr<PowerConsumerComponent>> consumers;
     std::unordered_map<Vector2Int, std::weak_ptr<PowerProducerComponent>> producers;
@@ -13,7 +14,8 @@ struct PowerGrid
 
     bool dirty = false;
 
-    u_int8_t GetWireProximityState(Vector2Int pos) const
+public:
+    constexpr u_int8_t GetWireProximityState(Vector2Int pos) const
     {
         if (Contains(powerWires, pos))
             return 1; // Wire at the given position
@@ -28,12 +30,10 @@ struct PowerGrid
         return 0; // No wire at or adjacent to the given position
     }
 
-    bool ContainsWire(Vector2Int pos) const
-    {
-        return Contains(powerWires, pos);
-    }
+    constexpr bool ContainsWire(Vector2Int pos) const { return Contains(powerWires, pos); }
+    constexpr const std::unordered_set<Vector2Int> &GetWires() const { return powerWires; }
 
-    void AddWire(Vector2Int pos)
+    constexpr void AddWire(Vector2Int pos)
     {
         powerWires.insert(pos);
         dirty = true;
@@ -41,7 +41,7 @@ struct PowerGrid
         LogMessage(LogLevel::DEBUG, "Added wire at position: " + ToString(pos));
     }
 
-    void RemoveWire(Vector2Int pos)
+    constexpr void RemoveWire(Vector2Int pos)
     {
         powerWires.erase(pos);
         dirty = true;
@@ -49,7 +49,25 @@ struct PowerGrid
         LogMessage(LogLevel::DEBUG, "Removed wire at position: " + ToString(pos));
     }
 
-    void MergeGrid(std::shared_ptr<PowerGrid> other)
+    constexpr void AddConsumer(Vector2Int pos, std::shared_ptr<PowerConsumerComponent> consumer)
+    {
+        consumers[pos] = consumer;
+        dirty = true;
+    }
+
+    constexpr void AddProducer(Vector2Int pos, std::shared_ptr<PowerProducerComponent> producer)
+    {
+        producers[pos] = producer;
+        dirty = true;
+    }
+
+    constexpr void AddBattery(Vector2Int pos, std::shared_ptr<BatteryComponent> battery)
+    {
+        batteries[pos] = battery;
+        dirty = true;
+    }
+
+    constexpr void MergeGrid(std::shared_ptr<PowerGrid> other)
     {
         powerWires.merge(other->powerWires);
         consumers.merge(other->consumers);
@@ -61,7 +79,7 @@ struct PowerGrid
         LogMessage(LogLevel::DEBUG, "Merged grids");
     }
 
-    void Disconnect(std::shared_ptr<Tile> parentTile)
+    constexpr void Disconnect(std::shared_ptr<Tile> parentTile)
     {
         if (!parentTile)
             return;
@@ -100,7 +118,7 @@ struct PowerGrid
         dirty = true;
     }
 
-    void Print() const
+    constexpr void Print() const
     {
         LogMessage(LogLevel::DEBUG, "Power Grid:");
         LogMessage(LogLevel::DEBUG, "- Wires: " + std::to_string(powerWires.size()));
