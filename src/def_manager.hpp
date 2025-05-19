@@ -50,6 +50,22 @@ private:
         return defaultValue;
     }
 
+    std::optional<PowerConsumerComponent::PowerPriority> ParsePowerPriority(const ryml::ConstNodeRef &node)
+    {
+        std::string powerPriorityStr;
+        node["powerPriority"] >> powerPriorityStr;
+        StringRemoveSpaces(powerPriorityStr);
+
+        if (powerPriorityStr.empty())
+            return std::nullopt;
+
+        auto powerPriority = magic_enum::enum_cast<PowerConsumerComponent::PowerPriority>(powerPriorityStr, magic_enum::case_insensitive);
+        if (!powerPriority.has_value())
+            throw std::runtime_error(std::format("Parsing of power priority string failed: {}", powerPriorityStr));
+
+        return powerPriority;
+    }
+
     std::shared_ptr<Component> CreateComponent(Component::Type type, const ryml::ConstNodeRef &node)
     {
         switch (type)
@@ -67,7 +83,9 @@ private:
             return std::make_shared<BatteryComponent>(GetValue(node, "maxCharge", 0.f));
 
         case Component::Type::POWER_CONSUMER:
-            return std::make_shared<PowerConsumerComponent>(GetValue(node, "powerConsumption", 0.f));
+            if (auto powerPriority = ParsePowerPriority(node); powerPriority.has_value())
+                return std::make_shared<PowerConsumerComponent>(GetValue(node, "powerConsumption", 0.f), powerPriority.value());
+            return nullptr;
 
         case Component::Type::POWER_PRODUCER:
             return std::make_shared<PowerProducerComponent>(GetValue(node, "powerProduction", 0.f));

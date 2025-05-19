@@ -155,24 +155,24 @@ public:
 
 struct PowerConsumerComponent : Component
 {
+public:
+    enum class PowerPriority : uint8_t
+    {
+        CRITICAL = 0, // Life support, etc.
+        HIGH = 1,     // Main systems
+        MEDIUM = 2,   // General equipment
+        LOW = 3,      // Convenience, decoration
+        OFFLINE = 255 // Manually turned off
+    };
+
 protected:
-    bool isPoweredOn;
     bool isActive;
     float powerConsumption;
+    PowerPriority powerPriority;
 
 public:
-    PowerConsumerComponent(float powerConsumption, std::shared_ptr<Tile> parent = nullptr)
-        : Component(parent), isPoweredOn(true), isActive(false), powerConsumption(std::max(powerConsumption, 0.f)) {}
-
-    constexpr bool IsPoweredOn() const
-    {
-        return isPoweredOn;
-    }
-
-    constexpr void SetPoweredState(bool state)
-    {
-        isPoweredOn = state;
-    }
+    PowerConsumerComponent(float powerConsumption, PowerPriority powerPriority, std::shared_ptr<Tile> parent = nullptr)
+        : Component(parent), isActive(powerPriority != PowerPriority::OFFLINE), powerConsumption(std::max(powerConsumption, 0.f)), powerPriority(powerPriority) {}
 
     constexpr bool IsActive() const
     {
@@ -188,13 +188,13 @@ public:
 
     std::shared_ptr<Component> Clone(std::shared_ptr<Tile> newParent) const override
     {
-        return std::make_shared<PowerConsumerComponent>(powerConsumption, newParent);
+        return std::make_shared<PowerConsumerComponent>(powerConsumption, powerPriority, newParent);
     }
 
     constexpr Type GetType() const override { return Type::POWER_CONSUMER; }
     constexpr std::optional<std::string> GetInfo() override
     {
-        return std::format("   + Power State: {}\n   + Power Consumption: {:.0f}", !isPoweredOn ? "OFF" : (isActive ? "POWERED" : "NOT POWERED"), powerConsumption);
+        return std::format("   + Power Priority: {}\n   + Power Consumption: {:.0f}", magic_enum::enum_name(powerPriority), powerConsumption);
     }
 };
 
