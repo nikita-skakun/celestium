@@ -88,6 +88,18 @@ inline bool CheckIfEventHappens(double chancePerSecond, double deltaTime) noexce
     return dis(gen) < expectedEvents;
 }
 
+/**
+ * @brief Converts a float value to a string with a specified precision.
+ *
+ * @param value The float value to convert.
+ * @param precision The number of decimal places to include in the string.
+ * @return A string representation of the float value.
+ */
+constexpr std::string ToString(float value, int precision = 2) noexcept
+{
+    return std::format("{:.{}f}", value, precision);
+}
+
 // Utility functions for booleans
 
 /**
@@ -253,9 +265,9 @@ inline int Vector2ToRandomInt(const Vector2 &a, int min, int max) noexcept
     return distribution(generator);
 }
 
-constexpr std::string ToString(const Vector2 &a) noexcept
+constexpr std::string ToString(const Vector2 &a, int precision = 2) noexcept
 {
-    return std::format("({:.2f}, {:.2f})", a.x, a.y);
+    return "(" + ToString(a.x, precision) + ", " + ToString(a.y, precision) + ")";
 }
 
 // Utility functions for Vector2Int
@@ -344,7 +356,7 @@ inline Vector2 GetScreenSize()
 
 constexpr std::string ToString(const Vector2Int &a) noexcept
 {
-    return std::format("({:}, {:})", a.x, a.y);
+    return std::format("({}, {})", a.x, a.y);
 }
 
 // Rectangle operator overloads
@@ -410,9 +422,10 @@ constexpr bool IsVector2WithinRect(const Rectangle &rect, const Vector2 &point) 
             point.y >= rect.y && point.y <= (rect.y + rect.height));
 }
 
-constexpr std::string ToString(const Rectangle &rect) noexcept
+constexpr std::string ToString(const Rectangle &rect, int precision = 2) noexcept
 {
-    return std::format("({:}, {:}, {:}, {:})", rect.x, rect.y, rect.width, rect.height);
+    return "(" + ToString(rect.x, precision) + ", " + ToString(rect.y, precision) + ", " +
+           ToString(rect.width, precision) + ", " + ToString(rect.height, precision) + ")";
 }
 
 // Utility functions for Line

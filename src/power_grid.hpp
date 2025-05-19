@@ -117,12 +117,51 @@ public:
         dirty = true;
     }
 
+    constexpr float GetTotalPowerConsumption() const
+    {
+        float totalPower = 0.f;
+        for (const auto &consumer : consumers)
+        {
+            if (auto consumerPtr = consumer.second.lock())
+            {
+                totalPower += consumerPtr->GetPowerConsumption();
+            }
+        }
+        return totalPower;
+    }
+
+    constexpr float GetTotalPowerProduction() const
+    {
+        float totalPower = 0.f;
+        for (const auto &producer : producers)
+        {
+            if (auto producerPtr = producer.second.lock())
+            {
+                totalPower += producerPtr->GetPowerProduction();
+            }
+        }
+        return totalPower;
+    }
+
+    constexpr float GetTotalBatteryPower() const
+    {
+        float totalPower = 0.f;
+        for (const auto &battery : batteries)
+        {
+            if (auto batteryPtr = battery.second.lock())
+            {
+                totalPower += batteryPtr->GetChargeLevel();
+            }
+        }
+        return totalPower;
+    }
+
     constexpr void Print() const
     {
         LogMessage(LogLevel::DEBUG, "Power Grid:");
         LogMessage(LogLevel::DEBUG, "- Wires: " + std::to_string(powerWires.size()));
-        LogMessage(LogLevel::DEBUG, "- Consumers: " + std::to_string(consumers.size()));
-        LogMessage(LogLevel::DEBUG, "- Producers: " + std::to_string(producers.size()));
-        LogMessage(LogLevel::DEBUG, "- Batteries: " + std::to_string(batteries.size()));
+        LogMessage(LogLevel::DEBUG, "- Consumers: " + std::to_string(consumers.size()) + "  [" + ToString(GetTotalPowerConsumption(), 0) + " W]");
+        LogMessage(LogLevel::DEBUG, "- Producers: " + std::to_string(producers.size()) + "  [" + ToString(GetTotalPowerProduction(), 0) + " W]");
+        LogMessage(LogLevel::DEBUG, "- Batteries: " + std::to_string(batteries.size()) + "  [" + ToString(GetTotalBatteryPower(), 0) + "W]");
     }
 };
