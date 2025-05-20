@@ -62,7 +62,7 @@ std::shared_ptr<Station> CreateStation()
 
     Tile::CreateTile("OXYGEN_PRODUCER", Vector2Int(0, 0), station);
     Tile::CreateTile("OXYGEN_PRODUCER", Vector2Int(14, 0), station);
-    Tile::CreateTile("BATTERY", Vector2Int(0, -1), station);
+    Tile::CreateTile("BATTERY", Vector2Int(0, -2), station);
     Tile::CreateTile("FRAME", Vector2Int(0, -5), station);
     Tile::CreateTile("FRAME", Vector2Int(0, -6), station);
     Tile::CreateTile("FRAME", Vector2Int(-1, -6), station);
@@ -80,6 +80,7 @@ std::shared_ptr<Station> CreateStation()
     station->effects.push_back(std::make_shared<FoamEffect>(Vector2Int(13, 0)));
 
     station->AddPowerWire(Vector2Int(0, 0));
+    station->AddPowerWire(Vector2Int(0, -2));
     station->AddPowerWire(Vector2Int(0, -1));
 
 

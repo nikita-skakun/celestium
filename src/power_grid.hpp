@@ -2,7 +2,7 @@
 #include "tile.hpp"
 #include <unordered_set>
 
-struct PowerGrid
+struct PowerGrid : public std::enable_shared_from_this<PowerGrid>
 {
 protected:
     std::unordered_set<Vector2Int> powerWires;
@@ -67,12 +67,34 @@ public:
 
     constexpr void MergeGrid(std::shared_ptr<PowerGrid> other)
     {
+        auto updateConnectorsParents = [this](auto &componentMap)
+        {
+            for (auto &pair : componentMap)
+            {
+                auto component = pair.second.lock();
+                if (!component)
+                    continue;
+
+                auto parentTile = component->GetParent();
+                if (!parentTile)
+                    continue;
+
+                auto connector = parentTile->template GetComponent<PowerConnectorComponent>();
+                if (!connector)
+                    continue;
+
+                connector->SetPowerGrid(this->shared_from_this());
+            }
+        };
+
+        updateConnectorsParents(other->_consumers);
+        updateConnectorsParents(other->_producers);
+        updateConnectorsParents(other->_batteries);
+
         powerWires.merge(other->powerWires);
         _consumers.merge(other->_consumers);
         _producers.merge(other->_producers);
         _batteries.merge(other->_batteries);
-
-        // TODO: Update the power connector components of the tiles in this grid
 
         dirty = true;
     }
