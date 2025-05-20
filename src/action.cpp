@@ -9,13 +9,19 @@ void MoveAction::Update(const std::shared_ptr<Crew> &crew)
         return;
 
     auto station = crew->GetCurrentTile()->GetStation();
+    if (!station)
+    {
+        crew->RemoveFirstAction();
+        return;
+    }
+
     Vector2Int floorCrewPos = ToVector2Int(crew->GetPosition());
 
     if (path.empty())
     {
         path = AStar(floorCrewPos, targetPosition);
 
-        if (path.size() <= 0)
+        if (path.empty())
         {
             if (ToVector2(targetPosition) == crew->GetPosition())
             {
@@ -24,8 +30,7 @@ void MoveAction::Update(const std::shared_ptr<Crew> &crew)
             }
 
             targetPosition = floorCrewPos;
-            path.clear();
-            path.push_back(floorCrewPos);
+            path = {floorCrewPos};
         }
     }
 
@@ -33,10 +38,17 @@ void MoveAction::Update(const std::shared_ptr<Crew> &crew)
     Vector2 stepPos = ToVector2(path.front());
     const float distanceLeftSq = Vector2DistanceSq(crew->GetPosition(), stepPos) - moveDelta * moveDelta;
     float distanceToTravel = moveDelta;
+
+    // Crew can reach or pass the current waypoint
     if (distanceLeftSq <= 0)
     {
         if (auto doorTile = station->GetTileWithComponentAtPosition<DoorComponent>(floorCrewPos))
-            doorTile->GetComponent<DoorComponent>()->SetMovingState(DoorComponent::MovingState::IDLE);
+        {
+            if (auto door = doorTile->GetComponent<DoorComponent>())
+            {
+                door->SetMovingState(DoorComponent::MovingState::IDLE);
+            }
+        }
 
         crew->SetPosition(stepPos);
         path.pop_front();
@@ -47,25 +59,28 @@ void MoveAction::Update(const std::shared_ptr<Crew> &crew)
             return;
         }
 
-        // If there are any tiles are in the way, clear path for recalculation
+        // If there are any tiles in the way, clear path for recalculation
         if (DoesPathHaveObstacles(path))
         {
-            path = {};
+            path.clear();
             return;
         }
 
-        distanceToTravel = sqrtf(-distanceLeftSq);
+        distanceToTravel = std::sqrt(-distanceLeftSq);
         stepPos = ToVector2(path.front());
     }
+    // Crew cannot reach the current waypoint in this frame
     else
     {
         if (auto doorTile = station->GetTileWithComponentAtPosition<DoorComponent>(path.front()))
         {
-            auto door = doorTile->GetComponent<DoorComponent>();
-            door->SetMovingState(DoorComponent::MovingState::FORCED_OPEN);
+            if (auto door = doorTile->GetComponent<DoorComponent>())
+            {
+                door->SetMovingState(DoorComponent::MovingState::FORCED_OPEN);
 
-            if (door->GetProgress() > 0)
-                return;
+                if (door->GetProgress() > 0) // Door is still opening/closing
+                    return;                  // Wait for the door
+            }
         }
     }
 
@@ -84,21 +99,23 @@ void ExtinguishAction::Update(const std::shared_ptr<Crew> &crew)
         return;
     }
 
-    auto fire = station->GetEffectOfTypeAtPosition<FireEffect>(targetPosition);
-    if (!fire)
+    if (auto fire = station->GetEffectOfTypeAtPosition<FireEffect>(targetPosition))
     {
-        crew->RemoveFirstAction();
-        return;
-    }
+        // Fire effect exists at the target position
+        if (progress > 1.f)
+        {
+            station->RemoveEffect(fire);
+            crew->RemoveFirstAction();
+            return;
+        }
 
-    if (progress > 1.)
+        progress += CREW_EXTINGUISH_SPEED * FIXED_DELTA_TIME;
+    }
+    else
     {
-        station->RemoveEffect(fire);
+        // No fire effect at the target position; action cannot proceed
         crew->RemoveFirstAction();
-        return;
     }
-
-    progress += CREW_EXTINGUISH_SPEED * FIXED_DELTA_TIME;
 }
 
 void RepairAction::Update(const std::shared_ptr<Crew> &crew)
@@ -107,25 +124,19 @@ void RepairAction::Update(const std::shared_ptr<Crew> &crew)
         return;
 
     auto targetTile = _targetTile.lock();
-    if (!targetTile)
+    auto durability = targetTile ? targetTile->GetComponent<DurabilityComponent>() : nullptr;
+
+    if (!targetTile || !durability)
     {
         crew->RemoveFirstAction();
         return;
     }
 
-    auto durability = targetTile->GetComponent<DurabilityComponent>();
-    if (!durability)
-    {
-        crew->RemoveFirstAction();
-        return;
-    }
+    const float maxHitpoints = durability->GetMaxHitpoints();
+    float newHitpoints = std::min(durability->GetHitpoints() + CREW_REPAIR_SPEED * (float)FIXED_DELTA_TIME, maxHitpoints);
 
-    float newHitpoints = std::max(durability->GetHitpoints() + CREW_REPAIR_SPEED * (float)FIXED_DELTA_TIME, durability->GetMaxHitpoints());
     durability->SetHitpoints(newHitpoints);
 
-    if (newHitpoints >= durability->GetMaxHitpoints())
-    {
+    if (newHitpoints >= maxHitpoints)
         crew->RemoveFirstAction();
-        return;
-    }
 }

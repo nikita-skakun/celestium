@@ -341,8 +341,7 @@ void HandleCrewEnvironment()
         if (!tile)
             continue;
 
-        auto oxygen = tile->GetComponent<OxygenComponent>();
-        if (oxygen)
+        if (auto oxygen = tile->GetComponent<OxygenComponent>())
             crew->RefillOxygen(FIXED_DELTA_TIME, oxygen->GetOxygenLevel());
 
         auto effects = tile->GetStation()->GetEffectsAtPosition(tile->GetPosition());
