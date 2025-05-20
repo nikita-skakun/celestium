@@ -28,6 +28,7 @@ void FixedUpdate(double &timeSinceFixedUpdate)
                 HandleCrewEnvironment();
                 UpdateCrewCurrentTile();
                 UpdateEnvironmentalEffects();
+                UpdatePowerGrids();
                 UpdateTiles();
 
                 fixedUpdateCondition.notify_all();

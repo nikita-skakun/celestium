@@ -374,6 +374,18 @@ void UpdateCrewCurrentTile()
     }
 }
 
+void UpdatePowerGrids()
+{
+    auto station = GameManager::GetStation();
+    if (!station)
+        return;
+
+    for (const auto &powerGrid : station->powerGrids)
+    {
+        powerGrid->Update(FIXED_DELTA_TIME);
+    }
+}
+
 void UpdateTiles()
 {
     auto station = GameManager::GetStation();
@@ -388,21 +400,6 @@ void UpdateTiles()
             {
                 door->KeepClosed();
                 door->Animate(FIXED_DELTA_TIME);
-            }
-
-            if (auto powerProducer = tile->GetComponent<PowerProducerComponent>())
-            {
-                powerProducer->ProducePower(FIXED_DELTA_TIME);
-            }
-
-            if (auto powerConsumer = tile->GetComponent<PowerConsumerComponent>())
-            {
-                powerConsumer->ConsumePower(FIXED_DELTA_TIME);
-            }
-
-            if (auto battery = tile->GetComponent<BatteryComponent>())
-            {
-                battery->Charge();
             }
 
             if (auto oxygenProducer = tile->GetComponent<OxygenProducerComponent>())
@@ -430,46 +427,3 @@ void UpdateEnvironmentalEffects()
         effect->Update(station, i);
     }
 }
-
-// void MouseDeleteExistingConnection()
-// {
-//     auto &camera = GameManager::GetCamera();
-//     auto station = GameManager::GetStation();
-//     if (!station || !IsMouseButtonPressed(MOUSE_BUTTON_RIGHT) || !camera.IsOverlay(PlayerCam::Overlay::POWER) || !GameManager::IsInBuildMode())
-//         return;
-
-//     Vector2 mousePos = GetMousePosition();
-
-//     const float threshold = std::max(POWER_CONNECTION_WIDTH * camera.GetZoom(), 2.f);
-
-//     for (const auto &tilesAtPos : station->tileMap)
-//     {
-//         for (const auto &tile : tilesAtPos.second)
-//         {
-//             auto powerConnector = tile->GetComponent<PowerConnectorComponent>();
-//             if (!powerConnector)
-//                 continue;
-
-//             for (const auto &connection : powerConnector->_connections)
-//             {
-//                 auto otherConnector = connection.lock();
-//                 if (!otherConnector)
-//                     continue;
-
-//                 auto otherConnectorTile = otherConnector->_parent.lock();
-//                 if (!otherConnectorTile)
-//                     continue;
-
-//                 Vector2 start = GameManager::WorldToScreen(tile->GetPosition());
-//                 Vector2 end = GameManager::WorldToScreen(otherConnectorTile->GetPosition());
-
-//                 if (DistanceSqFromPointToLine(start, end, mousePos) > threshold * threshold)
-//                     continue;
-
-//                 LogMessage(LogLevel::DEBUG, std::format("Deleting connection between {} and {}!", tile->GetName(), otherConnectorTile->GetName()));
-//                 PowerConnectorComponent::DeleteConnection(powerConnector, otherConnector);
-//                 return;
-//             }
-//         }
-//     }
-// }

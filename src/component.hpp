@@ -123,26 +123,28 @@ public:
     BatteryComponent(float maxCharge, std::shared_ptr<Tile> parent = nullptr)
         : Component(parent), charge(maxCharge), maxCharge(maxCharge) {}
 
-    constexpr bool Drain(float amount)
-    {
-        if (charge < amount)
-            return false;
+    constexpr float GetMaxChargeLevel() const { return maxCharge; }
+    constexpr float GetChargeLevel() const { return charge; }
 
-        charge -= amount;
-        return true;
+    constexpr float AddCharge(float amount)
+    {
+        if (charge >= maxCharge)
+            return 0.f;
+
+        float added = std::min(maxCharge - charge, amount);
+        charge += added;
+        return added;
     }
 
-    constexpr float GetMaxChargeLevel() const
+    constexpr float Drain(float amount)
     {
-        return maxCharge;
-    }
+        if (charge <= 0.f)
+            return 0.f;
 
-    constexpr float GetChargeLevel() const
-    {
-        return charge;
+        float drained = std::min(charge, amount);
+        charge -= drained;
+        return drained;
     }
-
-    void Charge();
 
     std::shared_ptr<Component> Clone(std::shared_ptr<Tile> newParent) const override
     {
@@ -172,19 +174,15 @@ protected:
 
 public:
     PowerConsumerComponent(float powerConsumption, PowerPriority powerPriority, std::shared_ptr<Tile> parent = nullptr)
-        : Component(parent), isActive(powerPriority != PowerPriority::OFFLINE), powerConsumption(std::max(powerConsumption, 0.f)), powerPriority(powerPriority) {}
+        : Component(parent), isActive(false), powerConsumption(std::max(powerConsumption, 0.f)), powerPriority(powerPriority) {}
 
-    constexpr bool IsActive() const
-    {
-        return isActive;
-    }
+    constexpr bool IsActive() const { return isActive; }
+    constexpr void SetActive(bool active) { isActive = active; }
 
-    constexpr float GetPowerConsumption() const
-    {
-        return powerConsumption;
-    }
+    constexpr float GetPowerConsumption() const { return powerConsumption; }
 
-    void ConsumePower(float deltaTime);
+    constexpr PowerPriority GetPowerPriority() const { return powerPriority; }
+    constexpr void SetPowerPriority(PowerPriority priority) { powerPriority = priority; }
 
     std::shared_ptr<Component> Clone(std::shared_ptr<Tile> newParent) const override
     {
@@ -208,25 +206,11 @@ public:
     PowerProducerComponent(float powerProduction, std::shared_ptr<Tile> parent = nullptr)
         : Component(parent), powerProduction(std::max(powerProduction, 0.f)), availablePower(0.f) {}
 
-    constexpr float GetPowerProduction() const
-    {
-        return powerProduction;
-    }
+    constexpr float GetPowerProduction() const { return powerProduction; }
+    constexpr float GetAvailablePower() const { return availablePower; }
 
-    constexpr float GetAvailablePower() const
-    {
-        return availablePower;
-    }
-
-    constexpr void UseAvailablePower(float usedPower)
-    {
-        availablePower -= usedPower;
-    }
-
-    constexpr void ProducePower(float deltaTime)
-    {
-        availablePower = GetPowerProduction() * deltaTime;
-    }
+    constexpr void UseAvailablePower(float usedPower) { availablePower -= usedPower; }
+    constexpr void ProducePower(float deltaTime) { availablePower = GetPowerProduction() * deltaTime; }
 
     std::shared_ptr<Component> Clone(std::shared_ptr<Tile> newParent) const override
     {

@@ -8,6 +8,6 @@ void AssignCrewActions();
 void HandleCrewActions();
 void HandleCrewEnvironment();
 void UpdateCrewCurrentTile();
+void UpdatePowerGrids();
 void UpdateTiles();
 void UpdateEnvironmentalEffects();
-// void MouseDeleteExistingConnection();

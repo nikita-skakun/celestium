@@ -60,7 +60,7 @@ std::shared_ptr<Station> CreateStation()
     station->CreateRectRoom(Vector2Int(10, -4), Vector2Int(9, 9));
     station->CreateHorizontalCorridor(Vector2Int(4, 0), 7, 3);
 
-    auto oxygen = Tile::CreateTile("OXYGEN_PRODUCER", Vector2Int(0, 0), station);
+    Tile::CreateTile("OXYGEN_PRODUCER", Vector2Int(0, 0), station);
     Tile::CreateTile("OXYGEN_PRODUCER", Vector2Int(14, 0), station);
     Tile::CreateTile("BATTERY", Vector2Int(0, -1), station);
     Tile::CreateTile("FRAME", Vector2Int(0, -5), station);
@@ -82,12 +82,6 @@ std::shared_ptr<Station> CreateStation()
     station->AddPowerWire(Vector2Int(0, 0));
     station->AddPowerWire(Vector2Int(0, -1));
 
-    oxygen->DeleteTile();
-
-    for (auto powerGrid : station->powerGrids)
-    {
-        powerGrid->Print();
-    }
 
     auto fireAlarm = AudioManager::LoadSoundEffect("../assets/audio/fire_alarm.opus", SoundEffect::Type::EFFECT, false, true, .05);
     std::weak_ptr<SoundEffect> _fireAlarm = fireAlarm;
@@ -424,8 +418,6 @@ bool Station::AddPowerWire(const Vector2Int &pos)
             powerConnectorComponent->SetPowerGrid(finalGrid);
         }
     }
-
-    finalGrid->Print();
 
     return true;
 }

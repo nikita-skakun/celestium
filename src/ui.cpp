@@ -542,7 +542,8 @@ void DrawBuildUi()
     //         sprite->Draw(cursorPos, Fade(WHITE, .5));
     // }
     // else
-    if (auto allTiles = station->GetAllTilesAtPosition(cursorPos); !allTiles.empty())
+    auto allTiles = station->GetAllTilesAtPosition(cursorPos);
+    if (!allTiles.empty())
     {
         hoveredTile = allTiles.at(allTiles.size() - 1);
         DrawTileOutline(hoveredTile, DARKPURPLE);
