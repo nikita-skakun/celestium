@@ -40,57 +40,52 @@ void FireEffect::EffectCrew(const std::shared_ptr<Crew> &crew, float deltaTime) 
 void FireEffect::Update(const std::shared_ptr<Station> &station, size_t index)
 {
     auto tileWithOxygen = station->GetTileWithComponentAtPosition<OxygenComponent>(GetPosition());
-    bool foamPresentOnTile = station->GetEffectOfTypeAtPosition<FoamEffect>(GetPosition()) != nullptr;
-    if (!tileWithOxygen || foamPresentOnTile)
+    if (!tileWithOxygen || station->GetEffectOfTypeAtPosition<FoamEffect>(GetPosition()))
     {
         if (index < station->effects.size())
-            station->effects.erase(station->effects.begin() + index);
+            station->effects.erase(std::begin(station->effects) + index);
         return;
     }
 
-    for (auto &tileWithDurability : station->GetTilesWithComponentAtPosition<DurabilityComponent>(GetPosition()))
+    for (auto &tile : station->GetTilesWithComponentAtPosition<DurabilityComponent>(GetPosition()))
     {
-        auto durability = tileWithDurability->GetComponent<DurabilityComponent>();
-        durability->SetHitpoints(durability->GetHitpoints() - FireEffect::DAMAGE_PER_SECOND * FIXED_DELTA_TIME);
+        auto durability = tile->GetComponent<DurabilityComponent>();
+        durability->SetHitpoints(durability->GetHitpoints() - DAMAGE_PER_SECOND * FIXED_DELTA_TIME);
     }
 
     auto oxygen = tileWithOxygen->GetComponent<OxygenComponent>();
     if (oxygen->GetOxygenLevel() < GetOxygenConsumption() * FIXED_DELTA_TIME * 2.)
-        SetSize(GetSize() * (2. / 3.));
+        SetSize(GetSize() * (2.f / 3.f));
 
     float oxygenToConsume = GetOxygenConsumption() * FIXED_DELTA_TIME;
     if (oxygen->GetOxygenLevel() < oxygenToConsume)
     {
-        oxygen->SetOxygenLevel(0);
+        oxygen->SetOxygenLevel(0.f);
         if (index < station->effects.size())
-            station->effects.erase(station->effects.begin() + index);
+            station->effects.erase(std::begin(station->effects) + index);
         return;
     }
 
     oxygen->SetOxygenLevel(oxygen->GetOxygenLevel() - oxygenToConsume);
-    SetSize(GetSize() + FireEffect::GROWTH_IF_FED_PER_SECOND * FIXED_DELTA_TIME);
+    SetSize(GetSize() + (GROWTH_IF_FED_PER_SECOND * FIXED_DELTA_TIME));
 
-    bool tileIsSolid = station->GetTileWithComponentAtPosition<SolidComponent>(GetPosition()) != nullptr;
-    if (!tileIsSolid && CheckIfEventHappens(SPREAD_CHANCE_PER_SECOND, FIXED_DELTA_TIME))
+    if (!station->GetTileWithComponentAtPosition<SolidComponent>(GetPosition()) && CheckIfEventHappens(SPREAD_CHANCE_PER_SECOND, FIXED_DELTA_TIME))
     {
         std::vector<Vector2Int> possibleOffsets;
-        for (const auto &direction : CARDINAL_DIRECTIONS)
+        for (auto &dir : CARDINAL_DIRECTIONS)
         {
-            Vector2Int offset = DirectionToVector2Int(direction);
-            Vector2Int neighborPos = GetPosition() + offset;
-
+            auto neighborPos = GetPosition() + DirectionToVector2Int(dir);
             bool neighborHasOxygen = station->GetTileWithComponentAtPosition<OxygenComponent>(neighborPos) != nullptr;
             bool neighborHasFire = station->GetEffectOfTypeAtPosition<FireEffect>(neighborPos) != nullptr;
             bool neighborHasFoam = station->GetEffectOfTypeAtPosition<FoamEffect>(neighborPos) != nullptr;
             if (neighborHasOxygen && !neighborHasFire && !neighborHasFoam)
-                possibleOffsets.push_back(offset);
+                possibleOffsets.push_back(DirectionToVector2Int(dir));
         }
 
-        if (possibleOffsets.empty())
-            return;
-
-        int selectedDirectionIndex = RandomIntWithRange(0, static_cast<int>(possibleOffsets.size()) - 1);
-        Vector2Int newFirePos = GetPosition() + possibleOffsets[selectedDirectionIndex];
-        station->effects.push_back(std::make_shared<FireEffect>(newFirePos));
+        if (!possibleOffsets.empty())
+        {
+            int selected = RandomIntWithRange(0, static_cast<int>(possibleOffsets.size()) - 1);
+            station->effects.push_back(std::make_shared<FireEffect>(GetPosition() + possibleOffsets[selected]));
+        }
     }
 }
