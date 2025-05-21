@@ -61,6 +61,26 @@ std::shared_ptr<Tile> Tile::CreateTile(const std::string &tileId, const Vector2I
         tilesAtPos.push_back(tile);
         std::sort(tilesAtPos.begin(), tilesAtPos.end(), Tile::CompareByHeight);
 
+        if (auto powerConnector = tile->GetComponent<PowerConnectorComponent>())
+        {
+            if (auto powerGrid = station->GetPowerGridAt(position))
+            {
+                if (auto consumer = tile->GetComponent<PowerConsumerComponent>())
+                {
+                    powerGrid->AddConsumer(position, consumer);
+                }
+                if (auto producer = tile->GetComponent<PowerProducerComponent>())
+                {
+                    powerGrid->AddProducer(position, producer);
+                }
+                if (auto battery = tile->GetComponent<BatteryComponent>())
+                {
+                    powerGrid->AddBattery(position, battery);
+                }
+                powerConnector->SetPowerGrid(powerGrid);
+            }
+        }
+
         if (auto door = tile->GetComponent<DoorComponent>())
             door->SetOpenState(door->IsOpen());
     }

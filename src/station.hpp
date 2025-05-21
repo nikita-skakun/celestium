@@ -107,7 +107,7 @@ public:
     {
         for (const auto &grid : powerGrids)
         {
-            if (grid->GetWireProximityState(pos) == 1)
+            if (grid->ContainsWire(pos))
                 return grid;
         }
         return nullptr;
