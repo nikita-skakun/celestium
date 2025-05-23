@@ -15,21 +15,33 @@ struct TileDef
         HEAD = 1 << 4,
     };
 
+    enum class Category : uint8_t
+    {
+        NONE,
+        STRUCTURE,
+        POWER,
+        OXYGEN,
+    };
+
 private:
     const std::string id;
     const Height height;
+    const Category category;
     const std::unordered_set<std::shared_ptr<Component>> refComponents;
     const std::shared_ptr<SpriteDef> refSprite;
+    const Vector2Int iconOffset;
 
 public:
-    TileDef(const std::string &id, Height height, const std::unordered_set<std::shared_ptr<Component>> &refComponents,
-            const std::shared_ptr<SpriteDef> &refSprite)
-        : id(id), height(height), refComponents(refComponents), refSprite(refSprite) {}
+    TileDef(const std::string &id, Height height, Category category, const std::unordered_set<std::shared_ptr<Component>> &refComponents,
+            const std::shared_ptr<SpriteDef> &refSprite, const Vector2Int &iconOffset)
+        : id(id), height(height), category(category), refComponents(refComponents), refSprite(refSprite), iconOffset(iconOffset) {}
 
     constexpr const std::string &GetId() const { return id; }
     constexpr Height GetHeight() const { return height; }
+    constexpr Category GetCategory() const { return category; }
     constexpr const std::unordered_set<std::shared_ptr<Component>> &GetReferenceComponents() const { return refComponents; }
     constexpr const std::shared_ptr<SpriteDef> &GetReferenceSprite() const { return refSprite; }
+    constexpr const Vector2Int &GetIconOffset() const { return iconOffset; }
 };
 
 template <>

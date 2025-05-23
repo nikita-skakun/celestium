@@ -121,6 +121,12 @@ void GameManager::ToggleSelectedCrew(const std::shared_ptr<Crew> &crew)
         selectedCrewList.erase(crewIter);
 }
 
+void GameManager::ToggleSelectedCategory(TileDef::Category category)
+{
+    auto &selectedCategory = GetInstance().selectedCategory;
+    selectedCategory = (selectedCategory == category) ? TileDef::Category::NONE : category;
+}
+
 // void GameManager::ToggleSelectedTile(const std::shared_ptr<Tile> &tile)
 // {
 //     auto &selectedTileList = GetInstance().selectedTileList;

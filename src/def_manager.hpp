@@ -126,6 +126,11 @@ private:
     }
 
 public:
+    static const std::unordered_map<std::string, std::shared_ptr<TileDef>> &GetTileDefinitions()
+    {
+        return DefinitionManager::GetInstance().tileDefinitions;
+    }
+
     static const std::shared_ptr<TileDef> &GetTileDefinition(const std::string &tileId)
     {
         return DefinitionManager::GetInstance().tileDefinitions.at(tileId);
@@ -188,15 +193,21 @@ public:
             if (tileId.empty())
                 throw std::runtime_error(std::format("Parsing of tile ID string failed: {}", tileId));
 
-            // Retrieve the height string
+            // Parse Height
             std::string heightStr;
             tileNode["height"] >> heightStr;
             StringRemoveSpaces(heightStr);
-
-            // Parse Height
             auto height = magic_enum::enum_flags_cast<TileDef::Height>(heightStr, magic_enum::case_insensitive);
             if (!height.has_value())
                 throw std::runtime_error(std::format("Parsing of height string for tile ({}) failed: {}", tileId, heightStr));
+
+            // Parse Category
+            std::string categoryStr;
+            tileNode["category"] >> categoryStr;
+            StringRemoveSpaces(categoryStr);
+            auto category = magic_enum::enum_cast<TileDef::Category>(categoryStr, magic_enum::case_insensitive);
+            if (!category.has_value())
+                throw std::runtime_error(std::format("Parsing of category string for tile ({}) failed: {}", tileId, categoryStr));
 
             // Parse Components
             std::unordered_set<std::shared_ptr<Component>> refComponents;
@@ -257,7 +268,14 @@ public:
                 refSprite = std::make_shared<MultiSliceSpriteDef>(slices);
             }
 
-            DefinitionManager::GetInstance().tileDefinitions[tileId] = std::make_shared<TileDef>(tileId, height.value(), refComponents, refSprite);
+            // Parse Icon Offset
+            Vector2Int iconOffset;
+            if (tileNode.has_child("icon"))
+                tileNode["icon"] >> iconOffset;
+            else
+                iconOffset = Vector2Int(0, 0);
+
+            DefinitionManager::GetInstance().tileDefinitions[tileId] = std::make_shared<TileDef>(tileId, height.value(), category.value(), refComponents, refSprite, iconOffset);
         }
     }
 };

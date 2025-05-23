@@ -1,6 +1,7 @@
 tiles:
   - id: BLUE_FLOOR
     height: FLOOR
+    category: STRUCTURE
     components:
       - type: STRUCTURE
       - type: WALKABLE
@@ -82,8 +83,10 @@ tiles:
       - conditions: NORTH_SAME | WEST_SAME | NORTH_WEST_DIFFERENT
         sourceRect: (32, 32, 10, 10)
         destOffset: (0, 0)
+    icon: (0, 1)
   - id: WALL
     height: FLOOR | KNEE | WAIST | CHEST | HEAD
+    category: STRUCTURE
     components:
       - type: STRUCTURE
       - type: SOLID
@@ -168,8 +171,10 @@ tiles:
       - conditions: NORTH_DIFFERENT | WEST_DIFFERENT
         sourceRect: (128, 32, 12, 12)
         destOffset: (0, 0)
+    icon: (4, 1)
   - id: OXYGEN_PRODUCER
     height: KNEE | WAIST | CHEST
+    category: OXYGEN
     components:
       - type: POWER_CONNECTOR
       - type: POWER_CONSUMER
@@ -181,8 +186,10 @@ tiles:
         hitpoints: 10.0
       - type: ROTATABLE
     sprite: (6, 7)
+    icon: (6, 7)
   - id: BATTERY
     height: KNEE | WAIST
+    category: POWER
     components:
       - type: POWER_CONNECTOR
       - type: BATTERY
@@ -191,8 +198,10 @@ tiles:
         hitpoints: 10.0
       - type: ROTATABLE
     sprite: (5, 7)
+    icon: (5, 7)
   - id: SOLAR_PANEL
     height: KNEE
+    category: POWER
     components:
       - type: POWER_CONNECTOR
       - type: POWER_PRODUCER
@@ -202,14 +211,18 @@ tiles:
         hitpoints: 5.0
       - type: ROTATABLE
     sprite: (7, 7)
+    icon: (7, 7)
   - id: FRAME
     height: FLOOR
+    category: STRUCTURE
     components:
       - type: STRUCTURE
       - type: WALKABLE
     sprite: (1, 0)
+    icon: (1, 0)
   - id: DOOR
     height: KNEE | WAIST | CHEST | HEAD
+    category: STRUCTURE
     components:
       - type: POWER_CONNECTOR
       - type: POWER_CONSUMER
@@ -220,3 +233,4 @@ tiles:
       - type: DURABILITY
         hitpoints: 15.0
       - type: ROTATABLE
+    icon: (0, 5)

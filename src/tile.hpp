@@ -23,6 +23,7 @@ public:
     constexpr const Vector2Int &GetPosition() const { return position; }
 
     constexpr TileDef::Height GetHeight() const { return tileDef->GetHeight(); }
+    constexpr TileDef::Category GetCategory() const { return tileDef->GetCategory(); }
 
     constexpr const std::shared_ptr<Sprite> &GetSprite() const { return sprite; }
     void SetSprite(const std::shared_ptr<Sprite> &newSprite) { sprite = newSprite; }

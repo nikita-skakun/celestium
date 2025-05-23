@@ -42,6 +42,11 @@ public:
         children.push_back(child);
     }
 
+    void ClearChildren()
+    {
+        children.clear();
+    }
+
     constexpr void RenderChildren() const
     {
         for (const auto &child : children)

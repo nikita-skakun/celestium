@@ -32,6 +32,7 @@ private:
     bool forcePaused = false;
     bool horizontalSymmetry = true;
     bool verticalSymmetry = false;
+    TileDef::Category selectedCategory = TileDef::Category::NONE;
     std::string buildTileId = "";
 
     double timeSinceFixedUpdate = 0;
@@ -101,6 +102,9 @@ public:
     // static void ToggleSelectedTile(const std::shared_ptr<Tile> &tile);
     // static void SetSelectedTile(const std::shared_ptr<Tile> &tile, bool select = true);
     // static bool IsTileSelected(const std::shared_ptr<Tile> &tile);
+
+    static TileDef::Category GetSelectedCategory() { return GetInstance().selectedCategory; }
+    static void ToggleSelectedCategory(TileDef::Category category);
 
     static const std::string &GetBuildTileId() { return GetInstance().buildTileId; }
     static void SetBuildTileId(const std::string &tileId) { GetInstance().buildTileId = tileId; }
