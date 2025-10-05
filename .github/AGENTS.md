@@ -34,18 +34,23 @@ Task list (starter)
     - `src/update.cpp` / `src/fixed_update.cpp` (UpdatePowerGrids)
     - `assets/definitions/tiles.yml` (if new wire tile needed)
   description:
-    The project README and TODOs mention that power connections should be part of the physical world. Currently power grids are maintained as high-level grids. Convert wires/connections into tiles/components so players can place/remove wires and wires show up in station tile map.
+    The project README and TODOs mention that power connections should be part of the physical world. The repository currently stores wire positions inside `PowerGrid::powerWires` (a positional set) and `Station::AddPowerWire`/`RemovePowerWire` handle merge/split and connector attachment. To make wires editable and visible while preserving current behaviour, perform a staged migration:
+
+    - Stage 1 (non-destructive): Add a Station-level infrastructure map and APIs that forward power-wire operations into the existing `PowerGrid` logic. This makes infra visible and editable without breaking grids.
+    - Stage 2 (optional refactor): When UI/tests are stable, migrate `PowerGrid` to read from Station's infrastructure map (or be constructed from it), then remove `PowerGrid::powerWires`.
   steps:
-    1. Inspect `PowerGrid` implementation in `src/power_grid.hpp` and usages in `UpdatePowerGrids()`.
-    2. Add a `WIRE` tile definition in `assets/definitions/tiles.yml` or a dedicated `PowerWireComponent` for tiles.
-    3. Update `Station::AddPowerWire` / `RemovePowerWire` to create/remove wire tiles or wire components, and ensure `tileMap` contains them.
-    4. Make `PowerGrid::ContainsWire` and grid discovery use the physical tiles/components rather than a separate wire set.
-    5. Update rendering so wires are visible (add a small sprite to `assets/tilesets/` if necessary).
-    6. Add a manual smoke test: create a test station, add wires, place a power producer and consumer, ensure power flows and batteries charge/discharge.
+    1. Inspect `PowerGrid` in `src/power_grid.hpp` and verify merge/split behaviour used by `Station::AddPowerWire`/`RemovePowerWire`.
+    2. Implement Stage 1:
+       - Add `enum class InfrastructureType { NONE, POWER_WIRE, ... }` and `std::unordered_map<Vector2Int, InfrastructureType> infrastructureMap;` to `Station`.
+       - Add `Station::AddInfrastructure(Vector2Int,pos, InfrastructureType)` and `RemoveInfrastructure(...)` that update `infrastructureMap` and call existing `AddPowerWire`/`RemovePowerWire` for `POWER_WIRE`.
+       - Add a simple debug overlay draw to render infrastructure positions (tiny sprite / colored square) so wires are visible in build mode.
+    3. Wire build-mode UI to call `AddInfrastructure`/`RemoveInfrastructure` (toggle on click).
+    4. Add smoke tests verifying parity with existing behaviour (grid creation, merge, split, connector attachment).
+    5. (Optional) Stage 2: Once UI/tests are stable, implement `Station::RebuildPowerGridsFromInfrastructure()` and refactor `PowerGrid` to be constructed from or query Station data; then remove `PowerGrid::powerWires`.
   acceptance:
-    - Player can place/remove wires in build mode and see wires on screen.
-    - `GetPowerGridAt()` and `UpdatePowerGrids()` find grids based on tile state.
-    - No memory leaks; wiring operations are reversible.
+    - Player can place/remove wires in build mode and see wires on screen (debug overlay OK initially).
+    - Behaviour parity: grid creation/merge/split and connector attachment remain unchanged when using the new Station APIs.
+    - Tests/smoke checks prove parity; only remove `PowerGrid::powerWires` after tests pass and parity is confirmed.
 
 - id: TASK-002
   title: Add save/load (serialization) for station state
