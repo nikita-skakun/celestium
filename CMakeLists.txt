@@ -3,11 +3,19 @@ project(Celestium VERSION 1.0 LANGUAGES CXX)
 
 # Ensure CMake has compilers set
 if(NOT DEFINED CMAKE_C_COMPILER)
-    set(CMAKE_C_COMPILER ${CC} CACHE STRING "" FORCE)
+    if(DEFINED CC)
+        set(CMAKE_C_COMPILER ${CC} CACHE STRING "" FORCE)
+    else()
+        set(CMAKE_C_COMPILER /usr/bin/clang CACHE STRING "" FORCE)
+    endif()
 endif()
 
 if(NOT DEFINED CMAKE_CXX_COMPILER)
-    set(CMAKE_CXX_COMPILER ${CXX} CACHE STRING "" FORCE)
+    if(DEFINED CXX)
+        set(CMAKE_CXX_COMPILER ${CXX} CACHE STRING "" FORCE)
+    else()
+        set(CMAKE_CXX_COMPILER /usr/bin/clang++ CACHE STRING "" FORCE)
+    endif()
 endif()
 
 # Specify the C++ standard
