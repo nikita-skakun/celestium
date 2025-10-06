@@ -3,6 +3,12 @@
 #include "game_state.hpp"
 #include <queue>
 
+template <>
+struct magic_enum::customize::enum_range<Station::InfrastructureType>
+{
+    static constexpr bool is_flags = true;
+};
+
 void Station::CreateRectRoom(const Vector2Int &pos, const Vector2Int &size)
 {
     auto self = shared_from_this();
@@ -37,7 +43,7 @@ void Station::CreateHorizontalCorridor(const Vector2Int &startPos, int length, i
             bool isEnding = (i == 0 || i == absLength - 1);
             bool isWall = isEnding ? (y != 0) : (y == start || y == end - 1);
             Vector2Int pos = startPos + Vector2Int(i * direction, y);
-            std::shared_ptr<Tile> oldTile = GetTileAtPosition(pos);
+            const auto &oldTile = GetTileAtPosition(pos);
             if (isWall && oldTile)
                 continue;
 
@@ -79,10 +85,9 @@ std::shared_ptr<Station> CreateStation()
     station->effects.push_back(std::make_shared<FireEffect>(Vector2Int(12, 0)));
     station->effects.push_back(std::make_shared<FoamEffect>(Vector2Int(13, 0)));
 
-    station->AddPowerWire(Vector2Int(0, 0));
-    station->AddPowerWire(Vector2Int(0, -2));
-    station->AddPowerWire(Vector2Int(0, -1));
-
+    station->AddInfrastructure(Station::InfrastructureType::POWER_WIRE, Vector2Int(0, 0));
+    station->AddInfrastructure(Station::InfrastructureType::POWER_WIRE, Vector2Int(0, -2));
+    station->AddInfrastructure(Station::InfrastructureType::POWER_WIRE, Vector2Int(0, -1));
 
     auto fireAlarm = AudioManager::LoadSoundEffect("../assets/audio/fire_alarm.opus", SoundEffect::Type::EFFECT, false, true, .05);
     std::weak_ptr<SoundEffect> _fireAlarm = fireAlarm;
@@ -150,7 +155,7 @@ void Station::UpdateSpriteOffsets() const
 
 std::string Station::GetTileIdAtPosition(const Vector2Int &pos, TileDef::Height height) const
 {
-    std::shared_ptr<Tile> tile = GetTileAtPosition(pos, height);
+    const auto &tile = GetTileAtPosition(pos, height);
 
     if (!tile)
         return "";
@@ -220,26 +225,234 @@ void Station::RemoveEffect(const std::shared_ptr<Effect> &effect)
                   { return effect == other; });
 }
 
+bool Station::AddInfrastructure(InfrastructureType type, const Vector2Int &pos)
+{
+    auto infraEntryOpt = Find(infrastructureMap, pos);
+    InfrastructureType existingEntry = InfrastructureType::NONE;
+    if (infraEntryOpt.has_value())
+        existingEntry = infraEntryOpt.value()->second;
+
+    InfrastructureType newEntry = existingEntry | type;
+    if (newEntry == existingEntry)
+        return false;
+
+    infrastructureMap[pos] = newEntry;
+
+    if (EnumHasAny(type, InfrastructureType::POWER_WIRE))
+        RebuildPowerGridsFromInfrastructure();
+
+    return true;
+}
+
+bool Station::RemoveInfrastructure(InfrastructureType type, const Vector2Int &pos)
+{
+    auto infraEntryOpt = Find(infrastructureMap, pos);
+    if (!infraEntryOpt.has_value())
+        return false;
+
+    InfrastructureType existingEntry = infraEntryOpt.value()->second;
+
+    // Remove only the flags specified by the type mask
+    InfrastructureType newEntry = existingEntry & ~type;
+
+    if (newEntry == existingEntry)
+        return false;
+
+    if (newEntry == InfrastructureType::NONE)
+        infrastructureMap.erase(pos);
+    else
+        infrastructureMap[pos] = newEntry;
+
+    if (EnumHasAny(type, InfrastructureType::POWER_WIRE))
+        RebuildPowerGridsFromInfrastructure();
+
+    return true;
+}
+
+// Rebuild powerGrids from Station::infrastructureMap (POWER_WIRE entries).
+void Station::RebuildPowerGridsFromInfrastructure()
+{
+    // Preserve old wire->grid mapping so we can retain grid colors across rebuilds.
+    auto oldWireToGridMap = wireToGridMap;
+
+    // Clear existing grids
+    powerGrids.clear();
+    wireToGridMap.clear();
+
+    // Collect all wire positions
+    std::vector<Vector2Int> allWires;
+    for (const auto &entry : infrastructureMap)
+    {
+        if (EnumHasAny(entry.second, InfrastructureType::POWER_WIRE))
+            allWires.push_back(entry.first);
+    }
+
+    // First: discover all connected components of power wires
+    std::unordered_set<Vector2Int> visited;
+    std::vector<std::vector<Vector2Int>> components;
+    for (const auto &start : allWires)
+    {
+        if (visited.contains(start))
+            continue;
+
+        std::vector<Vector2Int> componentVec;
+        std::queue<Vector2Int> q;
+        q.push(start);
+
+        while (!q.empty())
+        {
+            Vector2Int cur = q.front();
+            q.pop();
+            if (visited.contains(cur))
+                continue;
+            visited.insert(cur);
+            componentVec.push_back(cur);
+
+            for (const auto &dir : CARDINAL_DIRECTIONS)
+            {
+                Vector2Int nb = cur + DirectionToVector2Int(dir);
+                if (visited.contains(nb))
+                    continue;
+
+                auto neighborInfraItOpt = Find(infrastructureMap, nb);
+                if (neighborInfraItOpt.has_value())
+                {
+                    auto neighborInfraIt = *neighborInfraItOpt; // extract iterator
+                    if (EnumHasAny(neighborInfraIt->second, InfrastructureType::POWER_WIRE))
+                    {
+                        q.push(nb);
+                    }
+                }
+            }
+        }
+
+        if (!componentVec.empty())
+            components.push_back(std::move(componentVec));
+    }
+
+    // For each component compute overlap counts with old grids and track best
+    std::vector<std::unordered_map<std::shared_ptr<PowerGrid>, int>> componentOverlaps(components.size());
+
+    for (size_t i = 0; i < components.size(); ++i)
+    {
+        for (const auto &p : components[i])
+        {
+            auto oldWireGridItOpt = Find(oldWireToGridMap, p);
+            if (oldWireGridItOpt.has_value())
+            {
+                auto oldWireGridIt = *oldWireGridItOpt;
+                if (oldWireGridIt->second)
+                {
+                    auto oldGridShared = oldWireGridIt->second;
+                    componentOverlaps[i][oldGridShared]++;
+                }
+            }
+        }
+    }
+
+    // Determine for each old grid which component it overlaps the most (winner)
+    std::unordered_map<std::shared_ptr<PowerGrid>, std::pair<size_t, int>> oldGridBest; // oldGrid -> (bestComponentIndex, count)
+    for (size_t i = 0; i < componentOverlaps.size(); ++i)
+    {
+        for (const auto &pair : componentOverlaps[i])
+        {
+            auto oldShared = pair.first;
+            int count = pair.second;
+            auto it = oldGridBest.find(oldShared);
+            if (it == oldGridBest.end() || count > it->second.second)
+            {
+                oldGridBest[oldShared] = std::make_pair(i, count);
+            }
+        }
+    }
+
+    // Now construct new PowerGrid objects for each component. Only inherit
+    // color from an old grid if that old grid's best component is this one.
+    for (size_t idx = 0; idx < components.size(); ++idx)
+    {
+        auto &component = components[idx];
+        auto newGrid = std::make_shared<PowerGrid>();
+
+        // Find an old grid that chose this component as its best overlap
+        std::shared_ptr<PowerGrid> chosenOldGrid = nullptr;
+        for (const auto &bestPair : oldGridBest)
+        {
+            if (bestPair.second.first == static_cast<size_t>(idx))
+            {
+                chosenOldGrid = bestPair.first;
+                break;
+            }
+        }
+
+        if (chosenOldGrid)
+        {
+            // Inherit the old color for the winning component only
+            newGrid->SetDebugColor(chosenOldGrid->GetDebugColor());
+        }
+
+        for (const auto &wirePos : component)
+        {
+            // Add connectors at this position if any
+            auto consumerTile = GetTileWithComponentAtPosition<PowerConsumerComponent>(wirePos);
+            if (consumerTile)
+            {
+                auto consumer = consumerTile->GetComponent<PowerConsumerComponent>();
+                if (consumer)
+                    newGrid->AddConsumer(wirePos, consumer);
+            }
+
+            auto producerTile = GetTileWithComponentAtPosition<PowerProducerComponent>(wirePos);
+            if (producerTile)
+            {
+                auto producer = producerTile->GetComponent<PowerProducerComponent>();
+                if (producer)
+                    newGrid->AddProducer(wirePos, producer);
+            }
+
+            auto batteryTile = GetTileWithComponentAtPosition<BatteryComponent>(wirePos);
+            if (batteryTile)
+            {
+                auto battery = batteryTile->GetComponent<BatteryComponent>();
+                if (battery)
+                    newGrid->AddBattery(wirePos, battery);
+            }
+
+            // Map wire position to this grid
+            wireToGridMap[wirePos] = newGrid;
+        }
+
+        newGrid->RebuildCaches();
+        powerGrids.push_back(newGrid);
+    }
+}
+
+Station::InfrastructureType Station::GetInfrastructureAt(const Vector2Int &pos) const
+{
+    auto infraLookupOpt = Find(infrastructureMap, pos);
+    if (!infraLookupOpt.has_value())
+        return InfrastructureType::NONE;
+    return infraLookupOpt.value()->second;
+}
+
 std::shared_ptr<Tile> Station::GetTileAtPosition(const Vector2Int &pos, TileDef::Height height) const
 {
-    auto posIt = tileMap.find(pos);
-    if (posIt != tileMap.end())
+    auto tilesAtPosOpt = Find(tileMap, pos);
+    if (tilesAtPosOpt.has_value())
     {
+        const auto &vec = (*tilesAtPosOpt)->second;
         if (height == TileDef::Height::NONE)
         {
-            if (posIt->second.empty())
+            if (vec.empty())
                 return nullptr;
 
-            return posIt->second[0];
+            return vec[0];
         }
         else
         {
-            for (const std::shared_ptr<Tile> &tile : posIt->second)
+            for (const std::shared_ptr<Tile> &tile : vec)
             {
-                if ((magic_enum::enum_integer(tile->GetHeight()) & magic_enum::enum_integer(height)) == 0)
-                    continue;
-
-                return tile;
+                if (EnumHasAny(tile->GetHeight(), height))
+                    return tile;
             }
         }
     }
@@ -250,11 +463,11 @@ std::shared_ptr<Tile> Station::GetTileAtPosition(const Vector2Int &pos, TileDef:
 const std::vector<std::shared_ptr<Tile>> &Station::GetTilesAtPosition(const Vector2Int &pos) const
 {
     static const std::vector<std::shared_ptr<Tile>> empty;
-    auto posIt = tileMap.find(pos);
-    if (posIt == tileMap.end())
+    auto tilesAtPosOpt = Find(tileMap, pos);
+    if (!tilesAtPosOpt.has_value())
         return empty;
 
-    return posIt->second;
+    return (*tilesAtPosOpt)->second;
 }
 
 std::vector<std::shared_ptr<Tile>> Station::GetDecorativeTilesAtPosition(const Vector2Int &pos) const
@@ -324,188 +537,4 @@ std::vector<std::shared_ptr<Tile>> Station::GetTilesWithHeightAtPosition(const V
     }
 
     return foundTiles;
-}
-
-bool Station::AddPowerWire(const Vector2Int &pos)
-{
-    std::shared_ptr<PowerGrid> finalGrid = nullptr;
-    std::vector<std::shared_ptr<PowerGrid>> gridsToRemove;
-
-    // Iterate through existing power grids
-    for (auto it = powerGrids.begin(); it != powerGrids.end(); ++it)
-    {
-        auto &currentGrid = *it;
-        // Check if can connect to the current grid
-        u_int8_t state = currentGrid->GetWireProximityState(pos);
-
-        // Wire already exists in this grid
-        if (state == 1)
-            return false;
-
-        // Not connectable to this grid
-        if (state == 0)
-            continue;
-
-        // Current grid is connectable
-        if (!finalGrid)
-        {
-            // This is the first connectable grid found, make it the finalGrid
-            finalGrid = currentGrid;
-            finalGrid->AddWire(pos);
-        }
-        else
-        {
-            // Another connectable grid found, merge it into finalGrid
-            if (currentGrid != finalGrid)
-            {
-                finalGrid->MergeGrid(currentGrid);
-                // Mark currentGrid for removal
-                gridsToRemove.push_back(currentGrid);
-            }
-        }
-    }
-
-    // Remove all grids that were merged into finalGrid
-    if (!gridsToRemove.empty())
-    {
-        std::erase_if(powerGrids, [&](const std::shared_ptr<PowerGrid> &g)
-                      { return Contains(gridsToRemove, g); });
-    }
-
-    // If no existing grid was connectable, create a new one
-    if (!finalGrid)
-    {
-        auto newGrid = std::make_shared<PowerGrid>();
-        newGrid->AddWire(pos);
-        powerGrids.push_back(newGrid);
-        finalGrid = newGrid;
-    }
-
-    auto powerConsumerTile = GetTileWithComponentAtPosition<PowerConsumerComponent>(pos);
-    if (powerConsumerTile)
-    {
-        auto powerConsumerComponent = powerConsumerTile->GetComponent<PowerConsumerComponent>();
-        auto powerConnectorComponent = powerConsumerTile->GetComponent<PowerConnectorComponent>();
-        // Add the consumer to the grid
-        if (powerConsumerComponent && powerConnectorComponent)
-        {
-            finalGrid->AddConsumer(pos, powerConsumerComponent);
-            powerConnectorComponent->SetPowerGrid(finalGrid);
-        }
-    }
-
-    auto powerProducerTile = GetTileWithComponentAtPosition<PowerProducerComponent>(pos);
-    if (powerProducerTile)
-    {
-        auto powerProducerComponent = powerProducerTile->GetComponent<PowerProducerComponent>();
-        auto powerConnectorComponent = powerProducerTile->GetComponent<PowerConnectorComponent>();
-        // Add the producer to the grid
-        if (powerProducerComponent && powerConnectorComponent)
-        {
-            finalGrid->AddProducer(pos, powerProducerComponent);
-            powerConnectorComponent->SetPowerGrid(finalGrid);
-        }
-    }
-
-    auto batteryTile = GetTileWithComponentAtPosition<BatteryComponent>(pos);
-    if (batteryTile)
-    {
-        auto batteryComponent = batteryTile->GetComponent<BatteryComponent>();
-        auto powerConnectorComponent = batteryTile->GetComponent<PowerConnectorComponent>();
-        // Add the battery to the grid
-        if (batteryComponent && powerConnectorComponent)
-        {
-            finalGrid->AddBattery(pos, batteryComponent);
-            powerConnectorComponent->SetPowerGrid(finalGrid);
-        }
-    }
-
-    return true;
-}
-
-bool Station::RemovePowerWire(const Vector2Int &pos)
-{
-    // Find the grid that owns this wire
-    std::shared_ptr<PowerGrid> originalGrid = GetPowerGridAt(pos);
-
-    // Wire not part of any grid
-    if (!originalGrid)
-        return false;
-
-    // Remove the wire from the grid
-    originalGrid->RemoveWire(pos);
-
-    // If the grid is now empty after removing the wire
-    if (originalGrid->GetWires().empty())
-    {
-        // Remove the empty grid
-        std::erase(powerGrids, originalGrid);
-        return true;
-    }
-
-    // Perform flood fill to find all connected components in the potentially fragmented grid
-    std::vector<std::unordered_set<Vector2Int>> foundComponents;
-    // Tracks wires already assigned to a component
-    std::unordered_set<Vector2Int> visitedWires;
-
-    // Iterate over all wires remaining in the original grid to find components
-    for (const auto &startWirePos : originalGrid->GetWires())
-    {
-        // This wire is already part of a found component
-        if (visitedWires.contains(startWirePos))
-            continue;
-
-        // Start a new BFS for a new component
-        std::unordered_set<Vector2Int> currentComponent;
-        std::queue<Vector2Int> toVisitQueue;
-        toVisitQueue.push(startWirePos);
-
-        while (!toVisitQueue.empty())
-        {
-            Vector2Int currentWire = toVisitQueue.front();
-            toVisitQueue.pop();
-
-            // Already processed
-            if (visitedWires.contains(currentWire))
-                continue;
-
-            visitedWires.insert(currentWire);
-            currentComponent.insert(currentWire);
-
-            for (const auto &dir : CARDINAL_DIRECTIONS)
-            {
-                Vector2Int neighborPos = currentWire + DirectionToVector2Int(dir);
-
-                // Check if neighbor is a wire in this grid and not yet visited
-                if (originalGrid->ContainsWire(neighborPos) && !visitedWires.contains(neighborPos))
-                    toVisitQueue.push(neighborPos);
-            }
-        }
-
-        if (!currentComponent.empty())
-            foundComponents.push_back(std::move(currentComponent));
-    }
-
-    // If the grid did not split, no need to replace it in powerGrids
-    if (foundComponents.size() <= 1)
-        return true;
-
-    // Grid split into multiple components, remove the original grid object
-    std::erase(powerGrids, originalGrid);
-
-    // Create new grid objects for each identified component
-    for (const auto &componentWires : foundComponents)
-    {
-        auto newGrid = std::make_shared<PowerGrid>();
-        for (const Vector2Int &wirePosInComponent : componentWires)
-        {
-            // Populate the new grid
-            newGrid->AddWire(wirePosInComponent);
-        }
-
-        // Add the new grid to the station's list
-        powerGrids.push_back(newGrid);
-    }
-
-    return true;
 }

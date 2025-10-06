@@ -42,7 +42,7 @@ Task list (starter)
     1. Inspect `PowerGrid` in `src/power_grid.hpp` and verify merge/split behaviour used by `Station::AddPowerWire`/`RemovePowerWire`.
     2. Implement Stage 1:
        - Add `enum class InfrastructureType { NONE, POWER_WIRE, ... }` and `std::unordered_map<Vector2Int, InfrastructureType> infrastructureMap;` to `Station`.
-       - Add `Station::AddInfrastructure(Vector2Int,pos, InfrastructureType)` and `RemoveInfrastructure(...)` that update `infrastructureMap` and call existing `AddPowerWire`/`RemovePowerWire` for `POWER_WIRE`.
+  - Add `Station::AddInfrastructure(InfrastructureType, Vector2Int)` and `RemoveInfrastructure(...)` that update `infrastructureMap` and call existing `AddPowerWire`/`RemovePowerWire` for `POWER_WIRE`.
        - Add a simple debug overlay draw to render infrastructure positions (tiny sprite / colored square) so wires are visible in build mode.
     3. Wire build-mode UI to call `AddInfrastructure`/`RemoveInfrastructure` (toggle on click).
     4. Add smoke tests verifying parity with existing behaviour (grid creation, merge, split, connector attachment).

@@ -1,5 +1,6 @@
 #pragma once
 #include "const.hpp"
+#include <algorithm>
 #include <format>
 #include <magic_enum/magic_enum_flags.hpp>
 #include <magic_enum/magic_enum.hpp>
@@ -457,7 +458,22 @@ constexpr bool Contains(const Container &container, const T &value) noexcept
     return std::find(container.begin(), container.end(), value) != container.end();
 }
 
+// Overload for containers with find method (like std::map, std::unordered_map, std::set, etc.)
+template <typename Container, typename Key>
+    requires requires(const Container &c, const Key &k) { c.find(k); }
+constexpr std::optional<typename Container::const_iterator> Find(const Container &container, const Key &key) noexcept
+{
+    auto it = container.find(key);
+    if (it != container.end())
+    {
+        return it;
+    }
+    return std::nullopt;
+}
+
+// Overload for containers without find method (like std::vector, std::list, etc.)
 template <typename Container, typename T>
+    requires(!requires(const Container &c, const T &k) { c.find(k); })
 constexpr std::optional<typename Container::const_iterator> Find(const Container &container, const T &value) noexcept
 {
     auto it = std::find(container.begin(), container.end(), value);
@@ -466,6 +482,13 @@ constexpr std::optional<typename Container::const_iterator> Find(const Container
         return it;
     }
     return std::nullopt;
+}
+
+// Utility functions for Enums
+template <typename E>
+constexpr bool EnumHasAny(E value, E mask) noexcept
+{
+    return (magic_enum::enum_underlying(value) & magic_enum::enum_underlying(mask)) != 0;
 }
 
 // Utility functions for std::string
@@ -515,4 +538,65 @@ template <typename T>
 constexpr std::string EnumToName(const T &enumValue)
 {
     return MacroCaseToName(std::string(magic_enum::enum_name(enumValue)));
+}
+
+// Utility functions for Color
+inline Color RandomColor()
+{
+    int h = RandomIntWithRange(0, 359);
+    int sInt = RandomIntWithRange(60, 90);
+    int vInt = RandomIntWithRange(70, 100);
+
+    float hue = static_cast<float>(h);
+    float sat = static_cast<float>(sInt) / 100.f;
+    float val = static_cast<float>(vInt) / 100.f;
+
+    float c = val * sat;
+    float hh = hue / 60.f;
+    float x = c * (1.f - std::fabs(std::fmod(hh, 2.f) - 1.f));
+    float r1 = 0, g1 = 0, b1 = 0;
+
+    if (hh < 1.f)
+    {
+        r1 = c;
+        g1 = x;
+        b1 = 0;
+    }
+    else if (hh < 2.f)
+    {
+        r1 = x;
+        g1 = c;
+        b1 = 0;
+    }
+    else if (hh < 3.f)
+    {
+        r1 = 0;
+        g1 = c;
+        b1 = x;
+    }
+    else if (hh < 4.f)
+    {
+        r1 = 0;
+        g1 = x;
+        b1 = c;
+    }
+    else if (hh < 5.f)
+    {
+        r1 = x;
+        g1 = 0;
+        b1 = c;
+    }
+    else
+    {
+        r1 = c;
+        g1 = 0;
+        b1 = x;
+    }
+
+    float m = val - c;
+    unsigned char r = static_cast<unsigned char>(std::clamp((r1 + m) * 255.f, 0.f, 255.f));
+    unsigned char g = static_cast<unsigned char>(std::clamp((g1 + m) * 255.f, 0.f, 255.f));
+    unsigned char b = static_cast<unsigned char>(std::clamp((b1 + m) * 255.f, 0.f, 255.f));
+
+    return Color{r, g, b, 255};
 }

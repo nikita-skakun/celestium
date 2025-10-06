@@ -5,7 +5,6 @@
 struct PowerGrid : public std::enable_shared_from_this<PowerGrid>
 {
 protected:
-    std::unordered_set<Vector2Int> powerWires;
     std::unordered_map<Vector2Int, std::weak_ptr<PowerConsumerComponent>> _consumers;
     std::unordered_map<Vector2Int, std::weak_ptr<PowerProducerComponent>> _producers;
     std::unordered_map<Vector2Int, std::weak_ptr<BatteryComponent>> _batteries;
@@ -15,91 +14,37 @@ protected:
     std::vector<std::shared_ptr<BatteryComponent>> cachedBatteries;
 
     bool dirty = false;
+    Color debugColor = {0, 0, 0, 0};
 
 public:
-    constexpr u_int8_t GetWireProximityState(Vector2Int pos) const
+    PowerGrid()
     {
-        if (Contains(powerWires, pos))
-            return 1; // Wire at the given position
-
-        for (const auto &dir : CARDINAL_DIRECTIONS)
-        {
-            Vector2Int adjacentPos = pos + DirectionToVector2Int(dir);
-            if (Contains(powerWires, adjacentPos))
-                return 2; // Wire adjacent to the given position
-        }
-
-        return 0; // No wire at or adjacent to the given position
+        debugColor = RandomColor();
+        debugColor.a = 192;
     }
 
-    constexpr bool ContainsWire(Vector2Int pos) const { return Contains(powerWires, pos); }
-    constexpr const std::unordered_set<Vector2Int> &GetWires() const { return powerWires; }
+    void SetDebugColor(const Color &c) { debugColor = c; }
+    Color GetDebugColor() const { return debugColor; }
 
-    constexpr void AddWire(Vector2Int pos)
-    {
-        powerWires.insert(pos);
-        dirty = true;
-    }
-
-    constexpr void RemoveWire(Vector2Int pos)
-    {
-        powerWires.erase(pos);
-        dirty = true;
-    }
-
-    constexpr void AddConsumer(Vector2Int pos, std::shared_ptr<PowerConsumerComponent> consumer)
+    constexpr void AddConsumer(Vector2Int pos, const std::shared_ptr<PowerConsumerComponent> &consumer)
     {
         _consumers[pos] = consumer;
         dirty = true;
     }
 
-    constexpr void AddProducer(Vector2Int pos, std::shared_ptr<PowerProducerComponent> producer)
+    constexpr void AddProducer(Vector2Int pos, const std::shared_ptr<PowerProducerComponent> &producer)
     {
         _producers[pos] = producer;
         dirty = true;
     }
 
-    constexpr void AddBattery(Vector2Int pos, std::shared_ptr<BatteryComponent> battery)
+    constexpr void AddBattery(Vector2Int pos, const std::shared_ptr<BatteryComponent> &battery)
     {
         _batteries[pos] = battery;
         dirty = true;
     }
 
-    constexpr void MergeGrid(std::shared_ptr<PowerGrid> other)
-    {
-        auto updateConnectorsParents = [this](auto &componentMap)
-        {
-            for (auto &pair : componentMap)
-            {
-                auto component = pair.second.lock();
-                if (!component)
-                    continue;
-
-                auto parentTile = component->GetParent();
-                if (!parentTile)
-                    continue;
-
-                auto connector = parentTile->template GetComponent<PowerConnectorComponent>();
-                if (!connector)
-                    continue;
-
-                connector->SetPowerGrid(this->shared_from_this());
-            }
-        };
-
-        updateConnectorsParents(other->_consumers);
-        updateConnectorsParents(other->_producers);
-        updateConnectorsParents(other->_batteries);
-
-        powerWires.merge(other->powerWires);
-        _consumers.merge(other->_consumers);
-        _producers.merge(other->_producers);
-        _batteries.merge(other->_batteries);
-
-        dirty = true;
-    }
-
-    constexpr void Disconnect(std::shared_ptr<Tile> parentTile)
+    constexpr void Disconnect(const std::shared_ptr<Tile> &parentTile)
     {
         if (!parentTile)
             return;

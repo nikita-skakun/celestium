@@ -205,27 +205,26 @@ void DrawStationOverlays()
         }
     }
 
-    for (const auto &powerGrid : station->powerGrids)
+    // Render power wires grouped by their owning PowerGrid using Station::wireToGridMap
+    std::unordered_map<std::shared_ptr<PowerGrid>, std::vector<Vector2Int>> gridToWires;
+    for (const auto &entry : station->wireToGridMap)
     {
-        if (!powerGrid)
+        if (!entry.second)
+            continue;
+        gridToWires[entry.second].push_back(entry.first);
+    }
+
+    for (const auto &pair : gridToWires)
+    {
+        auto gridShared = pair.first;
+        if (!gridShared)
             continue;
 
-        std::hash<void *> ptrHasher;
-        size_t seed = ptrHasher(powerGrid.get());
+        const std::vector<Vector2Int> &wires = pair.second;
 
-        // Derive color components from the seed hash
-        unsigned char rBase = static_cast<unsigned char>((seed & 0xFF0000) >> 16);
-        unsigned char gBase = static_cast<unsigned char>((seed & 0x00FF00) >> 8);
-        unsigned char bBase = static_cast<unsigned char>(seed & 0x0000FF);
+        Color gridColor = gridShared->GetDebugColor();
 
-        // Adjust components to make colors more visually distinct and avoid very dark colors
-        unsigned char r = 50 + (rBase % 206);
-        unsigned char g = 50 + (gBase % 206);
-        unsigned char b = 50 + (bBase % 206);
-
-        Color gridColor = {r, g, b, 192};
-
-        for (const auto &wirePos : powerGrid->GetWires())
+        for (const auto &wirePos : wires)
         {
             DrawCircleV(GameManager::WorldToScreen(wirePos), 3.0f * zoom, gridColor);
         }
@@ -322,7 +321,7 @@ void DrawCrew()
 
         if (!actionQueue.empty() && actionQueue.front()->GetType() == Action::Type::MOVE)
         {
-            const std::shared_ptr<MoveAction> moveAction = std::dynamic_pointer_cast<MoveAction>(actionQueue.front());
+            const auto moveAction = std::dynamic_pointer_cast<MoveAction>(actionQueue.front());
 
             if (!GameManager::IsInBuildMode() && !moveAction->path.empty())
             {

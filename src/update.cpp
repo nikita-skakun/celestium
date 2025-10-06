@@ -136,6 +136,45 @@ void HandleBuildMode()
 {
     auto station = GameManager::GetStation();
 
+    // Infrastructure handling
+    if (IsKeyDown(KEY_I) && (IsMouseButtonPressed(MOUSE_LEFT_BUTTON) || IsMouseButtonPressed(MOUSE_RIGHT_BUTTON)))
+    {
+        Vector2Int cursorPos = ToVector2Int(GameManager::GetWorldMousePos());
+
+        // Build mirrored positions according to symmetry settings
+        std::vector<Vector2Int> posList;
+        posList.push_back(cursorPos);
+        if (GameManager::IsHorizontalSymmetry())
+            posList.push_back(Vector2Int(cursorPos.x, -cursorPos.y - 1));
+        if (GameManager::IsVerticalSymmetry())
+            posList.push_back(Vector2Int(-cursorPos.x - 1, cursorPos.y));
+        if (GameManager::IsHorizontalSymmetry() && GameManager::IsVerticalSymmetry())
+            posList.push_back(Vector2Int(-cursorPos.x - 1, -cursorPos.y - 1));
+
+        // Deduplicate positions (same position can be added multiple times on symmetry axes)
+        std::unordered_set<Vector2Int> uniquePos(posList.begin(), posList.end());
+
+        bool isPlace = IsMouseButtonPressed(MOUSE_LEFT_BUTTON);
+        bool isRemove = IsMouseButtonPressed(MOUSE_RIGHT_BUTTON);
+
+        for (const auto &pos : uniquePos)
+        {
+            if (isPlace)
+            {
+                station->AddInfrastructure(Station::InfrastructureType::POWER_WIRE, pos);
+                LogMessage(LogLevel::DEBUG, std::format("Added power wire at {}", ToString(pos)));
+            }
+            else if (isRemove)
+            {
+                station->RemoveInfrastructure(Station::InfrastructureType::POWER_WIRE, pos);
+                LogMessage(LogLevel::DEBUG, std::format("Removed power wire at {}", ToString(pos)));
+            }
+        }
+
+        return;
+    }
+
+    // Proceed with normal left-click build behavior only when left mouse button was pressed
     if (!station || !IsMouseButtonPressed(MOUSE_LEFT_BUTTON))
         return;
 
@@ -323,8 +362,8 @@ void HandleCrewActions()
         if (!crew->IsAlive() || crew->GetActionQueue().empty())
             continue;
 
-        std::shared_ptr<Action> currentAction = crew->GetActionQueue().front();
-        currentAction->Update(crew);
+    const auto &currentAction = crew->GetActionQueue().front();
+    currentAction->Update(crew);
     }
 }
 
