@@ -5,76 +5,6 @@
 #include "station.hpp"
 #include "update.hpp"
 
-// void HandleTileMovement(const std::shared_ptr<Station> &station)
-// {
-//     auto moveTile = GameManager::GetMoveTile();
-//     Vector2Int cursorPos = ToVector2Int(GameManager::GetWorldMousePos());
-
-//     if (moveTile->GetPosition() != cursorPos)
-//     {
-//         bool canMove = true;
-//         auto overlappingTiles = station->GetTilesWithHeightAtPosition(cursorPos, moveTile->GetHeight());
-//         for (auto &tile : overlappingTiles)
-//         {
-//             if (tile->GetId() == moveTile->GetId())
-//             {
-//                 canMove = false;
-//                 break;
-//             }
-//             tile->DeleteTile();
-//         }
-
-//         if (canMove)
-//         {
-//             moveTile->MoveTile(cursorPos);
-//             LogMessage(LogLevel::DEBUG, std::format("Moved tile {} to {}", moveTile->GetId(), ToString(moveTile->GetPosition())));
-//         }
-//     }
-//     // Clear the move tile to prevent further movement actions until a new tile is selected
-//     GameManager::ClearMoveTile();
-// }
-
-// void HandleSelectTile(const std::shared_ptr<Station> &station)
-// {
-//     Vector2Int cursorPos = ToVector2Int(GameManager::GetWorldMousePos());
-//     auto allTiles = station->GetTilesWithHeightAtPosition(cursorPos, GameManager::GetSelectedHeight());
-
-//     if (allTiles.empty())
-//     {
-//         if (!IsKeyDown(KEY_LEFT_SHIFT))
-//         {
-//             GameManager::ClearSelectedTiles();
-//         }
-//         return;
-//     }
-
-//     auto clickedTile = allTiles[0];
-//     bool isSelectedTile = false;
-
-//     for (const auto &weakTile : GameManager::GetSelectedTiles())
-//     {
-//         if (auto selectedTile = weakTile.lock(); selectedTile && selectedTile == clickedTile)
-//         {
-//             isSelectedTile = true;
-//             break;
-//         }
-//     }
-
-//     if (IsKeyDown(KEY_LEFT_SHIFT))
-//     {
-//         GameManager::ToggleSelectedTile(clickedTile);
-//     }
-//     else if (isSelectedTile && GameManager::GetSelectedTiles().size() == 1)
-//     {
-//         GameManager::ClearSelectedTiles();
-//     }
-//     else
-//     {
-//         GameManager::ClearSelectedTiles();
-//         GameManager::SetSelectedTile(clickedTile);
-//     }
-// }
-
 void HandlePlaceTile(const std::shared_ptr<Station> &station)
 {
     const std::string &tileIdToPlace = GameManager::GetBuildTileId();
@@ -121,71 +51,58 @@ void HandlePlaceTile(const std::shared_ptr<Station> &station)
 
             // Create the new tile
             auto newTile = Tile::CreateTile(tileIdToPlace, pos, station);
-            LogMessage(LogLevel::DEBUG, std::format("Placed tile {} at {}", tileIdToPlace, ToString(pos)));
+            LogMessage(LogLevel::DEBUG, std::format("Placed {} at {}", tileDefinition->GetName(), ToString(pos)));
             tilesPlaced = true;
         }
     }
 
     if (tilesPlaced)
-    {
         station->UpdateSpriteOffsets();
+}
+
+void HandleDeleteTile(const std::shared_ptr<Station> &station)
+{
+    Vector2Int cursorPos = ToVector2Int(GameManager::GetWorldMousePos());
+
+    std::vector<Vector2Int> posListToDelete;
+    posListToDelete.push_back(cursorPos);
+    if (GameManager::IsHorizontalSymmetry())
+        posListToDelete.push_back(Vector2Int(cursorPos.x, -cursorPos.y - 1));
+
+    if (GameManager::IsVerticalSymmetry())
+        posListToDelete.push_back(Vector2Int(-cursorPos.x - 1, cursorPos.y));
+
+    if (GameManager::IsHorizontalSymmetry() && GameManager::IsVerticalSymmetry())
+        posListToDelete.push_back(Vector2Int(-cursorPos.x - 1, -cursorPos.y - 1));
+
+    bool deletedAny = false;
+    for (const auto &pos : posListToDelete)
+    {
+        const auto &tilesHere = station->GetTilesAtPosition(pos);
+        if (!tilesHere.empty())
+        {
+            auto topTile = tilesHere.back();
+            LogMessage(LogLevel::DEBUG, std::format("Deleted {} at {}", topTile->GetName(), ToString(pos)));
+            topTile->DeleteTile();
+            deletedAny = true;
+        }
     }
+
+    if (deletedAny)
+        station->UpdateSpriteOffsets();
 }
 
 void HandleBuildMode()
 {
     auto station = GameManager::GetStation();
-
-    // Infrastructure handling
-    if (IsKeyDown(KEY_I) && (IsMouseButtonPressed(MOUSE_LEFT_BUTTON) || IsMouseButtonPressed(MOUSE_RIGHT_BUTTON)))
-    {
-        Vector2Int cursorPos = ToVector2Int(GameManager::GetWorldMousePos());
-
-        // Build mirrored positions according to symmetry settings
-        std::vector<Vector2Int> posList;
-        posList.push_back(cursorPos);
-        if (GameManager::IsHorizontalSymmetry())
-            posList.push_back(Vector2Int(cursorPos.x, -cursorPos.y - 1));
-        if (GameManager::IsVerticalSymmetry())
-            posList.push_back(Vector2Int(-cursorPos.x - 1, cursorPos.y));
-        if (GameManager::IsHorizontalSymmetry() && GameManager::IsVerticalSymmetry())
-            posList.push_back(Vector2Int(-cursorPos.x - 1, -cursorPos.y - 1));
-
-        // Deduplicate positions (same position can be added multiple times on symmetry axes)
-        std::unordered_set<Vector2Int> uniquePos(posList.begin(), posList.end());
-
-        bool isPlace = IsMouseButtonPressed(MOUSE_LEFT_BUTTON);
-        bool isRemove = IsMouseButtonPressed(MOUSE_RIGHT_BUTTON);
-
-        for (const auto &pos : uniquePos)
-        {
-            if (isPlace)
-            {
-                station->AddInfrastructure(Station::InfrastructureType::POWER_WIRE, pos);
-                LogMessage(LogLevel::DEBUG, std::format("Added power wire at {}", ToString(pos)));
-            }
-            else if (isRemove)
-            {
-                station->RemoveInfrastructure(Station::InfrastructureType::POWER_WIRE, pos);
-                LogMessage(LogLevel::DEBUG, std::format("Removed power wire at {}", ToString(pos)));
-            }
-        }
-
-        return;
-    }
-
-    // Proceed with normal left-click build behavior only when left mouse button was pressed
-    if (!station || !IsMouseButtonPressed(MOUSE_LEFT_BUTTON))
+    if (!station)
         return;
 
-    // if (GameManager::GetMoveTile())
-    //     HandleTileMovement(station);
-    // else
-    // if (GameManager::GetBuildTileId().empty())
-    //     HandleSelectTile(station);
-    // else
-    if (!GameManager::GetBuildTileId().empty())
+    if (IsMouseButtonPressed(MOUSE_LEFT_BUTTON) && !GameManager::GetBuildTileId().empty())
         HandlePlaceTile(station);
+
+    if (IsMouseButtonPressed(MOUSE_RIGHT_BUTTON))
+        HandleDeleteTile(station);
 }
 
 void HandleCrewHover()
@@ -241,28 +158,6 @@ void HandleMouseDragEnd()
     auto &camera = GameManager::GetCamera();
     if (!IsMouseButtonReleased(MOUSE_LEFT_BUTTON) || !camera.IsDragging())
         return;
-
-    // auto station = GameManager::GetStation();
-    // if (camera.GetDragType() == PlayerCam::DragType::POWER_CONNECT && station)
-    // {
-    //     Vector2Int startPos = ToVector2Int(camera.GetDragStart());
-    //     Vector2Int endPos = ToVector2Int(camera.GetDragEnd());
-
-    //     if (startPos == endPos)
-    //         return;
-
-    //     auto startTile = station->GetTileWithComponentAtPosition<PowerConnectorComponent>(startPos);
-    //     auto endTile = station->GetTileWithComponentAtPosition<PowerConnectorComponent>(endPos);
-
-    //     if (startTile && endTile)
-    //     {
-    //         auto startConnector = startTile->GetComponent<PowerConnectorComponent>();
-    //         auto endConnector = endTile->GetComponent<PowerConnectorComponent>();
-
-    //         if (PowerConnectorComponent::AddConnection(startConnector, endConnector))
-    //             LogMessage(LogLevel::DEBUG, std::format("{} connected to {}!", startTile->GetName(), endTile->GetName()));
-    //     }
-    // }
 
     camera.SetDragType(PlayerCam::DragType::NONE);
 }

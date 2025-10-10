@@ -9,17 +9,6 @@ struct Station : public std::enable_shared_from_this<Station>
     std::unordered_map<Vector2Int, std::vector<std::shared_ptr<Tile>>> tileMap;
     std::vector<std::shared_ptr<Effect>> effects;
     std::vector<std::shared_ptr<PowerGrid>> powerGrids;
-    // Infrastructure overlay
-    enum class InfrastructureType : uint8_t
-    {
-        NONE = 0,
-        POWER_WIRE = 1 << 0,
-        // future: WATER_PIPE = 1 << 1, GAS_PIPE = 1 << 2, etc.
-    };
-
-    std::unordered_map<Vector2Int, InfrastructureType> infrastructureMap;
-    // Mapping from wire position to owning PowerGrid (updated by RebuildPowerGridsFromInfrastructure)
-    std::unordered_map<Vector2Int, std::shared_ptr<PowerGrid>> wireToGridMap;
 
 public:
     std::shared_ptr<Tile> GetTileAtPosition(const Vector2Int &pos, TileDef::Height height = TileDef::Height::NONE) const;
@@ -112,18 +101,9 @@ public:
         return result;
     }
 
-    bool AddInfrastructure(InfrastructureType type, const Vector2Int &pos);
-    bool RemoveInfrastructure(InfrastructureType mask, const Vector2Int &pos);
-    InfrastructureType GetInfrastructureAt(const Vector2Int &pos) const;
-    std::shared_ptr<PowerGrid> GetPowerGridAt(const Vector2Int &pos) const
-    {
-        auto it = wireToGridMap.find(pos);
-        if (it != wireToGridMap.end())
-            return it->second;
-        return nullptr;
-    }
+    // Use PowerConnectorComponent on wire tiles to find their PowerGrid.
 
-    // Rebuild power grid objects from the canonical infrastructure map (POWER_WIRE entries)
+    // Rebuild power grid objects from tile-based wires (POWER height layer)
     void RebuildPowerGridsFromInfrastructure();
 
     void CreateRectRoom(const Vector2Int &pos, const Vector2Int &size);

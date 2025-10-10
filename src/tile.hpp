@@ -34,7 +34,7 @@ public:
     bool IsActive() const;
 
     constexpr const std::string &GetId() const { return tileDef->GetId(); }
-    constexpr std::string GetName() const { return MacroCaseToName(GetId()); }
+    constexpr std::string GetName() const { return tileDef->GetName(); }
     std::string GetInfo() const;
 
     template <typename T>

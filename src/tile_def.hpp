@@ -13,6 +13,7 @@ struct TileDef
         WAIST = 1 << 2,
         CHEST = 1 << 3,
         HEAD = 1 << 4,
+        POWER = 1 << 5,
     };
 
     enum class Category : uint8_t
@@ -37,6 +38,7 @@ public:
         : id(id), height(height), category(category), refComponents(refComponents), refSprite(refSprite), iconOffset(iconOffset) {}
 
     constexpr const std::string &GetId() const { return id; }
+    constexpr std::string GetName() const { return MacroCaseToName(id); }
     constexpr Height GetHeight() const { return height; }
     constexpr Category GetCategory() const { return category; }
     constexpr const std::unordered_set<std::shared_ptr<Component>> &GetReferenceComponents() const { return refComponents; }

@@ -3,12 +3,6 @@
 #include "game_state.hpp"
 #include <queue>
 
-template <>
-struct magic_enum::customize::enum_range<Station::InfrastructureType>
-{
-    static constexpr bool is_flags = true;
-};
-
 void Station::CreateRectRoom(const Vector2Int &pos, const Vector2Int &size)
 {
     auto self = shared_from_this();
@@ -80,14 +74,15 @@ std::shared_ptr<Station> CreateStation()
     Tile::CreateTile("SOLAR_PANEL", Vector2Int(-1, -7), station);
     Tile::CreateTile("SOLAR_PANEL", Vector2Int(1, -7), station);
 
-    station->UpdateSpriteOffsets();
-
     station->effects.push_back(std::make_shared<FireEffect>(Vector2Int(12, 0)));
     station->effects.push_back(std::make_shared<FoamEffect>(Vector2Int(13, 0)));
 
-    station->AddInfrastructure(Station::InfrastructureType::POWER_WIRE, Vector2Int(0, 0));
-    station->AddInfrastructure(Station::InfrastructureType::POWER_WIRE, Vector2Int(0, -2));
-    station->AddInfrastructure(Station::InfrastructureType::POWER_WIRE, Vector2Int(0, -1));
+    // Place initial wire tiles as real tiles on the POWER layer
+    Tile::CreateTile("WIRE", Vector2Int(0, 0), station);
+    Tile::CreateTile("WIRE", Vector2Int(0, -2), station);
+    Tile::CreateTile("WIRE", Vector2Int(0, -1), station);
+
+    station->UpdateSpriteOffsets();
 
     auto fireAlarm = AudioManager::LoadSoundEffect("../assets/audio/fire_alarm.opus", SoundEffect::Type::EFFECT, false, true, .05);
     std::weak_ptr<SoundEffect> _fireAlarm = fireAlarm;
@@ -225,66 +220,34 @@ void Station::RemoveEffect(const std::shared_ptr<Effect> &effect)
                   { return effect == other; });
 }
 
-bool Station::AddInfrastructure(InfrastructureType type, const Vector2Int &pos)
-{
-    auto infraEntryOpt = Find(infrastructureMap, pos);
-    InfrastructureType existingEntry = InfrastructureType::NONE;
-    if (infraEntryOpt.has_value())
-        existingEntry = infraEntryOpt.value()->second;
-
-    InfrastructureType newEntry = existingEntry | type;
-    if (newEntry == existingEntry)
-        return false;
-
-    infrastructureMap[pos] = newEntry;
-
-    if (EnumHasAny(type, InfrastructureType::POWER_WIRE))
-        RebuildPowerGridsFromInfrastructure();
-
-    return true;
-}
-
-bool Station::RemoveInfrastructure(InfrastructureType type, const Vector2Int &pos)
-{
-    auto infraEntryOpt = Find(infrastructureMap, pos);
-    if (!infraEntryOpt.has_value())
-        return false;
-
-    InfrastructureType existingEntry = infraEntryOpt.value()->second;
-
-    // Remove only the flags specified by the type mask
-    InfrastructureType newEntry = existingEntry & ~type;
-
-    if (newEntry == existingEntry)
-        return false;
-
-    if (newEntry == InfrastructureType::NONE)
-        infrastructureMap.erase(pos);
-    else
-        infrastructureMap[pos] = newEntry;
-
-    if (EnumHasAny(type, InfrastructureType::POWER_WIRE))
-        RebuildPowerGridsFromInfrastructure();
-
-    return true;
-}
-
-// Rebuild powerGrids from Station::infrastructureMap (POWER_WIRE entries).
+// Rebuild powerGrids from POWER-layer tiles.
 void Station::RebuildPowerGridsFromInfrastructure()
 {
-    // Preserve old wire->grid mapping so we can retain grid colors across rebuilds.
-    auto oldWireToGridMap = wireToGridMap;
+    // Preserve old wire->grid mapping by reading the PowerConnectorComponent on existing POWER tiles
+    std::unordered_map<Vector2Int, std::shared_ptr<PowerGrid>> oldWireToGridMap;
+    for (const auto &tilesAtPos : tileMap)
+    {
+        const Vector2Int &pos = tilesAtPos.first;
+        if (auto powerTile = GetTileWithHeightAtPosition(pos, TileDef::Height::POWER))
+        {
+            if (auto connector = powerTile->GetComponent<PowerConnectorComponent>())
+            {
+                if (auto g = connector->GetPowerGrid())
+                    oldWireToGridMap[pos] = g;
+            }
+        }
+    }
 
     // Clear existing grids
     powerGrids.clear();
-    wireToGridMap.clear();
 
-    // Collect all wire positions
+    // Collect all wire positions from POWER-layer tiles only
     std::vector<Vector2Int> allWires;
-    for (const auto &entry : infrastructureMap)
+    for (const auto &tilesAtPos : tileMap)
     {
-        if (EnumHasAny(entry.second, InfrastructureType::POWER_WIRE))
-            allWires.push_back(entry.first);
+        const Vector2Int &pos = tilesAtPos.first;
+        if (GetTileWithHeightAtPosition(pos, TileDef::Height::POWER))
+            allWires.push_back(pos);
     }
 
     // First: discover all connected components of power wires
@@ -314,15 +277,9 @@ void Station::RebuildPowerGridsFromInfrastructure()
                 if (visited.contains(nb))
                     continue;
 
-                auto neighborInfraItOpt = Find(infrastructureMap, nb);
-                if (neighborInfraItOpt.has_value())
-                {
-                    auto neighborInfraIt = *neighborInfraItOpt; // extract iterator
-                    if (EnumHasAny(neighborInfraIt->second, InfrastructureType::POWER_WIRE))
-                    {
-                        q.push(nb);
-                    }
-                }
+                // Neighbor is considered part of the component if it has a POWER-layer tile
+                if (GetTileWithHeightAtPosition(nb, TileDef::Height::POWER))
+                    q.push(nb);
             }
         }
 
@@ -417,21 +374,19 @@ void Station::RebuildPowerGridsFromInfrastructure()
                     newGrid->AddBattery(wirePos, battery);
             }
 
-            // Map wire position to this grid
-            wireToGridMap[wirePos] = newGrid;
+            auto allTilesHere = GetAllTilesAtPosition(wirePos);
+            for (const auto &tile : allTilesHere)
+            {
+                if (auto connector = tile->GetComponent<PowerConnectorComponent>())
+                {
+                    connector->SetPowerGrid(newGrid);
+                }
+            }
         }
 
         newGrid->RebuildCaches();
         powerGrids.push_back(newGrid);
     }
-}
-
-Station::InfrastructureType Station::GetInfrastructureAt(const Vector2Int &pos) const
-{
-    auto infraLookupOpt = Find(infrastructureMap, pos);
-    if (!infraLookupOpt.has_value())
-        return InfrastructureType::NONE;
-    return infraLookupOpt.value()->second;
 }
 
 std::shared_ptr<Tile> Station::GetTileAtPosition(const Vector2Int &pos, TileDef::Height height) const
@@ -451,7 +406,7 @@ std::shared_ptr<Tile> Station::GetTileAtPosition(const Vector2Int &pos, TileDef:
         {
             for (const std::shared_ptr<Tile> &tile : vec)
             {
-                if (EnumHasAny(tile->GetHeight(), height))
+                if (magic_enum::enum_flags_test_any(tile->GetHeight(), height))
                     return tile;
             }
         }

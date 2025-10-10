@@ -61,23 +61,30 @@ std::shared_ptr<Tile> Tile::CreateTile(const std::string &tileId, const Vector2I
         tilesAtPos.push_back(tile);
         std::sort(tilesAtPos.begin(), tilesAtPos.end(), Tile::CompareByHeight);
 
+        if (magic_enum::enum_flags_test_any(tile->GetHeight(), TileDef::Height::POWER))
+        {
+            if (auto st = tile->GetStation())
+                st->RebuildPowerGridsFromInfrastructure();
+        }
+
         if (auto powerConnector = tile->GetComponent<PowerConnectorComponent>())
         {
-            if (auto powerGrid = station->GetPowerGridAt(position))
+            if (auto powerWireTile = station->GetTileWithHeightAtPosition(position, TileDef::Height::POWER))
             {
-                if (auto consumer = tile->GetComponent<PowerConsumerComponent>())
+                if (auto powerWireConnector = powerWireTile->GetComponent<PowerConnectorComponent>())
                 {
-                    powerGrid->AddConsumer(position, consumer);
+                    if (auto wireGrid = powerWireConnector->GetPowerGrid())
+                    {
+                        // Register this tile's components with the found grid
+                        if (auto consumer = tile->GetComponent<PowerConsumerComponent>())
+                            wireGrid->AddConsumer(position, consumer);
+                        if (auto producer = tile->GetComponent<PowerProducerComponent>())
+                            wireGrid->AddProducer(position, producer);
+                        if (auto battery = tile->GetComponent<BatteryComponent>())
+                            wireGrid->AddBattery(position, battery);
+                        powerConnector->SetPowerGrid(wireGrid);
+                    }
                 }
-                if (auto producer = tile->GetComponent<PowerProducerComponent>())
-                {
-                    powerGrid->AddProducer(position, producer);
-                }
-                if (auto battery = tile->GetComponent<BatteryComponent>())
-                {
-                    powerGrid->AddBattery(position, battery);
-                }
-                powerConnector->SetPowerGrid(powerGrid);
             }
         }
 
@@ -133,6 +140,13 @@ void Tile::DeleteTile()
         std::erase_if(tilesAtPos, [&self](const std::shared_ptr<Tile> &tile)
                       { return tile == self; });
 
+        // If this tile occupied the POWER height layer, rebuild power grids so
+        // removal of a wire tile updates connectivity.
+        if (magic_enum::enum_flags_test_any(GetHeight(), TileDef::Height::POWER))
+        {
+            if (auto st = station)
+                st->RebuildPowerGridsFromInfrastructure();
+        }
         station->UpdateSpriteOffsets();
     }
 

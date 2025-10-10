@@ -110,7 +110,7 @@ public:
     constexpr std::shared_ptr<PowerGrid> GetPowerGrid() const { return _powerGrid.lock(); }
 
     constexpr Type GetType() const override { return Type::POWER_CONNECTOR; }
-    constexpr std::optional<std::string> GetInfo() override { return std::nullopt; } // return std::format("   + Power Connector: {} ({})", magic_enum::enum_flags_name(GetIo()), GetConnections().size());
+    constexpr std::optional<std::string> GetInfo() override { return std::nullopt; }
 };
 
 struct BatteryComponent : Component

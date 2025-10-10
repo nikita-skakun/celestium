@@ -484,13 +484,6 @@ constexpr std::optional<typename Container::const_iterator> Find(const Container
     return std::nullopt;
 }
 
-// Utility functions for Enums
-template <typename E>
-constexpr bool EnumHasAny(E value, E mask) noexcept
-{
-    return (magic_enum::enum_underlying(value) & magic_enum::enum_underlying(mask)) != 0;
-}
-
 // Utility functions for std::string
 constexpr std::string StringToTitleCase(const std::string &a) noexcept
 {
