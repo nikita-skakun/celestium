@@ -167,14 +167,15 @@ SpriteCondition Station::GetSpriteConditionForTile(const std::shared_ptr<Tile> &
     const std::string &tileId = tile->GetId();
 
     SpriteCondition status = SpriteCondition::NONE;
-    status |= CheckAdjacentTile(tilePos, tileId, Direction::N) ? SpriteCondition::NORTH_SAME : SpriteCondition::NORTH_DIFFERENT;
-    status |= CheckAdjacentTile(tilePos, tileId, Direction::E) ? SpriteCondition::EAST_SAME : SpriteCondition::EAST_DIFFERENT;
-    status |= CheckAdjacentTile(tilePos, tileId, Direction::S) ? SpriteCondition::SOUTH_SAME : SpriteCondition::SOUTH_DIFFERENT;
-    status |= CheckAdjacentTile(tilePos, tileId, Direction::W) ? SpriteCondition::WEST_SAME : SpriteCondition::WEST_DIFFERENT;
-    status |= CheckAdjacentTile(tilePos, tileId, Direction::N | Direction::E) ? SpriteCondition::NORTH_EAST_SAME : SpriteCondition::NORTH_EAST_DIFFERENT;
-    status |= CheckAdjacentTile(tilePos, tileId, Direction::S | Direction::E) ? SpriteCondition::SOUTH_EAST_SAME : SpriteCondition::SOUTH_EAST_DIFFERENT;
-    status |= CheckAdjacentTile(tilePos, tileId, Direction::S | Direction::W) ? SpriteCondition::SOUTH_WEST_SAME : SpriteCondition::SOUTH_WEST_DIFFERENT;
-    status |= CheckAdjacentTile(tilePos, tileId, Direction::N | Direction::W) ? SpriteCondition::NORTH_WEST_SAME : SpriteCondition::NORTH_WEST_DIFFERENT;
+    auto height = tile->GetHeight();
+    status |= CheckAdjacentTile(tilePos, tileId, Direction::N, height) ? SpriteCondition::NORTH_SAME : SpriteCondition::NORTH_DIFFERENT;
+    status |= CheckAdjacentTile(tilePos, tileId, Direction::E, height) ? SpriteCondition::EAST_SAME : SpriteCondition::EAST_DIFFERENT;
+    status |= CheckAdjacentTile(tilePos, tileId, Direction::S, height) ? SpriteCondition::SOUTH_SAME : SpriteCondition::SOUTH_DIFFERENT;
+    status |= CheckAdjacentTile(tilePos, tileId, Direction::W, height) ? SpriteCondition::WEST_SAME : SpriteCondition::WEST_DIFFERENT;
+    status |= CheckAdjacentTile(tilePos, tileId, Direction::N | Direction::E, height) ? SpriteCondition::NORTH_EAST_SAME : SpriteCondition::NORTH_EAST_DIFFERENT;
+    status |= CheckAdjacentTile(tilePos, tileId, Direction::S | Direction::E, height) ? SpriteCondition::SOUTH_EAST_SAME : SpriteCondition::SOUTH_EAST_DIFFERENT;
+    status |= CheckAdjacentTile(tilePos, tileId, Direction::S | Direction::W, height) ? SpriteCondition::SOUTH_WEST_SAME : SpriteCondition::SOUTH_WEST_DIFFERENT;
+    status |= CheckAdjacentTile(tilePos, tileId, Direction::N | Direction::W, height) ? SpriteCondition::NORTH_WEST_SAME : SpriteCondition::NORTH_WEST_DIFFERENT;
 
     return status;
 }
