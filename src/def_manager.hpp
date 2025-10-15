@@ -119,6 +119,72 @@ private:
         }
     }
 
+    static std::vector<SpriteCondition> ExpandUtilityConditions(const std::string &condStr)
+    {
+        std::string s = StringToMacroCase(condStr);
+
+        std::vector<SpriteCondition> out;
+
+        // Support CARDINAL_N_SAME where N is 0..4: exactly N of the cardinal neighbors
+        // are SAME and the rest are DIFFERENT. This generates all bit combinations
+        // of NORTH/EAST/SOUTH/WEST where the count of SAME equals N.
+        if (s.rfind("CARDINAL_", 0) == 0 && s.size() > 9 && s.find("_SAME", 9) != std::string::npos)
+        {
+            // Extract the number between CARDINAL_ and _SAME
+            size_t start = 9;
+            size_t end = s.find("_SAME", start);
+            std::string numStr = s.substr(start, end - start);
+            int n = 0;
+            try
+            {
+                n = std::stoi(numStr);
+            }
+            catch (...) {
+                return out;
+            }
+
+            if (n < 0 || n > 4)
+                return out;
+
+            // Order: NORTH(0), EAST(1), SOUTH(2), WEST(3)
+            const SpriteCondition sameFlags[4] = {
+                SpriteCondition::NORTH_SAME,
+                SpriteCondition::EAST_SAME,
+                SpriteCondition::SOUTH_SAME,
+                SpriteCondition::WEST_SAME,
+            };
+            const SpriteCondition diffFlags[4] = {
+                SpriteCondition::NORTH_DIFFERENT,
+                SpriteCondition::EAST_DIFFERENT,
+                SpriteCondition::SOUTH_DIFFERENT,
+                SpriteCondition::WEST_DIFFERENT,
+            };
+
+            // Iterate all 16 masks and pick those with exactly n bits set
+            for (uint32_t mask = 0; mask < 16; ++mask)
+            {
+                int bits = __builtin_popcount(mask);
+                if (bits != n)
+                    continue;
+
+                SpriteCondition combined = SpriteCondition::NONE;
+                for (int i = 0; i < 4; ++i)
+                {
+                    if (mask & (1u << i))
+                        combined = combined | sameFlags[i];
+                    else
+                        combined = combined | diffFlags[i];
+                }
+                out.push_back(combined);
+            }
+
+            return out;
+        }
+
+        // Unknown utility, return empty to indicate not handled
+        return out;
+    }
+
     static DefinitionManager &GetInstance()
     {
         static DefinitionManager instance;
@@ -245,24 +311,65 @@ public:
                     sliceNode["conditions"] >> conditionsStr;
                     StringRemoveSpaces(conditionsStr);
 
-                    SpriteCondition conditions;
-                    if (conditionsStr.empty() || conditionsStr == "NONE")
-                        conditions = SpriteCondition::NONE;
-                    else
-                    {
-                        auto parsedConditions = magic_enum::enum_flags_cast<SpriteCondition>(conditionsStr, magic_enum::case_insensitive);
-                        if (!parsedConditions.has_value())
-                            throw std::runtime_error(std::format("Parsing of conditions string for tile ({}) failed: {}", tileId, conditionsStr));
-                        conditions = parsedConditions.value();
-                    }
-
                     Rectangle sourceRect;
                     sliceNode["sourceRect"] >> sourceRect;
 
                     Vector2 destOffset;
                     sliceNode["destOffset"] >> destOffset;
 
-                    slices.emplace_back(conditions, SpriteSlice(sourceRect, destOffset));
+                    if (conditionsStr.empty() || conditionsStr == "NONE")
+                    {
+                        slices.emplace_back(SpriteCondition::NONE, SpriteSlice(sourceRect, destOffset));
+                        continue;
+                    }
+
+                    std::vector<SpriteCondition> combos;
+                    combos.push_back(SpriteCondition::NONE);
+
+                    size_t start = 0;
+                    while (start < conditionsStr.size())
+                    {
+                        size_t sep = conditionsStr.find('|', start);
+                        std::string token = (sep == std::string::npos) ? conditionsStr.substr(start) : conditionsStr.substr(start, sep - start);
+                        start = (sep == std::string::npos) ? conditionsStr.size() : sep + 1;
+
+                        if (token.empty())
+                            continue;
+
+                        // Try parse token as enum flag
+                        std::vector<SpriteCondition> tokenPossibilities;
+                        auto parsed = magic_enum::enum_flags_cast<SpriteCondition>(token, magic_enum::case_insensitive);
+                        if (parsed.has_value())
+                        {
+                            tokenPossibilities.push_back(parsed.value());
+                        }
+                        else
+                        {
+                            // Try utility expansion
+                            auto expandedToken = ExpandUtilityConditions(token);
+                            if (!expandedToken.empty())
+                                tokenPossibilities.insert(tokenPossibilities.end(), expandedToken.begin(), expandedToken.end());
+                        }
+
+                        if (tokenPossibilities.empty())
+                            throw std::runtime_error(std::format("Parsing of conditions string for tile ({}) failed: {}", tileId, token));
+
+                        // Build new combos by OR-ing existing combos with each possibility
+                        std::vector<SpriteCondition> newCombos;
+                        for (auto &existing : combos)
+                        {
+                            for (auto &poss : tokenPossibilities)
+                            {
+                                SpriteCondition combined = existing | poss;
+                                newCombos.push_back(combined);
+                            }
+                        }
+                        combos.swap(newCombos);
+                    }
+
+                    // Add a slice for each resulting combination
+                    for (auto &cond : combos)
+                        slices.emplace_back(cond, SpriteSlice(sourceRect, destOffset));
                 }
 
                 refSprite = std::make_shared<MultiSliceSpriteDef>(slices);

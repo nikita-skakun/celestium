@@ -515,6 +515,62 @@ constexpr std::string StringToTitleCase(const std::string &a) noexcept
     return result;
 }
 
+inline std::string StringToMacroCase(const std::string &s) noexcept
+{
+    std::string out;
+    out.reserve(s.size());
+
+    auto is_alnum = [](char c)
+    { return std::isalnum(static_cast<unsigned char>(c)); };
+
+    char prev = '\0';
+    for (size_t i = 0; i < s.size(); ++i)
+    {
+        char c = s[i];
+        if (c == '_' || !is_alnum(c))
+        {
+            if (!out.empty() && out.back() != '_')
+                out.push_back('_');
+            prev = '_';
+            continue;
+        }
+
+        bool curIsUpper = std::isupper(static_cast<unsigned char>(c));
+        bool curIsLower = std::islower(static_cast<unsigned char>(c));
+        bool prevIsUpper = prev && std::isupper(static_cast<unsigned char>(prev));
+        bool prevIsLower = prev && std::islower(static_cast<unsigned char>(prev));
+        bool prevIsDigit = prev && std::isdigit(static_cast<unsigned char>(prev));
+        char next = (i + 1 < s.size()) ? s[i + 1] : '\0';
+        bool nextIsLower = next && std::islower(static_cast<unsigned char>(next));
+
+        if (!out.empty())
+        {
+            // Insert separator for transitions like lower->Upper, digit->alpha,
+            // or acronym end (UPPER UPPER lower -> UPPER_UPPER_lower)
+            if ((prevIsLower && curIsUpper) ||
+                (prevIsDigit && (curIsUpper || curIsLower)) ||
+                (prevIsUpper && curIsUpper && nextIsLower))
+            {
+                if (out.back() != '_')
+                    out.push_back('_');
+            }
+        }
+
+        out.push_back(static_cast<char>(std::toupper(static_cast<unsigned char>(c))));
+        prev = c;
+    }
+
+    // Trim leading/trailing underscores
+    size_t start = 0;
+    while (start < out.size() && out[start] == '_')
+        ++start;
+    size_t end = out.size();
+    while (end > start && out[end - 1] == '_')
+        --end;
+
+    return (start == 0 && end == out.size()) ? out : out.substr(start, end - start);
+}
+
 constexpr void StringRemoveSpaces(std::string &s) noexcept
 {
     std::erase_if(s, ::isspace);

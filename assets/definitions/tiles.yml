@@ -241,5 +241,47 @@ tiles:
       - type: POWER_CONNECTOR
       - type: DURABILITY
         hitpoints: 3.0
-    sprite: (5, 6)
+    slicedSprite:
+      - conditions: NORTH_SAME
+        sourceRect: (175, 192, 2, 15)
+        destOffset: (15, 0)
+      - conditions: EAST_SAME
+        sourceRect: (177, 207, 15, 2)
+        destOffset: (17, 15)
+      - conditions: SOUTH_SAME
+        sourceRect: (175, 209, 2, 15)
+        destOffset: (15, 17)
+      - conditions: WEST_SAME
+        sourceRect: (160, 207, 15, 2)
+        destOffset: (0, 15)
+      - conditions: NORTH_SAME | EAST_SAME
+        sourceRect: (154, 192, 2, 2)
+        destOffset: (15, 15)
+      - conditions: EAST_SAME | SOUTH_SAME
+        sourceRect: (158, 192, 2, 2)
+        destOffset: (15, 15)
+      - conditions: SOUTH_SAME | WEST_SAME
+        sourceRect: (152, 192, 2, 2)
+        destOffset: (15, 15)
+      - conditions: WEST_SAME | NORTH_SAME
+        sourceRect: (156, 192, 2, 2)
+        destOffset: (15, 15)
+      - conditions: NORTH_SAME | SOUTH_SAME
+        sourceRect: (152, 192, 2, 2)
+        destOffset: (15, 15)
+      - conditions: EAST_SAME | WEST_SAME
+        sourceRect: (154, 192, 2, 2)
+        destOffset: (15, 15)
+      - conditions: CARDINAL_0_SAME
+        sourceRect: (148, 192, 4, 4)
+        destOffset: (14, 14)
+      - conditions: CARDINAL_1_SAME
+        sourceRect: (148, 192, 4, 4)
+        destOffset: (14, 14)
+      - conditions: CARDINAL_3_SAME
+        sourceRect: (148, 192, 4, 4)
+        destOffset: (14, 14)
+      - conditions: CARDINAL_4_SAME
+        sourceRect: (148, 192, 4, 4)
+        destOffset: (14, 14)
     icon: (5, 6)
