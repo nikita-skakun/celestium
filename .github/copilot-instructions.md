@@ -36,14 +36,6 @@ if (auto oxygenComp = tile->GetComponent<OxygenComponent>()) {
 
 ## Development Workflow
 
-### Build Process
-```bash
-nix-shell  # Enter development environment
-mkdir build && cd build
-cmake .. && make -j$(nproc)
-./celestium
-```
-
 ### Key Directories
 - `src/`: Core game logic (.cpp/.hpp pairs)
 - `assets/definitions/`: YAML configuration files
