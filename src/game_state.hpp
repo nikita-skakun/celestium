@@ -1,6 +1,8 @@
 #pragma once
 #include "camera.hpp"
+#include "render_snapshot.hpp"
 #include "tile_def.hpp"
+#include <atomic>
 #include <thread>
 
 struct Crew;
@@ -23,10 +25,7 @@ private:
     std::vector<std::shared_ptr<Crew>> crewList;
     std::vector<std::weak_ptr<Crew>> hoveredCrewList;
     std::vector<std::weak_ptr<Crew>> selectedCrewList;
-    // std::vector<std::weak_ptr<Tile>> selectedTileList;
-    // TileDef::Height selectedHeight = TileDef::Height::NONE;
     std::shared_ptr<Station> station;
-    // std::weak_ptr<Tile> moveTile;
     bool buildMode = false;
     bool paused = false;
     bool forcePaused = false;
@@ -37,6 +36,21 @@ private:
 
     double timeSinceFixedUpdate = 0;
     std::thread updateThread;
+
+    // Double-buffered render state
+    std::atomic<std::shared_ptr<RenderSnapshot>> renderSnapshot;
+
+public:
+    // Render thread: get current snapshot
+    static std::shared_ptr<RenderSnapshot> GetRenderSnapshot()
+    {
+        return GetInstance().renderSnapshot.load(std::memory_order_acquire);
+    }
+    // Simulation thread: set new snapshot
+    static void SetRenderSnapshot(std::shared_ptr<RenderSnapshot> snap)
+    {
+        GetInstance().renderSnapshot.store(std::move(snap), std::memory_order_release);
+    }
 
     GameManager() = default;
     ~GameManager() = default;
@@ -92,16 +106,6 @@ public:
     static void ClearSelectedCrew() { GetInstance().selectedCrewList.clear(); }
     static void AddSelectedCrew(std::weak_ptr<Crew> crew) { GetInstance().selectedCrewList.push_back(crew); }
     static void ToggleSelectedCrew(const std::shared_ptr<Crew> &crew);
-
-    // static TileDef::Height GetSelectedHeight() { return GetInstance().selectedHeight; }
-    // static void ToggleSelectedHeight(TileDef::Height height) { GetInstance().selectedHeight ^= height; }
-    // static void ClearSelectedHeight() { GetInstance().selectedHeight = TileDef::Height::NONE; }
-
-    // static const std::vector<std::weak_ptr<Tile>> &GetSelectedTiles() { return GetInstance().selectedTileList; }
-    // static void ClearSelectedTiles() { GetInstance().selectedTileList.clear(); }
-    // static void ToggleSelectedTile(const std::shared_ptr<Tile> &tile);
-    // static void SetSelectedTile(const std::shared_ptr<Tile> &tile, bool select = true);
-    // static bool IsTileSelected(const std::shared_ptr<Tile> &tile);
 
     static TileDef::Category GetSelectedCategory() { return GetInstance().selectedCategory; }
     static void ToggleSelectedCategory(TileDef::Category category);

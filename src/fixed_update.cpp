@@ -1,6 +1,7 @@
 #include "fixed_update.hpp"
 #include "game_state.hpp"
 #include "update.hpp"
+#include "station.hpp"
 #include <chrono>
 
 std::mutex updateMutex;
@@ -30,6 +31,22 @@ void FixedUpdate(double &timeSinceFixedUpdate)
                 UpdateEnvironmentalEffects();
                 UpdatePowerGrids();
                 UpdateTiles();
+
+                // Build and swap new RenderSnapshot for render thread
+                auto station = GameManager::GetStation();
+                auto snapshot = std::make_shared<RenderSnapshot>();
+                if (station)
+                {
+                    snapshot->effects = station->effects;
+                    for (const auto &[pos, tiles] : station->tileMap)
+                        for (const auto &tile : tiles)
+                            snapshot->tileList.push_back(tile);
+                }
+                // Copy crew
+                snapshot->crewList = GameManager::GetCrewList();
+                // Copy selected crew (for render-safe selection state)
+                snapshot->selectedCrewList = GameManager::GetSelectedCrew();
+                GameManager::SetRenderSnapshot(snapshot);
 
                 fixedUpdateCondition.notify_all();
 

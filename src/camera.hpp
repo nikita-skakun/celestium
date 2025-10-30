@@ -15,7 +15,6 @@ struct PlayerCam
     {
         NONE,
         SELECT,
-        POWER_CONNECT,
     };
 
     enum class UiState : uint8_t
@@ -71,7 +70,7 @@ public:
         SetTargetFPS(FPS_OPTIONS.at(fpsIndex));
     }
     constexpr void SetFps(uint16_t newFps) { SetFpsIndex(std::ranges::find(FPS_OPTIONS, newFps) - FPS_OPTIONS.begin()); }
-    
+
     std::string GetFpsOptions() const;
 
     void HandleMovement();

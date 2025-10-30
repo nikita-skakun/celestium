@@ -226,7 +226,7 @@ void InitializeBuildWorldUi()
     constexpr Vector2 PANEL_SIZE = Vector2(.8, BUTTON_SIZE.y + SPACING.y * 2.);
     constexpr Vector2 PANEL_POS = Vector2(.5 - PANEL_SIZE.x / 2., 1. - PANEL_SIZE.y - SPACING.y);
 
-    auto onHorizontalSymmetryToggle = [](bool _)
+    auto onHorizontalSymmetryToggle = [](bool)
     { GameManager::ToggleHorizontalSymmetry(); };
     Vector2 horizontalSymmetryPos = Vector2(PANEL_POS.x - BUTTON_SIZE.x - SPACING.x, 1.f - SPACING.y * 1.5f - BUTTON_SIZE.y);
     auto horizontalSymmetryToggle = std::make_shared<UiToggle>(Vector2ToRect(horizontalSymmetryPos, BUTTON_SIZE), GameManager::IsHorizontalSymmetry(), onHorizontalSymmetryToggle);
@@ -244,7 +244,7 @@ void InitializeBuildWorldUi()
     horizontalSymmetryToggle->AddChild(horizontalSymmetryIcon);
     UiManager::AddElement("BUILD_HOR_SYM_BTN", horizontalSymmetryToggle);
 
-    auto onVerticalSymmetryToggle = [](bool _)
+    auto onVerticalSymmetryToggle = [](bool)
     { GameManager::ToggleVerticalSymmetry(); };
     Vector2 verticalTogglePos = horizontalSymmetryPos - Vector2(0, BUTTON_SIZE.y + SPACING.y);
     auto verticalSymmetryToggle = std::make_shared<UiToggle>(Vector2ToRect(verticalTogglePos, BUTTON_SIZE), GameManager::IsVerticalSymmetry(), onVerticalSymmetryToggle);
@@ -461,8 +461,8 @@ void InitializeBuildMenu()
     // Panel right above the build category panel
     constexpr Vector2 SPACING = Vector2ScreenScale(Vector2(DEFAULT_PADDING, DEFAULT_PADDING));
     constexpr Vector2 BUTTON_SIZE = Vector2ScreenScale(Vector2(64, 64));
-    constexpr Vector2 ICON_SIZE = BUTTON_SIZE * 3.f / 4.f;
-    constexpr Vector2 ICON_OFFSET = (BUTTON_SIZE - ICON_SIZE) / 2.;
+    // constexpr Vector2 ICON_SIZE = BUTTON_SIZE * 3.f / 4.f;
+    // constexpr Vector2 ICON_OFFSET = (BUTTON_SIZE - ICON_SIZE) / 2.;
     constexpr Vector2 PANEL_SIZE = Vector2(.8, BUTTON_SIZE.y + SPACING.y * 2.);
     constexpr Vector2 PANEL_POS = Vector2(.5 - PANEL_SIZE.x / 2., 1. - PANEL_SIZE.y - SPACING.y * 4. - BUTTON_SIZE.y);
 

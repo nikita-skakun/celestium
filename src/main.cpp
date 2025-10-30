@@ -30,7 +30,7 @@ int main()
     while (GameManager::IsGameRunning())
     {
         BeginDrawing();
-        ClearBackground(Color(31, 40, 45));
+        ClearBackground(Color(31, 40, 45, 255));
 
         GameManager::HandleStateInputs();
         UiManager::Update();

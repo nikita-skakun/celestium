@@ -137,17 +137,7 @@ void HandleMouseDragDuring()
     auto &camera = GameManager::GetCamera();
 
     if (!camera.IsDragging() && Vector2DistanceSq(camera.GetDragStart(), GameManager::GetWorldMousePos()) > DRAG_THRESHOLD * DRAG_THRESHOLD)
-    {
         camera.SetDragType(PlayerCam::DragType::SELECT);
-
-        auto station = GameManager::GetStation();
-        if (camera.IsOverlay(PlayerCam::Overlay::POWER) && station &&
-            station->GetTileWithComponentAtPosition<PowerConnectorComponent>(ToVector2Int(camera.GetDragStart())))
-        {
-            camera.SetDragType(PlayerCam::DragType::POWER_CONNECT);
-            camera.SetDragStart(Vector2Floor(camera.GetDragStart()) + Vector2(.5, .5));
-        }
-    }
 
     if (camera.IsDragging())
         camera.SetDragEnd(GameManager::GetWorldMousePos());
@@ -257,8 +247,8 @@ void HandleCrewActions()
         if (!crew->IsAlive() || crew->GetActionQueue().empty())
             continue;
 
-    const auto &currentAction = crew->GetActionQueue().front();
-    currentAction->Update(crew);
+        const auto &currentAction = crew->GetActionQueue().front();
+        currentAction->Update(crew);
     }
 }
 

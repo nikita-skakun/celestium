@@ -6,7 +6,7 @@
 #include "ui_manager.hpp"
 #include "ui.hpp"
 
-Color GetTileTint(const std::shared_ptr<Tile> &tile)
+Color GetTileTint(const std::shared_ptr<Tile> &)
 {
     Color tint = WHITE;
     // if (GameManager::IsInBuildMode() && GameManager::IsTileSelected(tile))
@@ -69,40 +69,34 @@ void DrawPath(const std::deque<Vector2Int> &path, const Vector2 &startPos)
  */
 void DrawStationTiles()
 {
-    auto station = GameManager::GetStation();
-    if (!station)
+    auto snapshot = GameManager::GetRenderSnapshot();
+    if (!snapshot)
         return;
 
     auto &camera = GameManager::GetCamera();
     Vector2 tileSize = Vector2(1, 1) * TILE_SIZE * camera.GetZoom();
-
-    for (const auto &tilesAtPos : station->tileMap)
+    for (const auto &tile : snapshot->tileList)
     {
-        for (const auto &tile : tilesAtPos.second)
+        float rotation = 0;
+        if (auto rotatable = tile->GetComponent<RotatableComponent>())
+            rotation = RotationToAngle(rotatable->GetRotation());
+
+        if (auto sprite = tile->GetSprite())
+            sprite->Draw(tile->GetPosition(), GetTileTint(tile), rotation);
+
+        Vector2 startPos = GameManager::WorldToScreen(ToVector2(tile->GetPosition()) - Vector2(.5, .5));
+
+        if (camera.IsOverlay(PlayerCam::Overlay::OXYGEN))
         {
-            float rotation = 0;
-            if (auto rotatable = tile->GetComponent<RotatableComponent>())
-                rotation = RotationToAngle(rotatable->GetRotation());
-
-            if (auto sprite = tile->GetSprite())
-                sprite->Draw(tile->GetPosition(), GetTileTint(tile), rotation);
-
-            Vector2 startPos = GameManager::WorldToScreen(ToVector2(tile->GetPosition()) - Vector2(.5, .5));
-
-            if (camera.IsOverlay(PlayerCam::Overlay::OXYGEN))
+            if (auto oxygen = tile->GetComponent<OxygenComponent>())
             {
-                if (auto oxygen = tile->GetComponent<OxygenComponent>())
-                {
-                    Color color = Color(50, 150, 255, oxygen->GetOxygenLevel() / TILE_OXYGEN_MAX * 255 * .8);
-                    DrawRectangleV(startPos, tileSize, color);
-                }
-            }
-
-            if (camera.IsOverlay(PlayerCam::Overlay::WALL) && tile->HasComponent<SolidComponent>())
-            {
-                DrawRectangleV(startPos, tileSize, Color(255, 0, 0, 64));
+                Color color = Color(50, 150, 255, oxygen->GetOxygenLevel() / TILE_OXYGEN_MAX * 255 * .8);
+                DrawRectangleV(startPos, tileSize, color);
             }
         }
+
+        if (camera.IsOverlay(PlayerCam::Overlay::WALL) && tile->HasComponent<SolidComponent>())
+            DrawRectangleV(startPos, tileSize, Color(255, 0, 0, 64));
     }
 }
 
@@ -111,83 +105,66 @@ void DrawStationTiles()
  */
 void DrawStationOverlays()
 {
-    auto station = GameManager::GetStation();
-    if (!station)
+    auto snapshot = GameManager::GetRenderSnapshot();
+    if (!snapshot)
         return;
 
     float zoom = GameManager::GetCamera().GetZoom();
     const Vector2 tileSize = Vector2(1, 1) * TILE_SIZE * zoom;
     bool isPowerOverlay = GameManager::GetCamera().IsOverlay(PlayerCam::Overlay::POWER);
-    const Texture2D &stationTileset = AssetManager::GetTexture("STATION");
-    const Texture2D &iconTileset = AssetManager::GetTexture("ICON");
-
-    for (const auto &tilesAtPos : station->tileMap)
+    Texture2D stationTileset = AssetManager::GetTexture("STATION");
+    Texture2D iconTileset = AssetManager::GetTexture("ICON");
+    for (const auto &tile : snapshot->tileList)
     {
-        for (const auto &tile : tilesAtPos.second)
+        Color tint = GetTileTint(tile);
+        float rotation = 0;
+        if (auto rotatable = tile->GetComponent<RotatableComponent>())
+            rotation = RotationToAngle(rotatable->GetRotation());
+        if (auto decorative = tile->GetComponent<DecorativeComponent>())
         {
-            Color tint = GetTileTint(tile);
-
-            float rotation = 0;
-            if (auto rotatable = tile->GetComponent<RotatableComponent>())
-                rotation = RotationToAngle(rotatable->GetRotation());
-
-            if (auto decorative = tile->GetComponent<DecorativeComponent>())
+            for (const auto &dTile : decorative->GetDecorativeTiles())
             {
-                for (const auto &dTile : decorative->GetDecorativeTiles())
-                {
-                    dTile->Draw(tile->GetPosition(), tint, rotation);
-                }
+                dTile->Draw(tile->GetPosition(), tint, rotation);
             }
-
-            if (auto door = tile->GetComponent<DoorComponent>())
+        }
+        if (auto door = tile->GetComponent<DoorComponent>())
+        {
+            Vector2 startPos = GameManager::WorldToScreen(tile->GetPosition());
+            Rectangle destRect = Vector2ToRect(startPos, tileSize);
+            destRect.height = std::max(25. * door->GetProgress(), 1.) * zoom;
+            Rectangle doorSourceRect = Rectangle(0, 7, 1, 1) * TILE_SIZE;
+            doorSourceRect.height = std::max(25. * door->GetProgress(), 1.);
+            Vector2 pivot = Vector2(tileSize.x / 2., destRect.height - 25. * zoom);
+            DrawTexturePro(stationTileset, doorSourceRect, destRect, pivot, rotation, tint);
+            Rectangle doorSourceRect2 = doorSourceRect;
+            doorSourceRect2.width = -doorSourceRect2.width;
+            DrawTexturePro(stationTileset, doorSourceRect2, destRect, pivot, rotation + 180., tint);
+        }
+        if (isPowerOverlay && magic_enum::enum_flags_test_any(tile->GetHeight(), TileDef::Height::POWER))
+        {
+            if (auto connector = tile->GetComponent<PowerConnectorComponent>())
             {
-                Vector2 startPos = GameManager::WorldToScreen(tile->GetPosition());
-                Rectangle destRect = Vector2ToRect(startPos, tileSize);
-                destRect.height = std::max(25. * door->GetProgress(), 1.) * zoom;
-                Rectangle doorSourceRect = Rectangle(0, 7, 1, 1) * TILE_SIZE;
-                doorSourceRect.height = std::max(25. * door->GetProgress(), 1.);
-
-                Vector2 pivot = Vector2(tileSize.x / 2., destRect.height - 25. * zoom);
-
-                DrawTexturePro(stationTileset, doorSourceRect, destRect, pivot, rotation, tint);
-
-                Rectangle doorSourceRect2 = doorSourceRect;
-                doorSourceRect2.width = -doorSourceRect2.width;
-
-                DrawTexturePro(stationTileset, doorSourceRect2, destRect, pivot, rotation + 180., tint);
+                auto grid = connector->GetPowerGrid();
+                Color gridColor = grid ? grid->GetDebugColor() : Color(200, 200, 200, 128);
+                DrawCircleV(GameManager::WorldToScreen(ToVector2(tile->GetPosition())), 3.0f * zoom, gridColor);
             }
-
-            if (isPowerOverlay && magic_enum::enum_flags_test_any(tile->GetHeight(), TileDef::Height::POWER))
-            {
-                if (auto connector = tile->GetComponent<PowerConnectorComponent>())
-                {
-                    auto grid = connector->GetPowerGrid();
-                    Color gridColor = grid ? grid->GetDebugColor() : Color(200, 200, 200, 128);
-                    DrawCircleV(GameManager::WorldToScreen(tilesAtPos.first), 3.0f * zoom, gridColor);
-                }
-            }
-
-            if (tile->HasComponent<PowerConsumerComponent>() && !tile->IsActive())
-            {
-                Vector2 startScreenPos = GameManager::WorldToScreen(ToVector2(tile->GetPosition()) + Vector2(2. / 3., 0));
-                Rectangle destRect = Vector2ToRect(startScreenPos, tileSize / 3.);
-                Rectangle sourceRect = Rectangle(0, 1, 1, 1) * TILE_SIZE;
-
-                DrawTexturePro(iconTileset, sourceRect, destRect, tileSize / 2., 0, Fade(YELLOW, .8));
-            }
-
-            if (auto battery = tile->GetComponent<BatteryComponent>())
-            {
-                float barProgress = battery->GetChargeLevel() / battery->GetMaxChargeLevel();
-                Vector2 topLeftPos = GameManager::WorldToScreen(ToVector2(tile->GetPosition()) - Vector2(.5 - 1. / 16., .5));
-                Vector2 barStartPos = GameManager::WorldToScreen(ToVector2(tile->GetPosition()) - Vector2(.5 - 1. / 16., barProgress - .5));
-
-                Vector2 totalSize = Vector2(1. / 8., 1) * TILE_SIZE * zoom;
-                Vector2 barSize = Vector2(1. / 8., barProgress) * TILE_SIZE * zoom;
-
-                DrawRectangleV(topLeftPos, totalSize, Color(25, 25, 25, 200));
-                DrawRectangleV(barStartPos, barSize, Fade(YELLOW, .8));
-            }
+        }
+        if (tile->HasComponent<PowerConsumerComponent>() && !tile->IsActive())
+        {
+            Vector2 startScreenPos = GameManager::WorldToScreen(ToVector2(tile->GetPosition()) + Vector2(2. / 3., 0));
+            Rectangle destRect = Vector2ToRect(startScreenPos, tileSize / 3.);
+            Rectangle sourceRect = Rectangle(0, 1, 1, 1) * TILE_SIZE;
+            DrawTexturePro(iconTileset, sourceRect, destRect, tileSize / 2., 0, Fade(YELLOW, .8));
+        }
+        if (auto battery = tile->GetComponent<BatteryComponent>())
+        {
+            float barProgress = battery->GetChargeLevel() / battery->GetMaxChargeLevel();
+            Vector2 topLeftPos = GameManager::WorldToScreen(ToVector2(tile->GetPosition()) - Vector2(.5 - 1. / 16., .5));
+            Vector2 barStartPos = GameManager::WorldToScreen(ToVector2(tile->GetPosition()) - Vector2(.5 - 1. / 16., barProgress - .5));
+            Vector2 totalSize = Vector2(1. / 8., 1) * TILE_SIZE * zoom;
+            Vector2 barSize = Vector2(1. / 8., barProgress) * TILE_SIZE * zoom;
+            DrawRectangleV(topLeftPos, totalSize, Color(25, 25, 25, 200));
+            DrawRectangleV(barStartPos, barSize, Fade(YELLOW, .8));
         }
     }
 
@@ -248,14 +225,12 @@ void DrawTileOutline(const std::shared_ptr<Tile> &tile, Color color)
  */
 void DrawEnvironmentalEffects()
 {
-    auto station = GameManager::GetStation();
-    if (!station)
+    auto snapshot = GameManager::GetRenderSnapshot();
+    if (!snapshot)
         return;
 
-    for (const auto &effect : station->effects)
-    {
+    for (const auto &effect : snapshot->effects)
         effect->Render();
-    }
 }
 
 void DrawCrewCircle(const std::shared_ptr<Crew> &crew, const Vector2 &drawPosition, bool isSelected)
@@ -274,8 +249,10 @@ void DrawCrewCircle(const std::shared_ptr<Crew> &crew, const Vector2 &drawPositi
  */
 void DrawCrew()
 {
-    auto &crewList = GameManager::GetCrewList();
-    for (const auto &crew : crewList)
+    auto snapshot = GameManager::GetRenderSnapshot();
+    if (!snapshot)
+        return;
+    for (const auto &crew : snapshot->crewList)
     {
         Vector2 drawPosition = crew->GetPosition();
         auto &actionQueue = crew->GetReadOnlyActionQueue();
@@ -313,7 +290,7 @@ void DrawCrew()
             }
         }
 
-        const auto &selectedCrewList = GameManager::GetSelectedCrew();
+        const auto &selectedCrewList = snapshot->selectedCrewList;
         bool isSelected = std::find_if(selectedCrewList.begin(), selectedCrewList.end(), [crew](std::weak_ptr<Crew> _crew)
                                        { return !_crew.expired() && _crew.lock() == crew; }) != selectedCrewList.end();
         DrawCrewCircle(crew, drawPosition, isSelected);
@@ -322,8 +299,11 @@ void DrawCrew()
 
 void DrawCrewActionProgress()
 {
-    const auto &crewList = GameManager::GetCrewList();
-    for (const auto &crew : crewList)
+    auto snapshot = GameManager::GetRenderSnapshot();
+    if (!snapshot)
+        return;
+
+    for (const auto &crew : snapshot->crewList)
     {
         if (!crew->IsAlive() || crew->GetReadOnlyActionQueue().empty())
             continue;
@@ -366,10 +346,6 @@ void DrawDragSelectBox()
         DrawRectangleLinesEx(Vector2ToBoundingBox(dragStart, dragEnd), 1, BLUE);
         break;
 
-    case PlayerCam::DragType::POWER_CONNECT:
-        DrawLineEx(dragStart, dragEnd, POWER_CONNECTION_WIDTH * std::max(camera.GetZoom(), 1.f), POWER_CONNECTION_COLOR);
-        break;
-
     default:
         break;
     }
@@ -381,7 +357,7 @@ void DrawDragSelectBox()
 void DrawFpsCounter()
 {
     float deltaTime = GetFrameTime();
-    const Font &font = AssetManager::GetFont("DEFAULT");
+    Font font = AssetManager::GetFont("DEFAULT");
     std::string fpsText = std::format("FPS: {:} ({:.2f}ms)", GetFPS(), deltaTime * 1000.);
     const char *text = fpsText.c_str();
     DrawTextEx(font, text, Vector2(GetScreenSize().x - MeasureTextEx(font, text, DEFAULT_FONT_SIZE, 1).x - DEFAULT_PADDING, DEFAULT_PADDING), DEFAULT_FONT_SIZE, 1, UI_TEXT_COLOR);
@@ -400,7 +376,7 @@ void DrawTooltip(const std::string &tooltip, const Vector2 &pos, float padding, 
     Vector2 screenSize = GetScreenSize();
     int lineCount = 0;
     char **lines = TextSplit(tooltip.c_str(), '\n', &lineCount);
-    const Font &font = AssetManager::GetFont("DEFAULT");
+    Font font = AssetManager::GetFont("DEFAULT");
 
     float textWidth = 0;
     for (int i = 0; i < lineCount; i++)
@@ -438,46 +414,39 @@ void DrawMainTooltip()
     std::string hoverText;
     const Vector2 mousePos = GetMousePosition();
 
+    auto snapshot = GameManager::GetRenderSnapshot();
+    if (!snapshot)
+        return;
+
     if (!GameManager::IsInBuildMode())
     {
-        auto &hoveredCrew = GameManager::GetHoveredCrew();
-
-        for (const auto &_crew : hoveredCrew)
+        Vector2 worldMousePos = GameManager::GetWorldMousePos() - Vector2(.5, .5);
+        auto hoveredCrew = snapshot->GetCrewAtPosition(worldMousePos);
+        for (const auto &crew : hoveredCrew)
         {
-            auto crew = _crew.lock();
-            if (!crew)
-                continue;
-
             if (!hoverText.empty())
                 hoverText += "\n";
-
             hoverText += crew->GetInfo();
         }
     }
 
-    if (auto station = GameManager::GetStation())
-    {
-        Vector2Int tileHoverPos = GameManager::ScreenToTile(mousePos);
-        auto allTiles = station->GetAllTilesAtPosition(tileHoverPos);
+    Vector2Int tileHoverPos = GameManager::ScreenToTile(mousePos);
 
-        for (const auto &tile : allTiles)
+    auto hoveredTiles = snapshot->GetTilesAtPosition(tileHoverPos);
+    for (const auto &tile : hoveredTiles)
+    {
+        if (!hoverText.empty())
+            hoverText += "\n";
+        hoverText += tile->GetInfo();
+    }
+    if (!GameManager::IsInBuildMode())
+    {
+        auto hoveredEffects = snapshot->GetEffectsAtPosition(tileHoverPos);
+        for (const auto &effect : hoveredEffects)
         {
             if (!hoverText.empty())
                 hoverText += "\n";
-
-            hoverText += tile->GetInfo();
-        }
-
-        if (!GameManager::IsInBuildMode())
-        {
-            auto effects = station->GetEffectsAtPosition(tileHoverPos);
-            for (auto &&effect : effects)
-            {
-                if (!hoverText.empty())
-                    hoverText += "\n";
-
-                hoverText += effect->GetInfo();
-            }
+            hoverText += effect->GetInfo();
         }
     }
 
@@ -489,23 +458,51 @@ void DrawMainTooltip()
 
 void DrawBuildUi()
 {
-    auto station = GameManager::GetStation();
-    if (!station || UiManager::IsMouseOverUiElement())
+    auto snapshot = GameManager::GetRenderSnapshot();
+    if (!snapshot || UiManager::IsMouseOverUiElement())
         return;
 
     Vector2Int cursorPos = ToVector2Int(GameManager::GetWorldMousePos());
+    const std::string &buildTileId = GameManager::GetBuildTileId();
+    if (buildTileId.empty())
+        return;
 
-    std::shared_ptr<Tile> hoveredTile = nullptr;
-    // if (auto moveTile = GameManager::GetMoveTile())
-    // {
-    //     if (auto sprite = moveTile->GetSprite())
-    //         sprite->Draw(cursorPos, Fade(WHITE, .5));
-    // }
-    // else
-    auto allTiles = station->GetAllTilesAtPosition(cursorPos);
-    if (!allTiles.empty())
+    auto tileDefs = DefinitionManager::GetTileDefinitions();
+    auto it = tileDefs.find(buildTileId);
+    if (it == tileDefs.end())
+        return;
+    auto tileDef = it->second;
+    if (!tileDef || !tileDef->GetReferenceSprite())
+        return;
+    const auto &spriteDef = tileDef->GetReferenceSprite();
+
+    auto drawGhost = [&](const Vector2Int &pos)
     {
-        hoveredTile = allTiles.at(allTiles.size() - 1);
-        DrawTileOutline(hoveredTile, DARKPURPLE);
-    }
+        if (auto basicDef = std::dynamic_pointer_cast<BasicSpriteDef>(spriteDef))
+        {
+            BasicSprite ghostSprite(basicDef->spriteOffset);
+            ghostSprite.Draw(pos, Fade(WHITE, 0.5f), 0);
+        }
+        else if (auto multiDef = std::dynamic_pointer_cast<MultiSliceSpriteDef>(spriteDef))
+        {
+            std::vector<SpriteSlice> slices;
+            for (const auto &swc : multiDef->slices)
+                slices.push_back(swc.slice);
+            MultiSliceSprite ghostSprite(slices);
+            ghostSprite.Draw(pos, Fade(WHITE, 0.5f), 0);
+        }
+    };
+
+    // Collect all unique positions to draw (main + symmetry)
+    std::unordered_set<Vector2Int> ghostPositions;
+    ghostPositions.insert(cursorPos);
+    if (GameManager::IsHorizontalSymmetry())
+        ghostPositions.insert(Vector2Int(cursorPos.x, -cursorPos.y - 1));
+    if (GameManager::IsVerticalSymmetry())
+        ghostPositions.insert(Vector2Int(-cursorPos.x - 1, cursorPos.y));
+    if (GameManager::IsHorizontalSymmetry() && GameManager::IsVerticalSymmetry())
+        ghostPositions.insert(Vector2Int(-cursorPos.x - 1, -cursorPos.y - 1));
+
+    for (const auto &pos : ghostPositions)
+        drawGhost(pos);
 }

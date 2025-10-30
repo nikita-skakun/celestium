@@ -109,9 +109,6 @@ private:
 
             uint32_t samplesRead = op_read_float(sound->file, tempBuffer.data(), nBufferFrames * CHANNELS, nullptr);
 
-            if (samplesRead < 0)
-                throw std::runtime_error("Error reading Opus file!");
-
             for (uint32_t i = 0; i < samplesRead * CHANNELS; ++i)
             {
                 output[i] += tempBuffer[i] * sound->volume * GetVolume(sound->type);
