@@ -1,5 +1,6 @@
 #pragma once
 #include "def_manager.hpp"
+#include "particle_system.hpp"
 
 struct Crew;
 struct PlayerCam;
@@ -24,7 +25,7 @@ public:
     constexpr const float &GetSize() const { return size; }
     constexpr void SetSize(float newSize) { size = std::clamp(newSize, 0.f, 1.f); }
 
-    void Render() const;
+    virtual void Render() const;
     std::string GetInfo() const;
 
     virtual void EffectCrew(const std::shared_ptr<Crew> &crew, float deltaTime) const = 0;
@@ -42,10 +43,13 @@ struct FireEffect : Effect
     static constexpr float SPREAD_CHANCE_PER_SECOND = .2f;
     static constexpr float DAMAGE_PER_SECOND = 2.f;
 
-    FireEffect(const Vector2Int &position, float size = 0) : Effect("FIRE", position, size) {}
+    ParticleSystem particleSystem;
+
+    FireEffect(const Vector2Int &position, float size = 0);
 
     void EffectCrew(const std::shared_ptr<Crew> &crew, float deltaTime) const override;
     void Update(const std::shared_ptr<Station> &station, size_t index) override;
+    void Render() const override;
 
     constexpr float GetOxygenConsumption() const { return OXYGEN_CONSUMPTION_PER_SECOND * GetRoundedSize(); }
 };
