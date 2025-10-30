@@ -18,6 +18,7 @@ public:
     void Emit(const Particle& proto, int count);
     void SetBlendMode(int mode); // e.g. BLEND_ALPHA, BLEND_ADDITIVE
     void Clear();
+    bool IsEmpty() const;
 private:
     std::vector<Particle> particles;
     int blendMode = BLEND_ALPHA;

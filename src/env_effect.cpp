@@ -3,6 +3,57 @@
 #include "env_effect.hpp"
 #include "game_state.hpp"
 #include "station.hpp"
+#include "direction.hpp"
+
+// --- FoamEffect Implementation ---
+FoamEffect::FoamEffect(const Vector2Int &position, float size)
+    : Effect("FOAM", position, size)
+{
+    particleSystem.SetBlendMode(BLEND_ALPHA);
+    // Particles will be spawned in Update on first call
+}
+
+void FoamEffect::Update(const std::shared_ptr<Station> &, size_t)
+{
+    if (particlesSpawned)
+        return;
+
+    int numParticles = 16 + rand() % 8;
+    float baseSize = 8.f * GetRoundedSize();
+    // Helper: Box-Muller transform for normal distribution
+    auto rand_normal = []()
+    {
+        float u1 = (rand() + 1.f) / ((float)RAND_MAX + 2.f);
+        float u2 = (rand() + 1.f) / ((float)RAND_MAX + 2.f);
+        return sqrtf(-2.f * logf(u1)) * cosf(2.f * PI * u2);
+    };
+
+    float stddev = 0.11f; // Controls spread; smaller = tighter cluster
+    for (int i = 0; i < numParticles; ++i)
+    {
+        float offsetX = stddev * rand_normal();
+        float offsetY = stddev * rand_normal();
+
+        float sizeVar = std::clamp(0.9f + 0.3f * (rand() / (float)RAND_MAX), 0.7f, 1.3f);
+
+        Particle p;
+        p.position = Vector2((float)GetPosition().x + offsetX, (float)GetPosition().y + offsetY);
+        p.velocity = Vector2();
+        p.size = std::max(baseSize * sizeVar, 1.f);
+        p.lifetime = -1.f;
+        p.age = 0.f;
+        unsigned char gray = 235 + rand() % 16;
+        unsigned char a = 180 + rand() % 50;
+        p.color = Color(gray, gray, gray, a);
+        particleSystem.Emit(p, 1);
+    }
+    particlesSpawned = true;
+}
+
+void FoamEffect::Render() const
+{
+    particleSystem.Draw();
+}
 
 Effect::Effect(const std::string &defName, const Vector2Int &position, float s)
     : position(position)
@@ -15,12 +66,7 @@ Effect::Effect(const std::string &defName, const Vector2Int &position, float s)
 
 void Effect::Render() const
 {
-    // Render the effect's sprite with animation
-    Vector2 screenSize = Vector2(1, 1) * TILE_SIZE * GameManager::GetCamera().GetZoom() * GetRoundedSize();
-    Vector2 startPos = GameManager::WorldToScreen(GetPosition());
-    int frame = GetEvenlySpacedIndex(GetTime() * effectDef->GetAnimationSpeed(), effectDef->GetSpriteCount());
-    Rectangle sourceRect = Rectangle(frame, 0, 1, 1) * TILE_SIZE;
-    DrawTexturePro(AssetManager::GetTexture(effectDef->GetSpriteSheet()), sourceRect, Vector2ToRect(startPos, screenSize), screenSize / 2.f, 0, WHITE);
+    // No-op: old sprite/tile rendering removed. Effects now use particle systems for rendering.
 }
 
 FireEffect::FireEffect(const Vector2Int &position, float size)
@@ -56,7 +102,7 @@ static Color ComputeFireColor(int overlapCount)
 
     if (overlapCount > 1)
     {
-        float blend = std::min(1.f, 0.4f + 0.3f * (overlapCount - 1));
+        float blend = 1.f - std::min(1.f, .4f + .3f * (overlapCount - 1));
         baseR = (unsigned char)(baseR * (1.f - blend) + 255 * blend);
         baseG = (unsigned char)(baseG * (1.f - blend) + 255 * blend);
         baseB = (unsigned char)(baseB * (1.f - blend) + 200 * blend);
@@ -69,32 +115,31 @@ void FireEffect::Update(const std::shared_ptr<Station> &station, size_t index)
 {
     Particle proto;
     // Random initial offset proportional to fire size
-    float spread = std::clamp(0.08f + 0.32f * GetRoundedSize(), 0.01f, 2.f);
+    float spread = std::clamp(.08f + .32f * GetRoundedSize(), .01f, 2.f);
     float angle0 = ((rand() / (float)RAND_MAX) * 2.f * PI);
     float radius = spread * std::clamp((rand() / (float)RAND_MAX), 0.f, 1.f);
     proto.position = Vector2(
         (float)GetPosition().x + cosf(angle0) * radius,
         (float)GetPosition().y + sinf(angle0) * radius);
     // Size variety
-    float baseSize = std::max(10.f * GetRoundedSize() * GameManager::GetCamera().GetZoom(), 1.f);
-    float sizeVar = std::clamp(0.6f + 0.4f * (rand() / (float)RAND_MAX), 0.3f, 1.2f);
+    float baseSize = std::max(10.f * GetRoundedSize(), 1.f); // size in world units, zoom applied at render
+    float sizeVar = std::clamp(.6f + .4f * (rand() / (float)RAND_MAX), .3f, 1.2f);
     proto.size = std::max(baseSize * sizeVar, 1.f);
-    proto.lifetime = 0.5f + 0.3f * (rand() / (float)RAND_MAX);
-    proto.age = 0.0f;
+    proto.lifetime = .5f + .3f * (rand() / (float)RAND_MAX);
+    proto.age = 0.f;
     // Velocity: upward, with some horizontal randomness
-    float angle = ((rand() / (float)RAND_MAX) - 0.5f) * 1.2f;
-    float speed = (1.f + 0.5f * (rand() / (float)RAND_MAX));
+    float angle = ((rand() / (float)RAND_MAX) - .5f) * 1.2f;
+    float minSize = 1.f / effectDef->GetSizeIncrements();
+    float sizeNorm = (GetRoundedSize() - minSize) / (1.f - minSize);
+    sizeNorm = std::clamp(sizeNorm, 0.f, 1.f);
+    float speed = (1.f + .5f * (rand() / (float)RAND_MAX)) * (.5f + .5f * sizeNorm);
     proto.velocity = Vector2(sinf(angle) * speed, -speed);
 
     // Count overlapping fires at this position
     int overlapCount = 0;
     for (const auto &eff : station->effects)
-    {
         if (std::dynamic_pointer_cast<FireEffect>(eff) && eff->GetPosition() == GetPosition())
-        {
             ++overlapCount;
-        }
-    }
     proto.color = ComputeFireColor(overlapCount);
 
     particleSystem.Emit(proto, 2 + rand() % 2);
@@ -104,7 +149,7 @@ void FireEffect::Update(const std::shared_ptr<Station> &station, size_t index)
     if (!tileWithOxygen || station->GetEffectOfTypeAtPosition<FoamEffect>(GetPosition()))
     {
         if (index < station->effects.size())
-            station->effects.erase(std::begin(station->effects) + index);
+            station->effects.erase(station->effects.begin() + index);
         return;
     }
 
@@ -124,7 +169,7 @@ void FireEffect::Update(const std::shared_ptr<Station> &station, size_t index)
     {
         oxygen->SetOxygenLevel(0.f);
         if (index < station->effects.size())
-            station->effects.erase(std::begin(station->effects) + index);
+            station->effects.erase(station->effects.begin() + index);
         return;
     }
     oxygen->SetOxygenLevel(oxygen->GetOxygenLevel() - oxygenToConsume);
@@ -133,7 +178,7 @@ void FireEffect::Update(const std::shared_ptr<Station> &station, size_t index)
     if (!station->GetTileWithComponentAtPosition<SolidComponent>(GetPosition()) && CheckIfEventHappens(SPREAD_CHANCE_PER_SECOND, FIXED_DELTA_TIME))
     {
         std::vector<Vector2Int> possibleOffsets;
-        for (auto &dir : CARDINAL_DIRECTIONS)
+        for (const auto &dir : CARDINAL_DIRECTIONS)
         {
             auto neighborPos = GetPosition() + DirectionToVector2Int(dir);
             bool neighborHasOxygen = station->GetTileWithComponentAtPosition<OxygenComponent>(neighborPos) != nullptr;

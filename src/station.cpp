@@ -76,6 +76,8 @@ std::shared_ptr<Station> CreateStation()
 
     station->effects.push_back(std::make_shared<FireEffect>(Vector2Int(12, 0)));
     station->effects.push_back(std::make_shared<FoamEffect>(Vector2Int(13, 0)));
+    station->effects.push_back(std::make_shared<FoamEffect>(Vector2Int(13, 1)));
+    station->effects.push_back(std::make_shared<FoamEffect>(Vector2Int(13, 2)));
 
     // Place initial wire tiles as real tiles on the POWER layer
     Tile::CreateTile("WIRE", Vector2Int(0, 0), station);

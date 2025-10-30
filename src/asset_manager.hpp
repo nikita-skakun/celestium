@@ -26,8 +26,6 @@ public:
 
         assetManager.textures.emplace("STATION", LoadTexture("../assets/tilesets/station.png"));
         assetManager.textures.emplace("ICON", LoadTexture("../assets/tilesets/icons.png"));
-        assetManager.textures.emplace("FIRE", LoadTexture("../assets/tilesets/fire.png"));
-        assetManager.textures.emplace("FOAM", LoadTexture("../assets/tilesets/foam.png"));
         assetManager.fonts.emplace("DEFAULT", LoadFontEx("../assets/fonts/Jersey25.ttf", DEFAULT_FONT_SIZE, NULL, 0));
     }
 

@@ -1,8 +1,4 @@
 env_effects:
   - id: FIRE
-    spritesheet: FIRE
     sizeIncrements: 8
-    spriteCount: 8
-    animationSpeed: 1.25
   - id: FOAM
-    spritesheet: FOAM

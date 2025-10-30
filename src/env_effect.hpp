@@ -56,10 +56,12 @@ struct FireEffect : Effect
 
 struct FoamEffect : Effect
 {
-    // TODO: Later add a way to remove it (maybe automatic despawning?)
+    ParticleSystem particleSystem;
+    bool particlesSpawned = false;
 
-    FoamEffect(const Vector2Int &position, float size = 0) : Effect("FOAM", position, size) {}
+    FoamEffect(const Vector2Int &position, float size = 0);
 
     void EffectCrew(const std::shared_ptr<Crew> &, float) const override {}
-    void Update(const std::shared_ptr<Station> &, size_t) override {}
+    void Update(const std::shared_ptr<Station> &station, size_t index) override;
+    void Render() const override;
 };
