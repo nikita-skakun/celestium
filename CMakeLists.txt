@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.29)
-project(Celestium VERSION 1.0 LANGUAGES CXX)
+project(Celestium VERSION 1.0 LANGUAGES C CXX)
 
 # Ensure CMake has compilers set
 if(NOT DEFINED CMAKE_C_COMPILER)
@@ -117,3 +117,32 @@ target_link_libraries(celestium PRIVATE raygui)
 
 # Disable warnings for raygui, as they are harmless
 target_include_directories(celestium SYSTEM PRIVATE ${raygui_SOURCE_DIR}/src)
+
+# --- LuaJIT v2.1 integration (Makefile build) ---
+include(ExternalProject)
+ExternalProject_Add(
+    luajit
+    GIT_REPOSITORY https://github.com/LuaJIT/LuaJIT.git
+    GIT_TAG v2.1
+    PREFIX ${CMAKE_BINARY_DIR}/luajit
+    BUILD_IN_SOURCE 1
+    CONFIGURE_COMMAND ""
+    BUILD_COMMAND make -C src
+    INSTALL_COMMAND ""
+    UPDATE_COMMAND ""
+)
+
+# Path to the built static library after build
+set(LUAJIT_LIB ${CMAKE_BINARY_DIR}/luajit/src/luajit/src/libluajit.a)
+
+# Create imported target for LuaJIT static library
+add_library(luajit_static STATIC IMPORTED GLOBAL)
+set_target_properties(luajit_static PROPERTIES IMPORTED_LOCATION ${LUAJIT_LIB})
+
+# Link LuaJIT and add include dir to celestium, ensure build order
+add_dependencies(celestium luajit)
+target_link_libraries(celestium PRIVATE luajit_static)
+target_include_directories(celestium PRIVATE ${CMAKE_BINARY_DIR}/luajit/src/luajit/src)
+
+# --- sol2 (Lua C++ binding) integration ---
+fetch_and_link_dependency(sol2 https://github.com/ThePhD/sol2.git develop)
