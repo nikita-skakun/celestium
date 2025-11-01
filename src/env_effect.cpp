@@ -2,82 +2,33 @@
 #include "crew.hpp"
 #include "env_effect.hpp"
 #include "game_state.hpp"
+#include "lua_bindings.hpp"
 #include "station.hpp"
-#include "direction.hpp"
-
-// --- FoamEffect Implementation ---
-FoamEffect::FoamEffect(const Vector2Int &position, float size)
-    : Effect("FOAM", position, size)
-{
-    particleSystem.SetBlendMode(BLEND_ALPHA);
-    // Particles will be spawned in Update on first call
-}
-
-void FoamEffect::Update(const std::shared_ptr<Station> &, size_t)
-{
-    if (particlesSpawned)
-        return;
-
-    int numParticles = 16 + rand() % 8;
-    float baseSize = 8.f * GetRoundedSize();
-    // Helper: Box-Muller transform for normal distribution
-    auto rand_normal = []()
-    {
-        float u1 = (rand() + 1.f) / ((float)RAND_MAX + 2.f);
-        float u2 = (rand() + 1.f) / ((float)RAND_MAX + 2.f);
-        return sqrtf(-2.f * logf(u1)) * cosf(2.f * PI * u2);
-    };
-
-    float stddev = 0.11f; // Controls spread; smaller = tighter cluster
-    for (int i = 0; i < numParticles; ++i)
-    {
-        float offsetX = stddev * rand_normal();
-        float offsetY = stddev * rand_normal();
-
-        float sizeVar = std::clamp(0.9f + 0.3f * (rand() / (float)RAND_MAX), 0.7f, 1.3f);
-
-        Particle p;
-        p.position = Vector2((float)GetPosition().x + offsetX, (float)GetPosition().y + offsetY);
-        p.velocity = Vector2();
-        p.size = std::max(baseSize * sizeVar, 1.f);
-        p.lifetime = -1.f;
-        p.age = 0.f;
-        unsigned char gray = 235 + rand() % 16;
-        unsigned char a = 180 + rand() % 50;
-        p.color = Color(gray, gray, gray, a);
-        particleSystem.Emit(p, 1);
-    }
-    particlesSpawned = true;
-}
-
-void FoamEffect::Render() const
-{
-    particleSystem.Draw();
-}
 
 Effect::Effect(const std::string &defName, const Vector2Int &position, float s)
     : position(position)
 {
     effectDef = DefinitionManager::GetEffectDefinition(defName);
+    if (!effectDef)
+        throw std::runtime_error("Effect definition not found: " + defName);
+
     if (s == 0)
         s = 1.f / effectDef->GetSizeIncrements();
     size = std::clamp(s, 0.f, 1.f);
+
+    for (const auto &psDef : effectDef->GetParticleSystems())
+    {
+        ParticleSystemWithLua ps;
+        ps.onCreateLua = psDef.onCreateLua;
+        ps.onUpdateLua = psDef.onUpdateLua;
+        particleSystems.push_back(std::move(ps));
+    }
 }
 
 void Effect::Render() const
 {
-    // No-op: old sprite/tile rendering removed. Effects now use particle systems for rendering.
-}
-
-FireEffect::FireEffect(const Vector2Int &position, float size)
-    : Effect("FIRE", position, size)
-{
-    particleSystem.SetBlendMode(BLEND_ADDITIVE);
-}
-
-void FireEffect::Render() const
-{
-    particleSystem.Draw();
+    for (const auto &ps : particleSystems)
+        ps.system.Draw();
 }
 
 std::string Effect::GetInfo() const
@@ -92,59 +43,74 @@ void FireEffect::EffectCrew(const std::shared_ptr<Crew> &crew, float deltaTime) 
     crew->SetHealth(crew->GetHealth() - DAMAGE_PER_SECOND * deltaTime);
 }
 
-static Color ComputeFireColor(int overlapCount)
-{
-    // Base orange
-    unsigned char baseR = 255;
-    unsigned char baseG = 110 + rand() % 50;
-    unsigned char baseB = 20 + rand() % 30;
-    unsigned char baseA = 140 + rand() % 60;
-
-    if (overlapCount > 1)
-    {
-        float blend = 1.f - std::min(1.f, .4f + .3f * (overlapCount - 1));
-        baseR = (unsigned char)(baseR * (1.f - blend) + 255 * blend);
-        baseG = (unsigned char)(baseG * (1.f - blend) + 255 * blend);
-        baseB = (unsigned char)(baseB * (1.f - blend) + 200 * blend);
-        baseA = (unsigned char)(baseA * (1.f - blend) + 220 * blend);
-    }
-    return Color(baseR, baseG, baseB, baseA);
-}
-
 void FireEffect::Update(const std::shared_ptr<Station> &station, size_t index)
 {
-    Particle proto;
-    // Random initial offset proportional to fire size
-    float spread = std::clamp(.08f + .32f * GetRoundedSize(), .01f, 2.f);
-    float angle0 = ((rand() / (float)RAND_MAX) * 2.f * PI);
-    float radius = spread * std::clamp((rand() / (float)RAND_MAX), 0.f, 1.f);
-    proto.position = Vector2(
-        (float)GetPosition().x + cosf(angle0) * radius,
-        (float)GetPosition().y + sinf(angle0) * radius);
-    // Size variety
-    float baseSize = std::max(10.f * GetRoundedSize(), 1.f); // size in world units, zoom applied at render
-    float sizeVar = std::clamp(.6f + .4f * (rand() / (float)RAND_MAX), .3f, 1.2f);
-    proto.size = std::max(baseSize * sizeVar, 1.f);
-    proto.lifetime = .5f + .3f * (rand() / (float)RAND_MAX);
-    proto.age = 0.f;
-    // Velocity: upward, with some horizontal randomness
-    float angle = ((rand() / (float)RAND_MAX) - .5f) * 1.2f;
-    float minSize = 1.f / effectDef->GetSizeIncrements();
-    float sizeNorm = (GetRoundedSize() - minSize) / (1.f - minSize);
-    sizeNorm = std::clamp(sizeNorm, 0.f, 1.f);
-    float speed = (1.f + .5f * (rand() / (float)RAND_MAX)) * (.5f + .5f * sizeNorm);
-    proto.velocity = Vector2(sinf(angle) * speed, -speed);
+    sol::state &lua = GameManager::GetLua();
+    for (auto &ps : particleSystems)
+    {
+        // Execute Lua on_create (system) if not yet run
+        if (!ps.systemCreated)
+        {
+            if (!ps.onCreateLua.empty())
+            {
+                std::string wrapped = "return function(system, effect, station)\n" + ps.onCreateLua + "\nend";
+                auto chunk = lua.load(wrapped);
+                if (!chunk.valid())
+                {
+                    sol::error err = chunk;
+                    throw std::runtime_error("FireEffect: Failed to load on_create Lua: " + std::string(err.what()));
+                }
+                else
+                {
+                    try
+                    {
+                        sol::protected_function func = chunk();
+                        sol::state_view lua_view(lua);
+                        sol::table effect_tbl = lua_view.create_table_with(
+                            "size", size,
+                            "position", lua_view.create_table_with("x", position.x, "y", position.y));
+                        func(LuaParticleSystem(&ps.system), effect_tbl, station);
+                    }
+                    catch (const sol::error &e)
+                    {
+                        throw std::runtime_error("FireEffect: Error running on_create Lua: " + std::string(e.what()));
+                    }
+                }
+            }
+            ps.systemCreated = true;
+        }
+        if (!ps.onUpdateLua.empty())
+        {
+            std::string wrapped = "return function(system, effect, station, dt)\n" + ps.onUpdateLua + "\nend";
+            auto chunk = lua.load(wrapped);
+            if (!chunk.valid())
+            {
+                sol::error err = chunk;
+                throw std::runtime_error("FireEffect: Failed to load on_update Lua: " + std::string(err.what()));
+            }
+            else
+            {
+                try
+                {
+                    sol::protected_function func = chunk();
+                    sol::state_view lua_view(lua);
+                    sol::table effect_tbl = lua_view.create_table_with(
+                        "size", size,
+                        "position", lua_view.create_table_with("x", position.x, "y", position.y));
+                    func(LuaParticleSystem(&ps.system), effect_tbl, station, FIXED_DELTA_TIME);
+                }
+                catch (const sol::error &e)
+                {
+                    throw std::runtime_error("FireEffect: Error running on_update Lua: " + std::string(e.what()));
+                }
+            }
+        }
 
-    // Count overlapping fires at this position
-    int overlapCount = 0;
-    for (const auto &eff : station->effects)
-        if (std::dynamic_pointer_cast<FireEffect>(eff) && eff->GetPosition() == GetPosition())
-            ++overlapCount;
-    proto.color = ComputeFireColor(overlapCount);
+        // Ensure the particle system advances each fixed update.
+        ps.system.Update(FIXED_DELTA_TIME);
+    }
 
-    particleSystem.Emit(proto, 2 + rand() % 2);
-    particleSystem.Update(FIXED_DELTA_TIME);
-
+    // --- Fire effect logic (tile damage, oxygen, spreading) ---
     auto tileWithOxygen = station->GetTileWithComponentAtPosition<OxygenComponent>(GetPosition());
     if (!tileWithOxygen || station->GetEffectOfTypeAtPosition<FoamEffect>(GetPosition()))
     {
@@ -192,5 +158,75 @@ void FireEffect::Update(const std::shared_ptr<Station> &station, size_t index)
             int selected = RandomIntWithRange(0, static_cast<int>(possibleOffsets.size()) - 1);
             station->effects.push_back(std::make_shared<FireEffect>(GetPosition() + possibleOffsets[selected]));
         }
+    }
+}
+
+void FoamEffect::Update(const std::shared_ptr<Station> &station, size_t)
+{
+    sol::state &lua = GameManager::GetLua();
+    for (auto &ps : particleSystems)
+    {
+        // Execute Lua on_create (system) if not yet run
+        if (!ps.systemCreated)
+        {
+            if (!ps.onCreateLua.empty())
+            {
+                // Wrap user snippet in a function so it can receive parameters: (system, effect, station)
+                std::string wrapped = std::string("return function(system, effect, station)\n") + ps.onCreateLua + "\nend";
+                auto chunk = lua.load(wrapped);
+                if (!chunk.valid())
+                {
+                    sol::error err = chunk;
+                    throw std::runtime_error(std::string("FoamEffect: Failed to load on_create Lua: ") + std::string(err.what()));
+                }
+                else
+                {
+                    try
+                    {
+                        sol::protected_function func = chunk();
+                        // Build a simple Lua table for the effect so scripts can read fields like `size` and `position.x`
+                        sol::state_view lua_view(lua);
+                        sol::table effect_tbl = lua_view.create_table_with(
+                            "size", size,
+                            "position", lua_view.create_table_with("x", position.x, "y", position.y));
+                        func(LuaParticleSystem(&ps.system), effect_tbl, station);
+                    }
+                    catch (const sol::error &e)
+                    {
+                        throw std::runtime_error(std::string("FoamEffect: Error running on_create Lua: ") + std::string(e.what()));
+                    }
+                }
+            }
+            ps.systemCreated = true;
+        }
+        if (!ps.onUpdateLua.empty())
+        {
+            // Wrap user snippet in a function so it can receive parameters: (system, effect, station, dt)
+            std::string wrapped = std::string("return function(system, effect, station, dt)\n") + ps.onUpdateLua + "\nend";
+            auto chunk = lua.load(wrapped);
+            if (!chunk.valid())
+            {
+                sol::error err = chunk;
+                throw std::runtime_error(std::string("FoamEffect: Failed to load on_update Lua: ") + std::string(err.what()));
+            }
+            else
+            {
+                try
+                {
+                    sol::protected_function func = chunk();
+                    sol::state_view lua_view(lua);
+                    sol::table effect_tbl = lua_view.create_table_with(
+                        "size", size,
+                        "position", lua_view.create_table_with("x", position.x, "y", position.y));
+                    func(LuaParticleSystem(&ps.system), effect_tbl, station, FIXED_DELTA_TIME);
+                }
+                catch (const sol::error &e)
+                {
+                    throw std::runtime_error(std::string("FoamEffect: Error running on_update Lua: ") + std::string(e.what()));
+                }
+            }
+        }
+
+        ps.system.Update(FIXED_DELTA_TIME);
     }
 }

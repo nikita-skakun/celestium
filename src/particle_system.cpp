@@ -13,7 +13,7 @@ void ParticleSystem::Update(float dt)
         p.age += dt;
     }
     particles.erase(std::remove_if(particles.begin(), particles.end(), [](const Particle &p)
-                                   { return p.age >= p.lifetime; }),
+                                   { return (p.lifetime >= 0.0f) && (p.age > p.lifetime); }),
                     particles.end());
 }
 
@@ -23,7 +23,10 @@ void ParticleSystem::Draw() const
     for (const auto &p : particles)
     {
         Color c = p.color;
-        c.a = (unsigned char)(p.color.a * (1.0f - p.age / p.lifetime));
+        // Compute life ratio for fading. If lifetime <= 0 we treat it as infinite (no fade).
+        float lifeRatio = (p.lifetime > 0.0f) ? (p.age / p.lifetime) : 0.0f;
+        lifeRatio = std::clamp(lifeRatio, 0.0f, 1.0f);
+        c.a = static_cast<unsigned char>(p.color.a * (1.0f - lifeRatio));
         // Convert world to screen space for drawing
         Vector2 screenPos = GameManager::WorldToScreen(p.position);
         float zoom = GameManager::GetCamera().GetZoom();
@@ -33,13 +36,25 @@ void ParticleSystem::Draw() const
     EndBlendMode();
 }
 
-void ParticleSystem::Emit(const Particle &proto, int count)
+size_t ParticleSystem::Emit(const Particle &proto)
 {
-    for (int i = 0; i < count; ++i)
-    {
-        Particle p = proto;
-        particles.push_back(p);
-    }
+    Particle p = proto;
+    particles.push_back(p);
+    return particles.size() - 1;
+}
+
+Particle *ParticleSystem::GetParticlePtr(size_t idx)
+{
+    if (idx < particles.size())
+        return &particles[idx];
+    return nullptr;
+}
+
+const Particle *ParticleSystem::GetParticlePtr(size_t idx) const
+{
+    if (idx < particles.size())
+        return &particles[idx];
+    return nullptr;
 }
 
 void ParticleSystem::SetBlendMode(int mode)
@@ -55,4 +70,9 @@ void ParticleSystem::Clear()
 bool ParticleSystem::IsEmpty() const
 {
     return particles.empty();
+}
+
+size_t ParticleSystem::GetParticleCount() const
+{
+    return particles.size();
 }

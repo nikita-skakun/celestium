@@ -13,6 +13,14 @@ protected:
     Vector2Int position;
     // [0, 1] range
     float size;
+    struct ParticleSystemWithLua
+    {
+        ParticleSystem system;
+        std::string onCreateLua;
+        std::string onUpdateLua;
+        bool systemCreated = false;
+    };
+    std::vector<ParticleSystemWithLua> particleSystems;
 
 public:
     Effect(const std::string &defName, const Vector2Int &position, float size);
@@ -25,7 +33,7 @@ public:
     constexpr const float &GetSize() const { return size; }
     constexpr void SetSize(float newSize) { size = std::clamp(newSize, 0.f, 1.f); }
 
-    virtual void Render() const;
+    void Render() const;
     std::string GetInfo() const;
 
     virtual void EffectCrew(const std::shared_ptr<Crew> &crew, float deltaTime) const = 0;
@@ -43,25 +51,18 @@ struct FireEffect : Effect
     static constexpr float SPREAD_CHANCE_PER_SECOND = .2f;
     static constexpr float DAMAGE_PER_SECOND = 2.f;
 
-    ParticleSystem particleSystem;
-
-    FireEffect(const Vector2Int &position, float size = 0);
+    FireEffect(const Vector2Int &position, float size = 0) : Effect("FIRE", position, size) {}
 
     void EffectCrew(const std::shared_ptr<Crew> &crew, float deltaTime) const override;
     void Update(const std::shared_ptr<Station> &station, size_t index) override;
-    void Render() const override;
 
     constexpr float GetOxygenConsumption() const { return OXYGEN_CONSUMPTION_PER_SECOND * GetRoundedSize(); }
 };
 
 struct FoamEffect : Effect
 {
-    ParticleSystem particleSystem;
-    bool particlesSpawned = false;
-
-    FoamEffect(const Vector2Int &position, float size = 0);
+    FoamEffect(const Vector2Int &position, float size = 0) : Effect("FOAM", position, size) {}
 
     void EffectCrew(const std::shared_ptr<Crew> &, float) const override {}
     void Update(const std::shared_ptr<Station> &station, size_t index) override;
-    void Render() const override;
 };

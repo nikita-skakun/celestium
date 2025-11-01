@@ -3,6 +3,7 @@
 #include "def_manager.hpp"
 #include "game_state.hpp"
 #include "logging.hpp"
+#include "lua_bindings.hpp"
 #include "ui_manager.hpp"
 #include "ui.hpp"
 #include "update.hpp"
@@ -16,6 +17,8 @@ int main()
     SetExitKey(0);
 
     AssetManager::Initialize();
+    GameManager::GetLua().open_libraries(sol::lib::base, sol::lib::math, sol::lib::table, sol::lib::string);
+    RegisterAllLuaBindings(GameManager::GetLua());
     DefinitionManager::ParseTilesFromFile("../assets/definitions/tiles.yml");
     DefinitionManager::ParseEffectsFromFile("../assets/definitions/env_effects.yml");
 

@@ -139,7 +139,8 @@ private:
             {
                 n = std::stoi(numStr);
             }
-            catch (...) {
+            catch (...)
+            {
                 return out;
             }
 
@@ -227,7 +228,24 @@ public:
 
             uint16_t sizeIncrements = GetValue<uint16_t>(effectNode, "sizeIncrements", 1);
 
-            DefinitionManager::GetInstance().effectDefinitions[effectId] = std::make_shared<EffectDef>(effectId, sizeIncrements);
+            std::vector<ParticleSystemDef> particleSystems;
+            if (effectNode.has_child("particle_systems"))
+            {
+                for (ryml::ConstNodeRef psysNode : effectNode["particle_systems"])
+                {
+                    std::string psysId;
+                    psysNode["id"] >> psysId;
+                    StringRemoveSpaces(psysId);
+                    std::string onCreateLua, onUpdateLua;
+                    if (psysNode.has_child("on_create"))
+                        psysNode["on_create"] >> onCreateLua;
+                    if (psysNode.has_child("on_update"))
+                        psysNode["on_update"] >> onUpdateLua;
+                    particleSystems.emplace_back(psysId, onCreateLua, onUpdateLua);
+                }
+            }
+
+            DefinitionManager::GetInstance().effectDefinitions[effectId] = std::make_shared<EffectDef>(effectId, sizeIncrements, particleSystems);
         }
     }
 
