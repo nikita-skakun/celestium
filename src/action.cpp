@@ -36,7 +36,7 @@ void MoveAction::Update(const std::shared_ptr<Crew> &crew)
         }
     }
 
-    constexpr float moveDelta = CREW_MOVE_SPEED * FIXED_DELTA_TIME;
+    const float moveDelta = CREW_MOVE_SPEED * FIXED_DELTA_TIME;
     Vector2 stepPos = ToVector2(path.front());
     const float distanceLeftSq = Vector2DistanceSq(crew->GetPosition(), stepPos) - moveDelta * moveDelta;
     float distanceToTravel = moveDelta;

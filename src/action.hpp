@@ -16,8 +16,8 @@ struct Action
     };
 
     virtual void Update(const std::shared_ptr<Crew> &crew) = 0;
-    virtual constexpr std::string GetActionName() const = 0;
-    virtual constexpr Type GetType() const = 0;
+    virtual std::string GetActionName() const = 0;
+    virtual Type GetType() const = 0;
     virtual ~Action() = default;
 };
 
@@ -30,8 +30,8 @@ struct MoveAction : Action
 
     void Update(const std::shared_ptr<Crew> &crew) override;
 
-    constexpr std::string GetActionName() const override { return "Moving"; }
-    constexpr Type GetType() const override { return Type::MOVE; }
+    std::string GetActionName() const override { return "Moving"; }
+    Type GetType() const override { return Type::MOVE; }
 };
 
 struct ExtinguishAction : Action
@@ -45,11 +45,11 @@ public:
 
     void Update(const std::shared_ptr<Crew> &crew) override;
 
-    constexpr float GetProgress() const { return progress; }
-    constexpr const Vector2Int &GetTargetPosition() const { return targetPosition; }
+    float GetProgress() const { return progress; }
+    const Vector2Int &GetTargetPosition() const { return targetPosition; }
 
-    constexpr std::string GetActionName() const override { return "Extinguishing"; }
-    constexpr Type GetType() const override { return Type::EXTINGUISH; }
+    std::string GetActionName() const override { return "Extinguishing"; }
+    Type GetType() const override { return Type::EXTINGUISH; }
 };
 
 struct RepairAction : Action
@@ -64,6 +64,6 @@ public:
 
     std::shared_ptr<Tile> GetTargetTile() const { return _targetTile.lock(); }
 
-    constexpr std::string GetActionName() const override { return "Repairing"; }
-    constexpr Type GetType() const override { return Type::REPAIR; }
+    std::string GetActionName() const override { return "Repairing"; }
+    Type GetType() const override { return Type::REPAIR; }
 };

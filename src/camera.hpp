@@ -55,7 +55,7 @@ public:
     constexpr bool IsOverlay(Overlay other) const { return overlay == other; }
     constexpr void SetOverlay(Overlay targetOverlay) { overlay = targetOverlay; }
     constexpr void ToggleOverlay(Overlay targetOverlay) { overlay = (overlay != targetOverlay) ? targetOverlay : Overlay::NONE; }
-    constexpr std::string GetOverlayName() const { return EnumToName<Overlay>(overlay); }
+    std::string GetOverlayName() const { return EnumToName<Overlay>(overlay); }
 
     constexpr UiState GetUiState() const { return uiState; }
     constexpr void SetUiState(UiState newUiState) { uiState = newUiState; }
@@ -64,12 +64,12 @@ public:
     constexpr bool IsUiClear() const { return uiState == UiState::NONE; }
 
     constexpr uint16_t GetFpsIndex() const { return fpsIndex; }
-    constexpr void SetFpsIndex(uint16_t newFpsIndex)
+    void SetFpsIndex(uint16_t newFpsIndex)
     {
         fpsIndex = std::min(newFpsIndex, (uint16_t)(FPS_OPTIONS.size() - 1));
         SetTargetFPS(FPS_OPTIONS.at(fpsIndex));
     }
-    constexpr void SetFps(uint16_t newFps) { SetFpsIndex(std::ranges::find(FPS_OPTIONS, newFps) - FPS_OPTIONS.begin()); }
+    void SetFps(uint16_t newFps) { SetFpsIndex(std::ranges::find(FPS_OPTIONS, newFps) - FPS_OPTIONS.begin()); }
 
     std::string GetFpsOptions() const;
 

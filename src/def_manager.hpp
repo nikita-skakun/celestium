@@ -38,6 +38,37 @@ private:
     DefinitionManager(const DefinitionManager &) = delete;
     DefinitionManager &operator=(const DefinitionManager &) = delete;
 
+    // Resolve a slash-separated path (e.g. "ui/textColor") against a node and return
+    // the child node reference. Throws if any path component is missing.
+    static ryml::ConstNodeRef GetNodeByPath(const ryml::ConstNodeRef &root, const std::string &path)
+    {
+        ryml::ConstNodeRef cur = root;
+        size_t start = 0;
+        while (start < path.size())
+        {
+            size_t sep = path.find('/', start);
+            std::string part = (sep == std::string::npos) ? path.substr(start) : path.substr(start, sep - start);
+            ryml::csubstr part_cs(part.c_str(), part.size());
+            if (!cur.has_child(part_cs))
+                throw std::runtime_error(std::format("Missing required configuration key: {}", path));
+            cur = cur[part_cs];
+            start = (sep == std::string::npos) ? path.size() : sep + 1;
+        }
+        return cur;
+    }
+
+    template <typename T>
+    static T GetRequiredValue(const ryml::ConstNodeRef &root, const std::string &key)
+    {
+        ryml::ConstNodeRef child = GetNodeByPath(root, key);
+        if (child.val_is_null())
+            throw std::runtime_error(std::format("Required configuration key is null: {}", key));
+        T value;
+        child >> value;
+        return value;
+    }
+
+    // Backwards-compatible permissive getter used by tile/effect component parsing.
     template <typename T>
     static T GetValue(const ryml::ConstNodeRef &node, const ryml::csubstr &key, T defaultValue)
     {
@@ -247,6 +278,84 @@ public:
 
             DefinitionManager::GetInstance().effectDefinitions[effectId] = std::make_shared<EffectDef>(effectId, sizeIncrements, particleSystems);
         }
+    }
+
+    static void ParseConstantsFromFile(const std::string &filename)
+    {
+        std::vector<char> contents = ReadFromFile<std::vector<char>>(filename);
+        ryml::Tree tree = ryml::parse_in_place(ryml::to_substr(contents));
+
+        if (tree.empty())
+            throw std::runtime_error(std::format("The constants file is empty or unreadable: {}", filename));
+
+        ryml::ConstNodeRef root = tree.rootref();
+
+        // Helper to read color sequences [r,g,b,a] from a slash-separated path; throws if missing
+        auto ReadColorAt = [&](const std::string &path) {
+            ryml::ConstNodeRef colNode = GetNodeByPath(root, path);
+            if (!colNode.is_seq())
+                throw std::runtime_error(std::format("Expected color sequence at {}", path));
+            int r = 0, g = 0, b = 0, a = 255;
+            size_t idx = 0;
+            for (ryml::ConstNodeRef child : colNode)
+            {
+                int v = 0;
+                child >> v;
+                if (idx == 0) r = v;
+                else if (idx == 1) g = v;
+                else if (idx == 2) b = v;
+                else if (idx == 3) a = v;
+                ++idx;
+            }
+            return Color{(unsigned char)r, (unsigned char)g, (unsigned char)b, (unsigned char)a};
+        };
+
+        // general (required)
+        FIXED_DELTA_TIME = GetRequiredValue<double>(root, "general/fixedDeltaTime");
+
+        // fps (required)
+        {
+            ryml::ConstNodeRef fpsNode = GetNodeByPath(root, "fps/options");
+            std::vector<uint16_t> tmp;
+            fpsNode >> tmp;
+            if (tmp.empty())
+                throw std::runtime_error(std::format("fps/options must contain at least one entry"));
+            FPS_OPTIONS = tmp;
+        }
+
+        // camera (required)
+        MIN_ZOOM = GetRequiredValue<float>(root, "camera/minZoom");
+        MAX_ZOOM = GetRequiredValue<float>(root, "camera/maxZoom");
+        ZOOM_SPEED = GetRequiredValue<float>(root, "camera/zoomSpeed");
+        CAMERA_KEY_MOVE_SPEED = GetRequiredValue<float>(root, "camera/keyMoveSpeed");
+
+        // ui (required)
+        DEFAULT_FONT_SIZE = GetRequiredValue<int>(root, "ui/defaultFontSize");
+        DEFAULT_PADDING = GetRequiredValue<float>(root, "ui/defaultPadding");
+        UI_TEXT_COLOR = ReadColorAt("ui/textColor");
+
+        // tile (required)
+        TILE_SIZE = GetRequiredValue<float>(root, "tile/size");
+        TILE_OXYGEN_MAX = GetRequiredValue<float>(root, "tile/oxygenMax");
+        GRID_COLOR = ReadColorAt("tile/gridColor");
+
+        // oxygen (required)
+        OXYGEN_DIFFUSION_RATE = GetRequiredValue<float>(root, "oxygen/diffusionRate");
+
+        // outline (required)
+        DRAG_THRESHOLD = GetRequiredValue<float>(root, "outline/dragThreshold");
+        OUTLINE_SIZE = GetRequiredValue<float>(root, "outline/outlineSize");
+        OUTLINE_COLOR = ReadColorAt("outline/outlineColor");
+
+        // crew (required)
+        CREW_RADIUS = GetRequiredValue<float>(root, "crew/radius");
+        CREW_MOVE_SPEED = GetRequiredValue<float>(root, "crew/moveSpeed");
+        CREW_OXYGEN_MAX = GetRequiredValue<float>(root, "crew/oxygenMax");
+        CREW_OXYGEN_USE = GetRequiredValue<float>(root, "crew/oxygenUse");
+        CREW_OXYGEN_REFILL = GetRequiredValue<float>(root, "crew/oxygenRefill");
+        CREW_HEALTH_MAX = GetRequiredValue<float>(root, "crew/healthMax");
+        CREW_EXTINGUISH_SPEED = GetRequiredValue<float>(root, "crew/extinguishSpeed");
+        CREW_REPAIR_SPEED = GetRequiredValue<float>(root, "crew/repairSpeed");
     }
 
     static void ParseTilesFromFile(const std::string &filename)

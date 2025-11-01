@@ -1,0 +1,39 @@
+general:
+  fixedDeltaTime: 0.02
+
+fps:
+  options: [30, 60, 75, 120, 144, 240, 360]
+
+camera:
+  minZoom: 0.25
+  maxZoom: 5.0
+  zoomSpeed: 0.1
+  keyMoveSpeed: 10.0
+
+ui:
+  defaultFontSize: 20
+  defaultPadding: 10.0
+  textColor: [200, 200, 200, 255]
+
+tile:
+  size: 32.0
+  oxygenMax: 100.0
+  gridColor: [0, 0, 0, 50]
+
+oxygen:
+  diffusionRate: 10.0
+
+outline:
+  dragThreshold: 0.25
+  outlineSize: 1.0
+  outlineColor: [0, 0, 0, 255]
+
+crew:
+  radius: 12.0
+  moveSpeed: 2.0
+  oxygenMax: 100.0
+  oxygenUse: 10.0
+  oxygenRefill: 50.0
+  healthMax: 10.0
+  extinguishSpeed: 0.5
+  repairSpeed: 0.5

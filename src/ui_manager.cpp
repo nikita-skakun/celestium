@@ -8,16 +8,16 @@
 
 void InitializeEscapeMenu()
 {
-    constexpr int buttonCount = 4;
-    constexpr double buttonWidth = 1. / 12.;
-    constexpr Vector2 spacing = Vector2ScreenScale(Vector2(DEFAULT_PADDING, DEFAULT_PADDING));
-    constexpr double buttonHeight = 1. / 24.;
-    constexpr double totalButtonHeight = buttonCount * buttonHeight + (buttonCount - 1) * spacing.y;
+    const int buttonCount = 4;
+    const double buttonWidth = 1. / 12.;
+    const Vector2 spacing = Vector2ScreenScale(Vector2(DEFAULT_PADDING, DEFAULT_PADDING));
+    const double buttonHeight = 1. / 24.;
+    const double totalButtonHeight = buttonCount * buttonHeight + (buttonCount - 1) * spacing.y;
 
     // Calculate menu dimensions
-    constexpr Vector2 menuSize = Vector2(buttonWidth, totalButtonHeight) + spacing * 2;
+    const Vector2 menuSize = Vector2(buttonWidth, totalButtonHeight) + spacing * 2;
 
-    constexpr Vector2 menuPos = Vector2(.5, .5) - menuSize / 2.;
+    const Vector2 menuPos = Vector2(.5, .5) - menuSize / 2.;
 
     // Darken the background to draw focus to the UI
     auto escMenu = std::make_shared<UiPanel>(Rectangle(0, 0, 1, 1), Fade(BLACK, .2));
@@ -32,25 +32,25 @@ void InitializeEscapeMenu()
     escMenu->AddChild(menuBackground);
 
     // Dynamically position buttons in the center of the menu
-    constexpr double firstButtonPosY = menuPos.y + (menuSize.y - totalButtonHeight) / 2.;
-    constexpr double buttonPosX = .5 - buttonWidth / 2.;
+    const double firstButtonPosY = menuPos.y + (menuSize.y - totalButtonHeight) / 2.;
+    const double buttonPosX = .5 - buttonWidth / 2.;
 
-    constexpr Rectangle resumeButtonRect = Rectangle(buttonPosX, firstButtonPosY, buttonWidth, buttonHeight);
+    Rectangle resumeButtonRect = Rectangle(buttonPosX, firstButtonPosY, buttonWidth, buttonHeight);
     auto resumeButton = std::make_shared<UiButton>(resumeButtonRect, "Resume", []()
                                                    { GameManager::GetCamera().SetUiState(PlayerCam::UiState::NONE); });
     menuBackground->AddChild(resumeButton);
 
-    constexpr Rectangle settingsButtonRect = Rectangle(buttonPosX, firstButtonPosY + (buttonHeight + spacing.y), buttonWidth, buttonHeight);
+    Rectangle settingsButtonRect = Rectangle(buttonPosX, firstButtonPosY + (buttonHeight + spacing.y), buttonWidth, buttonHeight);
     auto settingsButton = std::make_shared<UiButton>(settingsButtonRect, "Settings", []()
                                                      { GameManager::GetCamera().SetUiState(PlayerCam::UiState::SETTINGS_MENU); });
     menuBackground->AddChild(settingsButton);
 
-    constexpr Rectangle mainMenuButtonRect = Rectangle(buttonPosX, firstButtonPosY + 2. * (buttonHeight + spacing.y), buttonWidth, buttonHeight);
+    Rectangle mainMenuButtonRect = Rectangle(buttonPosX, firstButtonPosY + 2. * (buttonHeight + spacing.y), buttonWidth, buttonHeight);
     auto mainMenuButton = std::make_shared<UiButton>(mainMenuButtonRect, "Main Menu", []()
                                                      { GameManager::RequestStateChange(GameState::MAIN_MENU); });
     menuBackground->AddChild(mainMenuButton);
 
-    constexpr Rectangle exitButtonRect = Rectangle(buttonPosX, firstButtonPosY + 3. * (buttonHeight + spacing.y), buttonWidth, buttonHeight);
+    Rectangle exitButtonRect = Rectangle(buttonPosX, firstButtonPosY + 3. * (buttonHeight + spacing.y), buttonWidth, buttonHeight);
     auto exitButton = std::make_shared<UiButton>(exitButtonRect, "Exit", []()
                                                  { GameManager::RequestStateChange(GameState::NONE); });
     menuBackground->AddChild(exitButton);
@@ -60,11 +60,11 @@ void InitializeEscapeMenu()
 
 void InitializeSettingsMenu()
 {
-    constexpr Vector2 menuSize = Vector2(1, 1) * 2. / 3.;
-    constexpr Vector2 menuPos = Vector2(.5, .5) - menuSize / 2.;
-    constexpr Vector2 spacing = Vector2ScreenScale(Vector2(DEFAULT_PADDING, DEFAULT_PADDING));
-    constexpr double settingHeight = 1. / 36.;
-    constexpr double halfPanelWidth = menuSize.x / 2. - spacing.x * 1.5;
+    const Vector2 menuSize = Vector2(1, 1) * 2. / 3.;
+    const Vector2 menuPos = Vector2(.5, .5) - menuSize / 2.;
+    const Vector2 spacing = Vector2ScreenScale(Vector2(DEFAULT_PADDING, DEFAULT_PADDING));
+    const double settingHeight = 1. / 36.;
+    const double halfPanelWidth = menuSize.x / 2. - spacing.x * 1.5;
 
     // Darken the background to draw focus to the UI
     auto settingsMenu = std::make_shared<UiPanel>(Rectangle(0, 0, 1, 1), Fade(BLACK, .2));
@@ -164,17 +164,17 @@ void InitializeSettingsMenu()
 
 void InitializeSidebar()
 {
-    constexpr Vector2 largeButtonSize = Vector2ScreenScale(Vector2(64, 64));
-    constexpr Vector2 smallButtonSize = largeButtonSize / 2.;
-    constexpr Vector2 spacing = Vector2ScreenScale(Vector2(DEFAULT_PADDING, DEFAULT_PADDING));
+    const Vector2 largeButtonSize = Vector2ScreenScale(Vector2(64, 64));
+    const Vector2 smallButtonSize = largeButtonSize / 2.;
+    const Vector2 spacing = Vector2ScreenScale(Vector2(DEFAULT_PADDING, DEFAULT_PADDING));
 
-    constexpr Rectangle buildButtonRect = Vector2ToRect(Vector2(1. - spacing.x - largeButtonSize.x, (1. - largeButtonSize.y) / 2.), largeButtonSize);
+    Rectangle buildButtonRect = Vector2ToRect(Vector2(1. - spacing.x - largeButtonSize.x, (1. - largeButtonSize.y) / 2.), largeButtonSize);
     bool isInBuildMode = GameManager::IsInBuildMode();
     auto buildToggle = std::make_shared<UiToggle>(buildButtonRect, isInBuildMode, [](bool state)
                                                   { GameManager::SetBuildModeState(state); });
     buildToggle->SetVisible(false);
 
-    constexpr Rectangle buildIconRect = Vector2ToRect(Vector2(buildButtonRect.x, buildButtonRect.y) + largeButtonSize / 8., largeButtonSize * .75);
+    Rectangle buildIconRect = Vector2ToRect(Vector2(buildButtonRect.x, buildButtonRect.y) + largeButtonSize / 8., largeButtonSize * .75);
     buildToggle->AddChild(std::make_shared<UiIcon>(buildIconRect, "ICON", Rectangle(1, 1, 1, 1) * TILE_SIZE, Fade(DARKGRAY, .8)));
 
     std::weak_ptr<UiToggle> _buildToggle = buildToggle;
@@ -219,12 +219,12 @@ void InitializeSidebar()
 
 void InitializeBuildWorldUi()
 {
-    constexpr Vector2 SPACING = Vector2ScreenScale(Vector2(DEFAULT_PADDING, DEFAULT_PADDING));
-    constexpr Vector2 BUTTON_SIZE = Vector2ScreenScale(Vector2(32, 32));
-    constexpr Vector2 ICON_SIZE = BUTTON_SIZE * 3.f / 4.f;
-    constexpr Vector2 ICON_OFFSET = (BUTTON_SIZE - ICON_SIZE) / 2.;
-    constexpr Vector2 PANEL_SIZE = Vector2(.8, BUTTON_SIZE.y + SPACING.y * 2.);
-    constexpr Vector2 PANEL_POS = Vector2(.5 - PANEL_SIZE.x / 2., 1. - PANEL_SIZE.y - SPACING.y);
+    const Vector2 SPACING = Vector2ScreenScale(Vector2(DEFAULT_PADDING, DEFAULT_PADDING));
+    const Vector2 BUTTON_SIZE = Vector2ScreenScale(Vector2(32, 32));
+    const Vector2 ICON_SIZE = BUTTON_SIZE * 3.f / 4.f;
+    const Vector2 ICON_OFFSET = (BUTTON_SIZE - ICON_SIZE) / 2.;
+    const Vector2 PANEL_SIZE = Vector2(.8, BUTTON_SIZE.y + SPACING.y * 2.);
+    const Vector2 PANEL_POS = Vector2(.5 - PANEL_SIZE.x / 2., 1. - PANEL_SIZE.y - SPACING.y);
 
     auto onHorizontalSymmetryToggle = [](bool)
     { GameManager::ToggleHorizontalSymmetry(); };
@@ -272,10 +272,10 @@ struct TileToggleConfig
 
 void AddBuildToggle(std::shared_ptr<UiPanel> buildMenuPanel, const TileToggleConfig &config, int index)
 {
-    constexpr Vector2 SPACING = Vector2ScreenScale(Vector2(DEFAULT_PADDING, DEFAULT_PADDING));
-    constexpr Vector2 TOGGLE_SIZE = Vector2ScreenScale(Vector2(64, 64));
-    constexpr Vector2 PANEL_SIZE = Vector2(.8, TOGGLE_SIZE.y + SPACING.y * 2.);
-    constexpr Vector2 PANEL_POS = Vector2(.5 - PANEL_SIZE.x / 2., 1. - PANEL_SIZE.y - SPACING.y * 4. - TOGGLE_SIZE.y);
+    const Vector2 SPACING = Vector2ScreenScale(Vector2(DEFAULT_PADDING, DEFAULT_PADDING));
+    const Vector2 TOGGLE_SIZE = Vector2ScreenScale(Vector2(64, 64));
+    const Vector2 PANEL_SIZE = Vector2(.8, TOGGLE_SIZE.y + SPACING.y * 2.);
+    const Vector2 PANEL_POS = Vector2(.5 - PANEL_SIZE.x / 2., 1. - PANEL_SIZE.y - SPACING.y * 4. - TOGGLE_SIZE.y);
 
     Vector2 togglePos = PANEL_POS + Vector2(SPACING.x + index * (TOGGLE_SIZE.x + SPACING.x), SPACING.y);
 
@@ -323,14 +323,14 @@ void UiManager::Render()
 
 void UiManager::InitializeMainMenu()
 {
-    constexpr int buttonCount = 4;
-    constexpr double buttonWidth = 1. / 6.; // Menu width
-    constexpr Vector2 spacing = Vector2ScreenScale(Vector2(DEFAULT_PADDING, DEFAULT_PADDING));
-    constexpr double buttonHeight = 1. / 18.;
-    constexpr double totalButtonHeight = buttonCount * buttonHeight + (buttonCount - 1) * spacing.y;
+    const int buttonCount = 4;
+    const double buttonWidth = 1. / 6.; // Menu width
+    const Vector2 spacing = Vector2ScreenScale(Vector2(DEFAULT_PADDING, DEFAULT_PADDING));
+    const double buttonHeight = 1. / 18.;
+    const double totalButtonHeight = buttonCount * buttonHeight + (buttonCount - 1) * spacing.y;
 
-    constexpr Vector2 menuSize = Vector2(buttonWidth, totalButtonHeight) + spacing * 2;
-    constexpr Vector2 menuPos = Vector2(1. - menuSize.x - spacing.x, (1. - menuSize.y) / 2.);
+    const Vector2 menuSize = Vector2(buttonWidth, totalButtonHeight) + spacing * 2;
+    const Vector2 menuPos = Vector2(1. - menuSize.x - spacing.x, (1. - menuSize.y) / 2.);
 
     auto mainMenuPanel = std::make_shared<UiPanel>(Vector2ToRect(menuPos, menuSize), Fade(BLACK, .5));
     std::weak_ptr<UiPanel> _mainMenuPanel = mainMenuPanel;
@@ -338,24 +338,24 @@ void UiManager::InitializeMainMenu()
                                { if (auto mainMenuPanel = _mainMenuPanel.lock())
                              { mainMenuPanel->SetVisible(GameManager::GetCamera().IsUiClear()); } });
 
-    constexpr double firstButtonPosY = menuPos.y + (menuSize.y - totalButtonHeight) / 2.;
-    constexpr double buttonPosX = menuPos.x + (menuSize.x - buttonWidth) / 2.; // Center buttons within the panel
+    double firstButtonPosY = menuPos.y + (menuSize.y - totalButtonHeight) / 2.;
+    const double buttonPosX = menuPos.x + (menuSize.x - buttonWidth) / 2.; // Center buttons within the panel
 
-    constexpr Rectangle newGameButtonRect = Rectangle(buttonPosX, firstButtonPosY, buttonWidth, buttonHeight);
+    Rectangle newGameButtonRect = Rectangle(buttonPosX, firstButtonPosY, buttonWidth, buttonHeight);
     auto newGameButton = std::make_shared<UiButton>(newGameButtonRect, "New Game", []()
                                                     { GameManager::RequestStateChange(GameState::GAME_SIM); });
     mainMenuPanel->AddChild(newGameButton);
 
-    constexpr Rectangle loadGameButtonRect = Rectangle(buttonPosX, firstButtonPosY + (buttonHeight + spacing.y), buttonWidth, buttonHeight);
+    Rectangle loadGameButtonRect = Rectangle(buttonPosX, firstButtonPosY + (buttonHeight + spacing.y), buttonWidth, buttonHeight);
     auto loadGameButton = std::make_shared<UiButton>(loadGameButtonRect, "Load Game", []() { /* TODO: Implement load game functionality */ });
     mainMenuPanel->AddChild(loadGameButton);
 
-    constexpr Rectangle settingsButtonRect = Rectangle(buttonPosX, firstButtonPosY + 2. * (buttonHeight + spacing.y), buttonWidth, buttonHeight);
+    Rectangle settingsButtonRect = Rectangle(buttonPosX, firstButtonPosY + 2. * (buttonHeight + spacing.y), buttonWidth, buttonHeight);
     auto settingsButton = std::make_shared<UiButton>(settingsButtonRect, "Settings", []()
                                                      { GameManager::GetCamera().SetUiState(PlayerCam::UiState::SETTINGS_MENU); });
     mainMenuPanel->AddChild(settingsButton);
 
-    constexpr Rectangle exitButtonRect = Rectangle(buttonPosX, firstButtonPosY + 3. * (buttonHeight + spacing.y), buttonWidth, buttonHeight);
+    Rectangle exitButtonRect = Rectangle(buttonPosX, firstButtonPosY + 3. * (buttonHeight + spacing.y), buttonWidth, buttonHeight);
     auto exitButton = std::make_shared<UiButton>(exitButtonRect, "Exit", []()
                                                  { GameManager::RequestStateChange(GameState::NONE); });
     mainMenuPanel->AddChild(exitButton);
@@ -401,13 +401,13 @@ void ToggleBuildCategory(TileDef::Category category)
 void InitializeBuildCategory()
 {
     // 3 buttons on the bottom centered of screen
-    constexpr Vector2 SPACING = Vector2ScreenScale(Vector2(DEFAULT_PADDING, DEFAULT_PADDING));
-    constexpr Vector2 BUTTON_SIZE = Vector2ScreenScale(Vector2(64, 64));
-    constexpr Vector2 ICON_SIZE = BUTTON_SIZE * 3.f / 4.f;
-    constexpr Vector2 ICON_OFFSET = (BUTTON_SIZE - ICON_SIZE) / 2.;
+    const Vector2 SPACING = Vector2ScreenScale(Vector2(DEFAULT_PADDING, DEFAULT_PADDING));
+    const Vector2 BUTTON_SIZE = Vector2ScreenScale(Vector2(64, 64));
+    const Vector2 ICON_SIZE = BUTTON_SIZE * 3.f / 4.f;
+    const Vector2 ICON_OFFSET = (BUTTON_SIZE - ICON_SIZE) / 2.;
 
-    constexpr Vector2 PANEL_SIZE = Vector2(.8, BUTTON_SIZE.y + SPACING.y * 2.);
-    constexpr Vector2 PANEL_POS = Vector2(.5 - PANEL_SIZE.x / 2., 1. - PANEL_SIZE.y - SPACING.y);
+    const Vector2 PANEL_SIZE = Vector2(.8, BUTTON_SIZE.y + SPACING.y * 2.);
+    const Vector2 PANEL_POS = Vector2(.5 - PANEL_SIZE.x / 2., 1. - PANEL_SIZE.y - SPACING.y);
     auto buildCategoryPanel = std::make_shared<UiPanel>(Vector2ToRect(PANEL_POS, PANEL_SIZE), Fade(BLACK, .5));
     buildCategoryPanel->SetVisible(false);
     std::weak_ptr<UiPanel> _buildCategoryPanel = buildCategoryPanel;
@@ -459,12 +459,12 @@ void InitializeBuildCategory()
 void InitializeBuildMenu()
 {
     // Panel right above the build category panel
-    constexpr Vector2 SPACING = Vector2ScreenScale(Vector2(DEFAULT_PADDING, DEFAULT_PADDING));
-    constexpr Vector2 BUTTON_SIZE = Vector2ScreenScale(Vector2(64, 64));
-    // constexpr Vector2 ICON_SIZE = BUTTON_SIZE * 3.f / 4.f;
-    // constexpr Vector2 ICON_OFFSET = (BUTTON_SIZE - ICON_SIZE) / 2.;
-    constexpr Vector2 PANEL_SIZE = Vector2(.8, BUTTON_SIZE.y + SPACING.y * 2.);
-    constexpr Vector2 PANEL_POS = Vector2(.5 - PANEL_SIZE.x / 2., 1. - PANEL_SIZE.y - SPACING.y * 4. - BUTTON_SIZE.y);
+    const Vector2 SPACING = Vector2ScreenScale(Vector2(DEFAULT_PADDING, DEFAULT_PADDING));
+    const Vector2 BUTTON_SIZE = Vector2ScreenScale(Vector2(64, 64));
+    // const Vector2 ICON_SIZE = BUTTON_SIZE * 3.f / 4.f;
+    // const Vector2 ICON_OFFSET = (BUTTON_SIZE - ICON_SIZE) / 2.;
+    const Vector2 PANEL_SIZE = Vector2(.8, BUTTON_SIZE.y + SPACING.y * 2.);
+    const Vector2 PANEL_POS = Vector2(.5 - PANEL_SIZE.x / 2., 1. - PANEL_SIZE.y - SPACING.y * 4. - BUTTON_SIZE.y);
 
     auto buildMenuPanel = std::make_shared<UiPanel>(Vector2ToRect(PANEL_POS, PANEL_SIZE), Fade(BLACK, .5));
     buildMenuPanel->SetVisible(false);

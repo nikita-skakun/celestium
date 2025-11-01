@@ -13,6 +13,8 @@ int main()
     SetConfigFlags(FLAG_FULLSCREEN_MODE);
     InitWindow(0, 0, "Celestium");
 
+    DefinitionManager::ParseConstantsFromFile("../assets/definitions/constants.yml");
+
     GameManager::GetCamera().SetFps(GetMonitorRefreshRate(GetCurrentMonitor()));
     SetExitKey(0);
 

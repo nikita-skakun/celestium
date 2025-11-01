@@ -28,10 +28,10 @@ public:
 
     std::shared_ptr<EffectDef> GetEffectDefinition() const { return effectDef; }
 
-    constexpr const Vector2Int &GetPosition() const { return position; };
+    const Vector2Int &GetPosition() const { return position; };
 
-    constexpr const float &GetSize() const { return size; }
-    constexpr void SetSize(float newSize) { size = std::clamp(newSize, 0.f, 1.f); }
+    const float &GetSize() const { return size; }
+    void SetSize(float newSize) { size = std::clamp(newSize, 0.f, 1.f); }
 
     void Render() const;
     std::string GetInfo() const;
@@ -39,9 +39,9 @@ public:
     virtual void EffectCrew(const std::shared_ptr<Crew> &crew, float deltaTime) const = 0;
     virtual void Update(const std::shared_ptr<Station> &station, size_t index) = 0;
 
-    constexpr float GetRoundedSize() const { return std::ceil(size * effectDef->GetSizeIncrements()) / (float)effectDef->GetSizeIncrements(); }
-    constexpr const std::string &GetId() const { return effectDef->GetId(); }
-    constexpr std::string GetName() const { return MacroCaseToName(GetId()); }
+    float GetRoundedSize() const { return std::ceil(size * effectDef->GetSizeIncrements()) / (float)effectDef->GetSizeIncrements(); }
+    const std::string &GetId() const { return effectDef->GetId(); }
+    std::string GetName() const { return MacroCaseToName(GetId()); }
 };
 
 struct FireEffect : Effect
@@ -56,7 +56,7 @@ struct FireEffect : Effect
     void EffectCrew(const std::shared_ptr<Crew> &crew, float deltaTime) const override;
     void Update(const std::shared_ptr<Station> &station, size_t index) override;
 
-    constexpr float GetOxygenConsumption() const { return OXYGEN_CONSUMPTION_PER_SECOND * GetRoundedSize(); }
+    float GetOxygenConsumption() const { return OXYGEN_CONSUMPTION_PER_SECOND * GetRoundedSize(); }
 };
 
 struct FoamEffect : Effect

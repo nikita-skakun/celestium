@@ -1,41 +1,37 @@
 #pragma once
-#include <array>
+#include <vector>
 #include <cstdint>
 #include <raylib.h>
 
-constexpr double FIXED_DELTA_TIME = 1. / 45.;
+inline double FIXED_DELTA_TIME;
 
-constexpr std::array<uint16_t, 7> FPS_OPTIONS{30, 60, 75, 120, 144, 240, 360};
+inline std::vector<uint16_t> FPS_OPTIONS;
 
-constexpr float MIN_ZOOM = .25f;
-constexpr float MAX_ZOOM = 5.f;
-constexpr float ZOOM_SPEED = .1f;
-constexpr float CAMERA_KEY_MOVE_SPEED = 10.f;
+inline float MIN_ZOOM;
+inline float MAX_ZOOM;
+inline float ZOOM_SPEED;
+inline float CAMERA_KEY_MOVE_SPEED;
 
-constexpr int DEFAULT_FONT_SIZE = 20;
-constexpr float DEFAULT_PADDING = 10.f;
-constexpr Color UI_TEXT_COLOR = LIGHTGRAY;
+inline int DEFAULT_FONT_SIZE;
+inline float DEFAULT_PADDING;
+inline Color UI_TEXT_COLOR;
 
-constexpr float TILE_SIZE = 32.f;
-constexpr float TILE_OXYGEN_MAX = 100.f;
-constexpr Color TILE_SELECTION_TINT = Color(255, 128, 255, 255);
+inline float TILE_SIZE;
+inline float TILE_OXYGEN_MAX;
 
-constexpr Color GRID_COLOR = Color(0, 0, 0, 50);
+inline Color GRID_COLOR;
 
-constexpr float OXYGEN_DIFFUSION_RATE = 10.f;
+inline float OXYGEN_DIFFUSION_RATE;
 
-constexpr float POWER_CONNECTION_WIDTH = 2.f;
-constexpr Color POWER_CONNECTION_COLOR = Color(253, 249, 0, 77);
+inline float DRAG_THRESHOLD;
+inline float OUTLINE_SIZE;
+inline Color OUTLINE_COLOR;
 
-constexpr float DRAG_THRESHOLD = .25f;
-constexpr float OUTLINE_SIZE = 1.f;
-constexpr Color OUTLINE_COLOR = BLACK;
-
-constexpr float CREW_RADIUS = 12.f;
-constexpr float CREW_MOVE_SPEED = 2.f;
-constexpr float CREW_OXYGEN_MAX = 100.f;
-constexpr float CREW_OXYGEN_USE = 10.f;
-constexpr float CREW_OXYGEN_REFILL = 50.0f;
-constexpr float CREW_HEALTH_MAX = 10.f;
-constexpr float CREW_EXTINGUISH_SPEED = .5f;
-constexpr float CREW_REPAIR_SPEED = .5f;
+inline float CREW_RADIUS;
+inline float CREW_MOVE_SPEED;
+inline float CREW_OXYGEN_MAX;
+inline float CREW_OXYGEN_USE;
+inline float CREW_OXYGEN_REFILL;
+inline float CREW_HEALTH_MAX;
+inline float CREW_EXTINGUISH_SPEED;
+inline float CREW_REPAIR_SPEED;
