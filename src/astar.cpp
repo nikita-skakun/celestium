@@ -1,6 +1,4 @@
 #include "astar.hpp"
-#include "game_state.hpp"
-#include "station.hpp"
 #include <queue>
 #include <unordered_set>
 
@@ -11,12 +9,15 @@
  * @param start     The starting position as a Vector2Int.
  * @param end       The target position as a Vector2Int.
  * @param heuristic A function that estimates the cost between two points.
- * @return          A deque of Vector2Int positions representing the path.
+ * @param pathable  A callable that returns true if a given position is
+ *                  traversable (e.g. calls Station::IsPositionPathable).
+ * @return          A deque of Vector2Int positions representing the path
+ *                  from start (exclusive) to end (inclusive). If no path
+ *                  is found, an empty deque is returned.
  */
-std::deque<Vector2Int> AStar(const Vector2Int &start, const Vector2Int &end, const HeuristicFunction &heuristic)
+std::deque<Vector2Int> AStar(const Vector2Int &start, const Vector2Int &end, const HeuristicFunction &heuristic, const PathableFunction &pathable)
 {
-    auto station = GameManager::GetStation();
-    if (start == end || !station)
+    if (start == end)
         return {};
 
     // Combined cost map for tracking both g and f costs
@@ -76,13 +77,13 @@ std::deque<Vector2Int> AStar(const Vector2Int &start, const Vector2Int &end, con
             if (offset.x != 0 && offset.y != 0)
             {
                 // Ensure both adjacent sides are walkable for diagonals
-                if (!station->IsPositionPathable(Vector2Int(current.x + offset.x, current.y)) ||
-                    !station->IsPositionPathable(Vector2Int(current.x, current.y + offset.y)))
+                if (!pathable(Vector2Int(current.x + offset.x, current.y)) ||
+                    !pathable(Vector2Int(current.x, current.y + offset.y)))
                     continue; // Skip to the next neighbor
             }
 
             // Check if neighbor is pathable and not in the closed set
-            if (station->IsPositionPathable(neighborPos) && !Contains(closedSet, neighborPos))
+            if (pathable(neighborPos) && !Contains(closedSet, neighborPos))
             {
                 // Calculate tentative G cost
                 float tentativeGCost = costMap[current].x + heuristic(current, neighborPos);
@@ -112,18 +113,15 @@ std::deque<Vector2Int> AStar(const Vector2Int &start, const Vector2Int &end, con
 }
 
 /**
- * Checks if there are any obstacles along the given path.
+ * Checks if there are any obstacles along the given path using the
+ * provided pathability callback.
  *
- * @param path            The queue of Vector2Int positions representing the path.
- *
- * @return                True if an obstacle is found, false otherwise.
+ * @param path     The deque of Vector2Int positions representing the path.
+ * @param pathable Callable that returns true when a tile is traversable.
+ * @return         True if any position on the path is not traversable.
  */
-bool DoesPathHaveObstacles(const std::deque<Vector2Int> &path)
+bool DoesPathHaveObstacles(const std::deque<Vector2Int> &path, const PathableFunction &pathable)
 {
-    auto station = GameManager::GetStation();
-    if (!station)
-        return false;
-
-    return std::ranges::any_of(path, [station](const Vector2Int &step)
-                               { return !station->IsPositionPathable(step); });
+    return std::ranges::any_of(path, [&pathable](const Vector2Int &step)
+                               { return !pathable(step); });
 }

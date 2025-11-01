@@ -19,7 +19,9 @@ void MoveAction::Update(const std::shared_ptr<Crew> &crew)
 
     if (path.empty())
     {
-        path = AStar(floorCrewPos, targetPosition);
+        path = AStar(floorCrewPos, targetPosition, Vector2IntDistanceSq,
+                     [station](const Vector2Int &p)
+                     { return station->IsPositionPathable(p); });
 
         if (path.empty())
         {
@@ -60,7 +62,8 @@ void MoveAction::Update(const std::shared_ptr<Crew> &crew)
         }
 
         // If there are any tiles in the way, clear path for recalculation
-        if (DoesPathHaveObstacles(path))
+        if (DoesPathHaveObstacles(path, [station](const Vector2Int &p)
+                                  { return station->IsPositionPathable(p); }))
         {
             path.clear();
             return;
