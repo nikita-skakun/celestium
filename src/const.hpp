@@ -10,6 +10,7 @@ constexpr std::array<uint16_t, 7> FPS_OPTIONS{30, 60, 75, 120, 144, 240, 360};
 constexpr float MIN_ZOOM = .25f;
 constexpr float MAX_ZOOM = 5.f;
 constexpr float ZOOM_SPEED = .1f;
+constexpr float CAMERA_KEY_MOVE_SPEED = 10.f;
 
 constexpr int DEFAULT_FONT_SIZE = 20;
 constexpr float DEFAULT_PADDING = 10.f;
