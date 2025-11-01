@@ -3,6 +3,7 @@
 #include "render_snapshot.hpp"
 #include "tile_def.hpp"
 #include <atomic>
+#include <sol/sol.hpp>
 #include <thread>
 
 struct Crew;
@@ -65,6 +66,7 @@ public:
 
 public:
     static GameState GetGameState() { return GetInstance().state; }
+    static sol::state &GetLua();
     static bool IsGameRunning() { return GetInstance().state != GameState::NONE; }
     static bool IsInGameSim() { return GetGameState() == GameState::GAME_SIM; }
     static bool IsInMainMenu() { return GetGameState() == GameState::MAIN_MENU; }
