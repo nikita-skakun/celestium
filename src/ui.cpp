@@ -233,7 +233,7 @@ void DrawEnvironmentalEffects()
 
     struct RenderParticleSystem
     {
-        std::unique_ptr<ParticleSystem> system;
+        std::shared_ptr<ParticleSystem> system;
         std::string psysId;
         sol::protected_function onCreateFunc;
         sol::protected_function onUpdateFunc;
@@ -264,7 +264,7 @@ void DrawEnvironmentalEffects()
             for (const auto &psDef : effect->GetEffectDefinition()->GetParticleSystems())
             {
                 RenderParticleSystem r;
-                r.system = std::make_unique<ParticleSystem>();
+                r.system = std::make_shared<ParticleSystem>();
                 r.psysId = psDef.id;
                 r.effectRef = effect; // hold reference so render callbacks remain valid
 
@@ -277,7 +277,7 @@ void DrawEnvironmentalEffects()
                         if (chunk.valid())
                         {
                             r.onCreateFunc = chunk();
-                            r.onCreateFunc(LuaParticleSystem(r.system.get()), LuaEffect(r.effectRef.get()));
+                            r.onCreateFunc(LuaParticleSystem(r.system), LuaEffect(r.effectRef));
                         }
                     }
 
@@ -315,7 +315,7 @@ void DrawEnvironmentalEffects()
                 {
                     try
                     {
-                        r.onUpdateFunc(LuaParticleSystem(r.system.get()), LuaEffect(r.effectRef.get()), dt);
+                        r.onUpdateFunc(LuaParticleSystem(r.system), LuaEffect(r.effectRef), dt);
                     }
                     catch (const sol::error &e)
                     {
@@ -345,7 +345,7 @@ void DrawEnvironmentalEffects()
                 {
                     try
                     {
-                        r.onDeleteFunc(LuaParticleSystem(r.system.get()), LuaEffect(r.effectRef.get()));
+                        r.onDeleteFunc(LuaParticleSystem(r.system), LuaEffect(r.effectRef));
                     }
                     catch (const sol::error &e)
                     {

@@ -217,7 +217,7 @@ sol::table LuaParticleSystem::get_particles(sol::this_state s)
 void register_particle_lua(sol::state &lua)
 {
     lua.new_usertype<LuaParticle>("particle",
-                                  sol::constructors<LuaParticle(ParticleSystem *, size_t)>(),
+                                  sol::constructors<LuaParticle(std::shared_ptr<ParticleSystem>, size_t)>(),
                                   "lifetime", sol::property(&LuaParticle::lifetime, &LuaParticle::set_lifetime),
                                   "size", sol::property(&LuaParticle::size, &LuaParticle::set_size),
                                   "age", sol::property(&LuaParticle::age, &LuaParticle::set_age),
@@ -226,7 +226,7 @@ void register_particle_lua(sol::state &lua)
                                   "color", sol::property(&LuaParticle::color, &LuaParticle::set_color));
 
     lua.new_usertype<LuaParticleSystem>("system",
-                                        sol::constructors<LuaParticleSystem(ParticleSystem *)>(),
+                                        sol::constructors<LuaParticleSystem(std::shared_ptr<ParticleSystem>)>(),
                                         "set_blend_mode", &LuaParticleSystem::set_blend_mode,
                                         "emit", &LuaParticleSystem::emit,
                                         "get_particles", &LuaParticleSystem::get_particles);
@@ -238,19 +238,19 @@ void register_particle_lua(sol::state &lua)
 
 float LuaEffect::size() const
 {
-    if (!effect)
-        return 0.0f;
-    return effect->GetSize();
+    if (auto e = effectRef.lock())
+        return e->GetSize();
+    return 0.0f;
 }
 
 sol::table LuaEffect::position(sol::this_state s) const
 {
     sol::state_view lua(s);
     sol::table t = lua.create_table();
-    if (effect)
+    if (auto e = effectRef.lock())
     {
-        t["x"] = effect->GetPosition().x;
-        t["y"] = effect->GetPosition().y;
+        t["x"] = e->GetPosition().x;
+        t["y"] = e->GetPosition().y;
     }
     else
     {

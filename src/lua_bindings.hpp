@@ -4,12 +4,13 @@
 void RegisterAllLuaBindings(sol::state &lua);
 
 struct ParticleSystem;
+struct Effect;
 
 struct LuaParticle
 {
-    ParticleSystem *system;
+    std::shared_ptr<ParticleSystem> system;
     size_t index;
-    LuaParticle(ParticleSystem *s = nullptr, size_t i = SIZE_MAX) : system(s), index(i) {}
+    LuaParticle(std::shared_ptr<ParticleSystem> s = nullptr, size_t i = SIZE_MAX) : system(s), index(i) {}
 
     float lifetime() const;
     void set_lifetime(float v);
@@ -32,8 +33,8 @@ struct LuaParticle
 
 struct LuaParticleSystem
 {
-    ParticleSystem *system;
-    LuaParticleSystem(ParticleSystem *sys) : system(sys) {}
+    std::shared_ptr<ParticleSystem> system;
+    LuaParticleSystem(std::shared_ptr<ParticleSystem> sys) : system(sys) {}
 
     void set_blend_mode(const std::string &mode);
     LuaParticle emit();
@@ -42,8 +43,9 @@ struct LuaParticleSystem
 
 struct LuaEffect
 {
-    const struct Effect *effect;
-    LuaEffect(const struct Effect *e = nullptr) : effect(e) {}
+    std::weak_ptr<const Effect> effectRef;
+    LuaEffect() = default;
+    LuaEffect(const std::shared_ptr<Effect> &e) : effectRef(e) {}
 
     float size() const;
     sol::table position(sol::this_state s) const;
