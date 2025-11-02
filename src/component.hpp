@@ -35,10 +35,10 @@ public:
     virtual ~Component() = default;
 
     constexpr virtual Type GetType() const { return Type::NONE; }
-    constexpr virtual std::optional<std::string> GetInfo() = 0;
-
-    constexpr std::string GetName() const { return EnumToName<Type>(GetType()); }
     constexpr std::shared_ptr<Tile> GetParent() const { return _parent.lock(); }
+    
+    virtual std::optional<std::string> GetInfo() const = 0;
+    constexpr std::string GetName() const { return EnumToName<Type>(GetType()); }
 
     bool operator==(const Component &other) const
     {
@@ -77,7 +77,7 @@ struct WalkableComponent : Component
     }
 
     constexpr Type GetType() const override { return Type::WALKABLE; }
-    constexpr std::optional<std::string> GetInfo() override { return std::nullopt; }
+    std::optional<std::string> GetInfo() const override { return std::nullopt; }
 };
 
 struct SolidComponent : Component
@@ -90,7 +90,7 @@ struct SolidComponent : Component
     }
 
     constexpr Type GetType() const override { return Type::SOLID; }
-    constexpr std::optional<std::string> GetInfo() override { return std::nullopt; }
+    std::optional<std::string> GetInfo() const override { return std::nullopt; }
 };
 
 struct PowerConnectorComponent : Component
@@ -110,7 +110,7 @@ public:
     constexpr std::shared_ptr<PowerGrid> GetPowerGrid() const { return _powerGrid.lock(); }
 
     constexpr Type GetType() const override { return Type::POWER_CONNECTOR; }
-    constexpr std::optional<std::string> GetInfo() override { return std::nullopt; }
+    std::optional<std::string> GetInfo() const override { return std::nullopt; }
 };
 
 struct BatteryComponent : Component
@@ -152,7 +152,7 @@ public:
     }
 
     constexpr Type GetType() const override { return Type::BATTERY; }
-    constexpr std::optional<std::string> GetInfo() override { return std::format("   + Charge Level: {:.0f} / {:.0f}", charge, maxCharge); }
+    std::optional<std::string> GetInfo() const override { return std::format("   + Charge Level: {:.0f} / {:.0f}", charge, maxCharge); }
 };
 
 struct PowerConsumerComponent : Component
@@ -190,7 +190,7 @@ public:
     }
 
     constexpr Type GetType() const override { return Type::POWER_CONSUMER; }
-    constexpr std::optional<std::string> GetInfo() override
+    std::optional<std::string> GetInfo() const override
     {
         return std::format("   + Power Priority: {}\n   + Power Consumption: {:.0f}", magic_enum::enum_name(powerPriority), powerConsumption);
     }
@@ -218,7 +218,7 @@ public:
     }
 
     constexpr Type GetType() const override { return Type::POWER_PRODUCER; }
-    constexpr std::optional<std::string> GetInfo() override { return std::format("   + Power Production: {:.0f}", powerProduction); }
+    std::optional<std::string> GetInfo() const override { return std::format("   + Power Production: {:.0f}", powerProduction); }
 };
 
 // TODO: Implement occlusions for solar panels (if indoor)
@@ -232,7 +232,7 @@ struct SolarPanelComponent : Component
     }
 
     constexpr Type GetType() const override { return Type::SOLAR_PANEL; }
-    constexpr std::optional<std::string> GetInfo() override { return std::nullopt; }
+    std::optional<std::string> GetInfo() const override { return std::nullopt; }
 };
 
 struct OxygenComponent : Component
@@ -262,7 +262,7 @@ public:
     }
 
     constexpr Type GetType() const override { return Type::OXYGEN; }
-    constexpr std::optional<std::string> GetInfo() override { return std::format("   + Oxygen Level: {:.0f}", oxygenLevel); }
+    std::optional<std::string> GetInfo() const override { return std::format("   + Oxygen Level: {:.0f}", oxygenLevel); }
 };
 
 struct OxygenProducerComponent : Component
@@ -284,7 +284,7 @@ public:
     }
 
     constexpr Type GetType() const override { return Type::OXYGEN_PRODUCER; }
-    constexpr std::optional<std::string> GetInfo() override { return std::format("   + Oxygen Production: {:.0f}", oxygenProduction); }
+    std::optional<std::string> GetInfo() const override { return std::format("   + Oxygen Production: {:.0f}", oxygenProduction); }
 };
 
 struct DecorativeComponent : Component
@@ -316,7 +316,7 @@ public:
     }
 
     constexpr Type GetType() const override { return Type::DECORATIVE; }
-    constexpr std::optional<std::string> GetInfo() override { return std::nullopt; }
+    std::optional<std::string> GetInfo() const override { return std::nullopt; }
 };
 
 struct DoorComponent : Component
@@ -387,7 +387,7 @@ public:
     }
 
     constexpr Type GetType() const override { return Type::DOOR; }
-    constexpr std::optional<std::string> GetInfo() override
+    std::optional<std::string> GetInfo() const override
     {
         return std::format("   + State: {}\n   + Action: {} ({:.0f}%)", isOpen ? "Open" : "Closed", GetMovementName(), progress * 100.);
     }
@@ -414,7 +414,7 @@ public:
     }
 
     constexpr Type GetType() const override { return Type::DURABILITY; }
-    constexpr std::optional<std::string> GetInfo() override { return std::format("   + HP: {:.1f} / {:.1f}", hitpoints, maxHitpoints); }
+    std::optional<std::string> GetInfo() const override { return std::format("   + HP: {:.1f} / {:.1f}", hitpoints, maxHitpoints); }
 };
 
 struct RotatableComponent : Component
@@ -444,7 +444,7 @@ public:
     }
 
     constexpr Type GetType() const override { return Type::ROTATABLE; }
-    constexpr std::optional<std::string> GetInfo() override { return std::nullopt; }
+    std::optional<std::string> GetInfo() const override { return std::nullopt; }
 };
 
 struct StructureComponent : Component
@@ -457,5 +457,5 @@ struct StructureComponent : Component
     }
 
     constexpr Type GetType() const override { return Type::STRUCTURE; }
-    constexpr std::optional<std::string> GetInfo() override { return std::nullopt; }
+    std::optional<std::string> GetInfo() const override { return std::nullopt; }
 };
