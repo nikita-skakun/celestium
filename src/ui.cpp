@@ -2,6 +2,8 @@
 #include "asset_manager.hpp"
 #include "crew.hpp"
 #include "game_state.hpp"
+#include "lua_bindings.hpp"
+#include "particle_system.hpp"
 #include "station.hpp"
 #include "ui_manager.hpp"
 #include "ui.hpp"
@@ -229,8 +231,170 @@ void DrawEnvironmentalEffects()
     if (!snapshot)
         return;
 
+    struct RenderParticleSystem
+    {
+        std::unique_ptr<ParticleSystem> system;
+        std::string psysId;
+        sol::protected_function onCreateFunc;
+        sol::protected_function onUpdateFunc;
+        sol::protected_function onDeleteFunc;
+        std::shared_ptr<Effect> effectRef;
+        bool deleteCalled = false;
+    };
+
+    static std::unordered_map<uint64_t, std::vector<RenderParticleSystem>> g_renderSystems;
+
+    // Collect current effect IDs for cleanup detection
+    std::unordered_set<uint64_t> currentIds;
     for (const auto &effect : snapshot->effects)
-        effect->Render();
+        currentIds.insert(effect->GetInstanceId());
+
+    sol::state &lua = GameManager::GetLua();
+    const float dt = GetFrameTime();
+    const bool paused = GameManager::IsGamePaused();
+
+    // Ensure render systems exist for each active effect (create on first encounter)
+    for (const auto &effect : snapshot->effects)
+    {
+        uint64_t id = effect->GetInstanceId();
+        auto &vec = g_renderSystems[id];
+
+        if (vec.empty())
+        {
+            for (const auto &psDef : effect->GetEffectDefinition()->GetParticleSystems())
+            {
+                RenderParticleSystem r;
+                r.system = std::make_unique<ParticleSystem>();
+                r.psysId = psDef.id;
+                r.effectRef = effect; // hold reference so render callbacks remain valid
+
+                try
+                {
+                    if (!psDef.onCreateLua.empty())
+                    {
+                        std::string wrapped = std::string("return function(system, effect)\n") + psDef.onCreateLua + "\nend";
+                        auto chunk = lua.load(wrapped);
+                        if (chunk.valid())
+                        {
+                            r.onCreateFunc = chunk();
+                            r.onCreateFunc(LuaParticleSystem(r.system.get()), LuaEffect(r.effectRef.get()));
+                        }
+                    }
+
+                    if (!psDef.onUpdateLua.empty())
+                    {
+                        std::string wrapped2 = std::string("return function(system, effect, dt)\n") + psDef.onUpdateLua + "\nend";
+                        auto chunk2 = lua.load(wrapped2);
+                        if (chunk2.valid())
+                            r.onUpdateFunc = chunk2();
+                    }
+
+                    if (!psDef.onDeleteLua.empty())
+                    {
+                        std::string wrapped3 = std::string("return function(system, effect)\n") + psDef.onDeleteLua + "\nend";
+                        auto chunk3 = lua.load(wrapped3);
+                        if (chunk3.valid())
+                            r.onDeleteFunc = chunk3();
+                    }
+                }
+                catch (const sol::error &e)
+                {
+                    throw std::runtime_error(std::string("Error compiling render Lua for effect '") + effect->GetEffectDefinition()->GetId() +
+                                             "', particle system '" + psDef.id + "': " + e.what());
+                }
+
+                vec.push_back(std::move(r));
+            }
+        }
+
+        if (!paused)
+        {
+            for (auto &r : vec)
+            {
+                if (r.onUpdateFunc)
+                {
+                    try
+                    {
+                        r.onUpdateFunc(LuaParticleSystem(r.system.get()), LuaEffect(r.effectRef.get()), dt);
+                    }
+                    catch (const sol::error &e)
+                    {
+                        throw std::runtime_error(std::string("Error in render Lua for effect '") + effect->GetEffectDefinition()->GetId() +
+                                                 "', particle system '" + r.psysId + "' on_update: " + e.what());
+                    }
+                }
+
+                r.system->Update(dt);
+            }
+        }
+    }
+
+    // Handle systems for effects that no longer exist: call on_delete, stop spawning, and erase when fully empty
+    std::vector<uint64_t> toErase;
+    for (auto &kv : g_renderSystems)
+    {
+        uint64_t id = kv.first;
+        if (currentIds.count(id) == 0)
+        {
+            bool allEmpty = true;
+
+            // Mark inactive and call delete handlers once
+            for (auto &r : kv.second)
+            {
+                if (!r.deleteCalled && r.onDeleteFunc)
+                {
+                    try
+                    {
+                        r.onDeleteFunc(LuaParticleSystem(r.system.get()), LuaEffect(r.effectRef.get()));
+                    }
+                    catch (const sol::error &e)
+                    {
+                        throw std::runtime_error(std::string("Error in render on_delete Lua for psys '") + r.psysId + "': " + e.what());
+                    }
+                    r.deleteCalled = true;
+                }
+            }
+
+            // Advance particle systems until they are empty (unless paused, then just check emptiness)
+            if (!paused)
+            {
+                for (auto &r : kv.second)
+                {
+                    r.system->Update(dt);
+                    if (!r.system->IsEmpty())
+                        allEmpty = false;
+                }
+            }
+            else
+            {
+                for (auto &r : kv.second)
+                {
+                    if (!r.system->IsEmpty())
+                    {
+                        allEmpty = false;
+                        break;
+                    }
+                }
+            }
+
+            if (allEmpty)
+            {
+                for (auto &r : kv.second)
+                    r.effectRef.reset();
+                toErase.push_back(id);
+            }
+        }
+    }
+
+    for (uint64_t id : toErase)
+        g_renderSystems.erase(id);
+
+    // Draw all active/remaining particle systems
+    for (auto &kv : g_renderSystems)
+    {
+        for (auto &r : kv.second)
+            r.system->Draw();
+    }
 }
 
 void DrawCrewCircle(const std::shared_ptr<Crew> &crew, const Vector2 &drawPosition, bool isSelected)

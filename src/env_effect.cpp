@@ -1,9 +1,10 @@
-#include "asset_manager.hpp"
 #include "crew.hpp"
 #include "env_effect.hpp"
-#include "game_state.hpp"
 #include "lua_bindings.hpp"
 #include "station.hpp"
+
+// static instance id counter
+std::atomic<uint64_t> Effect::nextInstanceId{1};
 
 Effect::Effect(const std::string &defName, const Vector2Int &position, float s)
     : position(position)
@@ -16,19 +17,7 @@ Effect::Effect(const std::string &defName, const Vector2Int &position, float s)
         s = 1.f / effectDef->GetSizeIncrements();
     size = std::clamp(s, 0.f, 1.f);
 
-    for (const auto &psDef : effectDef->GetParticleSystems())
-    {
-        ParticleSystemWithLua ps;
-        ps.onCreateLua = psDef.onCreateLua;
-        ps.onUpdateLua = psDef.onUpdateLua;
-        particleSystems.push_back(std::move(ps));
-    }
-}
-
-void Effect::Render() const
-{
-    for (const auto &ps : particleSystems)
-        ps.system.Draw();
+    instanceId = nextInstanceId.fetch_add(1);
 }
 
 std::string Effect::GetInfo() const
@@ -45,71 +34,6 @@ void FireEffect::EffectCrew(const std::shared_ptr<Crew> &crew, float deltaTime) 
 
 void FireEffect::Update(const std::shared_ptr<Station> &station, size_t index)
 {
-    sol::state &lua = GameManager::GetLua();
-    for (auto &ps : particleSystems)
-    {
-        // Execute Lua on_create (system) if not yet run
-        if (!ps.systemCreated)
-        {
-            if (!ps.onCreateLua.empty())
-            {
-                std::string wrapped = "return function(system, effect, station)\n" + ps.onCreateLua + "\nend";
-                auto chunk = lua.load(wrapped);
-                if (!chunk.valid())
-                {
-                    sol::error err = chunk;
-                    throw std::runtime_error("FireEffect: Failed to load on_create Lua: " + std::string(err.what()));
-                }
-                else
-                {
-                    try
-                    {
-                        sol::protected_function func = chunk();
-                        sol::state_view lua_view(lua);
-                        sol::table effect_tbl = lua_view.create_table_with(
-                            "size", size,
-                            "position", lua_view.create_table_with("x", position.x, "y", position.y));
-                        func(LuaParticleSystem(&ps.system), effect_tbl, station);
-                    }
-                    catch (const sol::error &e)
-                    {
-                        throw std::runtime_error("FireEffect: Error running on_create Lua: " + std::string(e.what()));
-                    }
-                }
-            }
-            ps.systemCreated = true;
-        }
-        if (!ps.onUpdateLua.empty())
-        {
-            std::string wrapped = "return function(system, effect, station, dt)\n" + ps.onUpdateLua + "\nend";
-            auto chunk = lua.load(wrapped);
-            if (!chunk.valid())
-            {
-                sol::error err = chunk;
-                throw std::runtime_error("FireEffect: Failed to load on_update Lua: " + std::string(err.what()));
-            }
-            else
-            {
-                try
-                {
-                    sol::protected_function func = chunk();
-                    sol::state_view lua_view(lua);
-                    sol::table effect_tbl = lua_view.create_table_with(
-                        "size", size,
-                        "position", lua_view.create_table_with("x", position.x, "y", position.y));
-                    func(LuaParticleSystem(&ps.system), effect_tbl, station, FIXED_DELTA_TIME);
-                }
-                catch (const sol::error &e)
-                {
-                    throw std::runtime_error("FireEffect: Error running on_update Lua: " + std::string(e.what()));
-                }
-            }
-        }
-
-        // Ensure the particle system advances each fixed update.
-        ps.system.Update(FIXED_DELTA_TIME);
-    }
-
     // --- Fire effect logic (tile damage, oxygen, spreading) ---
     auto tileWithOxygen = station->GetTileWithComponentAtPosition<OxygenComponent>(GetPosition());
     if (!tileWithOxygen || station->GetEffectOfTypeAtPosition<FoamEffect>(GetPosition()))
@@ -163,70 +87,13 @@ void FireEffect::Update(const std::shared_ptr<Station> &station, size_t index)
 
 void FoamEffect::Update(const std::shared_ptr<Station> &station, size_t)
 {
-    sol::state &lua = GameManager::GetLua();
-    for (auto &ps : particleSystems)
+    // If there is no floor component, remove the foam effect
+    auto tileWithOxygen = station->GetTileWithComponentAtPosition<WalkableComponent>(GetPosition());
+    if (!tileWithOxygen)
     {
-        // Execute Lua on_create (system) if not yet run
-        if (!ps.systemCreated)
-        {
-            if (!ps.onCreateLua.empty())
-            {
-                // Wrap user snippet in a function so it can receive parameters: (system, effect, station)
-                std::string wrapped = std::string("return function(system, effect, station)\n") + ps.onCreateLua + "\nend";
-                auto chunk = lua.load(wrapped);
-                if (!chunk.valid())
-                {
-                    sol::error err = chunk;
-                    throw std::runtime_error(std::string("FoamEffect: Failed to load on_create Lua: ") + std::string(err.what()));
-                }
-                else
-                {
-                    try
-                    {
-                        sol::protected_function func = chunk();
-                        // Build a simple Lua table for the effect so scripts can read fields like `size` and `position.x`
-                        sol::state_view lua_view(lua);
-                        sol::table effect_tbl = lua_view.create_table_with(
-                            "size", size,
-                            "position", lua_view.create_table_with("x", position.x, "y", position.y));
-                        func(LuaParticleSystem(&ps.system), effect_tbl, station);
-                    }
-                    catch (const sol::error &e)
-                    {
-                        throw std::runtime_error(std::string("FoamEffect: Error running on_create Lua: ") + std::string(e.what()));
-                    }
-                }
-            }
-            ps.systemCreated = true;
-        }
-        if (!ps.onUpdateLua.empty())
-        {
-            // Wrap user snippet in a function so it can receive parameters: (system, effect, station, dt)
-            std::string wrapped = std::string("return function(system, effect, station, dt)\n") + ps.onUpdateLua + "\nend";
-            auto chunk = lua.load(wrapped);
-            if (!chunk.valid())
-            {
-                sol::error err = chunk;
-                throw std::runtime_error(std::string("FoamEffect: Failed to load on_update Lua: ") + std::string(err.what()));
-            }
-            else
-            {
-                try
-                {
-                    sol::protected_function func = chunk();
-                    sol::state_view lua_view(lua);
-                    sol::table effect_tbl = lua_view.create_table_with(
-                        "size", size,
-                        "position", lua_view.create_table_with("x", position.x, "y", position.y));
-                    func(LuaParticleSystem(&ps.system), effect_tbl, station, FIXED_DELTA_TIME);
-                }
-                catch (const sol::error &e)
-                {
-                    throw std::runtime_error(std::string("FoamEffect: Error running on_update Lua: ") + std::string(e.what()));
-                }
-            }
-        }
-
-        ps.system.Update(FIXED_DELTA_TIME);
+        auto &effects = station->effects;
+        effects.erase(std::remove_if(effects.begin(), effects.end(), [&](const std::shared_ptr<Effect> &effect)
+                                     { return effect.get() == this; }),
+                      effects.end());
     }
 }

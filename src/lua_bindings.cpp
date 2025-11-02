@@ -1,3 +1,4 @@
+#include "env_effect.hpp"
 #include "lua_bindings.hpp"
 #include "particle_system.hpp"
 
@@ -197,18 +198,66 @@ LuaParticle LuaParticleSystem::emit()
     return LuaParticle(system, idx);
 }
 
+sol::table LuaParticleSystem::get_particles(sol::this_state s)
+{
+    sol::state_view lua(s);
+    sol::table t = lua.create_table();
+    if (!system)
+        return t;
+
+    size_t count = system->GetParticleCount();
+    for (size_t i = 0; i < count; ++i)
+    {
+        t[i + 1] = LuaParticle(system, i);
+    }
+
+    return t;
+}
+
 void register_particle_lua(sol::state &lua)
 {
     lua.new_usertype<LuaParticle>("particle",
+                                  sol::constructors<LuaParticle(ParticleSystem *, size_t)>(),
                                   "lifetime", sol::property(&LuaParticle::lifetime, &LuaParticle::set_lifetime),
                                   "size", sol::property(&LuaParticle::size, &LuaParticle::set_size),
                                   "age", sol::property(&LuaParticle::age, &LuaParticle::set_age),
                                   "position", sol::property(&LuaParticle::position, &LuaParticle::set_position),
                                   "velocity", sol::property(&LuaParticle::velocity, &LuaParticle::set_velocity),
                                   "color", sol::property(&LuaParticle::color, &LuaParticle::set_color));
+
     lua.new_usertype<LuaParticleSystem>("system",
+                                        sol::constructors<LuaParticleSystem(ParticleSystem *)>(),
                                         "set_blend_mode", &LuaParticleSystem::set_blend_mode,
-                                        "emit", &LuaParticleSystem::emit);
+                                        "emit", &LuaParticleSystem::emit,
+                                        "get_particles", &LuaParticleSystem::get_particles);
+
+    lua.new_usertype<LuaEffect>("effect",
+                                "size", sol::property(&LuaEffect::size),
+                                "position", sol::property(&LuaEffect::position));
+}
+
+float LuaEffect::size() const
+{
+    if (!effect)
+        return 0.0f;
+    return effect->GetSize();
+}
+
+sol::table LuaEffect::position(sol::this_state s) const
+{
+    sol::state_view lua(s);
+    sol::table t = lua.create_table();
+    if (effect)
+    {
+        t["x"] = effect->GetPosition().x;
+        t["y"] = effect->GetPosition().y;
+    }
+    else
+    {
+        t["x"] = 0.0f;
+        t["y"] = 0.0f;
+    }
+    return t;
 }
 
 void RegisterAllLuaBindings(sol::state &lua)

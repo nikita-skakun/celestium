@@ -267,16 +267,19 @@ public:
                     std::string psysId;
                     psysNode["id"] >> psysId;
                     StringRemoveSpaces(psysId);
-                    std::string onCreateLua, onUpdateLua;
+                    std::string onCreateLua, onUpdateLua, onDeleteLua;
                     if (psysNode.has_child("on_create"))
                         psysNode["on_create"] >> onCreateLua;
                     if (psysNode.has_child("on_update"))
                         psysNode["on_update"] >> onUpdateLua;
-                    particleSystems.emplace_back(psysId, onCreateLua, onUpdateLua);
+                    if (psysNode.has_child("on_delete"))
+                        psysNode["on_delete"] >> onDeleteLua;
+                    particleSystems.emplace_back(psysId, onCreateLua, onUpdateLua, onDeleteLua);
                 }
             }
 
-            DefinitionManager::GetInstance().effectDefinitions[effectId] = std::make_shared<EffectDef>(effectId, sizeIncrements, particleSystems);
+            DefinitionManager::GetInstance().effectDefinitions[effectId] =
+                std::make_shared<EffectDef>(effectId, sizeIncrements, particleSystems);
         }
     }
 

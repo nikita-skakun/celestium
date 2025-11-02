@@ -27,7 +27,6 @@ public:
     void SetBlendMode(int mode);
     void Clear();
     bool IsEmpty() const;
-    // Safe accessors by index. Returns nullptr if out of range.
     Particle *GetParticlePtr(size_t idx);
     const Particle *GetParticlePtr(size_t idx) const;
     size_t GetParticleCount() const;

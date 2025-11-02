@@ -59,3 +59,9 @@ env_effects:
             local gray = 210 + math.floor(30 * math.random())
             p.color = { r = gray, g = gray, b = gray, a = 200 + math.random(0, 30) }
           end
+        on_delete: |
+          local particles = system:get_particles()
+          for i, p in ipairs(particles) do
+            p.lifetime = 1.0 + 0.5 * math.random()
+            p.age = 0.0
+          end

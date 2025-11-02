@@ -36,8 +36,17 @@ struct LuaParticleSystem
     LuaParticleSystem(ParticleSystem *sys) : system(sys) {}
 
     void set_blend_mode(const std::string &mode);
-
     LuaParticle emit();
+    sol::table get_particles(sol::this_state s);
+};
+
+struct LuaEffect
+{
+    const struct Effect *effect;
+    LuaEffect(const struct Effect *e = nullptr) : effect(e) {}
+
+    float size() const;
+    sol::table position(sol::this_state s) const;
 };
 
 void register_particle_lua(sol::state &lua);

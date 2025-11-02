@@ -6,8 +6,10 @@ struct ParticleSystemDef
     std::string id;
     std::string onCreateLua;
     std::string onUpdateLua;
-    ParticleSystemDef(const std::string &id_, const std::string &onCreateLua_, const std::string &onUpdateLua_)
-        : id(id_), onCreateLua(onCreateLua_), onUpdateLua(onUpdateLua_) {}
+    std::string onDeleteLua;
+
+    ParticleSystemDef(const std::string &id_, const std::string &onCreateLua_, const std::string &onUpdateLua_, const std::string &onDeleteLua_ = "")
+        : id(id_), onCreateLua(onCreateLua_), onUpdateLua(onUpdateLua_), onDeleteLua(onDeleteLua_) {}
 };
 
 struct EffectDef

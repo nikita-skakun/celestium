@@ -1,6 +1,6 @@
 #pragma once
 #include "def_manager.hpp"
-#include "particle_system.hpp"
+#include <atomic>
 
 struct Crew;
 struct PlayerCam;
@@ -13,14 +13,9 @@ protected:
     Vector2Int position;
     // [0, 1] range
     float size;
-    struct ParticleSystemWithLua
-    {
-        ParticleSystem system;
-        std::string onCreateLua;
-        std::string onUpdateLua;
-        bool systemCreated = false;
-    };
-    std::vector<ParticleSystemWithLua> particleSystems;
+    // Stable instance id for matching render-side particle systems
+    uint64_t instanceId;
+    static std::atomic<uint64_t> nextInstanceId;
 
 public:
     Effect(const std::string &defName, const Vector2Int &position, float size);
@@ -33,9 +28,8 @@ public:
     const float &GetSize() const { return size; }
     void SetSize(float newSize) { size = std::clamp(newSize, 0.f, 1.f); }
 
-    void Render() const;
+    uint64_t GetInstanceId() const { return instanceId; }
     std::string GetInfo() const;
-
     virtual void EffectCrew(const std::shared_ptr<Crew> &crew, float deltaTime) const = 0;
     virtual void Update(const std::shared_ptr<Station> &station, size_t index) = 0;
 

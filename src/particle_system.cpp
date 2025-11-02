@@ -13,7 +13,7 @@ void ParticleSystem::Update(float dt)
         p.age += dt;
     }
     particles.erase(std::remove_if(particles.begin(), particles.end(), [](const Particle &p)
-                                   { return (p.lifetime >= 0.0f) && (p.age > p.lifetime); }),
+                                   { return (p.lifetime >= 0.f) && (p.age > p.lifetime); }),
                     particles.end());
 }
 
@@ -24,14 +24,14 @@ void ParticleSystem::Draw() const
     {
         Color c = p.color;
         // Compute life ratio for fading. If lifetime <= 0 we treat it as infinite (no fade).
-        float lifeRatio = (p.lifetime > 0.0f) ? (p.age / p.lifetime) : 0.0f;
-        lifeRatio = std::clamp(lifeRatio, 0.0f, 1.0f);
-        c.a = static_cast<unsigned char>(p.color.a * (1.0f - lifeRatio));
+        float lifeRatio = (p.lifetime > 0.f) ? (p.age / p.lifetime) : 0.f;
+        lifeRatio = std::clamp(lifeRatio, 0.f, 1.f);
+        c.a = static_cast<unsigned char>(p.color.a * (1.f - lifeRatio));
         // Convert world to screen space for drawing
         Vector2 screenPos = GameManager::WorldToScreen(p.position);
         float zoom = GameManager::GetCamera().GetZoom();
         Vector2 size = Vector2(p.size * zoom, p.size * zoom);
-        DrawRectangleV(screenPos - size * 0.5f, size, c);
+        DrawRectangleV(screenPos - size * .5f, size, c);
     }
     EndBlendMode();
 }
