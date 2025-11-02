@@ -1,108 +1,131 @@
-# Celestium AI Coding Guidelines
+# Celestium — developer notes for AI assistants
 
-## Project Overview
-Celestium is a 2D space station simulation game built in C++23 using raylib. It features procedural generation, crew AI with A* pathfinding, real-time air diffusion simulation, power management, and environmental hazards. The architecture uses a component-based system for tiles, with data-driven definitions loaded from YAML files.
+## Project overview
+Celestium is a 2D space-station simulation written in modern C++ (C++23) using raylib for rendering and input. Primary systems include:
 
-## Core Architecture
+- Procedural station/tile system with data-driven tile definitions
+- Crew AI and pathfinding (A*), actions and queued behaviours
+- Environmental simulation (oxygen diffusion, environmental effects)
+- Power grid simulation with prioritized consumers and batteries
+- Particle systems with small Lua scripts for behaviour hooks
 
-### Component System
-Tiles are composed of components that define their behavior:
-- **WalkableComponent**: Allows crew movement
-- **SolidComponent**: Blocks vision/pathing
-- **PowerConnectorComponent**: Connects to power grids
-- **OxygenComponent**: Stores oxygen for diffusion
-- **DoorComponent**: Dynamic air flow control
-- **BatteryComponent**: Power storage
-- **DurabilityComponent**: Health/damage system
+Definitions and tuning are stored as YAML under `assets/definitions/`.
 
-Example component access:
+## Core architecture
+
+### Component system
+Tiles are assembled from small Components that encapsulate behaviour. Common components:
+
+- WalkableComponent — allows crew movement
+- SolidComponent — blocks vision/pathing
+- PowerConnectorComponent — connects to power grids
+- BatteryComponent — stores/supplies power
+- PowerProducer / PowerConsumer — producers/consumers and optional priority
+- OxygenComponent / OxygenProducer — oxygen storage and generation
+- DoorComponent — animated door which affects air flow
+- DurabilityComponent — hitpoints and damage handling
+
+Usage example:
 ```cpp
 if (auto oxygenComp = tile->GetComponent<OxygenComponent>()) {
     float level = oxygenComp->GetOxygenLevel();
 }
 ```
 
-### Game State Management
-- **GameManager**: Singleton handling global state, crew lists, station reference
-- State transitions: NONE → MAIN_MENU → GAME_SIM
-- Fixed timestep updates (60 FPS) for simulation consistency
-- Multithreaded fixed updates for performance
+### Game state and update model
 
-### Data Flow
-1. YAML definitions loaded at startup (`assets/definitions/tiles.yml`, `env_effects.yml`)
-2. Tiles instantiated with components based on definitions
-3. Simulation updates: crew actions → environment → power → tiles
-4. Rendering: station tiles → crew → UI overlays
+- `GameManager` is the central singleton used to access global state (camera, station, crew lists, Lua state, etc.) and manage game-state transitions (NONE → MAIN_MENU → GAME_SIM).
+- A dedicated fixed-update thread (see `src/fixed_update.cpp`) steps the simulation at `FIXED_DELTA_TIME`. It runs crew action handling, environmental updates, power grid updates and prepares a `RenderSnapshot` for the main/render thread.
 
-## Development Workflow
+### Data flow
 
-### Key Directories
-- `src/`: Core game logic (.cpp/.hpp pairs)
-- `assets/definitions/`: YAML configuration files
-- `assets/tilesets/`: Sprite sheets
-- `assets/audio/`: Sound effects
+1. `DefinitionManager` parses `constants.yml`, `tiles.yml` and `env_effects.yml` (in `assets/definitions/`) to populate runtime constants and tile/effect definitions.
+2. Tiles are spawned with component lists and sprite conditions from the parsed definitions.
+3. The fixed-update loop performs simulation work and publishes a `RenderSnapshot`.
+4. The main thread (raylib loop in `src/main.cpp`) handles input, UI, drawing and audio.
 
-## Coding Patterns
+## Development workflow
 
-### Memory Management
-- Use `std::shared_ptr` for primary ownership
-- `std::weak_ptr` for back-references (e.g., tile to station)
-- `std::enable_shared_from_this` for self-referencing objects
+### Notable directories
 
-### Enums and Constants
-- Enum classes with `magic_enum` for string conversion
-- Constants defined in `const.hpp`
-- Use `EnumToName<Type>()` for debug/logging
+- `src/` — C++ source and header files
+- `assets/definitions/` — YAML config and definitions (`constants.yml`, `tiles.yml`, `env_effects.yml`)
+- `assets/tilesets/`, `assets/audio/`, `fonts/` — media assets
+- `CMakeLists.txt` — build definitions (external deps are under `external/`)
+- `shell.nix` — reproducible development environment
 
-### Pathfinding and Movement
-- A* algorithm implemented in `astar.cpp`
-- Crew actions queued as `std::deque<std::shared_ptr<Action>>`
-- Actions: MOVE, EXTINGUISH, REPAIR
+### Build & run
 
-### Rendering
-- raylib-based with custom sprite system
-- Tiles rendered with neighbor-aware sprite conditions
-- UI managed through `UiManager` with element hierarchy
+Build with CMake (out-of-source):
 
-### Error Handling
-- Asserts for development (`assert()`)
-- Logging via `LogMessage()` with levels (INFO, WARN, ERROR)
-- Graceful degradation for missing assets
+    mkdir -p build && cd build
+    cmake ..
+    make -j$(nproc)
 
-## Common Tasks
+Run the produced `celestium` binary in `build/`.
 
-### Adding New Tile Types
-1. Define in `assets/definitions/tiles.yml` with components
-2. Add sprite conditions for neighbor rendering
-3. Implement component logic if new component type needed
+Use `shell.nix` if you want a nix-based development environment.
 
-### Implementing Crew Actions
-1. Create new `Action` subclass in `action.hpp/.cpp`
-2. Add to `Action::Type` enum
-3. Implement `Update()` method with progress tracking
-4. Handle in `AssignCrewActions()` and `HandleCrewActions()`
+### Ownership & memory
 
-### Modifying Simulation
-- Fixed updates in `fixed_update.cpp` for physics/simulation
-- Variable updates in `main.cpp` for rendering/input
-- Use `FIXED_DELTA_TIME` for time-based calculations
+- `std::shared_ptr` is used for owning references to tiles, components, crew and definitions.
+- `std::weak_ptr` is used for back-references and to break ownership cycles.
+- `std::enable_shared_from_this` is used where objects need to safely obtain a shared pointer to themselves.
+
+### Enums & constants
+
+- `magic_enum` is used for enum parsing and name conversion.
+- `src/const.hpp` declares global constants and the `FIXED_DELTA_TIME` variable, which is populated at startup by `DefinitionManager::ParseConstantsFromFile()`.
+
+### Pathfinding & actions
+
+- A* pathfinding is implemented in `src/astar.cpp`/`src/astar.hpp`.
+- Crew actions are modelled as `Action` subclasses (see `src/action.hpp`/`src/action.cpp`) and progressed during fixed updates. Common actions: MOVE, EXTINGUISH, REPAIR.
+
+### Rendering & UI
+
+- Rendering and input are handled on the main thread using raylib. UI code lives in `src/ui.cpp` and `src/ui_manager.cpp`.
+- Tile rendering supports neighbour-aware sprite selection (see `src/tile_def.hpp` and `src/tile.cpp`).
+
+### Logging & errors
+
+- Use `LogMessage()` for structured logging across INFO/WARNING/ERROR levels.
+- `DefinitionManager` throws on missing required configuration keys — treat these as hard errors that should be fixed in YAML.
 
 ## Dependencies
-- **raylib**: Graphics, input, audio
-- **rapidyaml**: Configuration parsing
-- **magic_enum**: Enum utilities
-- **RtAudio/Opus**: Audio playback
-- **termcolor**: Console output
 
-## Testing and Debugging
-- Build with `CMAKE_BUILD_TYPE=Debug` for assertions
-- Use `LogMessage()` for debug output
-- Visual debugging: crew selection, tile overlays, FPS counter
-- No formal test suite; manual testing required
+- raylib — rendering, input and basic audio
+- ryml (rapidyaml) — YAML parsing (`src/def_manager.hpp` uses `ryml.hpp`)
+- sol2 + LuaJIT — embedded Lua scripting used for particle system hooks
+- magic_enum — enum parsing helpers
+- RtAudio/Opus, termcolor — audio and console utilities
 
-## File Organization
-- Headers (.hpp) declare interfaces, sources (.cpp) implement
-- Forward declarations in headers to minimize includes
-- `utils.hpp` for common types (Vector2Int, Direction)
-- `def_manager.hpp` handles YAML loading and caching</content>
-<parameter name="filePath">/home/user/Projects/celestium/.github/copilot-instructions.md
+Most dependencies are configured through CMake and/or vendored under `external/`.
+
+## Common tasks & how-to
+
+### Add or change a tile definition
+
+1. Edit `assets/definitions/tiles.yml` and add/modify a `tile` entry.
+2. Use the `components` list for components and include component-specific parameters.
+3. If a new component type is required, implement it in `src/` and add its construction to `DefinitionManager::CreateComponent()`.
+
+### Add a crew action
+
+1. Create an `Action` subclass and implement its `Update()` logic.
+2. Add the action type to the `Action::Type` definition and wire up creation/assignment logic in `AssignCrewActions()` / `HandleCrewActions()`.
+
+### Adjust simulation timing
+
+- Change `general/fixedDeltaTime` in `assets/definitions/constants.yml`; `DefinitionManager::ParseConstantsFromFile()` will populate the `FIXED_DELTA_TIME` global at startup.
+- Use `FIXED_DELTA_TIME` for per-second rates to keep behaviour consistent across platforms.
+
+## Quick file map
+
+- `src/main.cpp` — program entry, main render loop and input handling
+- `src/fixed_update.cpp` — fixed-step simulation thread
+- `src/def_manager.hpp` — YAML parsing, constants and definition creation
+- `src/astar.*` — pathfinding
+- `src/tile*`, `src/component*` — tile and component logic
+- `src/action.*`, `src/crew.*` — actions and crew AI
+- `src/ui.*` — UI and overlays
