@@ -37,3 +37,4 @@ crew:
   healthMax: 10.0
   extinguishSpeed: 0.5
   repairSpeed: 0.5
+  buildSpeed: 0.2

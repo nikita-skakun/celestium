@@ -1,6 +1,7 @@
 #include "action.hpp"
 #include "astar.hpp"
 #include "crew.hpp"
+#include "def_manager.hpp"
 #include "station.hpp"
 
 void MoveAction::Update(const std::shared_ptr<Crew> &crew)
@@ -164,7 +165,7 @@ void ConstructionAction::Update(const std::shared_ptr<Crew> &crew)
     }
 
     // Progress
-    task->progress += FIXED_DELTA_TIME / 5.f;
+    task->progress += DefinitionManager::GetFloat("crew.buildSpeed") * FIXED_DELTA_TIME;
 
     if (task->progress >= 1.f)
     {
