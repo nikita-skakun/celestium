@@ -38,7 +38,7 @@ public:
     std::string GetInfo() const;
 
     template <typename T>
-    constexpr std::shared_ptr<T> GetComponent() const
+    std::shared_ptr<T> GetComponent() const
     {
         for (const auto &component : components)
         {
@@ -49,7 +49,7 @@ public:
     }
 
     template <typename T>
-    constexpr bool HasComponent() const
+    bool HasComponent() const
     {
         for (const auto &component : components)
         {
@@ -60,7 +60,7 @@ public:
     }
 
     template <typename T, typename... Args>
-    constexpr std::shared_ptr<T> AddComponent(Args &&...args)
+    std::shared_ptr<T> AddComponent(Args &&...args)
     {
         if (auto existingComponent = GetComponent<T>())
             return existingComponent;
@@ -71,7 +71,7 @@ public:
     }
 
     template <typename T>
-    constexpr bool RemoveComponent()
+    bool RemoveComponent()
     {
         for (auto it = components.begin(); it != components.end(); ++it)
         {

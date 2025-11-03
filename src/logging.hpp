@@ -1,5 +1,5 @@
 #pragma once
-#include <termcolor/termcolor.hpp>
+#include <iostream>
 
 // Enum for log levels
 enum class LogLevel : uint8_t
@@ -24,16 +24,16 @@ constexpr void LogMessage(LogLevel level, const std::string &message) noexcept
     switch (level)
     {
     case LogLevel::DEBUG:
-        std::cout << termcolor::cyan << "[DEBUG] " << termcolor::reset << message << std::endl;
+        std::cout << "\033[36m[DEBUG] \033[0m" << message << '\n';
         break;
     case LogLevel::INFO:
-        std::cout << termcolor::green << "[INFO] " << termcolor::reset << message << std::endl;
+        std::cout << "\033[32m[INFO] \033[0m" << message << '\n';
         break;
     case LogLevel::WARNING:
-        std::cout << termcolor::yellow << "[WARNING] " << termcolor::reset << message << std::endl;
+        std::cout << "\033[33m[WARNING] \033[0m" << message << '\n';
         break;
     case LogLevel::ERROR:
-        std::cout << termcolor::red << "[ERROR] " << termcolor::reset << message << std::endl;
+        std::cout << "\033[31m[ERROR] \033[0m" << message << '\n';
         break;
     }
 }

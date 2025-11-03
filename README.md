@@ -74,8 +74,6 @@ Celestium is an source available project licensed under the [CC BY-NC 4.0 Licens
 
 - [raygui](https://github.com/raysan5/raygui) library, licensed under the [Zlib License](https://github.com/raysan5/raygui/blob/master/LICENSE).
 
-- [Termcolor](https://github.com/ikalnytskyi/termcolor) library, licensed under the [BSD (3-clause) License](https://github.com/ikalnytskyi/termcolor/blob/master/LICENSE).
-
 - [Magic Enum C++](https://github.com/Neargye/magic_enum) library, licensed under the [MIT License](https://github.com/Neargye/magic_enum/blob/master/LICENSE).
 
 - Visual assets inspired by [Jonik9i's Space Station Game Asset](https://jonik9i.itch.io/free-space-station-game-asset), licensed under the [Creative Commons Zero v1.0 Universal (CC0)](https://creativecommons.org/publicdomain/zero/1.0/).
@@ -87,3 +85,7 @@ Celestium is an source available project licensed under the [CC BY-NC 4.0 Licens
 - [RtAudio](https://github.com/thestk/rtaudio) library, licensed under the [MIT-like License](https://github.com/thestk/rtaudio/blob/master/LICENSE).
 
 - [Rapid YAML](https://github.com/biojppm/rapidyaml) library, licensed under the [MIT License](https://github.com/biojppm/rapidyaml/blob/master/LICENSE.txt).
+
+- [LuaJIT](https://luajit.org/) library, licensed under the [MIT License](https://github.com/LuaJIT/LuaJIT/blob/v2.1/COPYRIGHT).
+
+- [sol2](https://github.com/ThePhD/sol2) library, licensed under the [MIT License](https://github.com/ThePhD/sol2/blob/develop/LICENSE.txt).

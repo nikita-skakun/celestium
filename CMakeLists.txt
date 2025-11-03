@@ -80,7 +80,6 @@ pkg_check_modules(RtAudio REQUIRED rtaudio)
 target_link_libraries(celestium PRIVATE ${RtAudio_LIBRARIES})
 
 include_directories(${MAGIC_ENUM_DIR}/include)
-include_directories(${TERM_COLOR_DIR}/include)
 
 # Helper function to fetch, make available, and link dependencies
 function(fetch_and_link_dependency name repo tag)

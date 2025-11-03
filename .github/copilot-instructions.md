@@ -98,7 +98,7 @@ Use `shell.nix` if you want a nix-based development environment.
 - ryml (rapidyaml) — YAML parsing (`src/def_manager.hpp` uses `ryml.hpp`)
 - sol2 + LuaJIT — embedded Lua scripting used for particle system hooks
 - magic_enum — enum parsing helpers
-- RtAudio/Opus, termcolor — audio and console utilities
+- RtAudio/Opus — audio utilities
 
 Most dependencies are configured through CMake and/or vendored under `external/`.
 
