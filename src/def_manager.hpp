@@ -359,6 +359,7 @@ public:
         CREW_HEALTH_MAX = GetRequiredValue<float>(root, "crew/healthMax");
         CREW_EXTINGUISH_SPEED = GetRequiredValue<float>(root, "crew/extinguishSpeed");
         CREW_REPAIR_SPEED = GetRequiredValue<float>(root, "crew/repairSpeed");
+        CREW_BUILD_SPEED = GetRequiredValue<float>(root, "crew/buildSpeed");
     }
 
     static void ParseTilesFromFile(const std::string &filename)

@@ -496,3 +496,58 @@ std::vector<std::shared_ptr<Tile>> Station::GetTilesWithHeightAtPosition(const V
 
     return foundTiles;
 }
+
+void Station::AddPlannedTask(const Vector2Int &pos, const std::string &tileId, bool isBuild)
+{
+    // Remove any existing plan at this position
+    std::erase_if(plannedTasks, [pos](const std::shared_ptr<PlannedTask> &task)
+                  { return task->position == pos; });
+
+    plannedTasks.push_back(std::make_shared<PlannedTask>(PlannedTask(pos, tileId, isBuild)));
+}
+
+void Station::CompletePlannedTask(const Vector2Int &pos)
+{
+    auto it = std::find_if(plannedTasks.begin(), plannedTasks.end(), [pos](const std::shared_ptr<PlannedTask> &task)
+                           { return task->position == pos; });
+
+    if (it == plannedTasks.end())
+        return;
+
+    const auto &task = *it;
+
+    if (task->isBuild)
+    {
+        // Delete overlapping tiles
+        auto overlappingTiles = GetTilesWithHeightAtPosition(pos, DefinitionManager::GetTileDefinition(task->tileId)->GetHeight());
+        for (auto &tile : overlappingTiles)
+        {
+            tile->DeleteTile();
+        }
+
+        // Create the new tile
+        Tile::CreateTile(task->tileId, pos, shared_from_this());
+    }
+    else
+    {
+        // Remove the specific tile by id
+        const auto &tilesHere = GetTilesAtPosition(pos);
+        for (const auto &tile : tilesHere)
+        {
+            if (tile->GetId() == task->tileId)
+            {
+                tile->DeleteTile();
+                break;
+            }
+        }
+    }
+
+    plannedTasks.erase(it);
+    UpdateSpriteOffsets();
+}
+
+bool Station::HasPlannedTaskAt(const Vector2Int &pos) const
+{
+    return std::any_of(plannedTasks.begin(), plannedTasks.end(), [pos](const std::shared_ptr<PlannedTask> &task)
+                       { return task->position == pos; });
+}

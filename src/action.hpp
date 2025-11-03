@@ -4,6 +4,7 @@
 
 struct Crew;
 struct Tile;
+struct PlannedTask;
 
 struct Action
 {
@@ -13,6 +14,7 @@ struct Action
         MOVE,
         EXTINGUISH,
         REPAIR,
+        CONSTRUCTION,
     };
 
     virtual void Update(const std::shared_ptr<Crew> &crew) = 0;
@@ -66,4 +68,20 @@ public:
 
     std::string GetActionName() const override { return "Repairing"; }
     Type GetType() const override { return Type::REPAIR; }
+};
+
+struct ConstructionAction : Action
+{
+protected:
+    std::weak_ptr<PlannedTask> _task;
+
+public:
+    ConstructionAction(std::shared_ptr<PlannedTask> task) : _task(task) {}
+
+    void Update(const std::shared_ptr<Crew> &crew) override;
+
+    std::weak_ptr<PlannedTask> GetPlanned() const { return _task; }
+
+    std::string GetActionName() const override { return "Constructing"; }
+    Type GetType() const override { return Type::CONSTRUCTION; }
 };

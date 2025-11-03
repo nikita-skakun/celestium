@@ -25,39 +25,15 @@ void HandlePlaceTile(const std::shared_ptr<Station> &station)
     if (GameManager::IsHorizontalSymmetry() && GameManager::IsVerticalSymmetry())
         posListToPlace.push_back(Vector2Int(-cursorPos.x - 1, -cursorPos.y - 1));
 
-    bool tilesPlaced = false;
     for (const auto &pos : posListToPlace)
     {
-        bool canBuildAtPos = true;
-        auto overlappingTiles = station->GetTilesWithHeightAtPosition(pos, tileDefinition->GetHeight());
+        // Don't plan if the same tile already exists at this position and height
+        if (station->GetTileIdAtPosition(pos, tileDefinition->GetHeight()) == tileIdToPlace)
+            continue;
 
-        // First check if we can build at this position
-        for (auto &tile : overlappingTiles)
-        {
-            if (tile->GetId() == tileIdToPlace)
-            {
-                canBuildAtPos = false;
-                break;
-            }
-        }
-
-        if (canBuildAtPos)
-        {
-            // Only delete overlapping tiles if we can build here
-            for (auto &tile : overlappingTiles)
-            {
-                tile->DeleteTile();
-            }
-
-            // Create the new tile
-            auto newTile = Tile::CreateTile(tileIdToPlace, pos, station);
-            LogMessage(LogLevel::DEBUG, std::format("Placed {} at {}", tileDefinition->GetName(), ToString(pos)));
-            tilesPlaced = true;
-        }
+        station->AddPlannedTask(pos, tileIdToPlace, true);
+        LogMessage(LogLevel::DEBUG, std::format("Planned to place {} at {}", tileDefinition->GetName(), ToString(pos)));
     }
-
-    if (tilesPlaced)
-        station->UpdateSpriteOffsets();
 }
 
 void HandleDeleteTile(const std::shared_ptr<Station> &station)
@@ -75,21 +51,16 @@ void HandleDeleteTile(const std::shared_ptr<Station> &station)
     if (GameManager::IsHorizontalSymmetry() && GameManager::IsVerticalSymmetry())
         posListToDelete.push_back(Vector2Int(-cursorPos.x - 1, -cursorPos.y - 1));
 
-    bool deletedAny = false;
     for (const auto &pos : posListToDelete)
     {
-        const auto &tilesHere = station->GetTilesAtPosition(pos);
-        if (!tilesHere.empty())
+        const auto &tilesAtPos = station->GetTilesAtPosition(pos);
+        if (!tilesAtPos.empty())
         {
-            auto topTile = tilesHere.back();
-            LogMessage(LogLevel::DEBUG, std::format("Deleted {} at {}", topTile->GetName(), ToString(pos)));
-            topTile->DeleteTile();
-            deletedAny = true;
+            const auto &topTile = tilesAtPos.back();
+            station->AddPlannedTask(pos, topTile->GetId(), false);
+            LogMessage(LogLevel::DEBUG, std::format("Planned to remove {} at {}", topTile->GetId(), ToString(pos)));
         }
     }
-
-    if (deletedAny)
-        station->UpdateSpriteOffsets();
 }
 
 void HandleBuildMode()
@@ -227,12 +198,21 @@ void AssignCrewActions()
             continue;
         }
 
-        for (const auto &direction : CARDINAL_DIRECTIONS)
+        for (const auto &direction : ALL_DIRECTIONS)
         {
             Vector2Int neighborPos = crewPos + DirectionToVector2Int(direction);
             if (station->GetEffectOfTypeAtPosition<FireEffect>(neighborPos))
             {
                 crew->GetActionQueue().push_back(std::make_shared<ExtinguishAction>(neighborPos));
+                break;
+            }
+        }
+
+        for (const auto &task : station->plannedTasks)
+        {
+            if (Vector2IntChebyshev(crewPos, task->position) <= 1)
+            {
+                crew->GetActionQueue().push_back(std::make_shared<ConstructionAction>(task));
                 break;
             }
         }

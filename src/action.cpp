@@ -143,3 +143,31 @@ void RepairAction::Update(const std::shared_ptr<Crew> &crew)
     if (newHitpoints >= maxHitpoints)
         crew->RemoveFirstAction();
 }
+
+void ConstructionAction::Update(const std::shared_ptr<Crew> &crew)
+{
+    if (!crew)
+        return;
+
+    auto task = _task.lock();
+    if (!task)
+    {
+        crew->RemoveFirstAction();
+        return;
+    }
+
+    auto station = crew->GetCurrentTile()->GetStation();
+    if (!station)
+    {
+        crew->RemoveFirstAction();
+        return;
+    }
+
+    task->progress += CREW_BUILD_SPEED * FIXED_DELTA_TIME;
+
+    if (task->progress >= 1.f)
+    {
+        station->CompletePlannedTask(task->position);
+        crew->RemoveFirstAction();
+    }
+}
