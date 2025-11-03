@@ -76,8 +76,12 @@ void DrawStationTiles()
         return;
 
     auto &camera = GameManager::GetCamera();
-    Vector2 tileSize = Vector2(1, 1) * TILE_SIZE * camera.GetZoom();
-    for (const auto &tile : snapshot->tileList)
+    const float zoom = camera.GetZoom();
+    const Vector2 tileSize = Vector2(1, 1) * TILE_SIZE * zoom;
+
+    for (const auto &kv : snapshot->tileMap)
+    {
+        for (const auto &tile : kv.second)
     {
         float rotation = 0;
         if (auto rotatable = tile->GetComponent<RotatableComponent>())
@@ -101,6 +105,7 @@ void DrawStationTiles()
             DrawRectangleV(startPos, tileSize, Color(255, 0, 0, 64));
     }
 }
+}
 
 /**
  * Draws the indirect visual overlays.
@@ -116,7 +121,9 @@ void DrawStationOverlays()
     bool isPowerOverlay = GameManager::GetCamera().IsOverlay(PlayerCam::Overlay::POWER);
     Texture2D stationTileset = AssetManager::GetTexture("STATION");
     Texture2D iconTileset = AssetManager::GetTexture("ICON");
-    for (const auto &tile : snapshot->tileList)
+    for (const auto &kv : snapshot->tileMap)
+    {
+        for (const auto &tile : kv.second)
     {
         Color tint = GetTileTint(tile);
         float rotation = 0;
@@ -168,6 +175,7 @@ void DrawStationOverlays()
             DrawRectangleV(topLeftPos, totalSize, Color(25, 25, 25, 200));
             DrawRectangleV(barStartPos, barSize, Fade(YELLOW, .8));
         }
+    }
     }
 
     if (GameManager::IsInBuildMode() && GameManager::IsHorizontalSymmetry())

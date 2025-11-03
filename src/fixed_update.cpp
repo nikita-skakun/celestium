@@ -38,9 +38,7 @@ void FixedUpdate(double &timeSinceFixedUpdate)
                 if (station)
                 {
                     snapshot->effects = station->effects;
-                    for (const auto &[pos, tiles] : station->tileMap)
-                        for (const auto &tile : tiles)
-                            snapshot->tileList.push_back(tile);
+                    snapshot->tileMap = station->tileMap;
                 }
                 // Copy crew
                 snapshot->crewList = GameManager::GetCrewList();

@@ -60,8 +60,6 @@ int main()
                     AssignCrewActions();
                     HandleMouseDrag();
                 }
-
-                // MouseDeleteExistingConnection();
             }
 
             DrawTileGrid();

@@ -6,7 +6,7 @@
 struct RenderSnapshot
 {
     std::vector<std::shared_ptr<Crew>> crewList;
-    std::vector<std::shared_ptr<Tile>> tileList;
+    std::unordered_map<Vector2Int, std::vector<std::shared_ptr<Tile>>> tileMap;
     std::vector<std::shared_ptr<Effect>> effects;
     std::vector<std::weak_ptr<Crew>> selectedCrewList;
     // Add other renderable game state as needed
@@ -27,13 +27,10 @@ struct RenderSnapshot
     // Get all tiles at a tile position
     std::vector<std::shared_ptr<Tile>> GetTilesAtPosition(const Vector2Int &pos) const
     {
-        std::vector<std::shared_ptr<Tile>> result;
-        for (const auto &tile : tileList)
-        {
-            if (tile && tile->GetPosition() == pos)
-                result.push_back(tile);
-        }
-        return result;
+        auto it = tileMap.find(pos);
+        if (it == tileMap.end())
+            return {};
+        return it->second;
     }
 
     // Get all effects at a tile position
