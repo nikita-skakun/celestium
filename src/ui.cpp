@@ -705,6 +705,8 @@ void DrawPlannedTasks()
     if (!station)
         return;
 
+    PlayerCam camera = GameManager::GetCamera();
+
     for (const auto &task : station->plannedTasks)
     {
         auto tileDefs = DefinitionManager::GetTileDefinitions();
@@ -737,7 +739,8 @@ void DrawPlannedTasks()
 
         // Draw construction icon
         Rectangle iconRect = task->isBuild ? Rectangle{16.0f, 16.0f, 16.0f, 16.0f} : Rectangle{48.0f, 16.0f, 16.0f, 16.0f};
-        Vector2 iconPos = ToVector2(task->position) * TILE_SIZE;
-        DrawTextureRec(AssetManager::GetTexture("ICON"), iconRect, iconPos, WHITE);
+        Vector2 worldPos = ToVector2(task->position) * TILE_SIZE;
+        Vector2 screenPos = camera.WorldToScreen(worldPos);
+        DrawTextureRec(AssetManager::GetTexture("ICON"), iconRect, screenPos, WHITE);
     }
 }
