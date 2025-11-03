@@ -735,6 +735,9 @@ void DrawPlannedTasks()
 
         drawGhost(task->position);
 
-        // TODO: draw construction icon
+        // Draw construction icon
+        Rectangle iconRect = task->isBuild ? Rectangle{16.0f, 16.0f, 16.0f, 16.0f} : Rectangle{48.0f, 16.0f, 16.0f, 16.0f};
+        Vector2 iconPos = ToVector2(task->position) * TILE_SIZE;
+        DrawTextureRec(AssetManager::GetTexture("ICON"), iconRect, iconPos, WHITE);
     }
 }
