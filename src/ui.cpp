@@ -494,6 +494,16 @@ void DrawCrewActionProgress()
         }
         break;
 
+        case Action::Type::CONSTRUCTION:
+        {
+            const auto constructionAction = std::dynamic_pointer_cast<ConstructionAction>(action);
+
+            const Vector2 barPos = GameManager::WorldToScreen(ToVector2(constructionAction->GetTargetPosition()) - Vector2(.5 - .05, .5 - .85));
+            const Vector2 barSize = Vector2(constructionAction->GetProgress() * .9, .1) * TILE_SIZE * GameManager::GetCamera().GetZoom();
+            DrawRectangleV(barPos, barSize, Fade(GREEN, .8));
+        }
+        break;
+
         default:
             break;
         }
