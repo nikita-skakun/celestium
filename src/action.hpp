@@ -1,10 +1,10 @@
 #pragma once
 #include "utils.hpp"
-#include "station.hpp"
 #include <deque>
 
 struct Crew;
 struct Tile;
+struct PlannedTask;
 
 struct Action
 {
@@ -73,28 +73,14 @@ public:
 struct ConstructionAction : Action
 {
 protected:
-    Vector2Int targetPosition;
-    std::weak_ptr<Station> _station;
+    std::weak_ptr<PlannedTask> _task;
 
 public:
-    ConstructionAction(const Vector2Int &position, const std::shared_ptr<Station> &station) : targetPosition(position), _station(station) {}
+    ConstructionAction(std::shared_ptr<PlannedTask> task) : _task(task) {}
 
     void Update(const std::shared_ptr<Crew> &crew) override;
 
-    float GetProgress() const
-    {
-        auto station = _station.lock();
-        if (!station)
-            return 0.0f;
-
-        auto it = std::find_if(station->plannedTasks.begin(), station->plannedTasks.end(),
-                               [this](const PlannedTask &task) { return task.position == targetPosition; });
-        if (it == station->plannedTasks.end())
-            return 0.0f;
-
-        return it->progress;
-    }
-    const Vector2Int &GetTargetPosition() const { return targetPosition; }
+    std::weak_ptr<PlannedTask> GetPlanned() const { return _task; }
 
     std::string GetActionName() const override { return "Constructing"; }
     Type GetType() const override { return Type::CONSTRUCTION; }

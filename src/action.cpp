@@ -149,6 +149,13 @@ void ConstructionAction::Update(const std::shared_ptr<Crew> &crew)
     if (!crew)
         return;
 
+    auto task = _task.lock();
+    if (!task)
+    {
+        crew->RemoveFirstAction();
+        return;
+    }
+
     auto station = crew->GetCurrentTile()->GetStation();
     if (!station)
     {
@@ -156,32 +163,13 @@ void ConstructionAction::Update(const std::shared_ptr<Crew> &crew)
         return;
     }
 
-    Vector2Int crewPos = ToVector2Int(crew->GetPosition());
-    if (crewPos != targetPosition)
-    {
-        // Crew not at position, perhaps move first, but for now, assume they are.
-        crew->RemoveFirstAction();
-        return;
-    }
-
-    // Find the planned task
-    auto it = std::find_if(station->plannedTasks.begin(), station->plannedTasks.end(),
-                           [this](const PlannedTask &task) { return task.position == targetPosition; });
-
-    if (it == station->plannedTasks.end())
-    {
-        // No planned task, action done
-        crew->RemoveFirstAction();
-        return;
-    }
-
     // Progress
-    it->progress += FIXED_DELTA_TIME / 5.0f;
+    task->progress += FIXED_DELTA_TIME / 5.f;
 
-    if (it->progress >= 1.0f)
+    if (task->progress >= 1.f)
     {
         // Complete the task
-        station->CompletePlannedTask(targetPosition);
+        station->CompletePlannedTask(task->position);
         crew->RemoveFirstAction();
     }
 }

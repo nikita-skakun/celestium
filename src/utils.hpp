@@ -228,6 +228,11 @@ constexpr float Vector2DistanceSq(const Vector2 &a, const Vector2 &b) noexcept
     return (b.x - a.x) * (b.x - a.x) + (b.y - a.y) * (b.y - a.y);
 }
 
+constexpr float Vector2Manhattan(const Vector2 &a, const Vector2 &b) noexcept
+{
+    return std::abs(b.x - a.x) + std::abs(b.y - a.y);
+}
+
 constexpr Vector2 Vector2Round(const Vector2 &a) noexcept
 {
     return Vector2(round(a.x), round(a.y));
@@ -327,6 +332,16 @@ constexpr float Vector2IntDistanceSq(const Vector2Int &a, const Vector2Int &b) n
 constexpr bool Vector2IntTouching(const Vector2Int &a, const Vector2Int &b) noexcept
 {
     return (a.x == b.x && std::abs(a.y - b.y) == 1) || (a.y == b.y && std::abs(a.x - b.x) == 1);
+}
+
+constexpr int Vector2IntManhattan(const Vector2Int &a, const Vector2Int &b) noexcept
+{
+    return std::abs(b.x - a.x) + std::abs(b.y - a.y);
+}
+
+constexpr int Vector2IntChebyshev(const Vector2Int &a, const Vector2Int &b) noexcept
+{
+    return std::max(std::abs(b.x - a.x), std::abs(b.y - a.y));
 }
 
 inline int Vector2IntToRandomInt(const Vector2Int &a, int min, int max) noexcept

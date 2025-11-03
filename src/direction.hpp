@@ -8,6 +8,10 @@ enum class Direction : uint8_t
     E = 1 << 1,
     S = 1 << 2,
     W = 1 << 3,
+    NE = N | E,
+    SE = S | E,
+    SW = S | W,
+    NW = N | W,
 };
 
 template <>
@@ -33,6 +37,7 @@ constexpr Vector2Int DirectionToVector2Int(Direction direction)
 }
 
 constexpr std::array<Direction, 4> CARDINAL_DIRECTIONS = {Direction::N, Direction::E, Direction::S, Direction::W};
+constexpr std::array<Direction, 8> ALL_DIRECTIONS = {Direction::N, Direction::NE, Direction::E, Direction::SE, Direction::S, Direction::SW, Direction::W, Direction::NW};
 
 enum class Rotation : uint8_t
 {

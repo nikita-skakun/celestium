@@ -27,6 +27,10 @@ void HandlePlaceTile(const std::shared_ptr<Station> &station)
 
     for (const auto &pos : posListToPlace)
     {
+        // Don't plan if the same tile already exists at this position and height
+        if (station->GetTileIdAtPosition(pos, tileDefinition->GetHeight()) == tileIdToPlace)
+            continue;
+
         station->AddPlannedTask(pos, tileIdToPlace, true);
         LogMessage(LogLevel::DEBUG, std::format("Planned to place {} at {}", tileDefinition->GetName(), ToString(pos)));
     }
@@ -49,8 +53,13 @@ void HandleDeleteTile(const std::shared_ptr<Station> &station)
 
     for (const auto &pos : posListToDelete)
     {
-        station->AddPlannedTask(pos, "", false);
-        LogMessage(LogLevel::DEBUG, std::format("Planned to remove tile at {}", ToString(pos)));
+        const auto &tilesAtPos = station->GetTilesAtPosition(pos);
+        if (!tilesAtPos.empty())
+        {
+            const auto &topTile = tilesAtPos.back();
+            station->AddPlannedTask(pos, topTile->GetId(), false);
+            LogMessage(LogLevel::DEBUG, std::format("Planned to remove {} at {}", topTile->GetId(), ToString(pos)));
+        }
     }
 }
 
@@ -189,7 +198,7 @@ void AssignCrewActions()
             continue;
         }
 
-        for (const auto &direction : CARDINAL_DIRECTIONS)
+        for (const auto &direction : ALL_DIRECTIONS)
         {
             Vector2Int neighborPos = crewPos + DirectionToVector2Int(direction);
             if (station->GetEffectOfTypeAtPosition<FireEffect>(neighborPos))
@@ -199,23 +208,11 @@ void AssignCrewActions()
             }
         }
 
-        // Check for planned construction tasks nearby
         for (const auto &task : station->plannedTasks)
         {
-            Vector2 taskCenter = Vector2(task.position.x + 0.5f, task.position.y + 0.5f);
-            if (Vector2DistanceSq(crew->GetPosition(), taskCenter) <= 1.0f) // within 1 tile
+            if (Vector2IntChebyshev(ToVector2Int(crew->GetPosition()), task->position) <= 1)
             {
-                if (crewPos == task.position)
-                {
-                    // Already at position, start constructing
-                    crew->GetActionQueue().push_back(std::make_shared<ConstructionAction>(task.position, station));
-                }
-                else
-                {
-                    // Move to position first
-                    crew->GetActionQueue().push_back(std::make_shared<MoveAction>(task.position));
-                    crew->GetActionQueue().push_back(std::make_shared<ConstructionAction>(task.position, station));
-                }
+                crew->GetActionQueue().push_back(std::make_shared<ConstructionAction>(task));
                 break;
             }
         }
