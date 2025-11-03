@@ -205,7 +205,17 @@ void AssignCrewActions()
             Vector2 taskCenter = Vector2(task.position.x + 0.5f, task.position.y + 0.5f);
             if (Vector2DistanceSq(crew->GetPosition(), taskCenter) <= 1.0f) // within 1 tile
             {
-                crew->GetActionQueue().push_back(std::make_shared<ConstructionAction>(task.position));
+                if (crewPos == task.position)
+                {
+                    // Already at position, start constructing
+                    crew->GetActionQueue().push_back(std::make_shared<ConstructionAction>(task.position));
+                }
+                else
+                {
+                    // Move to position first
+                    crew->GetActionQueue().push_back(std::make_shared<MoveAction>(task.position));
+                    crew->GetActionQueue().push_back(std::make_shared<ConstructionAction>(task.position));
+                }
                 break;
             }
         }
