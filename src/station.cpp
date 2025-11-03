@@ -504,7 +504,7 @@ void Station::AddPlannedTask(const Vector2Int &pos, const std::string &tileId, b
         return task.position == pos;
     });
 
-    plannedTasks.push_back({pos, tileId, isBuild});
+    plannedTasks.push_back({pos, tileId, isBuild, 0.0f});
 }
 
 void Station::CompletePlannedTask(const Vector2Int &pos)

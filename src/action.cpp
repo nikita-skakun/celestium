@@ -143,3 +143,45 @@ void RepairAction::Update(const std::shared_ptr<Crew> &crew)
     if (newHitpoints >= maxHitpoints)
         crew->RemoveFirstAction();
 }
+
+void ConstructionAction::Update(const std::shared_ptr<Crew> &crew)
+{
+    if (!crew)
+        return;
+
+    auto station = crew->GetCurrentTile()->GetStation();
+    if (!station)
+    {
+        crew->RemoveFirstAction();
+        return;
+    }
+
+    Vector2Int crewPos = ToVector2Int(crew->GetPosition());
+    if (crewPos != targetPosition)
+    {
+        // Crew not at position, perhaps move first, but for now, assume they are.
+        crew->RemoveFirstAction();
+        return;
+    }
+
+    // Find the planned task
+    auto it = std::find_if(station->plannedTasks.begin(), station->plannedTasks.end(),
+                           [this](const PlannedTask &task) { return task.position == targetPosition; });
+
+    if (it == station->plannedTasks.end())
+    {
+        // No planned task, action done
+        crew->RemoveFirstAction();
+        return;
+    }
+
+    // Progress
+    it->progress += FIXED_DELTA_TIME / 5.0f;
+
+    if (it->progress >= 1.0f)
+    {
+        // Complete the task
+        station->CompletePlannedTask(targetPosition);
+        crew->RemoveFirstAction();
+    }
+}

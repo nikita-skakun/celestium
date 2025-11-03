@@ -13,6 +13,7 @@ struct Action
         MOVE,
         EXTINGUISH,
         REPAIR,
+        CONSTRUCTION,
     };
 
     virtual void Update(const std::shared_ptr<Crew> &crew) = 0;
@@ -66,4 +67,22 @@ public:
 
     std::string GetActionName() const override { return "Repairing"; }
     Type GetType() const override { return Type::REPAIR; }
+};
+
+struct ConstructionAction : Action
+{
+protected:
+    Vector2Int targetPosition;
+    float progress;
+
+public:
+    ConstructionAction(const Vector2Int &position) : targetPosition(position), progress(0) {}
+
+    void Update(const std::shared_ptr<Crew> &crew) override;
+
+    float GetProgress() const { return progress; }
+    const Vector2Int &GetTargetPosition() const { return targetPosition; }
+
+    std::string GetActionName() const override { return "Constructing"; }
+    Type GetType() const override { return Type::CONSTRUCTION; }
 };

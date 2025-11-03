@@ -9,6 +9,7 @@ struct PlannedTask
     Vector2Int position;
     std::string tileId;
     bool isBuild;
+    float progress = 0.0f;
 };
 
 struct Station : public std::enable_shared_from_this<Station>

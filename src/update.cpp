@@ -63,27 +63,6 @@ void HandleBuildMode()
     if (IsMouseButtonPressed(MOUSE_LEFT_BUTTON) && !GameManager::GetBuildTileId().empty())
         HandlePlaceTile(station);
 
-    if (IsMouseButtonPressed(MOUSE_LEFT_BUTTON) && GameManager::GetBuildTileId().empty())
-    {
-        Vector2Int cursorPos = ToVector2Int(GameManager::GetWorldMousePos());
-
-        std::vector<Vector2Int> posList;
-        posList.push_back(cursorPos);
-        if (GameManager::IsHorizontalSymmetry())
-            posList.push_back(Vector2Int(cursorPos.x, -cursorPos.y - 1));
-
-        if (GameManager::IsVerticalSymmetry())
-            posList.push_back(Vector2Int(-cursorPos.x - 1, cursorPos.y));
-
-        if (GameManager::IsHorizontalSymmetry() && GameManager::IsVerticalSymmetry())
-            posList.push_back(Vector2Int(-cursorPos.x - 1, -cursorPos.y - 1));
-
-        for (const auto &pos : posList)
-        {
-            station->CompletePlannedTask(pos);
-        }
-    }
-
     if (IsMouseButtonPressed(MOUSE_RIGHT_BUTTON))
         HandleDeleteTile(station);
 }
@@ -216,6 +195,17 @@ void AssignCrewActions()
             if (station->GetEffectOfTypeAtPosition<FireEffect>(neighborPos))
             {
                 crew->GetActionQueue().push_back(std::make_shared<ExtinguishAction>(neighborPos));
+                break;
+            }
+        }
+
+        // Check for planned construction tasks nearby
+        for (const auto &task : station->plannedTasks)
+        {
+            Vector2 taskCenter = Vector2(task.position.x + 0.5f, task.position.y + 0.5f);
+            if (Vector2DistanceSq(crew->GetPosition(), taskCenter) <= 1.0f) // within 1 tile
+            {
+                crew->GetActionQueue().push_back(std::make_shared<ConstructionAction>(task.position));
                 break;
             }
         }
