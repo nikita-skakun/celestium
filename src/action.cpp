@@ -164,12 +164,10 @@ void ConstructionAction::Update(const std::shared_ptr<Crew> &crew)
         return;
     }
 
-    // Progress
-    task->progress += DefinitionManager::GetFloat("crew.buildSpeed") * FIXED_DELTA_TIME;
+    task->progress += CREW_BUILD_SPEED * FIXED_DELTA_TIME;
 
     if (task->progress >= 1.f)
     {
-        // Complete the task
         station->CompletePlannedTask(task->position);
         crew->RemoveFirstAction();
     }
