@@ -631,9 +631,60 @@ void DrawMainTooltip()
 void DrawBuildUi()
 {
     auto snapshot = GameManager::GetRenderSnapshot();
-    if (!snapshot || UiManager::IsMouseOverUiElement())
+    if (!snapshot)
         return;
 
+    // Original cursor ghosts only if not over UI
+    if (UiManager::IsMouseOverUiElement())
+        return;
+
+    Vector2Int cursorPos = ToVector2Int(GameManager::GetWorldMousePos());
+    const std::string &buildTileId = GameManager::GetBuildTileId();
+    if (buildTileId.empty())
+        return;
+
+    auto tileDefs = DefinitionManager::GetTileDefinitions();
+    auto it = tileDefs.find(buildTileId);
+    if (it == tileDefs.end())
+        return;
+    auto tileDef = it->second;
+    if (!tileDef || !tileDef->GetReferenceSprite())
+        return;
+    const auto &spriteDef = tileDef->GetReferenceSprite();
+
+    auto drawGhost = [&](const Vector2Int &pos)
+    {
+        if (auto basicDef = std::dynamic_pointer_cast<BasicSpriteDef>(spriteDef))
+        {
+            BasicSprite ghostSprite(basicDef->spriteOffset);
+            ghostSprite.Draw(pos, Fade(WHITE, 0.5f), 0);
+        }
+        else if (auto multiDef = std::dynamic_pointer_cast<MultiSliceSpriteDef>(spriteDef))
+        {
+            std::vector<SpriteSlice> slices;
+            for (const auto &swc : multiDef->slices)
+                slices.push_back(swc.slice);
+            MultiSliceSprite ghostSprite(slices);
+            ghostSprite.Draw(pos, Fade(WHITE, 0.5f), 0);
+        }
+    };
+
+    // Collect all unique positions to draw (main + symmetry)
+    std::unordered_set<Vector2Int> ghostPositions;
+    ghostPositions.insert(cursorPos);
+    if (GameManager::IsHorizontalSymmetry())
+        ghostPositions.insert(Vector2Int(cursorPos.x, -cursorPos.y - 1));
+    if (GameManager::IsVerticalSymmetry())
+        ghostPositions.insert(Vector2Int(-cursorPos.x - 1, cursorPos.y));
+    if (GameManager::IsHorizontalSymmetry() && GameManager::IsVerticalSymmetry())
+        ghostPositions.insert(Vector2Int(-cursorPos.x - 1, -cursorPos.y - 1));
+
+    for (const auto &pos : ghostPositions)
+        drawGhost(pos);
+}
+
+void DrawPlannedTasks()
+{
     auto station = GameManager::GetStation();
     if (!station)
         return;

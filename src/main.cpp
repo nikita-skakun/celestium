@@ -64,6 +64,7 @@ int main()
 
             DrawTileGrid();
             DrawStationTiles();
+            DrawPlannedTasks();
             DrawStationOverlays();
 
             if (!GameManager::IsInBuildMode())
