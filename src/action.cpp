@@ -176,7 +176,6 @@ void ConstructionAction::Update(const std::shared_ptr<Crew> &crew)
     }
 
     // Progress
-    progress += FIXED_DELTA_TIME / 5.0f;
     it->progress += FIXED_DELTA_TIME / 5.0f;
 
     if (it->progress >= 1.0f)

@@ -208,13 +208,13 @@ void AssignCrewActions()
                 if (crewPos == task.position)
                 {
                     // Already at position, start constructing
-                    crew->GetActionQueue().push_back(std::make_shared<ConstructionAction>(task.position));
+                    crew->GetActionQueue().push_back(std::make_shared<ConstructionAction>(task.position, station));
                 }
                 else
                 {
                     // Move to position first
                     crew->GetActionQueue().push_back(std::make_shared<MoveAction>(task.position));
-                    crew->GetActionQueue().push_back(std::make_shared<ConstructionAction>(task.position));
+                    crew->GetActionQueue().push_back(std::make_shared<ConstructionAction>(task.position, station));
                 }
                 break;
             }

@@ -73,14 +73,26 @@ struct ConstructionAction : Action
 {
 protected:
     Vector2Int targetPosition;
-    float progress;
+    std::weak_ptr<Station> _station;
 
 public:
-    ConstructionAction(const Vector2Int &position) : targetPosition(position), progress(0) {}
+    ConstructionAction(const Vector2Int &position, const std::shared_ptr<Station> &station) : targetPosition(position), _station(station) {}
 
     void Update(const std::shared_ptr<Crew> &crew) override;
 
-    float GetProgress() const { return progress; }
+    float GetProgress() const
+    {
+        auto station = _station.lock();
+        if (!station)
+            return 0.0f;
+
+        auto it = std::find_if(station->plannedTasks.begin(), station->plannedTasks.end(),
+                               [this](const PlannedTask &task) { return task.position == targetPosition; });
+        if (it == station->plannedTasks.end())
+            return 0.0f;
+
+        return it->progress;
+    }
     const Vector2Int &GetTargetPosition() const { return targetPosition; }
 
     std::string GetActionName() const override { return "Constructing"; }
