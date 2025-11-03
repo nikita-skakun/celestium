@@ -1,7 +1,6 @@
 #include "action.hpp"
 #include "astar.hpp"
 #include "crew.hpp"
-#include "def_manager.hpp"
 #include "station.hpp"
 
 void MoveAction::Update(const std::shared_ptr<Crew> &crew)

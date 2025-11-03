@@ -210,7 +210,7 @@ void AssignCrewActions()
 
         for (const auto &task : station->plannedTasks)
         {
-            if (Vector2IntChebyshev(ToVector2Int(crew->GetPosition()), task->position) <= 1)
+            if (Vector2IntChebyshev(crewPos, task->position) <= 1)
             {
                 crew->GetActionQueue().push_back(std::make_shared<ConstructionAction>(task));
                 break;

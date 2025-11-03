@@ -647,11 +647,7 @@ void DrawMainTooltip()
 void DrawBuildUi()
 {
     auto snapshot = GameManager::GetRenderSnapshot();
-    if (!snapshot)
-        return;
-
-    // Original cursor ghosts only if not over UI
-    if (UiManager::IsMouseOverUiElement())
+    if (!snapshot || UiManager::IsMouseOverUiElement())
         return;
 
     Vector2Int cursorPos = ToVector2Int(GameManager::GetWorldMousePos());
@@ -712,7 +708,6 @@ void DrawPlannedTasks()
     {
         if (task->isBuild)
         {
-
             auto tileDefs = DefinitionManager::GetTileDefinitions();
             auto it = tileDefs.find(task->tileId);
             if (it == tileDefs.end())
