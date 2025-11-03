@@ -705,42 +705,45 @@ void DrawPlannedTasks()
     if (!station)
         return;
 
-    PlayerCam camera = GameManager::GetCamera();
+    Texture2D iconTileset = AssetManager::GetTexture("ICON");
+    Vector2 tileSize = Vector2(1, 1) * TILE_SIZE * GameManager::GetCamera().GetZoom();
 
     for (const auto &task : station->plannedTasks)
     {
-        auto tileDefs = DefinitionManager::GetTileDefinitions();
-        auto it = tileDefs.find(task->tileId);
-        if (it == tileDefs.end())
-            continue;
-        auto tileDef = it->second;
-        if (!tileDef || !tileDef->GetReferenceSprite())
-            continue;
-        const auto &spriteDef = tileDef->GetReferenceSprite();
-
-        auto drawGhost = [&](const Vector2Int &pos)
+        if (task->isBuild)
         {
-            if (auto basicDef = std::dynamic_pointer_cast<BasicSpriteDef>(spriteDef))
-            {
-                BasicSprite ghostSprite(basicDef->spriteOffset);
-                ghostSprite.Draw(pos, Fade(WHITE, 0.5f), 0);
-            }
-            else if (auto multiDef = std::dynamic_pointer_cast<MultiSliceSpriteDef>(spriteDef))
-            {
-                std::vector<SpriteSlice> slices;
-                for (const auto &swc : multiDef->slices)
-                    slices.push_back(swc.slice);
-                MultiSliceSprite ghostSprite(slices);
-                ghostSprite.Draw(pos, Fade(WHITE, 0.5f), 0);
-            }
-        };
 
-        drawGhost(task->position);
+            auto tileDefs = DefinitionManager::GetTileDefinitions();
+            auto it = tileDefs.find(task->tileId);
+            if (it == tileDefs.end())
+                continue;
+            auto tileDef = it->second;
+            if (!tileDef || !tileDef->GetReferenceSprite())
+                continue;
+            const auto &spriteDef = tileDef->GetReferenceSprite();
 
-        // Draw construction icon
-        Rectangle iconRect = task->isBuild ? Rectangle{16.0f, 16.0f, 16.0f, 16.0f} : Rectangle{48.0f, 16.0f, 16.0f, 16.0f};
-        Vector2 worldPos = ToVector2(task->position) * TILE_SIZE;
-        Vector2 screenPos = camera.WorldToScreen(worldPos);
-        DrawTextureRec(AssetManager::GetTexture("ICON"), iconRect, screenPos, WHITE);
+            auto drawGhost = [&](const Vector2Int &pos)
+            {
+                if (auto basicDef = std::dynamic_pointer_cast<BasicSpriteDef>(spriteDef))
+                {
+                    BasicSprite ghostSprite(basicDef->spriteOffset);
+                    ghostSprite.Draw(pos, Fade(WHITE, 0.5f), 0);
+                }
+                else if (auto multiDef = std::dynamic_pointer_cast<MultiSliceSpriteDef>(spriteDef))
+                {
+                    std::vector<SpriteSlice> slices;
+                    for (const auto &swc : multiDef->slices)
+                        slices.push_back(swc.slice);
+                    MultiSliceSprite ghostSprite(slices);
+                    ghostSprite.Draw(pos, Fade(WHITE, 0.5f), 0);
+                }
+            };
+
+            drawGhost(task->position);
+        }
+
+        Rectangle sourceRect = (task->isBuild ? Rectangle(1, 1, 1, 1) : Rectangle(3, 1, 1, 1)) * TILE_SIZE;
+        Rectangle destRect = Vector2ToRect(GameManager::WorldToScreen(task->position) + tileSize / 4., tileSize / 2.);
+        DrawTexturePro(iconTileset, sourceRect, destRect, tileSize / 2., 0, Fade(WHITE, .8));
     }
 }

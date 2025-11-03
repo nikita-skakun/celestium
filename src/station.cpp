@@ -503,7 +503,7 @@ void Station::AddPlannedTask(const Vector2Int &pos, const std::string &tileId, b
     std::erase_if(plannedTasks, [pos](const std::shared_ptr<PlannedTask> &task)
                   { return task->position == pos; });
 
-    plannedTasks.push_back(std::make_shared<PlannedTask>(PlannedTask{pos, tileId, isBuild, 0.f}));
+    plannedTasks.push_back(std::make_shared<PlannedTask>(PlannedTask(pos, tileId, isBuild)));
 }
 
 void Station::CompletePlannedTask(const Vector2Int &pos)
