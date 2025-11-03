@@ -1,5 +1,6 @@
 #pragma once
 #include "utils.hpp"
+#include "station.hpp"
 #include <deque>
 
 struct Crew;
