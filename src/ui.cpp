@@ -500,7 +500,7 @@ void DrawCrewActionProgress()
 
             const Vector2 barPos = GameManager::WorldToScreen(ToVector2(constructionAction->GetTargetPosition()) - Vector2(.5 - .05, .5 - .85));
             const Vector2 fillSize = Vector2(constructionAction->GetProgress() * .9, .1) * TILE_SIZE * GameManager::GetCamera().GetZoom();
-            DrawRectangleV(barPos, fillSize, Fade(BLUE, 1.0));
+            DrawRectangleV(barPos, fillSize, Fade(RED, 1.0));
         }
         break;
 
