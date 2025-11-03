@@ -496,3 +496,88 @@ std::vector<std::shared_ptr<Tile>> Station::GetTilesWithHeightAtPosition(const V
 
     return foundTiles;
 }
+
+void Station::AddPlannedTask(const Vector2Int &pos, const std::string &tileId, bool isBuild)
+{
+    // Remove any existing plan at this position
+    std::erase_if(plannedTasks, [pos](const PlannedTask &task) {
+        return task.position == pos;
+    });
+
+    plannedTasks.push_back({pos, tileId, isBuild});
+}
+
+void Station::CompletePlannedTask(const Vector2Int &pos)
+{
+    auto it = std::find_if(plannedTasks.begin(), plannedTasks.end(), [pos](const PlannedTask &task) {
+        return task.position == pos;
+    });
+
+    if (it == plannedTasks.end())
+        return;
+
+    const PlannedTask &task = *it;
+
+    if (task.isBuild)
+    {
+        // Delete overlapping tiles
+        auto overlappingTiles = GetTilesWithHeightAtPosition(pos, DefinitionManager::GetTileDefinition(task.tileId)->GetHeight());
+        for (auto &tile : overlappingTiles)
+        {
+            tile->DeleteTile();
+        }
+
+        // Create the new tile
+        Tile::CreateTile(task.tileId, pos, shared_from_this());
+    }
+    else
+    {
+        // Remove the top tile
+        const auto &tilesHere = GetTilesAtPosition(pos);
+        if (!tilesHere.empty())
+        {
+            tilesHere.back()->DeleteTile();
+        }
+    }
+
+    plannedTasks.erase(it);
+    UpdateSpriteOffsets();
+}
+
+void Station::CompleteAllPlannedTasks()
+{
+    for (const auto &task : plannedTasks)
+    {
+        if (task.isBuild)
+        {
+            // Delete overlapping tiles
+            auto overlappingTiles = GetTilesWithHeightAtPosition(task.position, DefinitionManager::GetTileDefinition(task.tileId)->GetHeight());
+            for (auto &tile : overlappingTiles)
+            {
+                tile->DeleteTile();
+            }
+
+            // Create the new tile
+            Tile::CreateTile(task.tileId, task.position, shared_from_this());
+        }
+        else
+        {
+            // Remove the top tile
+            const auto &tilesHere = GetTilesAtPosition(task.position);
+            if (!tilesHere.empty())
+            {
+                tilesHere.back()->DeleteTile();
+            }
+        }
+    }
+
+    plannedTasks.clear();
+    UpdateSpriteOffsets();
+}
+
+bool Station::HasPlannedTaskAt(const Vector2Int &pos) const
+{
+    return std::any_of(plannedTasks.begin(), plannedTasks.end(), [pos](const PlannedTask &task) {
+        return task.position == pos;
+    });
+}

@@ -25,39 +25,11 @@ void HandlePlaceTile(const std::shared_ptr<Station> &station)
     if (GameManager::IsHorizontalSymmetry() && GameManager::IsVerticalSymmetry())
         posListToPlace.push_back(Vector2Int(-cursorPos.x - 1, -cursorPos.y - 1));
 
-    bool tilesPlaced = false;
     for (const auto &pos : posListToPlace)
     {
-        bool canBuildAtPos = true;
-        auto overlappingTiles = station->GetTilesWithHeightAtPosition(pos, tileDefinition->GetHeight());
-
-        // First check if we can build at this position
-        for (auto &tile : overlappingTiles)
-        {
-            if (tile->GetId() == tileIdToPlace)
-            {
-                canBuildAtPos = false;
-                break;
-            }
-        }
-
-        if (canBuildAtPos)
-        {
-            // Only delete overlapping tiles if we can build here
-            for (auto &tile : overlappingTiles)
-            {
-                tile->DeleteTile();
-            }
-
-            // Create the new tile
-            auto newTile = Tile::CreateTile(tileIdToPlace, pos, station);
-            LogMessage(LogLevel::DEBUG, std::format("Placed {} at {}", tileDefinition->GetName(), ToString(pos)));
-            tilesPlaced = true;
-        }
+        station->AddPlannedTask(pos, tileIdToPlace, true);
+        LogMessage(LogLevel::DEBUG, std::format("Planned to place {} at {}", tileDefinition->GetName(), ToString(pos)));
     }
-
-    if (tilesPlaced)
-        station->UpdateSpriteOffsets();
 }
 
 void HandleDeleteTile(const std::shared_ptr<Station> &station)
@@ -75,21 +47,11 @@ void HandleDeleteTile(const std::shared_ptr<Station> &station)
     if (GameManager::IsHorizontalSymmetry() && GameManager::IsVerticalSymmetry())
         posListToDelete.push_back(Vector2Int(-cursorPos.x - 1, -cursorPos.y - 1));
 
-    bool deletedAny = false;
     for (const auto &pos : posListToDelete)
     {
-        const auto &tilesHere = station->GetTilesAtPosition(pos);
-        if (!tilesHere.empty())
-        {
-            auto topTile = tilesHere.back();
-            LogMessage(LogLevel::DEBUG, std::format("Deleted {} at {}", topTile->GetName(), ToString(pos)));
-            topTile->DeleteTile();
-            deletedAny = true;
-        }
+        station->AddPlannedTask(pos, "", false);
+        LogMessage(LogLevel::DEBUG, std::format("Planned to remove tile at {}", ToString(pos)));
     }
-
-    if (deletedAny)
-        station->UpdateSpriteOffsets();
 }
 
 void HandleBuildMode()
@@ -100,6 +62,27 @@ void HandleBuildMode()
 
     if (IsMouseButtonPressed(MOUSE_LEFT_BUTTON) && !GameManager::GetBuildTileId().empty())
         HandlePlaceTile(station);
+
+    if (IsMouseButtonPressed(MOUSE_LEFT_BUTTON) && GameManager::GetBuildTileId().empty())
+    {
+        Vector2Int cursorPos = ToVector2Int(GameManager::GetWorldMousePos());
+
+        std::vector<Vector2Int> posList;
+        posList.push_back(cursorPos);
+        if (GameManager::IsHorizontalSymmetry())
+            posList.push_back(Vector2Int(cursorPos.x, -cursorPos.y - 1));
+
+        if (GameManager::IsVerticalSymmetry())
+            posList.push_back(Vector2Int(-cursorPos.x - 1, cursorPos.y));
+
+        if (GameManager::IsHorizontalSymmetry() && GameManager::IsVerticalSymmetry())
+            posList.push_back(Vector2Int(-cursorPos.x - 1, -cursorPos.y - 1));
+
+        for (const auto &pos : posList)
+        {
+            station->CompletePlannedTask(pos);
+        }
+    }
 
     if (IsMouseButtonPressed(MOUSE_RIGHT_BUTTON))
         HandleDeleteTile(station);
