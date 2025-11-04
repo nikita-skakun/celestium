@@ -1,7 +1,10 @@
 #include "action.hpp"
 #include "astar.hpp"
+#include "component.hpp"
 #include "crew.hpp"
+#include "planned_task.hpp"
 #include "station.hpp"
+#include "tile.hpp"
 
 void MoveAction::Update(const std::shared_ptr<Crew> &crew)
 {
@@ -44,12 +47,10 @@ void MoveAction::Update(const std::shared_ptr<Crew> &crew)
     // Crew can reach or pass the current waypoint
     if (distanceLeftSq <= 0)
     {
-        if (auto doorTile = station->GetTileWithComponentAtPosition<DoorComponent>(floorCrewPos))
+        if (auto doorTile = station->GetTileWithComponentAtPosition(floorCrewPos, ComponentType::DOOR))
         {
             if (auto door = doorTile->GetComponent<DoorComponent>())
-            {
                 door->SetMovingState(DoorComponent::MovingState::IDLE);
-            }
         }
 
         crew->SetPosition(stepPos);
@@ -75,7 +76,7 @@ void MoveAction::Update(const std::shared_ptr<Crew> &crew)
     // Crew cannot reach the current waypoint in this frame
     else
     {
-        if (auto doorTile = station->GetTileWithComponentAtPosition<DoorComponent>(path.front()))
+        if (auto doorTile = station->GetTileWithComponentAtPosition(path.front(), ComponentType::DOOR))
         {
             if (auto door = doorTile->GetComponent<DoorComponent>())
             {
@@ -102,7 +103,7 @@ void ExtinguishAction::Update(const std::shared_ptr<Crew> &crew)
         return;
     }
 
-    if (auto fire = station->GetEffectOfTypeAtPosition<FireEffect>(targetPosition))
+    if (auto fire = station->GetEffectOfTypeAtPosition(targetPosition, "FIRE"))
     {
         // Fire effect exists at the target position
         if (progress > 1.f)

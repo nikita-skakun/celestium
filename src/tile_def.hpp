@@ -1,7 +1,9 @@
 #pragma once
-#include "component.hpp"
-#include "sprite.hpp"
+#include "utils.hpp"
 #include <unordered_set>
+
+struct Component;
+struct SpriteDef;
 
 struct TileDef
 {

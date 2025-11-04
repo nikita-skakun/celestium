@@ -1,6 +1,12 @@
-#include "station.hpp"
 #include "audio_manager.hpp"
+#include "component.hpp"
+#include "env_effect.hpp"
 #include "game_state.hpp"
+#include "planned_task.hpp"
+#include "power_grid.hpp"
+#include "sprite.hpp"
+#include "station.hpp"
+#include "tile.hpp"
 #include <queue>
 
 void Station::CreateRectRoom(const Vector2Int &pos, const Vector2Int &size)
@@ -94,7 +100,7 @@ std::shared_ptr<Station> CreateStation()
         if (!station || !fireAlarm)
             return true;
 
-        if (!station->HasEffectOfType<FireEffect>())
+        if (!station->HasEffectOfType("FIRE"))
             fireAlarm->Stop();
         else if (GameManager::IsInBuildMode())
             fireAlarm->Pause();
@@ -153,11 +159,12 @@ void Station::UpdateSpriteOffsets() const
 std::string Station::GetTileIdAtPosition(const Vector2Int &pos, TileDef::Height height) const
 {
     const auto &tile = GetTileAtPosition(pos, height);
+    return tile ? tile->GetId() : "";
+}
 
-    if (!tile)
-        return "";
-
-    return tile->GetId();
+bool Station::CheckAdjacentTile(const Vector2Int &tilePos, const std::string &tileId, Direction direction, TileDef::Height height) const
+{
+    return GetTileIdAtPosition(tilePos + DirectionToVector2Int(direction), height) == tileId;
 }
 
 SpriteCondition Station::GetSpriteConditionForTile(const std::shared_ptr<Tile> &tile) const
@@ -184,10 +191,10 @@ SpriteCondition Station::GetSpriteConditionForTile(const std::shared_ptr<Tile> &
 
 bool Station::IsPositionPathable(const Vector2Int &pos) const
 {
-    if (!GetTileWithComponentAtPosition<WalkableComponent>(pos))
+    if (!GetTileWithComponentAtPosition(pos, ComponentType::WALKABLE))
         return false;
 
-    if (GetTileWithComponentAtPosition<SolidComponent>(pos) && !GetTileWithComponentAtPosition<DoorComponent>(pos))
+    if (GetTileWithComponentAtPosition(pos, ComponentType::SOLID) && !GetTileWithComponentAtPosition(pos, ComponentType::DOOR))
         return false;
 
     return true;
@@ -195,7 +202,7 @@ bool Station::IsPositionPathable(const Vector2Int &pos) const
 
 bool Station::IsDoorFullyOpenAtPos(const Vector2Int &pos) const
 {
-    if (auto doorTile = GetTileWithComponentAtPosition<DoorComponent>(pos))
+    if (auto doorTile = GetTileWithComponentAtPosition(pos, ComponentType::DOOR))
     {
         auto door = doorTile->GetComponent<DoorComponent>();
         if (door->GetProgress() > 0.f)
@@ -204,23 +211,66 @@ bool Station::IsDoorFullyOpenAtPos(const Vector2Int &pos) const
     return true;
 }
 
-std::vector<std::shared_ptr<Effect>> Station::GetEffectsAtPosition(const Vector2Int &pos) const
-{
-    std::vector<std::shared_ptr<Effect>> foundEffects;
-
-    for (const auto &effect : effects)
-    {
-        if (effect->GetPosition() == pos)
-            foundEffects.push_back(effect);
-    }
-
-    return foundEffects;
-}
-
 void Station::RemoveEffect(const std::shared_ptr<Effect> &effect)
 {
     std::erase_if(effects, [effect](const std::shared_ptr<Effect> &other)
                   { return effect == other; });
+}
+
+std::vector<std::shared_ptr<Effect>> Station::GetEffectsAtPosition(const Vector2Int &pos) const
+{
+    std::vector<std::shared_ptr<Effect>> foundEffects;
+    std::ranges::copy_if(effects, std::back_inserter(foundEffects),
+                         [&pos](const std::shared_ptr<Effect> &effect)
+                         { return effect && effect->GetPosition() == pos; });
+    return foundEffects;
+}
+
+std::shared_ptr<Effect> Station::GetEffectOfTypeAtPosition(const Vector2Int &pos, const std::string &id) const
+{
+    if (auto it = std::ranges::find_if(effects, [&pos, &id](const std::shared_ptr<Effect> &effect)
+                                       { return effect && effect->GetPosition() == pos && effect->GetId() == id; });
+        it != effects.end())
+        return *it;
+    return nullptr;
+}
+
+bool Station::HasEffectOfType(const std::string &id) const
+{
+    return std::ranges::any_of(effects, [&id](const std::shared_ptr<Effect> &effect)
+                               { return effect && effect->GetId() == id; });
+}
+
+std::shared_ptr<Tile> Station::GetTileWithComponentAtPosition(const Vector2Int &pos, ComponentType type) const
+{
+    auto posIt = tileMap.find(pos);
+    if (posIt == tileMap.end())
+        return nullptr;
+
+    for (const std::shared_ptr<Tile> &tile : posIt->second)
+    {
+        if (tile->HasComponent(type))
+            return tile;
+    }
+
+    return nullptr;
+}
+
+std::vector<std::shared_ptr<Tile>> Station::GetTilesWithComponentAtPosition(const Vector2Int &pos, ComponentType type) const
+{
+    std::vector<std::shared_ptr<Tile>> result;
+
+    auto posIt = tileMap.find(pos);
+    if (posIt == tileMap.end())
+        return result;
+
+    for (const std::shared_ptr<Tile> &tile : posIt->second)
+    {
+        if (tile->HasComponent(type))
+            result.push_back(tile);
+    }
+
+    return result;
 }
 
 // Rebuild powerGrids from POWER-layer tiles.
@@ -353,7 +403,7 @@ void Station::RebuildPowerGridsFromInfrastructure()
         for (const auto &wirePos : component)
         {
             // Add connectors at this position if any
-            auto consumerTile = GetTileWithComponentAtPosition<PowerConsumerComponent>(wirePos);
+            auto consumerTile = GetTileWithComponentAtPosition(wirePos, ComponentType::POWER_CONSUMER);
             if (consumerTile)
             {
                 auto consumer = consumerTile->GetComponent<PowerConsumerComponent>();
@@ -361,7 +411,7 @@ void Station::RebuildPowerGridsFromInfrastructure()
                     newGrid->AddConsumer(wirePos, consumer);
             }
 
-            auto producerTile = GetTileWithComponentAtPosition<PowerProducerComponent>(wirePos);
+            auto producerTile = GetTileWithComponentAtPosition(wirePos, ComponentType::POWER_PRODUCER);
             if (producerTile)
             {
                 auto producer = producerTile->GetComponent<PowerProducerComponent>();
@@ -369,7 +419,7 @@ void Station::RebuildPowerGridsFromInfrastructure()
                     newGrid->AddProducer(wirePos, producer);
             }
 
-            auto batteryTile = GetTileWithComponentAtPosition<BatteryComponent>(wirePos);
+            auto batteryTile = GetTileWithComponentAtPosition(wirePos, ComponentType::BATTERY);
             if (batteryTile)
             {
                 auto battery = batteryTile->GetComponent<BatteryComponent>();

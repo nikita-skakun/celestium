@@ -1,9 +1,13 @@
 #pragma once
-#include "env_effect.hpp"
-#include "planned_task.hpp"
-#include "power_grid.hpp"
-#include "tile.hpp"
-#include <unordered_map>
+#include "tile_def.hpp"
+
+struct Effect;
+struct PlannedTask;
+struct PowerGrid;
+struct Tile;
+
+enum class SpriteCondition : uint32_t;
+enum class ComponentType : uint8_t;
 
 struct Station : public std::enable_shared_from_this<Station>
 {
@@ -20,92 +24,23 @@ public:
     std::shared_ptr<Tile> GetTileWithHeightAtPosition(const Vector2Int &pos, TileDef::Height height) const;
     std::vector<std::shared_ptr<Tile>> GetTilesWithHeightAtPosition(const Vector2Int &pos, TileDef::Height height) const;
     std::string GetTileIdAtPosition(const Vector2Int &pos, TileDef::Height height = TileDef::Height::NONE) const;
+    bool CheckAdjacentTile(const Vector2Int &tilePos, const std::string &tileId, Direction direction, TileDef::Height height = TileDef::Height::NONE) const;
+    
     SpriteCondition GetSpriteConditionForTile(const std::shared_ptr<Tile> &tile) const;
     void UpdateSpriteOffsets() const;
+    
     bool IsPositionPathable(const Vector2Int &pos) const;
     bool IsDoorFullyOpenAtPos(const Vector2Int &pos) const;
 
-    constexpr bool CheckAdjacentTile(const Vector2Int &tilePos, const std::string &tileId, Direction direction, TileDef::Height height = TileDef::Height::NONE) const
-    {
-        return GetTileIdAtPosition(tilePos + DirectionToVector2Int(direction), height) == tileId;
-    }
-
-    std::vector<std::shared_ptr<Effect>> GetEffectsAtPosition(const Vector2Int &pos) const;
     void RemoveEffect(const std::shared_ptr<Effect> &effect);
+    
+    std::vector<std::shared_ptr<Effect>> GetEffectsAtPosition(const Vector2Int &pos) const;
+    std::shared_ptr<Effect> GetEffectOfTypeAtPosition(const Vector2Int &pos, const std::string &id) const;
+    bool HasEffectOfType(const std::string &id) const;
 
-    template <typename T>
-    std::shared_ptr<Effect> GetEffectOfTypeAtPosition(const Vector2Int &pos) const
-    {
-        auto effectsAtPos = GetEffectsAtPosition(pos);
-        for (const auto &effect : effectsAtPos)
-        {
-            if (std::dynamic_pointer_cast<T>(effect))
-                return effect;
-        }
-        return nullptr;
-    }
+    std::shared_ptr<Tile> GetTileWithComponentAtPosition(const Vector2Int &pos, ComponentType type) const;
+    std::vector<std::shared_ptr<Tile>> GetTilesWithComponentAtPosition(const Vector2Int &pos, ComponentType type) const;
 
-    template <typename T>
-    std::vector<std::shared_ptr<Effect>> GetEffectsOfTypeAtPosition(const Vector2Int &pos) const
-    {
-        auto effectsAtPos = GetEffectsAtPosition(pos);
-        std::vector<std::shared_ptr<Effect>> foundEffects;
-        for (const auto &effect : effectsAtPos)
-        {
-            if (std::dynamic_pointer_cast<T>(effect))
-                foundEffects.push_back(effect);
-        }
-        return foundEffects;
-    }
-
-    template <typename T>
-    bool HasEffectOfType() const
-    {
-        for (const auto &effect : effects)
-        {
-            if (std::dynamic_pointer_cast<T>(effect))
-                return true;
-        }
-        return false;
-    }
-
-    template <typename T>
-    std::shared_ptr<Tile> GetTileWithComponentAtPosition(const Vector2Int &pos) const
-    {
-        auto posIt = tileMap.find(pos);
-        if (posIt == tileMap.end())
-            return nullptr;
-
-        for (const std::shared_ptr<Tile> &tile : posIt->second)
-        {
-            if (tile->HasComponent<T>())
-                return tile;
-        }
-
-        return nullptr;
-    }
-
-    template <typename T>
-    std::vector<std::shared_ptr<Tile>> GetTilesWithComponentAtPosition(const Vector2Int &pos) const
-    {
-        std::vector<std::shared_ptr<Tile>> result;
-
-        auto posIt = tileMap.find(pos);
-        if (posIt == tileMap.end())
-            return result;
-
-        for (const std::shared_ptr<Tile> &tile : posIt->second)
-        {
-            if (tile->HasComponent<T>())
-                result.push_back(tile);
-        }
-
-        return result;
-    }
-
-    // Use PowerConnectorComponent on wire tiles to find their PowerGrid.
-
-    // Rebuild power grid objects from tile-based wires (POWER height layer)
     void RebuildPowerGridsFromInfrastructure();
 
     void CreateRectRoom(const Vector2Int &pos, const Vector2Int &size);

@@ -1,8 +1,13 @@
 #include "action.hpp"
+#include "component.hpp"
 #include "crew.hpp"
+#include "env_effect.hpp"
 #include "game_state.hpp"
 #include "logging.hpp"
+#include "planned_task.hpp"
+#include "power_grid.hpp"
 #include "station.hpp"
+#include "tile.hpp"
 #include "update.hpp"
 
 void HandlePlaceTile(const std::shared_ptr<Station> &station)
@@ -192,7 +197,7 @@ void AssignCrewActions()
         auto station = crew->GetCurrentTile()->GetStation();
         Vector2Int crewPos = ToVector2Int(crew->GetPosition());
 
-        if (station->GetEffectOfTypeAtPosition<FireEffect>(crewPos))
+        if (station->GetEffectOfTypeAtPosition(crewPos, "FIRE"))
         {
             crew->GetActionQueue().push_back(std::make_shared<ExtinguishAction>(crewPos));
             continue;
@@ -201,7 +206,7 @@ void AssignCrewActions()
         for (const auto &direction : ALL_DIRECTIONS)
         {
             Vector2Int neighborPos = crewPos + DirectionToVector2Int(direction);
-            if (station->GetEffectOfTypeAtPosition<FireEffect>(neighborPos))
+            if (station->GetEffectOfTypeAtPosition(neighborPos, "FIRE"))
             {
                 crew->GetActionQueue().push_back(std::make_shared<ExtinguishAction>(neighborPos));
                 break;

@@ -2,13 +2,8 @@
 #include "camera.hpp"
 #include "render_snapshot.hpp"
 #include "tile_def.hpp"
-#include <atomic>
 #include <sol/sol.hpp>
 #include <thread>
-
-struct Crew;
-struct Station;
-struct Tile;
 
 enum class GameState : uint8_t
 {
@@ -128,15 +123,6 @@ public:
     static bool IsVerticalSymmetry() { return GetInstance().verticalSymmetry; }
     static void SetVerticalSymmetry(bool newState) { GetInstance().verticalSymmetry = newState; }
     static void ToggleVerticalSymmetry() { GetInstance().verticalSymmetry = !GetInstance().verticalSymmetry; }
-
-    // static bool IsInMoveMode() { return !GetInstance().moveTile.expired(); }
-    // static std::shared_ptr<Tile> GetMoveTile() { return GetInstance().moveTile.lock(); }
-    // static void ClearMoveTile() { GetInstance().moveTile.reset(); }
-    // static void SetMoveTile()
-    // {
-    //     GetInstance().moveTile = GetSelectedTile();
-    //     SetSelectedTile();
-    // }
 
     // Utility function for Screen to World space transformations
     static Vector2 GetWorldMousePos();

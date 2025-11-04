@@ -1,4 +1,5 @@
 #include "crew.hpp"
+#include "direction.hpp"
 #include "fixed_update.hpp"
 #include "game_state.hpp"
 #include "station.hpp"
@@ -88,7 +89,7 @@ void GameManager::Initialize()
     manager.buildMode = false;
     manager.paused = false;
     manager.forcePaused = false;
-    manager.horizontalSymmetry = true;
+    manager.horizontalSymmetry = false;
     manager.verticalSymmetry = false;
     manager.buildTileId = "";
 }

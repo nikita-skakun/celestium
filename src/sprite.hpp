@@ -1,5 +1,5 @@
 #pragma once
-#include "direction.hpp"
+#include "utils.hpp"
 
 struct SpriteSlice
 {

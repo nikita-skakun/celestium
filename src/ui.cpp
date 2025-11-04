@@ -1,10 +1,16 @@
 #include "action.hpp"
 #include "asset_manager.hpp"
+#include "component.hpp"
 #include "crew.hpp"
+#include "env_effect.hpp"
 #include "game_state.hpp"
 #include "lua_bindings.hpp"
 #include "particle_system.hpp"
+#include "planned_task.hpp"
+#include "power_grid.hpp"
+#include "sprite.hpp"
 #include "station.hpp"
+#include "tile.hpp"
 #include "ui_manager.hpp"
 #include "ui.hpp"
 
@@ -101,7 +107,7 @@ void DrawStationTiles()
                 }
             }
 
-            if (camera.IsOverlay(PlayerCam::Overlay::WALL) && tile->HasComponent<SolidComponent>())
+            if (camera.IsOverlay(PlayerCam::Overlay::WALL) && tile->HasComponent(ComponentType::SOLID))
                 DrawRectangleV(startPos, tileSize, Color(255, 0, 0, 64));
         }
     }
@@ -158,7 +164,7 @@ void DrawStationOverlays()
                     DrawCircleV(GameManager::WorldToScreen(ToVector2(tile->GetPosition())), 3.0f * zoom, gridColor);
                 }
             }
-            if (tile->HasComponent<PowerConsumerComponent>() && !tile->IsActive())
+            if (tile->HasComponent(ComponentType::POWER_CONSUMER) && !tile->IsActive())
             {
                 Vector2 startScreenPos = GameManager::WorldToScreen(ToVector2(tile->GetPosition()) + Vector2(2. / 3., 0));
                 Rectangle destRect = Vector2ToRect(startScreenPos, tileSize / 3.);

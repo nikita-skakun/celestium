@@ -1,6 +1,5 @@
 #include "game_state.hpp"
 #include "particle_system.hpp"
-#include "raylib.h"
 
 ParticleSystem::ParticleSystem() {}
 

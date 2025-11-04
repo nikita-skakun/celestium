@@ -1,6 +1,12 @@
 #pragma once
-#include "tile.hpp"
-#include <unordered_set>
+#include "utils.hpp"
+
+struct Tile;
+
+struct PowerConnectorComponent;
+struct PowerConsumerComponent;
+struct PowerProducerComponent;
+struct BatteryComponent;
 
 struct PowerGrid : public std::enable_shared_from_this<PowerGrid>
 {
@@ -14,17 +20,18 @@ protected:
     std::vector<std::shared_ptr<BatteryComponent>> cachedBatteries;
 
     bool dirty = false;
-    Color debugColor = {0, 0, 0, 0};
+    Color debugColor = WHITE;
 
 public:
     PowerGrid()
     {
         debugColor = RandomColor();
         debugColor.a = 192;
+        dirty = false;
     }
 
-    void SetDebugColor(const Color &c) { debugColor = c; }
-    Color GetDebugColor() const { return debugColor; }
+    constexpr void SetDebugColor(const Color &c) { debugColor = c; }
+    constexpr Color GetDebugColor() const { return debugColor; }
 
     constexpr void AddConsumer(Vector2Int pos, const std::shared_ptr<PowerConsumerComponent> &consumer)
     {
@@ -44,268 +51,15 @@ public:
         dirty = true;
     }
 
-    constexpr void Disconnect(const std::shared_ptr<Tile> &parentTile)
-    {
-        if (!parentTile)
-            return;
+    void Disconnect(const std::shared_ptr<Tile> &parentTile);
 
-        // TODO: Replace with loop when the map will have a list of connections
-        if (auto consumerIt = _consumers.find(parentTile->GetPosition()); consumerIt != _consumers.end())
-        {
-            auto consumer = consumerIt->second.lock();
-            if (consumer && consumer->GetParent() == parentTile)
-            {
-                _consumers.erase(consumerIt);
-            }
-        }
+    float GetTotalPowerConsumption() const;
+    float GetTotalPowerProduction() const;
+    float GetTotalBatteryCharge() const;
+    float GetTotalMaxBatteryCharge() const;
+    float GetTotalBatteryCapacity() const;
 
-        if (auto producerIt = _producers.find(parentTile->GetPosition()); producerIt != _producers.end())
-        {
-            auto producer = producerIt->second.lock();
-            if (producer && producer->GetParent() == parentTile)
-            {
-                _producers.erase(producerIt);
-            }
-        }
-
-        if (auto batteryIt = _batteries.find(parentTile->GetPosition()); batteryIt != _batteries.end())
-        {
-            auto battery = batteryIt->second.lock();
-            if (battery && battery->GetParent() == parentTile)
-            {
-                _batteries.erase(batteryIt);
-            }
-        }
-
-        if (auto connector = parentTile->GetComponent<PowerConnectorComponent>())
-            connector->SetPowerGrid(nullptr);
-
-        dirty = true;
-    }
-
-    constexpr float GetTotalPowerConsumption() const
-    {
-        float totalPower = 0.f;
-        for (const auto &consumer : cachedConsumers)
-        {
-            totalPower += consumer->GetPowerConsumption();
-        }
-        return totalPower;
-    }
-
-    constexpr float GetTotalPowerProduction() const
-    {
-        float totalPower = 0.f;
-        for (const auto &producer : cachedProducers)
-        {
-            totalPower += producer->GetPowerProduction();
-        }
-        return totalPower;
-    }
-
-    constexpr float GetTotalBatteryCharge() const
-    {
-        float totalPower = 0.f;
-        for (const auto &battery : cachedBatteries)
-        {
-            totalPower += battery->GetChargeLevel();
-        }
-        return totalPower;
-    }
-
-    constexpr float GetTotalMaxBatteryCharge() const
-    {
-        float totalPower = 0.f;
-        for (const auto &battery : cachedBatteries)
-        {
-            totalPower += battery->GetMaxChargeLevel();
-        }
-        return totalPower;
-    }
-
-    constexpr float GetTotalBatteryCapacity() const
-    {
-        float totalPower = 0.f;
-        for (const auto &battery : cachedBatteries)
-        {
-            totalPower += battery->GetMaxChargeLevel() - battery->GetChargeLevel();
-        }
-        return totalPower;
-    }
-
-    float DrainBatteriesProportionally(float amount)
-    {
-        if (amount <= 0.f || cachedBatteries.empty())
-            return 0.f;
-
-        float totalCharge = GetTotalBatteryCharge();
-        if (totalCharge <= 0.f)
-            return 0.f;
-
-        float remaining = amount;
-
-        for (auto &battery : cachedBatteries)
-        {
-            float charge = battery->GetChargeLevel();
-            if (charge <= 0.f)
-                continue;
-
-            float shareRatio = charge / totalCharge;
-            float share = remaining * shareRatio;
-
-            float drained = battery->Drain(share);
-            remaining -= drained;
-
-            if (remaining <= 0.f)
-                break;
-        }
-
-        return amount - remaining;
-    }
-
-    void RebuildCaches()
-    {
-        // Update the cached consumers
-        cachedConsumers.clear();
-        cachedConsumers.reserve(_consumers.size());
-        for (auto it = _consumers.begin(); it != _consumers.end();)
-        {
-            if (auto consumer = it->second.lock())
-            {
-                if (consumer->GetPowerPriority() != PowerConsumerComponent::PowerPriority::OFFLINE)
-                {
-                    cachedConsumers.push_back(consumer);
-                }
-                ++it;
-            }
-            else
-            {
-                it = _consumers.erase(it);
-            }
-        }
-
-        std::ranges::sort(cachedConsumers,
-                          [](const auto &a, const auto &b)
-                          {
-                              return (a->GetPowerPriority() != b->GetPowerPriority()) ? (a->GetPowerPriority() < b->GetPowerPriority()) : (a->GetPowerConsumption() > b->GetPowerConsumption());
-                          });
-
-        // Update the cached producers
-        cachedProducers.clear();
-        cachedProducers.reserve(_producers.size());
-        for (auto it = _producers.begin(); it != _producers.end();)
-        {
-            if (auto producer = it->second.lock())
-            {
-                cachedProducers.push_back(producer);
-                ++it;
-            }
-            else
-            {
-                it = _producers.erase(it);
-            }
-        }
-
-        // Update the cached batteries
-        cachedBatteries.clear();
-        cachedBatteries.reserve(_batteries.size());
-        for (auto it = _batteries.begin(); it != _batteries.end();)
-        {
-            if (auto battery = it->second.lock())
-            {
-                cachedBatteries.push_back(battery);
-                ++it;
-            }
-            else
-            {
-                it = _batteries.erase(it);
-            }
-        }
-
-        dirty = false;
-    }
-
-    void Update(float deltaTime)
-    {
-        if (dirty)
-            RebuildCaches();
-
-        float totalDemand = GetTotalPowerConsumption();
-        float availablePower = GetTotalPowerProduction();
-        float totalBatteryCharge = GetTotalBatteryCharge();
-
-        float deficit = (totalDemand - availablePower) * deltaTime;
-
-        if (deficit <= 0.f)
-        {
-            // ✅ Enough production to power everything
-            for (const auto &consumer : cachedConsumers)
-            {
-                consumer->SetActive(true);
-            }
-
-            // ✅ Charge batteries with surplus
-            float surplus = -deficit;
-
-            // Compute total remaining capacity
-            float totalCapacity = GetTotalBatteryCapacity();
-
-            if (totalCapacity <= 0.f || surplus <= 0.f)
-                return; // Nothing to charge or nothing to charge with
-
-            // Charge batteries with priority to the emptier ones
-            for (const auto &battery : cachedBatteries)
-            {
-                float remaining = battery->GetMaxChargeLevel() - battery->GetChargeLevel();
-                if (remaining <= 0.f)
-                    continue;
-
-                float shareRatio = remaining / totalCapacity;
-                float share = surplus * shareRatio;
-
-                float added = battery->AddCharge(share);
-                surplus -= added;
-
-                if (surplus <= 0.f)
-                    break;
-            }
-        }
-        else if (totalBatteryCharge >= deficit)
-        {
-            // ✅ Not enough production, but batteries can cover it
-
-            // Power all consumers
-            for (const auto &consumer : cachedConsumers)
-            {
-                consumer->SetActive(true);
-            }
-
-            // Drain batteries evenly
-            DrainBatteriesProportionally(deficit);
-        }
-        else
-        {
-            // ❌ Not enough even with batteries: allocate power by priority
-
-            float usablePower = availablePower + totalBatteryCharge;
-
-            for (const auto &consumer : cachedConsumers)
-            {
-                float demand = consumer->GetPowerConsumption();
-                if (usablePower >= demand)
-                {
-                    consumer->SetActive(true);
-                    usablePower -= demand;
-                }
-                else
-                {
-                    consumer->SetActive(false);
-                }
-            }
-
-            // Drain batteries proportionally if any battery power was used
-            float toDrain = std::max(0.f, (availablePower + totalBatteryCharge - usablePower - availablePower)) * deltaTime;
-            DrainBatteriesProportionally(toDrain);
-        }
-    }
+    float DrainBatteriesProportionally(float amount);
+    void RebuildCaches();
+    void Update(float deltaTime);
 };

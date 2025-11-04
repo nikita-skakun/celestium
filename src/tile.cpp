@@ -1,7 +1,10 @@
-#include "tile.hpp"
-#include "station.hpp"
-#include "game_state.hpp"
 #include "asset_manager.hpp"
+#include "component.hpp"
+#include "game_state.hpp"
+#include "power_grid.hpp"
+#include "sprite.hpp"
+#include "station.hpp"
+#include "tile.hpp"
 
 void BasicSprite::Draw(const Vector2Int &position, const Color &tint, float rotation) const
 {
@@ -172,4 +175,10 @@ std::string Tile::GetInfo() const
     }
 
     return tileInfo;
+}
+
+bool Tile::HasComponent(ComponentType type) const
+{
+    return std::ranges::any_of(components, [&](const auto &component)
+                               { return component->GetType() == type; });
 }

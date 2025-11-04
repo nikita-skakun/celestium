@@ -1,7 +1,9 @@
+#include "component.hpp"
 #include "crew.hpp"
 #include "env_effect.hpp"
 #include "lua_bindings.hpp"
 #include "station.hpp"
+#include "tile.hpp"
 
 // static instance id counter
 std::atomic<uint64_t> Effect::nextInstanceId{1};
@@ -35,8 +37,8 @@ void FireEffect::EffectCrew(const std::shared_ptr<Crew> &crew, float deltaTime) 
 void FireEffect::Update(const std::shared_ptr<Station> &station, size_t index)
 {
     // --- Fire effect logic (tile damage, oxygen, spreading) ---
-    auto tileWithOxygen = station->GetTileWithComponentAtPosition<OxygenComponent>(GetPosition());
-    if (!tileWithOxygen || station->GetEffectOfTypeAtPosition<FoamEffect>(GetPosition()))
+    auto tileWithOxygen = station->GetTileWithComponentAtPosition(GetPosition(), ComponentType::OXYGEN);
+    if (!tileWithOxygen || station->GetEffectOfTypeAtPosition(GetPosition(), "FOAM"))
     {
         if (index < station->effects.size())
             station->effects.erase(station->effects.begin() + index);
@@ -44,7 +46,7 @@ void FireEffect::Update(const std::shared_ptr<Station> &station, size_t index)
     }
 
     // Damage durability of all tiles at this position
-    for (auto &tile : station->GetTilesWithComponentAtPosition<DurabilityComponent>(GetPosition()))
+    for (auto &tile : station->GetTilesWithComponentAtPosition(GetPosition(), ComponentType::DURABILITY))
     {
         auto durability = tile->GetComponent<DurabilityComponent>();
         durability->SetHitpoints(durability->GetHitpoints() - DAMAGE_PER_SECOND * FIXED_DELTA_TIME);
@@ -65,15 +67,15 @@ void FireEffect::Update(const std::shared_ptr<Station> &station, size_t index)
     oxygen->SetOxygenLevel(oxygen->GetOxygenLevel() - oxygenToConsume);
     SetSize(GetSize() + (GROWTH_IF_FED_PER_SECOND * FIXED_DELTA_TIME));
 
-    if (!station->GetTileWithComponentAtPosition<SolidComponent>(GetPosition()) && CheckIfEventHappens(SPREAD_CHANCE_PER_SECOND, FIXED_DELTA_TIME))
+    if (!station->GetTileWithComponentAtPosition(GetPosition(), ComponentType::SOLID) && CheckIfEventHappens(SPREAD_CHANCE_PER_SECOND, FIXED_DELTA_TIME))
     {
         std::vector<Vector2Int> possibleOffsets;
         for (const auto &dir : CARDINAL_DIRECTIONS)
         {
             auto neighborPos = GetPosition() + DirectionToVector2Int(dir);
-            bool neighborHasOxygen = station->GetTileWithComponentAtPosition<OxygenComponent>(neighborPos) != nullptr;
-            bool neighborHasFire = station->GetEffectOfTypeAtPosition<FireEffect>(neighborPos) != nullptr;
-            bool neighborHasFoam = station->GetEffectOfTypeAtPosition<FoamEffect>(neighborPos) != nullptr;
+            bool neighborHasOxygen = station->GetTileWithComponentAtPosition(neighborPos, ComponentType::OXYGEN) != nullptr;
+            bool neighborHasFire = station->GetEffectOfTypeAtPosition(neighborPos, "FIRE") != nullptr;
+            bool neighborHasFoam = station->GetEffectOfTypeAtPosition(neighborPos, "FOAM") != nullptr;
             if (neighborHasOxygen && !neighborHasFire && !neighborHasFoam)
                 possibleOffsets.push_back(DirectionToVector2Int(dir));
         }
@@ -88,8 +90,8 @@ void FireEffect::Update(const std::shared_ptr<Station> &station, size_t index)
 void FoamEffect::Update(const std::shared_ptr<Station> &station, size_t)
 {
     // If there is no floor component, remove the foam effect
-    auto tileWithOxygen = station->GetTileWithComponentAtPosition<WalkableComponent>(GetPosition());
-    if (!tileWithOxygen)
+    auto walkableTile = station->GetTileWithComponentAtPosition(GetPosition(), ComponentType::WALKABLE);
+    if (!walkableTile)
     {
         auto &effects = station->effects;
         effects.erase(std::remove_if(effects.begin(), effects.end(), [&](const std::shared_ptr<Effect> &effect)

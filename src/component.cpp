@@ -1,5 +1,6 @@
 #include "component.hpp"
 #include "station.hpp"
+#include "tile.hpp"
 
 void OxygenProducerComponent::ProduceOxygen(float deltaTime) const
 {
@@ -7,7 +8,7 @@ void OxygenProducerComponent::ProduceOxygen(float deltaTime) const
     if (!parent || !parent->GetStation() || !parent->IsActive())
         return;
 
-    auto oxygenTile = parent->GetStation()->GetTileWithComponentAtPosition<OxygenComponent>(parent->GetPosition());
+    auto oxygenTile = parent->GetStation()->GetTileWithComponentAtPosition(parent->GetPosition(), ComponentType::OXYGEN);
     if (!oxygenTile)
         return;
 
@@ -78,10 +79,10 @@ void OxygenComponent::Diffuse(float deltaTime)
             continue;
         }
 
-        if (station->GetTileWithComponentAtPosition<SolidComponent>(neighborPos))
+        if (station->GetTileWithComponentAtPosition(neighborPos, ComponentType::SOLID))
             continue;
 
-        std::shared_ptr<Tile> neighborWithOxygen = station->GetTileWithComponentAtPosition<OxygenComponent>(neighborPos);
+        std::shared_ptr<Tile> neighborWithOxygen = station->GetTileWithComponentAtPosition(neighborPos, ComponentType::OXYGEN);
         if (!neighborWithOxygen)
             continue;
 

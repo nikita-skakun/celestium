@@ -2,6 +2,10 @@
 #include "def_manager.hpp"
 
 struct Station;
+struct Sprite;
+struct Component;
+
+enum class ComponentType : uint8_t;
 
 struct Tile : public std::enable_shared_from_this<Tile>
 {
@@ -48,16 +52,7 @@ public:
         return nullptr;
     }
 
-    template <typename T>
-    bool HasComponent() const
-    {
-        for (const auto &component : components)
-        {
-            if (std::dynamic_pointer_cast<T>(component))
-                return true;
-        }
-        return false;
-    }
+    bool HasComponent(ComponentType type) const;
 
     template <typename T, typename... Args>
     std::shared_ptr<T> AddComponent(Args &&...args)
