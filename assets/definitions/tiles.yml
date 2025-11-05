@@ -2,6 +2,9 @@ tiles:
   - id: BLUE_FLOOR
     height: FLOOR
     category: STRUCTURE
+    buildResources:
+      - id: METAL
+        amount: 5
     components:
       - type: STRUCTURE
       - type: WALKABLE
@@ -87,6 +90,9 @@ tiles:
   - id: WALL
     height: FLOOR | KNEE | WAIST | CHEST | HEAD
     category: STRUCTURE
+    buildResources:
+      - id: METAL
+        amount: 15
     components:
       - type: STRUCTURE
       - type: SOLID
@@ -175,6 +181,11 @@ tiles:
   - id: OXYGEN_PRODUCER
     height: KNEE | WAIST | CHEST
     category: OXYGEN
+    buildResources:
+      - id: METAL
+        amount: 5
+      - id: ELECTRONICS
+        amount: 10
     components:
       - type: POWER_CONNECTOR
       - type: POWER_CONSUMER
@@ -190,6 +201,11 @@ tiles:
   - id: BATTERY
     height: KNEE | WAIST
     category: POWER
+    buildResources:
+      - id: METAL
+        amount: 10
+      - id: ELECTRONICS
+        amount: 10
     components:
       - type: POWER_CONNECTOR
       - type: BATTERY
@@ -202,6 +218,11 @@ tiles:
   - id: SOLAR_PANEL
     height: KNEE
     category: POWER
+    buildResources:
+      - id: METAL
+        amount: 8
+      - id: ELECTRONICS
+        amount: 12
     components:
       - type: POWER_CONNECTOR
       - type: POWER_PRODUCER
@@ -215,6 +236,9 @@ tiles:
   - id: FRAME
     height: FLOOR
     category: STRUCTURE
+    buildResources:
+      - id: METAL
+        amount: 3
     components:
       - type: STRUCTURE
       - type: WALKABLE
@@ -223,6 +247,11 @@ tiles:
   - id: DOOR
     height: KNEE | WAIST | CHEST | HEAD
     category: STRUCTURE
+    buildResources:
+      - id: METAL
+        amount: 15
+      - id: ELECTRONICS
+        amount: 5
     components:
       - type: POWER_CONNECTOR
       - type: POWER_CONSUMER
@@ -237,6 +266,9 @@ tiles:
   - id: WIRE
     height: POWER
     category: POWER
+    buildResources:
+      - id: METAL
+        amount: 1
     components:
       - type: POWER_CONNECTOR
       - type: DURABILITY

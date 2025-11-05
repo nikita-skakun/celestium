@@ -283,7 +283,23 @@ void DefinitionManager::ParseTilesFromFile(const std::string &filename)
         else
             iconOffset = Vector2Int(0, 0);
 
-        DefinitionManager::GetInstance().tileDefinitions[tileId] = std::make_shared<TileDef>(tileId, height.value(), category.value(), refComponents, refSprite, iconOffset);
+        // Parse Build Resources
+        std::unordered_map<std::string, int> buildResources;
+        if (tileNode.has_child("buildResources"))
+        {
+            for (ryml::ConstNodeRef resourceNode : tileNode["buildResources"])
+            {
+                std::string resourceId;
+                resourceNode["id"] >> resourceId;
+                StringRemoveSpaces(resourceId);
+
+                int amount = DefinitionManager::GetRequiredValue<int>(resourceNode, "amount");
+
+                buildResources[resourceId] = amount;
+            }
+        }
+
+        DefinitionManager::GetInstance().tileDefinitions[tileId] = std::make_shared<TileDef>(tileId, height.value(), category.value(), refComponents, refSprite, iconOffset, buildResources);
     }
 }
 
@@ -413,4 +429,29 @@ void DefinitionManager::ParseConstantsFromFile(const std::string &filename)
     CREW_EXTINGUISH_SPEED = GetRequiredValue<float>(root, "crew/extinguishSpeed");
     CREW_REPAIR_SPEED = GetRequiredValue<float>(root, "crew/repairSpeed");
     CREW_BUILD_SPEED = GetRequiredValue<float>(root, "crew/buildSpeed");
+}
+
+void DefinitionManager::ParseResourcesFromFile(const std::string &filename)
+{
+    std::vector<char> contents = ReadFromFile<std::vector<char>>(filename);
+    ryml::Tree tree = ryml::parse_in_place(ryml::to_substr(contents));
+
+    if (tree.empty())
+        throw std::runtime_error(std::format("The resource definition file is empty or unreadable: {}", filename));
+
+    for (ryml::ConstNodeRef resourceNode : tree["resources"])
+    {
+        // Retrieve the resource ID string
+        std::string resourceId;
+        resourceNode["id"] >> resourceId;
+        StringRemoveSpaces(resourceId);
+
+        if (resourceId.empty())
+            throw std::runtime_error(std::format("Parsing of resource ID string failed: {}", resourceId));
+
+        // Parse Price
+        float price = GetRequiredValue<float>(resourceNode, "price");
+
+        DefinitionManager::GetInstance().resourceDefinitions[resourceId] = std::make_shared<ResourceDef>(resourceId, price);
+    }
 }

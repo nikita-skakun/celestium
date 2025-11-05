@@ -15,6 +15,7 @@ struct Station : public std::enable_shared_from_this<Station>
     std::vector<std::shared_ptr<Effect>> effects;
     std::vector<std::shared_ptr<PowerGrid>> powerGrids;
     std::vector<std::shared_ptr<PlannedTask>> plannedTasks;
+    std::unordered_map<std::string, int> resources;
 
 public:
     std::shared_ptr<Tile> GetTileAtPosition(const Vector2Int &pos, TileDef::Height height = TileDef::Height::NONE) const;
@@ -49,6 +50,11 @@ public:
     void AddPlannedTask(const Vector2Int &pos, const std::string &tileId, bool isBuild);
     void CompletePlannedTask(const Vector2Int &pos);
     bool HasPlannedTaskAt(const Vector2Int &pos) const;
+
+    int GetResourceCount(const std::string &resourceId) const;
+    void AddResource(const std::string &resourceId, int amount);
+    bool HasResources(const std::unordered_map<std::string, int> &requiredResources) const;
+    void ConsumeResources(const std::unordered_map<std::string, int> &resourcesToConsume);
 };
 
 std::shared_ptr<Station> CreateStation();

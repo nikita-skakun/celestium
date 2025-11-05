@@ -92,6 +92,10 @@ std::shared_ptr<Station> CreateStation()
 
     station->UpdateSpriteOffsets();
 
+    // Initialize starting resources
+    station->AddResource("METAL", 100);
+    station->AddResource("ELECTRONICS", 50);
+
     auto fireAlarm = AudioManager::LoadSoundEffect("../assets/audio/fire_alarm.opus", SoundEffect::Type::EFFECT, false, true, .05);
     std::weak_ptr<SoundEffect> _fireAlarm = fireAlarm;
     fireAlarm->onUpdate = [_fireAlarm, station]()
@@ -563,7 +567,7 @@ void Station::AddPlannedTask(const Vector2Int &pos, const std::string &tileId, b
 void Station::CompletePlannedTask(const Vector2Int &pos)
 {
     auto it = std::find_if(plannedTasks.begin(), plannedTasks.end(), [pos](const std::shared_ptr<PlannedTask> &task)
-                           { return task->position == pos; });
+                            { return task->position == pos; });
 
     if (it == plannedTasks.end())
         return;
@@ -572,8 +576,21 @@ void Station::CompletePlannedTask(const Vector2Int &pos)
 
     if (task->isBuild)
     {
+        // Check if we have the required resources
+        auto tileDef = DefinitionManager::GetTileDefinition(task->tileId);
+        const auto &requiredResources = tileDef->GetBuildResources();
+
+        if (!HasResources(requiredResources))
+        {
+            // Don't complete the task if resources are insufficient
+            return;
+        }
+
+        // Consume the resources
+        ConsumeResources(requiredResources);
+
         // Delete overlapping tiles
-        auto overlappingTiles = GetTilesWithHeightAtPosition(pos, DefinitionManager::GetTileDefinition(task->tileId)->GetHeight());
+        auto overlappingTiles = GetTilesWithHeightAtPosition(pos, tileDef->GetHeight());
         for (auto &tile : overlappingTiles)
         {
             tile->DeleteTile();
@@ -603,5 +620,36 @@ void Station::CompletePlannedTask(const Vector2Int &pos)
 bool Station::HasPlannedTaskAt(const Vector2Int &pos) const
 {
     return std::any_of(plannedTasks.begin(), plannedTasks.end(), [pos](const std::shared_ptr<PlannedTask> &task)
-                       { return task->position == pos; });
+                        { return task->position == pos; });
+}
+
+int Station::GetResourceCount(const std::string &resourceId) const
+{
+    auto it = resources.find(resourceId);
+    return it != resources.end() ? it->second : 0;
+}
+
+void Station::AddResource(const std::string &resourceId, int amount)
+{
+    resources[resourceId] += amount;
+    if (resources[resourceId] <= 0)
+        resources.erase(resourceId);
+}
+
+bool Station::HasResources(const std::unordered_map<std::string, int> &requiredResources) const
+{
+    for (const auto &[resourceId, requiredAmount] : requiredResources)
+    {
+        if (GetResourceCount(resourceId) < requiredAmount)
+            return false;
+    }
+    return true;
+}
+
+void Station::ConsumeResources(const std::unordered_map<std::string, int> &resourcesToConsume)
+{
+    for (const auto &[resourceId, amount] : resourcesToConsume)
+    {
+        AddResource(resourceId, -amount);
+    }
 }
