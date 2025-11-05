@@ -194,7 +194,11 @@ bool Station::IsPositionPathable(const Vector2Int &pos) const
     if (!GetTileWithComponentAtPosition(pos, ComponentType::WALKABLE))
         return false;
 
-    if (GetTileWithComponentAtPosition(pos, ComponentType::SOLID) && !GetTileWithComponentAtPosition(pos, ComponentType::DOOR))
+    auto doorTile = GetTileWithComponentAtPosition(pos, ComponentType::DOOR);
+    if (GetTileWithComponentAtPosition(pos, ComponentType::SOLID) && !doorTile)
+        return false;
+
+    if (doorTile && !doorTile->IsActive())
         return false;
 
     return true;
