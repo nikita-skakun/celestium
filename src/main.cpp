@@ -21,6 +21,7 @@ int main()
     AssetManager::Initialize();
     GameManager::GetLua().open_libraries(sol::lib::base, sol::lib::math, sol::lib::table, sol::lib::string);
     RegisterAllLuaBindings(GameManager::GetLua());
+    DefinitionManager::ParseResourcesFromFile("../assets/definitions/resources.yml");
     DefinitionManager::ParseTilesFromFile("../assets/definitions/tiles.yml");
     DefinitionManager::ParseEffectsFromFile("../assets/definitions/env_effects.yml");
 
@@ -83,6 +84,7 @@ int main()
                 DrawDragSelectBox();
                 DrawMainTooltip();
                 DrawFpsCounter();
+                DrawResourceUI();
             }
         }
 

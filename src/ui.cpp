@@ -557,6 +557,28 @@ void DrawFpsCounter()
     DrawTextEx(font, text, Vector2(GetScreenSize().x - MeasureTextEx(font, text, DEFAULT_FONT_SIZE, 1).x - DEFAULT_PADDING, DEFAULT_PADDING), DEFAULT_FONT_SIZE, 1, UI_TEXT_COLOR);
 }
 
+void DrawResourceUI()
+{
+    auto station = GameManager::GetStation();
+    if (!station)
+        return;
+
+    Font font = AssetManager::GetFont("DEFAULT");
+    float yOffset = DEFAULT_PADDING;
+
+    // Get all resource definitions to show all resources, even if count is 0
+    const auto &resourceDefs = DefinitionManager::GetResourceDefinitions();
+
+    for (const auto &[resourceId, resourceDef] : resourceDefs)
+    {
+        int count = station->GetResourceCount(resourceId);
+        std::string resourceText = std::format("{}: {}", MacroCaseToName(resourceId), count);
+        const char *text = resourceText.c_str();
+        DrawTextEx(font, text, Vector2(DEFAULT_PADDING, yOffset), DEFAULT_FONT_SIZE, 1, UI_TEXT_COLOR);
+        yOffset += DEFAULT_FONT_SIZE + DEFAULT_PADDING / 2;
+    }
+}
+
 /**
  * Draws a tooltip with a background rectangle at the specified position.
  *

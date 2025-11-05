@@ -1,0 +1,5 @@
+resources:
+  - id: METAL
+    price: 10.0
+  - id: ELECTRONICS
+    price: 20.0

@@ -27,11 +27,23 @@ namespace c4
     }
 }
 
+struct ResourceDef
+{
+    const std::string id;
+    const float price;
+
+    ResourceDef(const std::string &id, float price) : id(id), price(price) {}
+
+    constexpr const std::string &GetId() const { return id; }
+    constexpr float GetPrice() const { return price; }
+};
+
 struct DefinitionManager
 {
 protected:
     std::unordered_map<std::string, std::shared_ptr<TileDef>> tileDefinitions;
     std::unordered_map<std::string, std::shared_ptr<EffectDef>> effectDefinitions;
+    std::unordered_map<std::string, std::shared_ptr<ResourceDef>> resourceDefinitions;
 
     DefinitionManager() = default;
     ~DefinitionManager() = default;
@@ -58,6 +70,16 @@ public:
     static std::shared_ptr<EffectDef> GetEffectDefinition(const std::string &effectId)
     {
         return DefinitionManager::GetInstance().effectDefinitions.at(effectId);
+    }
+
+    static const std::unordered_map<std::string, std::shared_ptr<ResourceDef>> &GetResourceDefinitions()
+    {
+        return DefinitionManager::GetInstance().resourceDefinitions;
+    }
+
+    static std::shared_ptr<ResourceDef> GetResourceDefinition(const std::string &resourceId)
+    {
+        return DefinitionManager::GetInstance().resourceDefinitions.at(resourceId);
     }
 
     // Resolve a slash-separated path (e.g. "ui/textColor") against a node and return
@@ -104,5 +126,6 @@ public:
 
     static void ParseTilesFromFile(const std::string &filename);
     static void ParseEffectsFromFile(const std::string &filename);
+    static void ParseResourcesFromFile(const std::string &filename);
     static void ParseConstantsFromFile(const std::string &filename);
 };
