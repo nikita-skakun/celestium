@@ -84,6 +84,7 @@ int main()
                 DrawDragSelectBox();
                 DrawMainTooltip();
                 DrawFpsCounter();
+                DrawResourceUI();
             }
         }
 
