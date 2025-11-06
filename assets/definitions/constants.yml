@@ -14,11 +14,12 @@ ui:
   defaultFontSize: 20
   defaultPadding: 10.0
   textColor: [200, 200, 200, 255]
+  spaceColor: [0, 0, 0, 255]
+  gridColor: [255, 255, 255, 25]
 
 tile:
   size: 32.0
   oxygenMax: 100.0
-  gridColor: [0, 0, 0, 50]
 
 oxygen:
   diffusionRate: 10.0

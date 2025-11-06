@@ -36,7 +36,7 @@ int main()
     while (GameManager::IsGameRunning())
     {
         BeginDrawing();
-        ClearBackground(Color(31, 40, 45, 255));
+        ClearBackground(SPACE_COLOR);
 
         GameManager::HandleStateInputs();
         UiManager::Update();
@@ -63,7 +63,9 @@ int main()
                 }
             }
 
-            DrawTileGrid();
+            if (GameManager::IsInBuildMode())
+                DrawTileGrid();
+
             DrawStationTiles();
             DrawPlannedTasks();
             DrawStationOverlays();

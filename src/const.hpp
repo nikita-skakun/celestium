@@ -15,11 +15,11 @@ inline float CAMERA_KEY_MOVE_SPEED;
 inline int DEFAULT_FONT_SIZE;
 inline float DEFAULT_PADDING;
 inline Color UI_TEXT_COLOR;
+inline Color SPACE_COLOR;
+inline Color GRID_COLOR;
 
 inline float TILE_SIZE;
 inline float TILE_OXYGEN_MAX;
-
-inline Color GRID_COLOR;
 
 inline float OXYGEN_DIFFUSION_RATE;
 

@@ -405,11 +405,12 @@ void DefinitionManager::ParseConstantsFromFile(const std::string &filename)
     DEFAULT_FONT_SIZE = GetRequiredValue<int>(root, "ui/defaultFontSize");
     DEFAULT_PADDING = GetRequiredValue<float>(root, "ui/defaultPadding");
     UI_TEXT_COLOR = ReadColorAt("ui/textColor");
+    SPACE_COLOR = ReadColorAt("ui/spaceColor");
+    GRID_COLOR = ReadColorAt("ui/gridColor");
 
     // tile (required)
     TILE_SIZE = GetRequiredValue<float>(root, "tile/size");
     TILE_OXYGEN_MAX = GetRequiredValue<float>(root, "tile/oxygenMax");
-    GRID_COLOR = ReadColorAt("tile/gridColor");
 
     // oxygen (required)
     OXYGEN_DIFFUSION_RATE = GetRequiredValue<float>(root, "oxygen/diffusionRate");
