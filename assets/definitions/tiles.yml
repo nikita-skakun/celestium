@@ -225,9 +225,8 @@ tiles:
         amount: 12
     components:
       - type: POWER_CONNECTOR
-      - type: POWER_PRODUCER
-        powerProduction: 20.0
       - type: SOLAR_PANEL
+        powerProduction: 20.0
       - type: DURABILITY
         hitpoints: 5.0
       - type: ROTATABLE
