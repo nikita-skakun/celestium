@@ -131,7 +131,7 @@ function(fetch_and_link_dependency name repo tag)
         GIT_REPOSITORY ${repo}
         GIT_TAG ${tag}
         GIT_SHALLOW ON
-        GIT_PROGRESS TRUE
+        GIT_PROGRESS OFF
     )
     FetchContent_MakeAvailable(${name})
     target_link_libraries(celestium PRIVATE ${name})
