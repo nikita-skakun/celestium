@@ -429,6 +429,7 @@ void DefinitionManager::ParseConstantsFromFile(const std::string &filename)
     CREW_EXTINGUISH_SPEED = GetRequiredValue<float>(root, "crew/extinguishSpeed");
     CREW_REPAIR_SPEED = GetRequiredValue<float>(root, "crew/repairSpeed");
     CREW_BUILD_SPEED = GetRequiredValue<float>(root, "crew/buildSpeed");
+    CREW_DECONSTRUCT_EFFICIENCY = GetRequiredValue<float>(root, "crew/deconstructEfficiency");
 }
 
 void DefinitionManager::ParseResourcesFromFile(const std::string &filename)

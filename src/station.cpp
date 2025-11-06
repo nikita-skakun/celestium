@@ -583,10 +583,7 @@ void Station::CompletePlannedTask(const Vector2Int &pos)
         const auto &requiredResources = tileDef->GetBuildResources();
 
         if (!HasResources(requiredResources))
-        {
-            // Don't complete the task if resources are insufficient
             return;
-        }
 
         // Consume the resources
         ConsumeResources(requiredResources);
@@ -595,6 +592,7 @@ void Station::CompletePlannedTask(const Vector2Int &pos)
         auto overlappingTiles = GetTilesWithHeightAtPosition(pos, tileDef->GetHeight());
         for (auto &tile : overlappingTiles)
         {
+            ReturnResourcesFromTile(tile);
             tile->DeleteTile();
         }
 
@@ -609,6 +607,7 @@ void Station::CompletePlannedTask(const Vector2Int &pos)
         {
             if (tile->GetId() == task->tileId)
             {
+                ReturnResourcesFromTile(tile);
                 tile->DeleteTile();
                 break;
             }
@@ -651,7 +650,30 @@ bool Station::HasResources(const std::unordered_map<std::string, int> &requiredR
 void Station::ConsumeResources(const std::unordered_map<std::string, int> &resourcesToConsume)
 {
     for (const auto &[resourceId, amount] : resourcesToConsume)
-    {
         AddResource(resourceId, -amount);
+}
+
+void Station::ReturnResourcesFromTile(const std::shared_ptr<Tile> &tile)
+{
+    if (!tile)
+        return;
+
+    try
+    {
+        const auto &tileDef = tile->GetTileDefinition();
+        const auto &requiredResources = tileDef->GetBuildResources();
+        for (const auto &p : requiredResources)
+        {
+            const std::string &resId = p.first;
+            int amount = p.second;
+            float returnedF = std::ceil(amount * CREW_DECONSTRUCT_EFFICIENCY);
+            int returned = static_cast<int>(returnedF);
+            if (returned > 0)
+                AddResource(resId, returned);
+        }
+    }
+    catch (...)
+    {
+        throw std::runtime_error("Error returning resources from tile " + (tile ? tile->GetId() : "null"));
     }
 }

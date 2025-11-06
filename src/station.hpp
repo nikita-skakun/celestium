@@ -26,15 +26,15 @@ public:
     std::vector<std::shared_ptr<Tile>> GetTilesWithHeightAtPosition(const Vector2Int &pos, TileDef::Height height) const;
     std::string GetTileIdAtPosition(const Vector2Int &pos, TileDef::Height height = TileDef::Height::NONE) const;
     bool CheckAdjacentTile(const Vector2Int &tilePos, const std::string &tileId, Direction direction, TileDef::Height height = TileDef::Height::NONE) const;
-    
+
     SpriteCondition GetSpriteConditionForTile(const std::shared_ptr<Tile> &tile) const;
     void UpdateSpriteOffsets() const;
-    
+
     bool IsPositionPathable(const Vector2Int &pos) const;
     bool IsDoorFullyOpenAtPos(const Vector2Int &pos) const;
 
     void RemoveEffect(const std::shared_ptr<Effect> &effect);
-    
+
     std::vector<std::shared_ptr<Effect>> GetEffectsAtPosition(const Vector2Int &pos) const;
     std::shared_ptr<Effect> GetEffectOfTypeAtPosition(const Vector2Int &pos, const std::string &id) const;
     bool HasEffectOfType(const std::string &id) const;
@@ -55,6 +55,7 @@ public:
     void AddResource(const std::string &resourceId, int amount);
     bool HasResources(const std::unordered_map<std::string, int> &requiredResources) const;
     void ConsumeResources(const std::unordered_map<std::string, int> &resourcesToConsume);
+    void ReturnResourcesFromTile(const std::shared_ptr<Tile> &tile);
 };
 
 std::shared_ptr<Station> CreateStation();

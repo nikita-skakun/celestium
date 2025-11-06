@@ -36,3 +36,4 @@ inline float CREW_HEALTH_MAX;
 inline float CREW_EXTINGUISH_SPEED;
 inline float CREW_REPAIR_SPEED;
 inline float CREW_BUILD_SPEED;
+inline float CREW_DECONSTRUCT_EFFICIENCY;
