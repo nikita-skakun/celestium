@@ -618,6 +618,13 @@ void Station::CompletePlannedTask(const Vector2Int &pos)
     UpdateSpriteOffsets();
 }
 
+void Station::CancelPlannedTask(const Vector2Int &pos)
+{
+    std::erase_if(plannedTasks, [pos](const std::shared_ptr<PlannedTask> &task)
+                  { return task->position == pos; });
+    UpdateSpriteOffsets();
+}
+
 bool Station::HasPlannedTaskAt(const Vector2Int &pos) const
 {
     return std::any_of(plannedTasks.begin(), plannedTasks.end(), [pos](const std::shared_ptr<PlannedTask> &task)

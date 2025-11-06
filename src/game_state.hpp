@@ -23,6 +23,7 @@ private:
     std::vector<std::weak_ptr<Crew>> selectedCrewList;
     std::shared_ptr<Station> station;
     bool buildMode = false;
+    bool cancelMode = false;
     bool paused = false;
     bool forcePaused = false;
     bool horizontalSymmetry = true;
@@ -115,6 +116,10 @@ public:
     static bool IsInBuildMode() { return GetInstance().buildMode; }
     static void SetBuildModeState(bool newState) { GetInstance().buildMode = newState; }
     static void ToggleBuildGameState() { GetInstance().buildMode = !GetInstance().buildMode; }
+
+    static bool IsInCancelMode() { return GetInstance().cancelMode; }
+    static void SetCancelMode(bool newState) { GetInstance().cancelMode = newState; }
+    static void ToggleCancelMode() { GetInstance().cancelMode = !GetInstance().cancelMode; }
 
     static bool IsHorizontalSymmetry() { return GetInstance().horizontalSymmetry; }
     static void SetHorizontalSymmetry(bool newState) { GetInstance().horizontalSymmetry = newState; }

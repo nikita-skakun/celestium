@@ -49,6 +49,7 @@ public:
 
     void AddPlannedTask(const Vector2Int &pos, const std::string &tileId, bool isBuild);
     void CompletePlannedTask(const Vector2Int &pos);
+    void CancelPlannedTask(const Vector2Int &pos);
     bool HasPlannedTaskAt(const Vector2Int &pos) const;
 
     int GetResourceCount(const std::string &resourceId) const;
