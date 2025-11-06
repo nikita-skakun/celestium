@@ -17,7 +17,6 @@ pkgs.mkShell {
     libogg # Ogg for audio handling
     libopus # Opus for audio handling
     libxkbcommon # Keymap handling library (shared between X11 and Wayland)
-    magic-enum # Magic Enum for enum handling
     opusfile.dev # Opus for audio handling
     pkg-config # pkg-config to manage library paths
     pulseaudio # PulseAudio for audio handling
@@ -29,7 +28,6 @@ pkgs.mkShell {
   shellHook = ''
     export CC=${pkgs.clang}/bin/clang
     export CXX=${pkgs.clang}/bin/clang++
-    export MAGIC_ENUM_DIR=${pkgs.magic-enum}/include
     echo "Using Clang: $CC and $CXX"
   '';
 }

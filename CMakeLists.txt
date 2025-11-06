@@ -79,7 +79,50 @@ include_directories(${OpusFile_INCLUDE_DIRS})
 pkg_check_modules(RtAudio REQUIRED rtaudio)
 target_link_libraries(celestium PRIVATE ${RtAudio_LIBRARIES})
 
-include_directories(${MAGIC_ENUM_DIR}/include)
+# --- magic_enum ---
+set(MAGIC_ENUM_DIR ${CMAKE_SOURCE_DIR}/external/magic_enum)
+file(MAKE_DIRECTORY ${MAGIC_ENUM_DIR})
+execute_process(COMMAND git -c protocol.version=2 clone --filter=blob:none --no-checkout --depth 1 --branch master https://github.com/Neargye/magic_enum.git ${MAGIC_ENUM_DIR})
+execute_process(COMMAND git -C ${MAGIC_ENUM_DIR} sparse-checkout init --cone)
+execute_process(COMMAND git -C ${MAGIC_ENUM_DIR} sparse-checkout set include)
+execute_process(COMMAND git -C ${MAGIC_ENUM_DIR} checkout)
+target_include_directories(celestium SYSTEM PRIVATE ${MAGIC_ENUM_DIR}/include)
+
+# --- raylib ---
+set(RAYLIB_SRC_DIR ${CMAKE_SOURCE_DIR}/external/raylib)
+file(MAKE_DIRECTORY ${RAYLIB_SRC_DIR})
+execute_process(COMMAND git -c protocol.version=2 clone --filter=blob:none --no-checkout --depth 1 --branch master https://github.com/raysan5/raylib.git ${RAYLIB_SRC_DIR})
+execute_process(COMMAND git -C ${RAYLIB_SRC_DIR} sparse-checkout init --cone)
+execute_process(COMMAND git -C ${RAYLIB_SRC_DIR} sparse-checkout set src cmake)
+execute_process(COMMAND git -C ${RAYLIB_SRC_DIR} checkout)
+add_subdirectory(${RAYLIB_SRC_DIR} ${CMAKE_SOURCE_DIR}/external/raylib-build)
+target_link_libraries(celestium PRIVATE raylib)
+
+# --- raygui ---
+set(RAYGUI_SRC_DIR ${CMAKE_SOURCE_DIR}/external/raygui)
+file(MAKE_DIRECTORY ${RAYGUI_SRC_DIR})
+execute_process(COMMAND git -c protocol.version=2 clone --filter=blob:none --no-checkout --depth 1 --branch master https://github.com/raysan5/raygui.git ${RAYGUI_SRC_DIR})
+execute_process(COMMAND git -C ${RAYGUI_SRC_DIR} sparse-checkout init --cone)
+execute_process(COMMAND git -C ${RAYGUI_SRC_DIR} sparse-checkout set src projects/CMake)
+execute_process(COMMAND git -C ${RAYGUI_SRC_DIR} checkout)
+add_subdirectory(${RAYGUI_SRC_DIR}/projects/CMake ${CMAKE_SOURCE_DIR}/external/raygui-build)
+target_link_libraries(celestium PRIVATE raygui)
+target_include_directories(celestium SYSTEM PRIVATE ${RAYGUI_SRC_DIR}/src) # Disable warnings for raygui, as they are harmless
+
+# --- LuaJIT v2.1 ---
+set(LUAJIT_SRC_DIR ${CMAKE_SOURCE_DIR}/external/luajit)
+file(MAKE_DIRECTORY ${LUAJIT_SRC_DIR})
+execute_process(COMMAND git -c protocol.version=2 clone --filter=blob:none --no-checkout --depth 1 --branch v2.1 https://github.com/LuaJIT/LuaJIT.git ${LUAJIT_SRC_DIR})
+execute_process(COMMAND git -C ${LUAJIT_SRC_DIR} sparse-checkout init --cone)
+execute_process(COMMAND git -C ${LUAJIT_SRC_DIR} sparse-checkout set src dynasm || true)
+execute_process(COMMAND git -C ${LUAJIT_SRC_DIR} checkout)
+add_custom_command(OUTPUT ${LUAJIT_SRC_DIR}/src/libluajit.a COMMAND make -C ${LUAJIT_SRC_DIR}/src WORKING_DIRECTORY ${LUAJIT_SRC_DIR} COMMENT "Building LuaJIT static library" VERBATIM)
+add_custom_target(luajit-build ALL DEPENDS ${LUAJIT_SRC_DIR}/src/libluajit.a)
+add_library(luajit_static STATIC IMPORTED GLOBAL)
+set_target_properties(luajit_static PROPERTIES IMPORTED_LOCATION ${LUAJIT_SRC_DIR}/src/libluajit.a)
+add_dependencies(celestium luajit-build)
+target_link_libraries(celestium PRIVATE luajit_static)
+target_include_directories(celestium PRIVATE ${LUAJIT_SRC_DIR}/src)
 
 # Helper function to fetch, make available, and link dependencies
 function(fetch_and_link_dependency name repo tag)
@@ -87,61 +130,13 @@ function(fetch_and_link_dependency name repo tag)
         ${name}
         GIT_REPOSITORY ${repo}
         GIT_TAG ${tag}
-        GIT_SHALLOW OFF # Fetch the full repository, not a shallow clone
-        GIT_PROGRESS TRUE # Show progress during the Git clone/fetch
+        GIT_SHALLOW ON
+        GIT_PROGRESS TRUE
     )
     FetchContent_MakeAvailable(${name})
     target_link_libraries(celestium PRIVATE ${name})
 endfunction()
 
-# Fetch and link dependencies
-fetch_and_link_dependency(raylib https://github.com/raysan5/raylib.git master)
-fetch_and_link_dependency(ryml https://github.com/biojppm/rapidyaml.git master)
-
-FetchContent_Declare(
-    raygui
-    GIT_REPOSITORY https://github.com/raysan5/raygui.git
-    GIT_TAG master
-    GIT_SHALLOW OFF
-    GIT_PROGRESS TRUE
-)
-
-FetchContent_GetProperties(raygui)
-if(NOT raygui_POPULATED)
-    FetchContent_MakeAvailable(raygui)
-    add_subdirectory(${raygui_SOURCE_DIR}/projects/CMake ${raygui_BINARY_DIR})
-endif()
-
-target_link_libraries(celestium PRIVATE raygui)
-
-# Disable warnings for raygui, as they are harmless
-target_include_directories(celestium SYSTEM PRIVATE ${raygui_SOURCE_DIR}/src)
-
-# --- LuaJIT v2.1 integration (Makefile build) ---
-include(ExternalProject)
-ExternalProject_Add(
-    luajit
-    GIT_REPOSITORY https://github.com/LuaJIT/LuaJIT.git
-    GIT_TAG v2.1
-    PREFIX ${CMAKE_BINARY_DIR}/luajit
-    BUILD_IN_SOURCE 1
-    CONFIGURE_COMMAND ""
-    BUILD_COMMAND make -C src
-    INSTALL_COMMAND ""
-    UPDATE_COMMAND ""
-)
-
-# Path to the built static library after build
-set(LUAJIT_LIB ${CMAKE_BINARY_DIR}/luajit/src/luajit/src/libluajit.a)
-
-# Create imported target for LuaJIT static library
-add_library(luajit_static STATIC IMPORTED GLOBAL)
-set_target_properties(luajit_static PROPERTIES IMPORTED_LOCATION ${LUAJIT_LIB})
-
-# Link LuaJIT and add include dir to celestium, ensure build order
-add_dependencies(celestium luajit)
-target_link_libraries(celestium PRIVATE luajit_static)
-target_include_directories(celestium PRIVATE ${CMAKE_BINARY_DIR}/luajit/src/luajit/src)
-
-# --- sol2 (Lua C++ binding) integration ---
+# --- Other Packages ---
 fetch_and_link_dependency(sol2 https://github.com/ThePhD/sol2.git develop)
+fetch_and_link_dependency(ryml https://github.com/biojppm/rapidyaml.git master)
