@@ -280,7 +280,7 @@ void AddBuildToggle(std::shared_ptr<UiPanel> buildMenuPanel, const TileToggleCon
     Vector2 togglePos = PANEL_POS + Vector2(SPACING.x + index * (TOGGLE_SIZE.x + SPACING.x), SPACING.y);
 
     auto onToggle = [config](bool state)
-    { GameManager::SetBuildTileId(state ? config.tileId : ""); };
+    { if (state) { GameManager::SetCancelMode(false); GameManager::SetBuildTileId(config.tileId); } else { GameManager::SetBuildTileId(""); } };
 
     auto toggle = std::make_shared<UiToggle>(Vector2ToRect(togglePos, TOGGLE_SIZE),
                                              GameManager::IsBuildTileId(config.tileId),
