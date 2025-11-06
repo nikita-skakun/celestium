@@ -21,6 +21,7 @@ void GameManager::SetGameState(GameState state)
     }
 
     UiManager::ClearAllElements();
+    ClearRenderSystems();
 
     switch (state)
     {
@@ -28,10 +29,12 @@ void GameManager::SetGameState(GameState state)
     {
         Initialize();
         UiManager::InitializeMainMenu();
+        GameManager::SetRenderSnapshot(nullptr);
         break;
     }
     case GameState::GAME_SIM:
     {
+        GameManager::SetRenderSnapshot(nullptr);
         ClearRenderSystems();
         PrepareTestWorld();
         UiManager::InitializeGameSim();
@@ -94,8 +97,6 @@ void GameManager::Initialize()
     manager.horizontalSymmetry = false;
     manager.verticalSymmetry = false;
     manager.buildTileId = "";
-
-    ClearRenderSystems();
 }
 
 void GameManager::PrepareTestWorld()
