@@ -775,5 +775,12 @@ void DrawPlannedTasks()
 
 void ClearRenderSystems()
 {
+    for (auto &kv : g_renderSystems)
+    {
+        for (auto &r : kv.second)
+        {
+            r.system->Clear();
+        }
+    }
     g_renderSystems.clear();
 }
