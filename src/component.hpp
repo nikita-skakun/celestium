@@ -204,29 +204,30 @@ public:
     PowerProducerComponent(float powerProduction, std::shared_ptr<Tile> parent = nullptr)
         : Component(parent), powerProduction(std::max(powerProduction, 0.f)) {}
 
-    float GetPowerProduction() const { return powerProduction; }
+    virtual float GetPowerProduction() const { return powerProduction; }
 
-    std::shared_ptr<Component> Clone(std::shared_ptr<Tile> newParent) const override
+    virtual std::shared_ptr<Component> Clone(std::shared_ptr<Tile> newParent) const override
     {
         return std::make_shared<PowerProducerComponent>(powerProduction, newParent);
     }
 
-    ComponentType GetType() const override { return ComponentType::POWER_PRODUCER; }
-    std::optional<std::string> GetInfo() const override { return "   + Power Production: " + ToString(powerProduction, 0); }
+    virtual ComponentType GetType() const override { return ComponentType::POWER_PRODUCER; }
+    virtual std::optional<std::string> GetInfo() const override { return "   + Power Production: " + ToString(GetPowerProduction(), 0); }
 };
 
-// TODO: Implement occlusions for solar panels (if indoor)
-struct SolarPanelComponent : Component
+struct SolarPanelComponent : public PowerProducerComponent
 {
-    SolarPanelComponent(std::shared_ptr<Tile> parent = nullptr) : Component(parent) {}
+    SolarPanelComponent(float powerProduction, std::shared_ptr<Tile> parent = nullptr) : PowerProducerComponent(powerProduction, parent) {}
 
     std::shared_ptr<Component> Clone(std::shared_ptr<Tile> newParent) const override
     {
-        return std::make_shared<SolarPanelComponent>(newParent);
+        return std::make_shared<SolarPanelComponent>(powerProduction, newParent);
     }
 
     ComponentType GetType() const override { return ComponentType::SOLAR_PANEL; }
-    std::optional<std::string> GetInfo() const override { return std::nullopt; }
+    std::optional<std::string> GetInfo() const override { return "   + Power Production: " + ToString(GetPowerProduction(), 0); }
+
+    float GetPowerProduction() const override;
 };
 
 struct OxygenComponent : Component

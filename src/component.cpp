@@ -97,3 +97,16 @@ void OxygenComponent::Diffuse(float deltaTime)
         neighborOxygen->SetOxygenLevel(neighborOxygen->GetOxygenLevel() + oxygenTransfer);
     }
 }
+
+float SolarPanelComponent::GetPowerProduction() const
+{
+    if (auto tile = GetParent())
+    {
+        if (auto station = tile->GetStation())
+        {
+            if (auto oxygenTile = station->GetTileWithComponentAtPosition(tile->GetPosition(), ComponentType::OXYGEN))
+                return 0.f;
+        }
+    }
+    return PowerProducerComponent::GetPowerProduction();
+}

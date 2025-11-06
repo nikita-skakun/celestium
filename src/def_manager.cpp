@@ -46,7 +46,7 @@ namespace
             return std::make_shared<PowerProducerComponent>(DefinitionManager::GetRequiredValue<float>(node, "powerProduction"));
 
         case ComponentType::SOLAR_PANEL:
-            return std::make_shared<SolarPanelComponent>();
+            return std::make_shared<SolarPanelComponent>(DefinitionManager::GetRequiredValue<float>(node, "powerProduction"));
 
         case ComponentType::OXYGEN:
             return std::make_shared<OxygenComponent>(DefinitionManager::GetRequiredValue<float>(node, "oxygenLevel"));
