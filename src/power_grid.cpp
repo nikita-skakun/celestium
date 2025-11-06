@@ -7,18 +7,45 @@ void PowerGrid::Disconnect(const std::shared_ptr<Tile> &parentTile)
     if (!parentTile)
         return;
 
-    // TODO: Replace with loop when the map will have a list of connections
-    auto erase_by_parent = [&](auto &...containers)
+    for (auto it = _consumers.begin(); it != _consumers.end();)
     {
-        (std::erase_if(containers, [&](const auto &entry)
-                       { 
-            if (auto ptr = entry.second.lock())
-                return ptr->GetParent() == parentTile;
-            return false; }),
-         ...);
-    };
+        if (auto ptr = it->second.lock())
+        {
+            if (ptr->GetParent() == parentTile)
+            {
+                ptr->SetActive(false);
+                it = _consumers.erase(it);
+                continue;
+            }
+        }
+        ++it;
+    }
 
-    erase_by_parent(_consumers, _producers, _batteries);
+    for (auto it = _producers.begin(); it != _producers.end();)
+    {
+        if (auto ptr = it->second.lock())
+        {
+            if (ptr->GetParent() == parentTile)
+            {
+                it = _producers.erase(it);
+                continue;
+            }
+        }
+        ++it;
+    }
+
+    for (auto it = _batteries.begin(); it != _batteries.end();)
+    {
+        if (auto ptr = it->second.lock())
+        {
+            if (ptr->GetParent() == parentTile)
+            {
+                it = _batteries.erase(it);
+                continue;
+            }
+        }
+        ++it;
+    }
 
     if (auto connector = parentTile->GetComponent<PowerConnectorComponent>())
         connector->SetPowerGrid(nullptr);
@@ -29,147 +56,89 @@ void PowerGrid::Disconnect(const std::shared_ptr<Tile> &parentTile)
 float PowerGrid::GetTotalPowerConsumption() const
 {
     return std::accumulate(cachedConsumers.begin(), cachedConsumers.end(), 0.f,
-                           [](float sum, const auto &consumer)
-                           { return sum + consumer->GetPowerConsumption(); });
+                           [](float sum, const auto &wp)
+                           { if (auto consumer = wp.lock()) return sum + consumer->GetPowerConsumption(); return sum; });
 }
 
 float PowerGrid::GetTotalPowerProduction() const
 {
     return std::accumulate(cachedProducers.begin(), cachedProducers.end(), 0.f,
-                           [](float sum, const auto &producer)
-                           { return sum + producer->GetPowerProduction(); });
+                           [](float sum, const auto &wp)
+                           { if (auto producer = wp.lock()) return sum + producer->GetPowerProduction(); return sum; });
 }
 
 float PowerGrid::GetTotalBatteryCharge() const
 {
     return std::accumulate(cachedBatteries.begin(), cachedBatteries.end(), 0.f,
-                           [](float sum, const auto &battery)
-                           { return sum + battery->GetChargeLevel(); });
+                           [](float sum, const auto &wp)
+                           { if (auto battery = wp.lock()) return sum + battery->GetChargeLevel(); return sum; });
 }
 
 float PowerGrid::GetTotalMaxBatteryCharge() const
 {
     return std::accumulate(cachedBatteries.begin(), cachedBatteries.end(), 0.f,
-                           [](float sum, const auto &battery)
-                           { return sum + battery->GetMaxChargeLevel(); });
+                           [](float sum, const auto &wp)
+                           { if (auto battery = wp.lock()) return sum + battery->GetMaxChargeLevel(); return sum; });
 }
 
 float PowerGrid::GetTotalBatteryCapacity() const
 {
     return std::accumulate(cachedBatteries.begin(), cachedBatteries.end(), 0.f,
-                           [](float sum, const auto &battery)
-                           { return sum + (battery->GetMaxChargeLevel() - battery->GetChargeLevel()); });
-}
-
-float PowerGrid::DrainBatteriesProportionally(float amount)
-{
-    if (amount <= 0.f || cachedBatteries.empty())
-        return 0.f;
-
-    struct BatteryInfo
-    {
-        std::shared_ptr<BatteryComponent> ptr;
-        float charge, maxCharge, soc;
-    };
-    std::vector<BatteryInfo> bats;
-    bats.reserve(cachedBatteries.size());
-
-    for (auto &bat : cachedBatteries)
-    {
-        const float c = bat->GetChargeLevel();
-        const float m = bat->GetMaxChargeLevel();
-        if (c > 0.f && m > 0.f)
-            bats.emplace_back(bat, c, m, c / m);
-    }
-    if (bats.empty())
-        return 0.f;
-
-    const float totalCharge = std::accumulate(bats.begin(), bats.end(), 0.f,
-                                              [](float s, const BatteryInfo &b)
-                                              { return s + b.charge; });
-
-    // drain everything if requested amount exceeds available charge
-    if (amount >= totalCharge)
-        return std::accumulate(bats.begin(), bats.end(), 0.f,
-                               [](float s, const BatteryInfo &b)
-                               { return s + b.ptr->Drain(b.charge); });
-
-    const float targetTotal = totalCharge - amount;
-
-    std::sort(bats.begin(), bats.end(), [](auto &a, auto &b)
-              { return a.soc < b.soc; });
-
-    float sumFixed = 0.f;
-    float sumMaxRemaining = std::accumulate(bats.begin(), bats.end(), 0.f,
-                                            [](float s, const BatteryInfo &b)
-                                            { return s + b.maxCharge; });
-
-    size_t idx = 0;
-    float s = 0.f;
-
-    while (idx < bats.size())
-    {
-        s = (targetTotal - sumFixed) / sumMaxRemaining;
-        if (s <= 0.f)
-        {
-            s = 0.f;
-            break;
-        }
-        if (s <= bats[idx].soc)
-            break;
-
-        sumFixed += bats[idx].charge;
-        sumMaxRemaining -= bats[idx].maxCharge;
-        ++idx;
-    }
-
-    float drainedTotal = 0.f;
-    for (size_t i = 0; i < bats.size(); ++i)
-    {
-        const float finalCharge = (i < idx) ? bats[i].charge : std::min(bats[i].charge, bats[i].maxCharge * s);
-        const float toDrain = bats[i].charge - finalCharge;
-        if (toDrain > 0.f)
-            drainedTotal += bats[i].ptr->Drain(toDrain);
-    }
-
-    return drainedTotal;
+                           [](float sum, const auto &wp)
+                           { if (auto battery = wp.lock()) return sum + (battery->GetMaxChargeLevel() - battery->GetChargeLevel()); return sum; });
 }
 
 void PowerGrid::RebuildCaches()
 {
-    // Rebuild cached consumers: remove expired and collect non-offline
-    std::erase_if(_consumers, [](auto &entry)
-                  { return entry.second.expired(); });
-    cachedConsumers.clear();
-    cachedConsumers.reserve(_consumers.size());
-    for (auto &[_k, wptr] : _consumers)
-        if (auto consumer = wptr.lock(); consumer && consumer->GetPowerPriority() != PowerConsumerComponent::PowerPriority::OFFLINE)
-            cachedConsumers.push_back(consumer);
-
-    std::ranges::sort(cachedConsumers, [](const auto &a, const auto &b)
-                      {
-                          if (a->GetPowerPriority() != b->GetPowerPriority())
-                              return a->GetPowerPriority() < b->GetPowerPriority();
-                          return a->GetPowerConsumption() > b->GetPowerConsumption(); });
-
-    // Rebuild producers and batteries: remove expired entries and collect
+    // Remove expired entries
     std::erase_if(_producers, [](auto &entry)
                   { return entry.second.expired(); });
-    cachedProducers.clear();
-    cachedProducers.reserve(_producers.size());
-    for (auto &[_k, wptr] : _producers)
-        if (auto p = wptr.lock())
-            cachedProducers.push_back(p);
 
     std::erase_if(_batteries, [](auto &entry)
                   { return entry.second.expired(); });
+
+    std::erase_if(_consumers, [](auto &entry)
+                  { return entry.second.expired(); });
+
+    // Rebuild cached weak_ptr lists for faster iteration in Update()
+    cachedProducers.clear();
+    cachedConsumers.clear();
     cachedBatteries.clear();
+
+    cachedProducers.reserve(_producers.size());
+    for (auto &p : _producers)
+        cachedProducers.push_back(p.second);
+
+    cachedConsumers.reserve(_consumers.size());
+    for (auto &c : _consumers)
+        if (c.second.lock()->GetPowerPriority() != PowerConsumerComponent::PowerPriority::OFFLINE)
+            cachedConsumers.push_back(c.second);
+
     cachedBatteries.reserve(_batteries.size());
-    for (auto &[_k, wptr] : _batteries)
-        if (auto b = wptr.lock())
-            cachedBatteries.push_back(b);
+    for (auto &b : _batteries)
+        cachedBatteries.push_back(b.second);
+
+    std::ranges::sort(cachedConsumers, [](const auto &_a, const auto &_b)
+                      {
+                        auto a = _a.lock();
+                        auto b = _b.lock();
+                        if (!a || !b) return false;
+                        if (a->GetPowerPriority() != b->GetPowerPriority())
+                            return a->GetPowerPriority() < b->GetPowerPriority();
+                        return a->GetPowerConsumption() > b->GetPowerConsumption(); });
 
     dirty = false;
+}
+
+template <typename T>
+static std::vector<std::shared_ptr<T>> LockWeakVector(const std::vector<std::weak_ptr<T>> &in)
+{
+    std::vector<std::shared_ptr<T>> out;
+    out.reserve(in.size());
+    for (auto &wp : in)
+        if (auto sp = wp.lock())
+            out.push_back(std::move(sp));
+    return out;
 }
 
 void PowerGrid::Update(float deltaTime)
@@ -177,81 +146,75 @@ void PowerGrid::Update(float deltaTime)
     if (dirty)
         RebuildCaches();
 
-    float totalDemand = GetTotalPowerConsumption();
-    float availablePower = GetTotalPowerProduction();
-    float totalBatteryCharge = GetTotalBatteryCharge();
+    const auto producers = LockWeakVector<PowerProducerComponent>(cachedProducers);
+    const auto consumers = LockWeakVector<PowerConsumerComponent>(cachedConsumers);
+    auto batteries = LockWeakVector<BatteryComponent>(cachedBatteries);
 
-    float deficit = (totalDemand - availablePower) * deltaTime;
+    std::sort(batteries.begin(), batteries.end(), [](const auto &a, const auto &b)
+              { return (a->GetChargeLevel() / a->GetMaxChargeLevel()) > (b->GetChargeLevel() / b->GetMaxChargeLevel()); });
 
-    if (deficit <= 0.f)
+    for (auto &b : batteries)
+        b->ResetDeltaCharge();
+
+    float remainingProduction = GetTotalPowerProduction() * deltaTime;
+
+    // First pass: attempt to power consumers from production only
+    std::vector<std::shared_ptr<PowerConsumerComponent>> unpoweredConsumers;
+
+    for (auto &c : consumers)
     {
-        // ✅ Enough production to power everything
-        for (const auto &consumer : cachedConsumers)
+        const float demand = c->GetPowerConsumption() * deltaTime;
+        if (remainingProduction >= demand)
         {
-            consumer->SetActive(true);
+            c->SetActive(true);
+            remainingProduction -= demand;
+        }
+        else
+            unpoweredConsumers.push_back(c);
+    }
+
+    // If there are unpowered consumers, try to cover them using batteries (by priority)
+    if (!unpoweredConsumers.empty())
+    {
+        float batteryRemaining = GetTotalBatteryCharge();
+        float batteryUsed = 0.f;
+
+        // Walk consumers in priority order and allocate from batteries until exhausted
+        for (auto &c : unpoweredConsumers)
+        {
+            const float demand = c->GetPowerConsumption() * deltaTime;
+            bool powered = batteryRemaining >= demand;
+            c->SetActive(powered);
+            if (powered)
+            {
+                batteryRemaining -= demand;
+                batteryUsed += demand;
+            }
         }
 
-        // ✅ Charge batteries with surplus
-        float surplus = -deficit;
-
-        // Compute total remaining capacity
-        float totalCapacity = GetTotalBatteryCapacity();
-
-        if (totalCapacity <= 0.f || surplus <= 0.f)
-            return; // Nothing to charge or nothing to charge with
-
-        // Charge batteries with priority to the emptier ones
-        for (const auto &battery : cachedBatteries)
+        // Greedy drain: prefer fullest batteries first
+        for (auto &b : batteries)
         {
-            float remaining = battery->GetMaxChargeLevel() - battery->GetChargeLevel();
-            if (remaining <= 0.f)
-                continue;
+            if (batteryUsed <= 0.f)
+                break;
+            float removed = b->Drain(batteryUsed);
+            b->AccumulateDeltaCharge(-removed / deltaTime);
+            batteryUsed -= removed;
+        }
+    }
 
-            float shareRatio = remaining / totalCapacity;
-            float share = surplus * shareRatio;
+    if (remainingProduction > 0.f && GetTotalBatteryCapacity() > 0.f)
+    {
+        std::reverse(batteries.begin(), batteries.end());
 
-            float added = battery->AddCharge(share);
-            surplus -= added;
-
-            if (surplus <= 0.f)
+        // Greedy top-up: prefer emptier batteries first
+        for (auto &b : batteries)
+        {
+            float added = b->AddCharge(remainingProduction);
+            b->AccumulateDeltaCharge(added / deltaTime);
+            remainingProduction -= added;
+            if (remainingProduction <= 0.f)
                 break;
         }
-    }
-    else if (totalBatteryCharge >= deficit)
-    {
-        // ✅ Not enough production, but batteries can cover it
-
-        // Power all consumers
-        for (const auto &consumer : cachedConsumers)
-        {
-            consumer->SetActive(true);
-        }
-
-        // Drain batteries evenly
-        DrainBatteriesProportionally(deficit);
-    }
-    else
-    {
-        // ❌ Not enough even with batteries: allocate power by priority
-
-        float usablePower = availablePower + totalBatteryCharge;
-
-        for (const auto &consumer : cachedConsumers)
-        {
-            float demand = consumer->GetPowerConsumption();
-            if (usablePower >= demand)
-            {
-                consumer->SetActive(true);
-                usablePower -= demand;
-            }
-            else
-            {
-                consumer->SetActive(false);
-            }
-        }
-
-        // Drain batteries proportionally if any battery power was used
-        float toDrain = std::max(0.f, (availablePower + totalBatteryCharge - usablePower - availablePower)) * deltaTime;
-        DrainBatteriesProportionally(toDrain);
     }
 }

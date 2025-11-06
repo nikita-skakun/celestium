@@ -299,27 +299,44 @@ void Station::RebuildPowerGridsFromInfrastructure()
         }
     }
 
+    for (const auto &tilesAtPos : tileMap)
+    {
+        for (const auto &tile : tilesAtPos.second)
+        {
+            if (auto consumer = tile->GetComponent<PowerConsumerComponent>())
+                consumer->SetActive(false);
+        }
+    }
+
     // Clear existing grids
     powerGrids.clear();
 
-    // Collect all wire positions from POWER-layer tiles only
-    std::vector<Vector2Int> allWires;
+    // Component info collected during a single-pass flood fill
+    struct ComponentInfo
+    {
+        std::vector<Vector2Int> positions;
+        std::unordered_map<std::shared_ptr<PowerGrid>, int> overlapCounts;
+        std::vector<std::pair<Vector2Int, std::weak_ptr<PowerProducerComponent>>> producers;
+        std::vector<std::pair<Vector2Int, std::weak_ptr<PowerConsumerComponent>>> consumers;
+        std::vector<std::pair<Vector2Int, std::weak_ptr<BatteryComponent>>> batteries;
+        std::vector<std::weak_ptr<PowerConnectorComponent>> connectors;
+    };
+
+    std::unordered_set<Vector2Int> visited;
+    std::vector<ComponentInfo> components;
+
+    // Iterate over tileMap once and start flood-fills from any unvisited POWER-layer tile
     for (const auto &tilesAtPos : tileMap)
     {
-        const Vector2Int &pos = tilesAtPos.first;
-        if (GetTileWithHeightAtPosition(pos, TileDef::Height::POWER))
-            allWires.push_back(pos);
-    }
+        const Vector2Int &start = tilesAtPos.first;
 
-    // First: discover all connected components of power wires
-    std::unordered_set<Vector2Int> visited;
-    std::vector<std::vector<Vector2Int>> components;
-    for (const auto &start : allWires)
-    {
         if (visited.contains(start))
             continue;
 
-        std::vector<Vector2Int> componentVec;
+        if (!GetTileWithHeightAtPosition(start, TileDef::Height::POWER))
+            continue; // skip non-power positions
+
+        ComponentInfo comp;
         std::queue<Vector2Int> q;
         q.push(start);
 
@@ -330,68 +347,69 @@ void Station::RebuildPowerGridsFromInfrastructure()
             if (visited.contains(cur))
                 continue;
             visited.insert(cur);
-            componentVec.push_back(cur);
 
+            // Only consider positions that actually have a POWER-layer tile
+            if (!GetTileWithHeightAtPosition(cur, TileDef::Height::POWER))
+                continue;
+
+            comp.positions.push_back(cur);
+
+            // Record overlap with old grid if any
+            if (auto itOpt = Find(oldWireToGridMap, cur); itOpt.has_value())
+            {
+                auto it = *itOpt;
+                if (it->second)
+                    comp.overlapCounts[it->second]++;
+            }
+
+            // Collect producers/consumers/batteries/connectors at this position once
+            auto allTilesHere = GetAllTilesAtPosition(cur);
+            for (const auto &tile : allTilesHere)
+            {
+                if (auto prod = tile->GetComponent<PowerProducerComponent>())
+                    comp.producers.emplace_back(cur, std::weak_ptr<PowerProducerComponent>(prod));
+                if (auto cons = tile->GetComponent<PowerConsumerComponent>())
+                    comp.consumers.emplace_back(cur, std::weak_ptr<PowerConsumerComponent>(cons));
+                if (auto bat = tile->GetComponent<BatteryComponent>())
+                    comp.batteries.emplace_back(cur, std::weak_ptr<BatteryComponent>(bat));
+                if (auto connector = tile->GetComponent<PowerConnectorComponent>())
+                    comp.connectors.push_back(std::weak_ptr<PowerConnectorComponent>(connector));
+            }
+
+            // Push neighboring positions that might have POWER-layer tiles
             for (const auto &dir : CARDINAL_DIRECTIONS)
             {
                 Vector2Int nb = cur + DirectionToVector2Int(dir);
                 if (visited.contains(nb))
                     continue;
-
-                // Neighbor is considered part of the component if it has a POWER-layer tile
                 if (GetTileWithHeightAtPosition(nb, TileDef::Height::POWER))
                     q.push(nb);
             }
         }
 
-        if (!componentVec.empty())
-            components.push_back(std::move(componentVec));
+        if (!comp.positions.empty())
+            components.push_back(std::move(comp));
     }
 
-    // For each component compute overlap counts with old grids and track best
-    std::vector<std::unordered_map<std::shared_ptr<PowerGrid>, int>> componentOverlaps(components.size());
-
+    // For each old grid determine its best-overlapping component (winner)
+    std::unordered_map<std::shared_ptr<PowerGrid>, std::pair<size_t, int>> oldGridBest;
     for (size_t i = 0; i < components.size(); ++i)
     {
-        for (const auto &p : components[i])
+        for (const auto &pair : components[i].overlapCounts)
         {
-            auto oldWireGridItOpt = Find(oldWireToGridMap, p);
-            if (oldWireGridItOpt.has_value())
-            {
-                auto oldWireGridIt = *oldWireGridItOpt;
-                if (oldWireGridIt->second)
-                {
-                    auto oldGridShared = oldWireGridIt->second;
-                    componentOverlaps[i][oldGridShared]++;
-                }
-            }
+            auto it = oldGridBest.find(pair.first);
+            if (it == oldGridBest.end() || pair.second > it->second.second)
+                oldGridBest[pair.first] = std::make_pair(i, pair.second);
         }
     }
 
-    // Determine for each old grid which component it overlaps the most (winner)
-    std::unordered_map<std::shared_ptr<PowerGrid>, std::pair<size_t, int>> oldGridBest; // oldGrid -> (bestComponentIndex, count)
-    for (size_t i = 0; i < componentOverlaps.size(); ++i)
-    {
-        for (const auto &pair : componentOverlaps[i])
-        {
-            auto oldShared = pair.first;
-            int count = pair.second;
-            auto it = oldGridBest.find(oldShared);
-            if (it == oldGridBest.end() || count > it->second.second)
-            {
-                oldGridBest[oldShared] = std::make_pair(i, count);
-            }
-        }
-    }
-
-    // Now construct new PowerGrid objects for each component. Only inherit
-    // color from an old grid if that old grid's best component is this one.
+    // Construct new grids and populate them using the gathered per-component info
     for (size_t idx = 0; idx < components.size(); ++idx)
     {
-        auto &component = components[idx];
+        auto &comp = components[idx];
         auto newGrid = std::make_shared<PowerGrid>();
 
-        // Find an old grid that chose this component as its best overlap
+        // If an old grid selected this component as its best match, inherit its color
         std::shared_ptr<PowerGrid> chosenOldGrid = nullptr;
         for (const auto &bestPair : oldGridBest)
         {
@@ -403,46 +421,30 @@ void Station::RebuildPowerGridsFromInfrastructure()
         }
 
         if (chosenOldGrid)
-        {
-            // Inherit the old color for the winning component only
             newGrid->SetDebugColor(chosenOldGrid->GetDebugColor());
+
+        // Add producers/consumers/batteries
+        for (const auto &p : comp.producers)
+        {
+            if (auto prodShared = p.second.lock())
+                newGrid->AddProducer(p.first, prodShared);
+        }
+        for (const auto &c : comp.consumers)
+        {
+            if (auto consShared = c.second.lock())
+                newGrid->AddConsumer(c.first, consShared);
+        }
+        for (const auto &b : comp.batteries)
+        {
+            if (auto batShared = b.second.lock())
+                newGrid->AddBattery(b.first, batShared);
         }
 
-        for (const auto &wirePos : component)
+        // Point connectors to the new grid
+        for (const auto &weakConn : comp.connectors)
         {
-            // Add connectors at this position if any
-            auto consumerTile = GetTileWithComponentAtPosition(wirePos, ComponentType::POWER_CONSUMER);
-            if (consumerTile)
-            {
-                auto consumer = consumerTile->GetComponent<PowerConsumerComponent>();
-                if (consumer)
-                    newGrid->AddConsumer(wirePos, consumer);
-            }
-
-            auto producerTile = GetTileWithComponentAtPosition(wirePos, ComponentType::POWER_PRODUCER);
-            if (producerTile)
-            {
-                auto producer = producerTile->GetComponent<PowerProducerComponent>();
-                if (producer)
-                    newGrid->AddProducer(wirePos, producer);
-            }
-
-            auto batteryTile = GetTileWithComponentAtPosition(wirePos, ComponentType::BATTERY);
-            if (batteryTile)
-            {
-                auto battery = batteryTile->GetComponent<BatteryComponent>();
-                if (battery)
-                    newGrid->AddBattery(wirePos, battery);
-            }
-
-            auto allTilesHere = GetAllTilesAtPosition(wirePos);
-            for (const auto &tile : allTilesHere)
-            {
-                if (auto connector = tile->GetComponent<PowerConnectorComponent>())
-                {
-                    connector->SetPowerGrid(newGrid);
-                }
-            }
+            if (auto conn = weakConn.lock())
+                conn->SetPowerGrid(newGrid);
         }
 
         newGrid->RebuildCaches();
@@ -567,7 +569,7 @@ void Station::AddPlannedTask(const Vector2Int &pos, const std::string &tileId, b
 void Station::CompletePlannedTask(const Vector2Int &pos)
 {
     auto it = std::find_if(plannedTasks.begin(), plannedTasks.end(), [pos](const std::shared_ptr<PlannedTask> &task)
-                            { return task->position == pos; });
+                           { return task->position == pos; });
 
     if (it == plannedTasks.end())
         return;
@@ -620,7 +622,7 @@ void Station::CompletePlannedTask(const Vector2Int &pos)
 bool Station::HasPlannedTaskAt(const Vector2Int &pos) const
 {
     return std::any_of(plannedTasks.begin(), plannedTasks.end(), [pos](const std::shared_ptr<PlannedTask> &task)
-                        { return task->position == pos; });
+                       { return task->position == pos; });
 }
 
 int Station::GetResourceCount(const std::string &resourceId) const

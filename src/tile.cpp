@@ -65,10 +65,7 @@ std::shared_ptr<Tile> Tile::CreateTile(const std::string &tileId, const Vector2I
         std::sort(tilesAtPos.begin(), tilesAtPos.end(), Tile::CompareByHeight);
 
         if (magic_enum::enum_flags_test_any(tile->GetHeight(), TileDef::Height::POWER))
-        {
-            if (auto st = tile->GetStation())
-                st->RebuildPowerGridsFromInfrastructure();
-        }
+            station->RebuildPowerGridsFromInfrastructure();
 
         if (auto powerConnector = tile->GetComponent<PowerConnectorComponent>())
         {
@@ -143,13 +140,9 @@ void Tile::DeleteTile()
         std::erase_if(tilesAtPos, [&self](const std::shared_ptr<Tile> &tile)
                       { return tile == self; });
 
-        // If this tile occupied the POWER height layer, rebuild power grids so
-        // removal of a wire tile updates connectivity.
         if (magic_enum::enum_flags_test_any(GetHeight(), TileDef::Height::POWER))
-        {
-            if (auto st = station)
-                st->RebuildPowerGridsFromInfrastructure();
-        }
+            station->RebuildPowerGridsFromInfrastructure();
+
         station->UpdateSpriteOffsets();
     }
 

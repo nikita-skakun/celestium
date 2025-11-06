@@ -111,10 +111,11 @@ struct BatteryComponent : Component
 protected:
     float charge;
     float maxCharge;
+    float deltaCharge;
 
 public:
     BatteryComponent(float maxCharge, std::shared_ptr<Tile> parent = nullptr)
-        : Component(parent), charge(maxCharge), maxCharge(maxCharge) {}
+        : Component(parent), charge(maxCharge), maxCharge(maxCharge), deltaCharge(0.f) {}
 
     float GetMaxChargeLevel() const { return maxCharge; }
     float GetChargeLevel() const { return charge; }
@@ -139,13 +140,17 @@ public:
         return drained;
     }
 
+    void ResetDeltaCharge() { deltaCharge = 0.f; }
+    void AccumulateDeltaCharge(float amount) { deltaCharge += amount; }
+
     std::shared_ptr<Component> Clone(std::shared_ptr<Tile> newParent) const override
     {
         return std::make_shared<BatteryComponent>(charge, newParent);
     }
 
     ComponentType GetType() const override { return ComponentType::BATTERY; }
-    std::optional<std::string> GetInfo() const override { return "   + Charge Level: " + ToString(charge, 0) + " / " + ToString(maxCharge, 0); }
+    std::optional<std::string> GetInfo() const override { return "   + Charge Level: " + ToString(charge, 0) + " / " + ToString(maxCharge, 0) + " (" +
+                                                                 (deltaCharge > 0 ? "+" : "") + ToString(deltaCharge, 0) + "/s)"; }
 };
 
 struct PowerConsumerComponent : Component
@@ -194,17 +199,12 @@ struct PowerProducerComponent : Component
 {
 protected:
     float powerProduction;
-    float availablePower;
 
 public:
     PowerProducerComponent(float powerProduction, std::shared_ptr<Tile> parent = nullptr)
-        : Component(parent), powerProduction(std::max(powerProduction, 0.f)), availablePower(0.f) {}
+        : Component(parent), powerProduction(std::max(powerProduction, 0.f)) {}
 
     float GetPowerProduction() const { return powerProduction; }
-    float GetAvailablePower() const { return availablePower; }
-
-    void UseAvailablePower(float usedPower) { availablePower -= usedPower; }
-    void ProducePower(float deltaTime) { availablePower = GetPowerProduction() * deltaTime; }
 
     std::shared_ptr<Component> Clone(std::shared_ptr<Tile> newParent) const override
     {

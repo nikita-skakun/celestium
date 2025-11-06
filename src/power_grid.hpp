@@ -15,9 +15,9 @@ protected:
     std::unordered_map<Vector2Int, std::weak_ptr<PowerProducerComponent>> _producers;
     std::unordered_map<Vector2Int, std::weak_ptr<BatteryComponent>> _batteries;
 
-    std::vector<std::shared_ptr<PowerConsumerComponent>> cachedConsumers;
-    std::vector<std::shared_ptr<PowerProducerComponent>> cachedProducers;
-    std::vector<std::shared_ptr<BatteryComponent>> cachedBatteries;
+    std::vector<std::weak_ptr<PowerConsumerComponent>> cachedConsumers;
+    std::vector<std::weak_ptr<PowerProducerComponent>> cachedProducers;
+    std::vector<std::weak_ptr<BatteryComponent>> cachedBatteries;
 
     bool dirty = false;
     Color debugColor = WHITE;
@@ -59,7 +59,6 @@ public:
     float GetTotalMaxBatteryCharge() const;
     float GetTotalBatteryCapacity() const;
 
-    float DrainBatteriesProportionally(float amount);
     void RebuildCaches();
     void Update(float deltaTime);
 };
