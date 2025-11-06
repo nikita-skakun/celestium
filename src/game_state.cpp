@@ -3,6 +3,7 @@
 #include "fixed_update.hpp"
 #include "game_state.hpp"
 #include "station.hpp"
+#include "ui.hpp"
 #include "ui_manager.hpp"
 
 void GameManager::SetGameState(GameState state)
@@ -31,11 +32,12 @@ void GameManager::SetGameState(GameState state)
     }
     case GameState::GAME_SIM:
     {
+        ClearRenderSystems();
         PrepareTestWorld();
         UiManager::InitializeGameSim();
 
         manager.updateThread = std::thread([&]()
-                                           { FixedUpdate(manager.timeSinceFixedUpdate); });
+                                          { FixedUpdate(manager.timeSinceFixedUpdate); });
         break;
     }
     default:
@@ -92,6 +94,8 @@ void GameManager::Initialize()
     manager.horizontalSymmetry = false;
     manager.verticalSymmetry = false;
     manager.buildTileId = "";
+
+    ClearRenderSystems();
 }
 
 void GameManager::PrepareTestWorld()

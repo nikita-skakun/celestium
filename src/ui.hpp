@@ -16,3 +16,4 @@ void DrawTooltip(const std::string &tooltip, const Vector2 &pos, float padding =
 void DrawMainTooltip();
 void DrawBuildUi();
 void DrawPlannedTasks();
+void ClearRenderSystems();
