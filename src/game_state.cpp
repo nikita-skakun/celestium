@@ -3,6 +3,7 @@
 #include "fixed_update.hpp"
 #include "game_state.hpp"
 #include "station.hpp"
+#include "ui.hpp"
 #include "ui_manager.hpp"
 
 void GameManager::SetGameState(GameState state)
@@ -20,6 +21,8 @@ void GameManager::SetGameState(GameState state)
     }
 
     UiManager::ClearAllElements();
+    GameManager::SetRenderSnapshot(nullptr);
+    ClearRenderSystems();
 
     switch (state)
     {
@@ -35,7 +38,7 @@ void GameManager::SetGameState(GameState state)
         UiManager::InitializeGameSim();
 
         manager.updateThread = std::thread([&]()
-                                           { FixedUpdate(manager.timeSinceFixedUpdate); });
+                                          { FixedUpdate(manager.timeSinceFixedUpdate); });
         break;
     }
     default:

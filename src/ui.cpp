@@ -14,6 +14,19 @@
 #include "ui_manager.hpp"
 #include "ui.hpp"
 
+struct RenderParticleSystem
+{
+    std::shared_ptr<ParticleSystem> system;
+    std::string psysId;
+    sol::protected_function onCreateFunc;
+    sol::protected_function onUpdateFunc;
+    sol::protected_function onDeleteFunc;
+    std::shared_ptr<Effect> effectRef;
+    bool deleteCalled = false;
+};
+
+std::unordered_map<uint64_t, std::vector<RenderParticleSystem>> g_renderSystems;
+
 Color GetTileTint(const std::shared_ptr<Tile> &)
 {
     Color tint = WHITE;
@@ -245,18 +258,7 @@ void DrawEnvironmentalEffects()
     if (!snapshot)
         return;
 
-    struct RenderParticleSystem
-    {
-        std::shared_ptr<ParticleSystem> system;
-        std::string psysId;
-        sol::protected_function onCreateFunc;
-        sol::protected_function onUpdateFunc;
-        sol::protected_function onDeleteFunc;
-        std::shared_ptr<Effect> effectRef;
-        bool deleteCalled = false;
-    };
 
-    static std::unordered_map<uint64_t, std::vector<RenderParticleSystem>> g_renderSystems;
 
     // Collect current effect IDs for cleanup detection
     std::unordered_set<uint64_t> currentIds;
@@ -769,4 +771,16 @@ void DrawPlannedTasks()
         Rectangle destRect = Vector2ToRect(GameManager::WorldToScreen(task->position) + tileSize / 4., tileSize / 2.);
         DrawTexturePro(iconTileset, sourceRect, destRect, tileSize / 2., 0, Fade(WHITE, .4));
     }
+}
+
+void ClearRenderSystems()
+{
+    for (auto &kv : g_renderSystems)
+    {
+        for (auto &r : kv.second)
+        {
+            r.system->Clear();
+        }
+    }
+    g_renderSystems.clear();
 }
