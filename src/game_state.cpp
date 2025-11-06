@@ -90,6 +90,7 @@ void GameManager::Initialize()
     manager.selectedCrewList.clear();
     manager.station = nullptr;
     manager.buildMode = false;
+    manager.cancelMode = false;
     manager.paused = false;
     manager.forcePaused = false;
     manager.horizontalSymmetry = false;
@@ -110,6 +111,7 @@ void GameManager::PrepareTestWorld()
     manager.selectedCrewList.clear();
     manager.hoveredCrewList.clear();
     manager.buildMode = false;
+    manager.cancelMode = false;
     manager.buildTileId = "";
 }
 

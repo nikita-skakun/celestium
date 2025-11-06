@@ -280,7 +280,7 @@ void AddBuildToggle(std::shared_ptr<UiPanel> buildMenuPanel, const TileToggleCon
     Vector2 togglePos = PANEL_POS + Vector2(SPACING.x + index * (TOGGLE_SIZE.x + SPACING.x), SPACING.y);
 
     auto onToggle = [config](bool state)
-    { GameManager::SetBuildTileId(state ? config.tileId : ""); };
+    { if (state) { GameManager::SetCancelMode(false); GameManager::SetBuildTileId(config.tileId); } else { GameManager::SetBuildTileId(""); } };
 
     auto toggle = std::make_shared<UiToggle>(Vector2ToRect(togglePos, TOGGLE_SIZE),
                                              GameManager::IsBuildTileId(config.tileId),
@@ -449,11 +449,25 @@ void InitializeBuildCategory()
     std::weak_ptr<UiToggle> _oxygenButton = oxygenButton;
     oxygenButton->SetOnUpdate([_oxygenButton]()
                               { if (auto oxygenButton = _oxygenButton.lock())
-                             { oxygenButton->SetToggle(GameManager::GetSelectedCategory() == TileDef::Category::OXYGEN); } });
+                         { oxygenButton->SetToggle(GameManager::GetSelectedCategory() == TileDef::Category::OXYGEN); } });
     buildCategoryPanel->AddChild(oxygenButton);
     auto oxygenIcon = std::make_shared<UiIcon>(Vector2ToRect(oxygenButton->GetPosition() + ICON_OFFSET, ICON_SIZE),
                                                "ICON", Rectangle(0, 0, 1, 1) * TILE_SIZE, Fade(DARKGRAY, .8));
     oxygenButton->AddChild(oxygenIcon);
+
+    // Fourth button will be cancel planned tasks
+    auto cancelButton = std::make_shared<UiToggle>(Vector2ToRect(oxygenButton->GetPosition() + Vector2(BUTTON_SIZE.x + SPACING.x * 2., 0), BUTTON_SIZE),
+                                                   GameManager::IsInCancelMode(), [](bool state)
+                                                   { GameManager::SetCancelMode(state); if (state) GameManager::SetBuildTileId(""); });
+    std::weak_ptr<UiToggle> _cancelButton = cancelButton;
+    cancelButton->SetOnUpdate([_cancelButton]()
+                              { if (auto cancelButton = _cancelButton.lock())
+                         { cancelButton->SetVisible(GameManager::IsInBuildMode() && GameManager::GetCamera().IsUiClear());
+                           cancelButton->SetToggle(GameManager::IsInCancelMode()); } });
+    buildCategoryPanel->AddChild(cancelButton);
+    auto cancelIcon = std::make_shared<UiIcon>(Vector2ToRect(cancelButton->GetPosition() + ICON_OFFSET, ICON_SIZE),
+                                               "ICON", Rectangle(7, 1, 1, 1) * TILE_SIZE, Fade(DARKGRAY, .8));
+    cancelButton->AddChild(cancelIcon);
 }
 
 void InitializeBuildMenu()

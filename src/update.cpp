@@ -74,6 +74,31 @@ void HandleBuildMode()
     if (!station)
         return;
 
+    // If we're in cancel mode, left-click cancels planned tasks (respecting symmetry)
+    if (IsMouseButtonPressed(MOUSE_LEFT_BUTTON) && GameManager::IsInCancelMode())
+    {
+        Vector2Int cursorPos = ToVector2Int(GameManager::GetWorldMousePos());
+        std::vector<Vector2Int> posListToCancel;
+        posListToCancel.push_back(cursorPos);
+        if (GameManager::IsHorizontalSymmetry())
+            posListToCancel.push_back(Vector2Int(cursorPos.x, -cursorPos.y - 1));
+        if (GameManager::IsVerticalSymmetry())
+            posListToCancel.push_back(Vector2Int(-cursorPos.x - 1, cursorPos.y));
+        if (GameManager::IsHorizontalSymmetry() && GameManager::IsVerticalSymmetry())
+            posListToCancel.push_back(Vector2Int(-cursorPos.x - 1, -cursorPos.y - 1));
+
+        for (const auto &pos : posListToCancel)
+        {
+            if (station->HasPlannedTaskAt(pos))
+            {
+                station->CancelPlannedTask(pos);
+                LogMessage(LogLevel::DEBUG, std::format("Canceled planned task at {}", ToString(pos)));
+            }
+        }
+
+        return; // Don't also place/delete while canceling
+    }
+
     if (IsMouseButtonPressed(MOUSE_LEFT_BUTTON) && !GameManager::GetBuildTileId().empty())
         HandlePlaceTile(station);
 
