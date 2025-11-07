@@ -25,7 +25,15 @@ struct RenderParticleSystem
     bool deleteCalled = false;
 };
 
+struct StarfieldParticle
+{
+    u_int16_t x, y;
+    u_char z, size;
+    Color color;
+};
+
 std::unordered_map<uint64_t, std::vector<RenderParticleSystem>> g_renderSystems;
+std::vector<StarfieldParticle> g_starfieldParticles;
 
 Color GetTileTint(const std::shared_ptr<Tile> &)
 {
@@ -257,8 +265,6 @@ void DrawEnvironmentalEffects()
     auto snapshot = GameManager::GetRenderSnapshot();
     if (!snapshot)
         return;
-
-
 
     // Collect current effect IDs for cleanup detection
     std::unordered_set<uint64_t> currentIds;
@@ -783,4 +789,51 @@ void ClearRenderSystems()
         }
     }
     g_renderSystems.clear();
+}
+
+void CreateStarfield()
+{
+    g_starfieldParticles.clear();
+    const int starCount = 500;
+    const Vector2 screenSize = GetScreenSize();
+
+    for (int i = 0; i < starCount; ++i)
+    {
+        StarfieldParticle star;
+        star.x = GetRandomValue(0, screenSize.x);
+        star.y = GetRandomValue(0, screenSize.y);
+        star.z = GetRandomValue(0, 100);
+        star.size = GetRandomValue(1, 3);
+        u_char brightness = GetRandomValue(100, 225);
+        u_char r = brightness + GetRandomValue(0, 30);
+        u_char g = brightness + GetRandomValue(0, 30);
+        u_char b = brightness + GetRandomValue(0, 30);
+        star.color = Color(r, g, b, GetRandomValue(150, 255));
+        g_starfieldParticles.push_back(star);
+    }
+}
+
+void DrawStarfieldBackground()
+{
+    const Vector2 screenSize = GetScreenSize();
+    const Vector2 oldSceenSize = GameManager::GetOriginalScreenSize();
+    const Vector2 scale = Vector2(screenSize.x / oldSceenSize.x, screenSize.y / oldSceenSize.y);
+    const Vector2 camPixels = GameManager::GetCamera().GetPosition() * TILE_SIZE;
+    auto wrap = [](float v, float dim)
+    { float r = std::fmod(v, dim); return r >= 0.f ? r : r + dim; };
+
+    for (const auto &star : g_starfieldParticles)
+    {
+        // depth: 0..100 -> closer stars have larger effect
+        float parallax = 0.01f * (1.f + (star.z / 100.f) * 2.f);
+        DrawRectangle(
+            wrap(star.x * scale.x - wrap(camPixels.x * parallax, screenSize.x), screenSize.x),
+            wrap(star.y * scale.y - wrap(camPixels.y * parallax, screenSize.y), screenSize.y),
+            star.size, star.size, star.color);
+    }
+}
+
+void ClearStarfield()
+{
+    g_starfieldParticles.clear();
 }

@@ -23,6 +23,7 @@ void GameManager::SetGameState(GameState state)
     UiManager::ClearAllElements();
     GameManager::SetRenderSnapshot(nullptr);
     ClearRenderSystems();
+    ClearStarfield();
 
     switch (state)
     {
@@ -34,11 +35,12 @@ void GameManager::SetGameState(GameState state)
     }
     case GameState::GAME_SIM:
     {
+        CreateStarfield();
         PrepareTestWorld();
         UiManager::InitializeGameSim();
 
         manager.updateThread = std::thread([&]()
-                                          { FixedUpdate(manager.timeSinceFixedUpdate); });
+                                           { FixedUpdate(manager.timeSinceFixedUpdate); });
         break;
     }
     default:
@@ -197,6 +199,16 @@ Rectangle GameManager::WorldToScreen(const Rectangle &worldRect)
     Vector2 screenSize = RectToSize(worldRect) * TILE_SIZE * camera.GetZoom();
 
     return Vector2ToRect(screenPos, screenSize);
+}
+
+const Vector2 &GameManager::GetOriginalScreenSize()
+{
+    return GetInstance().originalScreenSize;
+}
+
+void GameManager::SetOriginalScreenSize()
+{
+    GetInstance().originalScreenSize = GetScreenSize();
 }
 
 static sol::state lua;

@@ -32,6 +32,7 @@ private:
     std::string buildTileId = "";
 
     double timeSinceFixedUpdate = 0;
+    Vector2 originalScreenSize;
     std::thread updateThread;
 
     // Double-buffered render state
@@ -136,4 +137,6 @@ public:
     static Vector2 WorldToScreen(const Vector2 &worldPos);
     static Vector2 WorldToScreen(const Vector2Int &worldPos);
     static Rectangle WorldToScreen(const Rectangle &worldRect);
+    static const Vector2 &GetOriginalScreenSize();
+    static void SetOriginalScreenSize();
 };

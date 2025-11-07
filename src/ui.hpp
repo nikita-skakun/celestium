@@ -17,3 +17,6 @@ void DrawMainTooltip();
 void DrawBuildUi();
 void DrawPlannedTasks();
 void ClearRenderSystems();
+void CreateStarfield();
+void DrawStarfieldBackground();
+void ClearStarfield();

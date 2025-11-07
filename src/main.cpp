@@ -12,11 +12,12 @@ int main()
 {
     SetConfigFlags(FLAG_FULLSCREEN_MODE);
     InitWindow(0, 0, "Celestium");
+    SetExitKey(0);
 
     DefinitionManager::ParseConstantsFromFile("../assets/definitions/constants.yml");
 
     GameManager::GetCamera().SetFps(GetMonitorRefreshRate(GetCurrentMonitor()));
-    SetExitKey(0);
+    GameManager::SetOriginalScreenSize();
 
     AssetManager::Initialize();
     GameManager::GetLua().open_libraries(sol::lib::base, sol::lib::math, sol::lib::table, sol::lib::string);
@@ -37,6 +38,7 @@ int main()
     {
         BeginDrawing();
         ClearBackground(SPACE_COLOR);
+        DrawStarfieldBackground();
 
         GameManager::HandleStateInputs();
         UiManager::Update();
