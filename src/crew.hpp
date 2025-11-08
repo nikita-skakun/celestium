@@ -1,5 +1,6 @@
 #pragma once
 #include "utils.hpp"
+#include <deque>
 
 struct Action;
 struct Tile;
@@ -10,7 +11,7 @@ protected:
     std::string name;
     Vector2 position;
     Color color;
-    std::vector<std::shared_ptr<Action>> actionQueue;
+    std::deque<std::shared_ptr<Action>> actionQueue;
     float oxygen;
     float health;
     bool isAlive;
@@ -24,9 +25,9 @@ public:
     constexpr const Vector2 &GetPosition() const { return position; }
     constexpr void SetPosition(const Vector2 &newPosition) { position = newPosition; }
     constexpr Color GetColor() const { return color; }
-    constexpr const std::vector<std::shared_ptr<Action>> &GetReadOnlyActionQueue() const { return actionQueue; }
-    constexpr std::vector<std::shared_ptr<Action>> &GetActionQueue() { return actionQueue; }
-    constexpr void RemoveFirstAction() { actionQueue.erase(actionQueue.begin()); }
+    constexpr const std::deque<std::shared_ptr<Action>> &GetReadOnlyActionQueue() const { return actionQueue; }
+    constexpr std::deque<std::shared_ptr<Action>> &GetActionQueue() { return actionQueue; }
+    constexpr void RemoveFirstAction() { actionQueue.pop_front(); }
     constexpr float GetOxygen() const { return oxygen; }
     constexpr float GetHealth() const { return health; }
     constexpr bool IsAlive() const { return isAlive; }
