@@ -35,7 +35,7 @@ void GameManager::SetGameState(GameState state)
     }
     case GameState::GAME_SIM:
     {
-        CreateStarfield();
+        CreateStarfield(12345); // TODO: Use seed from save file
         PrepareTestWorld();
         UiManager::InitializeGameSim();
 
