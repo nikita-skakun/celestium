@@ -791,24 +791,33 @@ void ClearRenderSystems()
     g_renderSystems.clear();
 }
 
-void CreateStarfield()
+void CreateStarfield(uint64_t seed)
 {
     g_starfieldParticles.clear();
     const int starCount = 500;
     const Vector2 screenSize = GetScreenSize();
 
+    std::mt19937 gen(seed);
+    std::uniform_int_distribution<uint16_t> dist_x(0, screenSize.x);
+    std::uniform_int_distribution<uint16_t> dist_y(0, screenSize.y);
+    std::uniform_int_distribution<u_char> dist_z(0, 100);
+    std::uniform_int_distribution<u_char> dist_size(1, 3);
+    std::uniform_int_distribution<u_char> dist_brightness(100, 225);
+    std::uniform_int_distribution<u_char> dist_color_offset(0, 30);
+    std::uniform_int_distribution<u_char> dist_alpha(150, 255);
+
     for (int i = 0; i < starCount; ++i)
     {
         StarfieldParticle star;
-        star.x = GetRandomValue(0, screenSize.x);
-        star.y = GetRandomValue(0, screenSize.y);
-        star.z = GetRandomValue(0, 100);
-        star.size = GetRandomValue(1, 3);
-        u_char brightness = GetRandomValue(100, 225);
-        u_char r = brightness + GetRandomValue(0, 30);
-        u_char g = brightness + GetRandomValue(0, 30);
-        u_char b = brightness + GetRandomValue(0, 30);
-        star.color = Color(r, g, b, GetRandomValue(150, 255));
+        star.x = dist_x(gen);
+        star.y = dist_y(gen);
+        star.z = dist_z(gen);
+        star.size = dist_size(gen);
+        u_char brightness = dist_brightness(gen);
+        u_char r = brightness + dist_color_offset(gen);
+        u_char g = brightness + dist_color_offset(gen);
+        u_char b = brightness + dist_color_offset(gen);
+        star.color = Color(r, g, b, dist_alpha(gen));
         g_starfieldParticles.push_back(star);
     }
 }
