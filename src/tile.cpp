@@ -39,58 +39,71 @@ Tile::Tile(const std::string &tileId, const Vector2Int &position, const std::sha
     tileDef = DefinitionManager::GetTileDefinition(tileId);
 }
 
-std::shared_ptr<Tile> Tile::CreateTile(const std::string &tileId, const Vector2Int &position, const std::shared_ptr<Station> &station)
+std::shared_ptr<Tile> Tile::CreateTile(const std::string &tileId, const Vector2Int &position, const std::shared_ptr<Station> &station, bool overwriteExisting, bool useResources)
 {
+    if (!station)
+        throw std::runtime_error("Cannot create tile without a valid station.");
+
+    auto tileDef = DefinitionManager::GetTileDefinition(tileId);
+    if (!tileDef)
+        throw std::runtime_error(std::format("Tile definition not found: {}", tileId));
+
+    if (useResources) {
+        const auto &requiredResources = tileDef->GetBuildResources();
+        if (!station->HasResources(requiredResources))
+            return nullptr;
+        station->ConsumeResources(requiredResources);
+    }
+
+    auto &tilesAtPos = station->tileMap[position];
+    for (const auto &existingTile : tilesAtPos)
+    {
+        // Check if the existing tile and the new tile have overlapping heights
+        if (existingTile && (magic_enum::enum_integer(existingTile->GetHeight() & tileDef->GetHeight()) > 0))
+        {
+            if (overwriteExisting)
+                existingTile->DeleteTile(useResources);
+            else
+                return nullptr;
+        }
+    }
+
     std::shared_ptr<Tile> tile = std::make_shared<Tile>(Tile(tileId, position, station));
 
-    const auto &refComponents = tile->GetTileDefinition()->GetReferenceComponents();
+    const auto &refComponents = tileDef->GetReferenceComponents();
     tile->components.reserve(refComponents.size());
 
     for (const auto &refComponent : refComponents)
-    {
         tile->components.insert(refComponent->Clone(tile));
-    }
 
-    if (station)
+    tilesAtPos.push_back(tile);
+    std::sort(tilesAtPos.begin(), tilesAtPos.end(), Tile::CompareByHeight);
+
+    if (magic_enum::enum_flags_test_any(tile->GetHeight(), TileDef::Height::POWER))
+        station->RebuildPowerGridsFromInfrastructure();
+    else if (auto powerConnector = tile->GetComponent<PowerConnectorComponent>())
     {
-        auto &tilesAtPos = station->tileMap[position];
-        for (const auto &existingTile : tilesAtPos)
+        if (auto powerWireTile = station->GetTileWithHeightAtPosition(position, TileDef::Height::POWER))
         {
-            // Check if the existing tile and the new tile have overlapping heights
-            if (existingTile && (magic_enum::enum_integer(existingTile->GetHeight() & tile->GetHeight()) > 0))
-                throw std::runtime_error(std::format("A tile {} already exists at {} with overlapping height.", existingTile->GetName(), ToString(position)));
-        }
-
-        tilesAtPos.push_back(tile);
-        std::sort(tilesAtPos.begin(), tilesAtPos.end(), Tile::CompareByHeight);
-
-        if (magic_enum::enum_flags_test_any(tile->GetHeight(), TileDef::Height::POWER))
-            station->RebuildPowerGridsFromInfrastructure();
-
-        if (auto powerConnector = tile->GetComponent<PowerConnectorComponent>())
-        {
-            if (auto powerWireTile = station->GetTileWithHeightAtPosition(position, TileDef::Height::POWER))
+            if (auto powerWireConnector = powerWireTile->GetComponent<PowerConnectorComponent>())
             {
-                if (auto powerWireConnector = powerWireTile->GetComponent<PowerConnectorComponent>())
+                if (auto wireGrid = powerWireConnector->GetPowerGrid())
                 {
-                    if (auto wireGrid = powerWireConnector->GetPowerGrid())
-                    {
-                        // Register this tile's components with the found grid
-                        if (auto consumer = tile->GetComponent<PowerConsumerComponent>())
-                            wireGrid->AddConsumer(position, consumer);
-                        if (auto producer = tile->GetComponent<PowerProducerComponent>())
-                            wireGrid->AddProducer(position, producer);
-                        if (auto battery = tile->GetComponent<BatteryComponent>())
-                            wireGrid->AddBattery(position, battery);
-                        powerConnector->SetPowerGrid(wireGrid);
-                    }
+                    // Register this tile's components with the found grid
+                    if (auto consumer = tile->GetComponent<PowerConsumerComponent>())
+                        wireGrid->AddConsumer(position, consumer);
+                    if (auto producer = tile->GetComponent<PowerProducerComponent>())
+                        wireGrid->AddProducer(position, producer);
+                    if (auto battery = tile->GetComponent<BatteryComponent>())
+                        wireGrid->AddBattery(position, battery);
+                    powerConnector->SetPowerGrid(wireGrid);
                 }
             }
         }
-
-        if (auto door = tile->GetComponent<DoorComponent>())
-            door->SetOpenState(door->IsOpen());
     }
+
+    if (auto door = tile->GetComponent<DoorComponent>())
+        door->SetOpenState(door->IsOpen());
 
     return tile;
 }
@@ -124,7 +137,7 @@ void Tile::RotateTile()
     station->UpdateSpriteOffsets();
 }
 
-void Tile::DeleteTile()
+void Tile::DeleteTile(bool returnResources)
 {
     auto self = shared_from_this();
 
@@ -142,6 +155,9 @@ void Tile::DeleteTile()
 
         if (magic_enum::enum_flags_test_any(GetHeight(), TileDef::Height::POWER))
             station->RebuildPowerGridsFromInfrastructure();
+
+        if (returnResources)
+            station->ReturnResourcesFromTile(self);
 
         station->UpdateSpriteOffsets();
     }

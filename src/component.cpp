@@ -58,7 +58,7 @@ void DurabilityComponent::SetHitpoints(float newHitpoints)
     if (hitpoints > 0.f || !parent)
         return;
 
-    parent->DeleteTile();
+    parent->DeleteTile(true);
 }
 
 void OxygenComponent::Diffuse(float deltaTime)

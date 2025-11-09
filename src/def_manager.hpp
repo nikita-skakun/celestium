@@ -62,14 +62,28 @@ public:
         return DefinitionManager::GetInstance().tileDefinitions;
     }
 
-    static const std::shared_ptr<TileDef> &GetTileDefinition(const std::string &tileId)
+    static std::shared_ptr<TileDef> GetTileDefinition(const std::string &tileId)
     {
-        return DefinitionManager::GetInstance().tileDefinitions.at(tileId);
+        try
+        {
+            return DefinitionManager::GetInstance().tileDefinitions.at(tileId);
+        }
+        catch (...)
+        {
+            return nullptr;
+        }
     }
 
     static std::shared_ptr<EffectDef> GetEffectDefinition(const std::string &effectId)
     {
-        return DefinitionManager::GetInstance().effectDefinitions.at(effectId);
+        try
+        {
+            return DefinitionManager::GetInstance().effectDefinitions.at(effectId);
+        }
+        catch (...)
+        {
+            return nullptr;
+        }
     }
 
     static const std::unordered_map<std::string, std::shared_ptr<ResourceDef>> &GetResourceDefinitions()
@@ -79,7 +93,14 @@ public:
 
     static std::shared_ptr<ResourceDef> GetResourceDefinition(const std::string &resourceId)
     {
-        return DefinitionManager::GetInstance().resourceDefinitions.at(resourceId);
+        try
+        {
+            return DefinitionManager::GetInstance().resourceDefinitions.at(resourceId);
+        }
+        catch (...)
+        {
+            return nullptr;
+        }
     }
 
     // Resolve a slash-separated path (e.g. "ui/textColor") against a node and return

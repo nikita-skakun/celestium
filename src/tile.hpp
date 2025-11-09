@@ -16,13 +16,13 @@ private:
     std::unordered_set<std::shared_ptr<Component>> components;
     std::shared_ptr<Station> station;
 
-    Tile(const std::string &defName, const Vector2Int &position, const std::shared_ptr<Station> &station);
+    Tile(const std::string &tileId, const Vector2Int &position, const std::shared_ptr<Station> &station);
 
 public:
-    static std::shared_ptr<Tile> CreateTile(const std::string &defName, const Vector2Int &position, const std::shared_ptr<Station> &station);
+    static std::shared_ptr<Tile> CreateTile(const std::string &tileId, const Vector2Int &position, const std::shared_ptr<Station> &station, bool overwriteExisting, bool useResources);
     void MoveTile(const Vector2Int &newPosition);
     void RotateTile();
-    void DeleteTile();
+    void DeleteTile(bool returnResources);
 
     constexpr const Vector2Int &GetPosition() const { return position; }
 

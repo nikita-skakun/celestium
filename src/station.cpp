@@ -7,7 +7,6 @@
 #include "sprite.hpp"
 #include "station.hpp"
 #include "tile.hpp"
-#include <queue>
 
 void Station::CreateRectRoom(const Vector2Int &pos, const Vector2Int &size)
 {
@@ -17,7 +16,7 @@ void Station::CreateRectRoom(const Vector2Int &pos, const Vector2Int &size)
         for (int x = 0; x < size.x; x++)
         {
             bool isWall = (x == 0 || y == 0 || x == size.x - 1 || y == size.y - 1);
-            Tile::CreateTile(isWall ? "WALL" : "BLUE_FLOOR", pos + Vector2Int(x, y), self);
+            Tile::CreateTile(isWall ? "WALL" : "BLUE_FLOOR", pos + Vector2Int(x, y), self, true, false);
         }
     }
 }
@@ -43,18 +42,11 @@ void Station::CreateHorizontalCorridor(const Vector2Int &startPos, int length, i
             bool isEnding = (i == 0 || i == absLength - 1);
             bool isWall = isEnding ? (y != 0) : (y == start || y == end - 1);
             Vector2Int pos = startPos + Vector2Int(i * direction, y);
-            const auto &oldTile = GetTileAtPosition(pos);
-            if (isWall && oldTile)
-                continue;
-
-            if (!isWall && oldTile)
-                oldTile->DeleteTile();
-
-            Tile::CreateTile(isWall ? "WALL" : "BLUE_FLOOR", pos, self);
+            Tile::CreateTile(isWall ? "WALL" : "BLUE_FLOOR", pos, self, true, false);
 
             // TODO: Add larger sized doors
             if (isEnding && !isWall)
-                Tile::CreateTile("DOOR", pos, self);
+                Tile::CreateTile("DOOR", pos, self, true, false);
         }
     }
 }
@@ -63,56 +55,32 @@ std::shared_ptr<Station> CreateStation()
 {
     std::shared_ptr<Station> station = std::make_shared<Station>();
     station->CreateRectRoom(Vector2Int(-4, -4), Vector2Int(9, 9));
-    station->CreateRectRoom(Vector2Int(10, -4), Vector2Int(9, 9));
-    station->CreateHorizontalCorridor(Vector2Int(4, 0), 7, 3);
 
-    Tile::CreateTile("OXYGEN_PRODUCER", Vector2Int(0, 0), station);
-    Tile::CreateTile("OXYGEN_PRODUCER", Vector2Int(14, 0), station);
-    Tile::CreateTile("BATTERY", Vector2Int(0, -2), station);
-    Tile::CreateTile("FRAME", Vector2Int(0, -5), station);
-    Tile::CreateTile("FRAME", Vector2Int(0, -6), station);
-    Tile::CreateTile("FRAME", Vector2Int(-1, -6), station);
-    Tile::CreateTile("FRAME", Vector2Int(1, -6), station);
-    Tile::CreateTile("FRAME", Vector2Int(0, -7), station);
-    Tile::CreateTile("FRAME", Vector2Int(-1, -7), station);
-    Tile::CreateTile("FRAME", Vector2Int(1, -7), station);
-    Tile::CreateTile("SOLAR_PANEL", Vector2Int(0, -7), station);
-    Tile::CreateTile("SOLAR_PANEL", Vector2Int(-1, -7), station);
-    Tile::CreateTile("SOLAR_PANEL", Vector2Int(1, -7), station);
+    // Delete the tile at the door position to make space for the door
+    Tile::CreateTile("BLUE_FLOOR", Vector2Int(4, 0), station, true, false);
+    Tile::CreateTile("DOOR", Vector2Int(4, 0), station, true, false);
+    Tile::CreateTile("OXYGEN_PRODUCER", Vector2Int(0, 0), station, true, false);
+    Tile::CreateTile("BATTERY", Vector2Int(0, -2), station, true, false);
+    Tile::CreateTile("FRAME", Vector2Int(0, -5), station, true, false);
 
-    station->effects.push_back(std::make_shared<FireEffect>(Vector2Int(12, 0)));
-    station->effects.push_back(std::make_shared<FoamEffect>(Vector2Int(13, 0)));
-    station->effects.push_back(std::make_shared<FoamEffect>(Vector2Int(13, 1)));
-    station->effects.push_back(std::make_shared<FoamEffect>(Vector2Int(13, 2)));
+    for (int i = -1; i <= 1; i++)
+    {
+        Tile::CreateTile("FRAME", Vector2Int(i, -6), station, true, false);
+        Tile::CreateTile("SOLAR_PANEL", Vector2Int(i, -6), station, true, false);
+        Tile::CreateTile("WIRE", Vector2Int(i, -6), station, true, false);
+    }
 
-    // Place initial wire tiles as real tiles on the POWER layer
-    Tile::CreateTile("WIRE", Vector2Int(0, 0), station);
-    Tile::CreateTile("WIRE", Vector2Int(0, -2), station);
-    Tile::CreateTile("WIRE", Vector2Int(0, -1), station);
+    for (int i = 0; i <= 5; i++)
+        Tile::CreateTile("WIRE", Vector2Int(0, -i), station, true, false);
+
+    for (int i = 0; i <= 4; i++)
+        Tile::CreateTile("WIRE", Vector2Int(i, 0), station, true, false);
 
     station->UpdateSpriteOffsets();
 
     // Initialize starting resources
     station->AddResource("METAL", 100);
     station->AddResource("ELECTRONICS", 50);
-
-    auto fireAlarm = AudioManager::LoadSoundEffect("../assets/audio/fire_alarm.opus", SoundEffect::Type::EFFECT, false, true, .05);
-    std::weak_ptr<SoundEffect> _fireAlarm = fireAlarm;
-    fireAlarm->onUpdate = [_fireAlarm, station]()
-    {
-        auto fireAlarm = _fireAlarm.lock();
-        if (!station || !fireAlarm)
-            return true;
-
-        if (!station->HasEffectOfType("FIRE"))
-            fireAlarm->Stop();
-        else if (GameManager::IsInBuildMode())
-            fireAlarm->Pause();
-        else
-            fireAlarm->Play();
-
-        return false;
-    };
 
     return station;
 }
@@ -337,13 +305,13 @@ void Station::RebuildPowerGridsFromInfrastructure()
             continue; // skip non-power positions
 
         ComponentInfo comp;
-        std::queue<Vector2Int> q;
-        q.push(start);
+        std::deque<Vector2Int> q;
+        q.push_back(start);
 
         while (!q.empty())
         {
             Vector2Int cur = q.front();
-            q.pop();
+            q.pop_front();
             if (visited.contains(cur))
                 continue;
             visited.insert(cur);
@@ -383,7 +351,7 @@ void Station::RebuildPowerGridsFromInfrastructure()
                 if (visited.contains(nb))
                     continue;
                 if (GetTileWithHeightAtPosition(nb, TileDef::Height::POWER))
-                    q.push(nb);
+                    q.push_back(nb);
             }
         }
 
@@ -573,32 +541,10 @@ void Station::CompletePlannedTask(const Vector2Int &pos)
 
     if (it == plannedTasks.end())
         return;
-
     const auto &task = *it;
 
-    if (task->isBuild)
-    {
-        // Check if we have the required resources
-        auto tileDef = DefinitionManager::GetTileDefinition(task->tileId);
-        const auto &requiredResources = tileDef->GetBuildResources();
-
-        if (!HasResources(requiredResources))
-            return;
-
-        // Consume the resources
-        ConsumeResources(requiredResources);
-
-        // Delete overlapping tiles
-        auto overlappingTiles = GetTilesWithHeightAtPosition(pos, tileDef->GetHeight());
-        for (auto &tile : overlappingTiles)
-        {
-            ReturnResourcesFromTile(tile);
-            tile->DeleteTile();
-        }
-
-        // Create the new tile
-        Tile::CreateTile(task->tileId, pos, shared_from_this());
-    }
+    if (task->isBuild && !Tile::CreateTile(task->tileId, pos, shared_from_this(), true, true))
+        return;
     else
     {
         // Remove the specific tile by id
@@ -607,8 +553,7 @@ void Station::CompletePlannedTask(const Vector2Int &pos)
         {
             if (tile->GetId() == task->tileId)
             {
-                ReturnResourcesFromTile(tile);
-                tile->DeleteTile();
+                tile->DeleteTile(true);
                 break;
             }
         }
