@@ -220,43 +220,6 @@ void DrawStationOverlays()
     }
 }
 
-void DrawTileOutline(const std::shared_ptr<Tile> &tile, Color color)
-{
-    if (!tile)
-        return;
-
-    auto &camera = GameManager::GetCamera();
-    std::unordered_set<Vector2Int> positions = {tile->GetPosition()};
-    if (auto decorative = tile->GetComponent<DecorativeComponent>())
-    {
-        for (const auto &dTile : decorative->GetDecorativeTiles())
-        {
-            positions.insert(tile->GetPosition() + dTile->GetOffsetFromMainTile());
-        }
-    }
-
-    Vector2 tileSize = Vector2(1, 1) * TILE_SIZE * camera.GetZoom();
-    for (const auto &pos : positions)
-    {
-        Vector2 startPos = GameManager::WorldToScreen(ToVector2(pos) - Vector2(.5, .5));
-        Rectangle rect = Vector2ToRect(startPos, tileSize);
-
-        std::array<std::pair<Vector2, Vector2>, 4> lines = {
-            std::make_pair(Vector2{rect.x, rect.y}, Vector2{rect.x + rect.width, rect.y}),
-            std::make_pair(Vector2{rect.x + rect.width, rect.y}, Vector2{rect.x + rect.width, rect.y + rect.height}),
-            std::make_pair(Vector2{rect.x, rect.y + rect.height}, Vector2{rect.x + rect.width, rect.y + rect.height}),
-            std::make_pair(Vector2{rect.x, rect.y}, Vector2{rect.x, rect.y + rect.height})};
-
-        for (size_t i = 0; i < CARDINAL_DIRECTIONS.size(); ++i)
-        {
-            Vector2Int neighborPos = pos + DirectionToVector2Int(CARDINAL_DIRECTIONS[i]);
-
-            if (positions.count(neighborPos) == 0)
-                DrawLineEx(lines[i].first, lines[i].second, 3, color);
-        }
-    }
-}
-
 /**
  * Draws the station's environmental effects (such as fire or foam).
  */
@@ -604,9 +567,7 @@ void DrawTooltip(const std::string &tooltip, const Vector2 &pos, float padding, 
 
     float textWidth = 0;
     for (int i = 0; i < lineCount; i++)
-    {
         textWidth = std::max(textWidth, MeasureTextEx(font, lines[i], fontSize, 1).x);
-    }
 
     Vector2 size = Vector2(textWidth + 2 * padding, lineCount * fontSize + 2 * padding);
     Vector2 tooltipPos = pos;
@@ -625,9 +586,7 @@ void DrawTooltip(const std::string &tooltip, const Vector2 &pos, float padding, 
     DrawRectangleRec(Vector2ToRect(tooltipPos, size), Fade(LIGHTGRAY, .7));
 
     for (int i = 0; i < lineCount; i++)
-    {
         DrawTextEx(font, lines[i], tooltipPos + Vector2(padding, padding + (i * fontSize)), fontSize, 1, DARKGRAY);
-    }
 }
 
 /**
@@ -737,14 +696,14 @@ void DrawBuildUi()
 
 void DrawPlannedTasks()
 {
-    auto station = GameManager::GetStation();
-    if (!station)
+    auto snapshot = GameManager::GetRenderSnapshot();
+    if (!snapshot || !snapshot->station)
         return;
 
     Texture2D iconTileset = AssetManager::GetTexture("ICON");
     Vector2 tileSize = Vector2(1, 1) * TILE_SIZE * GameManager::GetCamera().GetZoom();
 
-    for (const auto &task : station->plannedTasks)
+    for (const auto &task : snapshot->station->plannedTasks)
     {
         if (task->isBuild)
         {
