@@ -2,9 +2,9 @@
 #include "utils.hpp"
 
 struct Crew;
-struct Tile;
-struct Station;
 struct Effect;
+struct Station;
+struct Tile;
 
 struct RenderSnapshot
 {
