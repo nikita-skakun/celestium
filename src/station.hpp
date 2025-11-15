@@ -6,8 +6,9 @@ struct PlannedTask;
 struct PowerGrid;
 struct Tile;
 
-enum class SpriteCondition : uint32_t;
 enum class ComponentType : uint8_t;
+enum class Direction : uint8_t;
+enum class SpriteCondition : uint32_t;
 
 struct Station : public std::enable_shared_from_this<Station>
 {

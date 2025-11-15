@@ -36,16 +36,9 @@ void FixedUpdate(double &timeSinceFixedUpdate)
                 UpdateTiles();
 
                 // Build and swap new RenderSnapshot for render thread
-                auto station = GameManager::GetStation();
                 auto snapshot = std::make_shared<RenderSnapshot>();
-                if (station)
-                {
-                    snapshot->effects = station->effects;
-                    snapshot->tileMap = station->tileMap;
-                }
-                // Copy crew
+                snapshot->station = GameManager::GetStation();
                 snapshot->crewList = GameManager::GetCrewList();
-                // Copy selected crew (for render-safe selection state)
                 snapshot->selectedCrewList = GameManager::GetSelectedCrew();
                 GameManager::SetRenderSnapshot(snapshot);
 

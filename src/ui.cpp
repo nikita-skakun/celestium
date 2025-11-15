@@ -99,14 +99,14 @@ void DrawPath(const std::deque<Vector2Int> &path, const Vector2 &startPos)
 void DrawStationTiles()
 {
     auto snapshot = GameManager::GetRenderSnapshot();
-    if (!snapshot)
+    if (!snapshot || !snapshot->station)
         return;
 
     auto &camera = GameManager::GetCamera();
     const float zoom = camera.GetZoom();
     const Vector2 tileSize = Vector2(1, 1) * TILE_SIZE * zoom;
 
-    for (const auto &kv : snapshot->tileMap)
+    for (const auto &kv : snapshot->station->tileMap)
     {
         for (const auto &tile : kv.second)
         {
@@ -140,7 +140,7 @@ void DrawStationTiles()
 void DrawStationOverlays()
 {
     auto snapshot = GameManager::GetRenderSnapshot();
-    if (!snapshot)
+    if (!snapshot || !snapshot->station)
         return;
 
     float zoom = GameManager::GetCamera().GetZoom();
@@ -148,7 +148,7 @@ void DrawStationOverlays()
     bool isPowerOverlay = GameManager::GetCamera().IsOverlay(PlayerCam::Overlay::POWER);
     Texture2D stationTileset = AssetManager::GetTexture("STATION");
     Texture2D iconTileset = AssetManager::GetTexture("ICON");
-    for (const auto &kv : snapshot->tileMap)
+    for (const auto &kv : snapshot->station->tileMap)
     {
         for (const auto &tile : kv.second)
         {
@@ -263,12 +263,12 @@ void DrawTileOutline(const std::shared_ptr<Tile> &tile, Color color)
 void DrawEnvironmentalEffects()
 {
     auto snapshot = GameManager::GetRenderSnapshot();
-    if (!snapshot)
+    if (!snapshot || !snapshot->station)
         return;
 
     // Collect current effect IDs for cleanup detection
     std::unordered_set<uint64_t> currentIds;
-    for (const auto &effect : snapshot->effects)
+    for (const auto &effect : snapshot->station->effects)
         currentIds.insert(effect->GetInstanceId());
 
     sol::state &lua = GameManager::GetLua();
@@ -276,7 +276,7 @@ void DrawEnvironmentalEffects()
     const bool paused = GameManager::IsGamePaused();
 
     // Ensure render systems exist for each active effect (create on first encounter)
-    for (const auto &effect : snapshot->effects)
+    for (const auto &effect : snapshot->station->effects)
     {
         uint64_t id = effect->GetInstanceId();
         auto &vec = g_renderSystems[id];
@@ -656,21 +656,25 @@ void DrawMainTooltip()
 
     Vector2Int tileHoverPos = GameManager::ScreenToTile(mousePos);
 
-    auto hoveredTiles = snapshot->GetTilesAtPosition(tileHoverPos);
-    for (const auto &tile : hoveredTiles)
+    if (snapshot->station)
     {
-        if (!hoverText.empty())
-            hoverText += "\n";
-        hoverText += tile->GetInfo();
-    }
-    if (!GameManager::IsInBuildMode())
-    {
-        auto hoveredEffects = snapshot->GetEffectsAtPosition(tileHoverPos);
-        for (const auto &effect : hoveredEffects)
+        auto hoveredTiles = snapshot->station->GetTilesAtPosition(tileHoverPos);
+        for (const auto &tile : hoveredTiles)
         {
             if (!hoverText.empty())
                 hoverText += "\n";
-            hoverText += effect->GetInfo();
+            hoverText += tile->GetInfo();
+        }
+
+        if (!GameManager::IsInBuildMode())
+        {
+            auto hoveredEffects = snapshot->station->GetEffectsAtPosition(tileHoverPos);
+            for (const auto &effect : hoveredEffects)
+            {
+                if (!hoverText.empty())
+                    hoverText += "\n";
+                hoverText += effect->GetInfo();
+            }
         }
     }
 

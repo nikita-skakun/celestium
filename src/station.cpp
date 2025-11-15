@@ -7,6 +7,7 @@
 #include "sprite.hpp"
 #include "station.hpp"
 #include "tile.hpp"
+#include <deque>
 
 void Station::CreateRectRoom(const Vector2Int &pos, const Vector2Int &size)
 {
