@@ -1,5 +1,4 @@
 #include "audio_manager.hpp"
-#include "logging.hpp"
 
 void AudioManager::CleanUp()
 {
@@ -13,7 +12,7 @@ void AudioManager::CleanUp()
     }
     catch (const RtAudioErrorType &e)
     {
-        LogMessage(LogLevel::ERROR, std::format("Error stopping audio stream: {}", static_cast<int>(e)));
+        TraceLog(TraceLogLevel::LOG_ERROR, std::format("Error stopping audio stream: {}", static_cast<int>(e)).c_str());
     }
 
     try
@@ -23,7 +22,7 @@ void AudioManager::CleanUp()
     }
     catch (const RtAudioErrorType &e)
     {
-        LogMessage(LogLevel::ERROR, std::format("Error closing audio stream: {}", static_cast<int>(e)));
+        TraceLog(TraceLogLevel::LOG_ERROR, std::format("Error closing audio stream: {}", static_cast<int>(e)).c_str());
     }
 
     for (auto &sound : audio.sounds)

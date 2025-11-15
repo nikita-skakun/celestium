@@ -4,7 +4,6 @@
 #include "tile.hpp"
 #include "ui_element.hpp"
 #include "ui_manager.hpp"
-#include "logging.hpp"
 
 void InitializeEscapeMenu()
 {

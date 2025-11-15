@@ -3,7 +3,6 @@
 #include "crew.hpp"
 #include "env_effect.hpp"
 #include "game_state.hpp"
-#include "logging.hpp"
 #include "planned_task.hpp"
 #include "power_grid.hpp"
 #include "station.hpp"
@@ -37,7 +36,7 @@ void HandlePlaceTile(const std::shared_ptr<Station> &station)
             continue;
 
         station->AddPlannedTask(pos, tileIdToPlace, true);
-        LogMessage(LogLevel::DEBUG, std::format("Planned to place {} at {}", tileDefinition->GetName(), ToString(pos)));
+        TraceLog(TraceLogLevel::LOG_DEBUG, std::format("Planned to place {} at {}", tileDefinition->GetName(), ToString(pos)).c_str());
     }
 }
 
@@ -63,7 +62,7 @@ void HandleDeleteTile(const std::shared_ptr<Station> &station)
         {
             const auto &topTile = tilesAtPos.back();
             station->AddPlannedTask(pos, topTile->GetId(), false);
-            LogMessage(LogLevel::DEBUG, std::format("Planned to remove {} at {}", topTile->GetId(), ToString(pos)));
+            TraceLog(TraceLogLevel::LOG_DEBUG, std::format("Planned to remove {} at {}", topTile->GetId(), ToString(pos)).c_str());
         }
     }
 }
@@ -92,7 +91,7 @@ void HandleBuildMode()
             if (station->HasPlannedTaskAt(pos))
             {
                 station->CancelPlannedTask(pos);
-                LogMessage(LogLevel::DEBUG, std::format("Canceled planned task at {}", ToString(pos)));
+                TraceLog(TraceLogLevel::LOG_DEBUG, std::format("Canceled planned task at {}", ToString(pos)).c_str());
             }
         }
 

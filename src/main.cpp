@@ -2,7 +2,6 @@
 #include "audio_manager.hpp"
 #include "def_manager.hpp"
 #include "game_state.hpp"
-#include "logging.hpp"
 #include "lua_bindings.hpp"
 #include "ui_manager.hpp"
 #include "ui.hpp"
@@ -32,7 +31,7 @@ int main()
 
     auto &camera = GameManager::GetCamera();
 
-    LogMessage(LogLevel::INFO, "Initialization Complete");
+    TraceLog(TraceLogLevel::LOG_INFO, "Initialization Complete");
 
     while (GameManager::IsGameRunning())
     {
@@ -109,6 +108,6 @@ int main()
 
     CloseWindow();
 
-    LogMessage(LogLevel::INFO, "Clean-up Complete");
+    TraceLog(TraceLogLevel::LOG_INFO, "Clean-up Complete");
     return 0;
 }
