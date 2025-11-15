@@ -146,3 +146,13 @@ add_subdirectory(${RYML_SRC_DIR} ${CMAKE_SOURCE_DIR}/external/ryml-build)
 target_include_directories(celestium SYSTEM PRIVATE ${RYML_SRC_DIR}/src)
 target_link_libraries(celestium PRIVATE c4core)
 target_link_libraries(celestium PRIVATE ryml)
+
+# --- capnproto ---
+set(CAPNPROTO_SRC_DIR ${CMAKE_SOURCE_DIR}/external/capnproto)
+file(MAKE_DIRECTORY ${CAPNPROTO_SRC_DIR})
+execute_process(COMMAND git -c protocol.version=2 clone --filter=blob:none --no-checkout --depth 1 --branch v2 https://github.com/capnproto/capnproto.git ${CAPNPROTO_SRC_DIR})
+execute_process(COMMAND git -C ${CAPNPROTO_SRC_DIR} sparse-checkout init --cone)
+execute_process(COMMAND git -C ${CAPNPROTO_SRC_DIR} sparse-checkout set c++)
+execute_process(COMMAND git -C ${CAPNPROTO_SRC_DIR} checkout)
+add_subdirectory(${CAPNPROTO_SRC_DIR} ${CMAKE_SOURCE_DIR}/external/capnproto-build)
+# target_include_directories(celestium SYSTEM PRIVATE ${CAPNPROTO_SRC_DIR}/include)
