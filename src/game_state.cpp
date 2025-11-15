@@ -1,10 +1,11 @@
 #include "crew.hpp"
 #include "direction.hpp"
 #include "fixed_update.hpp"
+#include "game_server.hpp"
 #include "game_state.hpp"
 #include "station.hpp"
-#include "ui.hpp"
 #include "ui_manager.hpp"
+#include "ui.hpp"
 
 void GameManager::SetGameState(GameState state)
 {
@@ -14,10 +15,10 @@ void GameManager::SetGameState(GameState state)
 
     manager.state = state;
 
-    if (state != GameState::GAME_SIM && manager.updateThread.joinable())
+    if (state != GameState::GAME_SIM && manager.server)
     {
-        manager.updateThread.join();
-        manager.timeSinceFixedUpdate = 0;
+        manager.server->StopSimulation();
+        manager.server->GetTimeSinceFixedUpdate() = 0;
     }
 
     UiManager::ClearAllElements();
@@ -38,9 +39,11 @@ void GameManager::SetGameState(GameState state)
         CreateStarfield(12345); // TODO: Use seed from save file
         PrepareTestWorld();
         UiManager::InitializeGameSim();
-
-        manager.updateThread = std::thread([&]()
-                                           { FixedUpdate(manager.timeSinceFixedUpdate); });
+        if (manager.server)
+        {
+            manager.server->GetTimeSinceFixedUpdate() = 0;
+            manager.server->StartSimulation();
+        }
         break;
     }
     default:
@@ -65,8 +68,8 @@ void GameManager::HandleStateInputs()
 
     if (camera.IsUiState(PlayerCam::UiState::NONE) && IsInGameSim())
     {
-        if (IsKeyPressed(KEY_SPACE) && !IsInBuildMode())
-            ToggleGamePaused();
+        if (IsKeyPressed(KEY_SPACE))
+            GameManager::GetServer().ToggleGamePaused();
 
         if (IsKeyPressed(KEY_O))
             camera.ToggleOverlay(PlayerCam::Overlay::OXYGEN);
@@ -78,7 +81,7 @@ void GameManager::HandleStateInputs()
             camera.ToggleOverlay(PlayerCam::Overlay::POWER);
 
         if (IsKeyPressed(KEY_B))
-            ToggleBuildGameState();
+            GameManager::ToggleBuildGameState();
     }
 }
 
@@ -87,17 +90,8 @@ void GameManager::Initialize()
     auto &manager = GetInstance();
 
     manager.camera = PlayerCam();
-    manager.crewList.clear();
-    manager.hoveredCrewList.clear();
-    manager.selectedCrewList.clear();
-    manager.station = nullptr;
-    manager.buildMode = false;
-    manager.cancelMode = false;
-    manager.paused = false;
-    manager.forcePaused = false;
-    manager.horizontalSymmetry = false;
-    manager.verticalSymmetry = false;
-    manager.buildTileId = "";
+    manager.server = std::make_unique<GameServer>();
+    manager.server->Initialize();
 }
 
 void GameManager::PrepareTestWorld()
@@ -105,26 +99,17 @@ void GameManager::PrepareTestWorld()
     auto &manager = GetInstance();
 
     manager.camera = PlayerCam();
-    manager.station = CreateStation();
-    manager.crewList = {
-        std::make_shared<Crew>("ALICE", Vector2(-2, 2), RED),
-        std::make_shared<Crew>("BOB", Vector2(3, 2), GREEN),
-        std::make_shared<Crew>("CHARLIE", Vector2(-3, -3), ORANGE)};
-    manager.selectedCrewList.clear();
-    manager.hoveredCrewList.clear();
-    manager.buildMode = false;
-    manager.cancelMode = false;
-    manager.buildTileId = "";
+    if (!manager.server)
+        manager.server = std::make_unique<GameServer>();
+    manager.server->PrepareTestWorld();
 }
 
-void GameManager::ToggleSelectedCrew(const std::shared_ptr<Crew> &crew)
+void GameManager::ToggleSelectedCrew(uint64_t crewId)
 {
     auto &selectedCrewList = GetInstance().selectedCrewList;
-    const auto crewIter = std::find_if(selectedCrewList.begin(), selectedCrewList.end(), [&crew](std::weak_ptr<Crew> _crew)
-                                       { return !_crew.expired() && _crew.lock() == crew; });
-
+    const auto crewIter = std::find(selectedCrewList.begin(), selectedCrewList.end(), crewId);
     if (crewIter == selectedCrewList.end())
-        selectedCrewList.push_back(crew);
+        selectedCrewList.push_back(crewId);
     else
         selectedCrewList.erase(crewIter);
 }
@@ -213,3 +198,11 @@ void GameManager::SetOriginalScreenSize()
 
 static sol::state lua;
 sol::state &GameManager::GetLua() { return lua; }
+
+GameServer &GameManager::GetServer()
+{
+    auto &instance = GetInstance();
+    if (!instance.server)
+        instance.server = std::make_unique<GameServer>();
+    return *instance.server;
+}

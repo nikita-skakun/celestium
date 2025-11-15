@@ -48,7 +48,8 @@ std::shared_ptr<Tile> Tile::CreateTile(const std::string &tileId, const Vector2I
     if (!tileDef)
         throw std::runtime_error(std::format("Tile definition not found: {}", tileId));
 
-    if (useResources) {
+    if (useResources)
+    {
         const auto &requiredResources = tileDef->GetBuildResources();
         if (!station->HasResources(requiredResources))
             return nullptr;

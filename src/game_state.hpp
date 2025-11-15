@@ -1,9 +1,9 @@
 #pragma once
 #include "camera.hpp"
+#include "game_server.hpp"
 #include "render_snapshot.hpp"
 #include "tile_def.hpp"
 #include <sol/sol.hpp>
-#include <thread>
 
 enum class GameState : uint8_t
 {
@@ -18,22 +18,20 @@ private:
     GameState state = GameState::NONE;
     std::optional<GameState> pendingState = std::nullopt;
     PlayerCam camera = PlayerCam();
-    std::vector<std::shared_ptr<Crew>> crewList;
-    std::vector<std::weak_ptr<Crew>> hoveredCrewList;
-    std::vector<std::weak_ptr<Crew>> selectedCrewList;
-    std::shared_ptr<Station> station;
+    // Server: owns the authoritative simulation state. For single-player, this will
+    // be a local server instance; for multiplayer, this can be a network client
+    // forwarding requests to a remote server.
+    std::unique_ptr<GameServer> server;
+
     bool buildMode = false;
     bool cancelMode = false;
-    bool paused = false;
-    bool forcePaused = false;
     bool horizontalSymmetry = true;
     bool verticalSymmetry = false;
     TileDef::Category selectedCategory = TileDef::Category::NONE;
     std::string buildTileId = "";
-
-    double timeSinceFixedUpdate = 0;
+    std::vector<uint64_t> hoveredCrewList;
+    std::vector<uint64_t> selectedCrewList;
     Vector2 originalScreenSize;
-    std::thread updateThread;
 
     // Double-buffered render state
     std::atomic<std::shared_ptr<RenderSnapshot>> renderSnapshot;
@@ -80,31 +78,14 @@ public:
         }
     }
 
-    static bool IsGamePaused() { return GetInstance().paused || GetInstance().forcePaused; }
-    static void SetGamePaused(bool newState) { GetInstance().paused = newState; }
-    static void ToggleGamePaused() { GetInstance().paused = !GetInstance().paused; }
-    static void SetForcePaused(bool newState) { GetInstance().forcePaused = newState; }
-
-    static double GetTimeSinceFixedUpdate() { return GetInstance().timeSinceFixedUpdate; }
-
-    static PlayerCam &GetCamera() { return GetInstance().camera; }
-    static void HandleStateInputs();
-
-    static void Initialize();
-    static void PrepareTestWorld();
-
-    static const std::vector<std::shared_ptr<Crew>> &GetCrewList() { return GetInstance().crewList; }
-
-    static std::shared_ptr<Station> GetStation() { return GetInstance().station; }
-
-    static const std::vector<std::weak_ptr<Crew>> &GetHoveredCrew() { return GetInstance().hoveredCrewList; }
+    static const std::vector<uint64_t> &GetHoveredCrew() { return GetInstance().hoveredCrewList; }
     static void ClearHoveredCrew() { GetInstance().hoveredCrewList.clear(); }
-    static void AddHoveredCrew(const std::shared_ptr<Crew> &crew) { GetInstance().hoveredCrewList.push_back(crew); }
+    static void AddHoveredCrew(uint64_t crewId) { GetInstance().hoveredCrewList.push_back(crewId); }
 
-    static const std::vector<std::weak_ptr<Crew>> &GetSelectedCrew() { return GetInstance().selectedCrewList; }
+    static const std::vector<uint64_t> &GetSelectedCrew() { return GetInstance().selectedCrewList; }
     static void ClearSelectedCrew() { GetInstance().selectedCrewList.clear(); }
-    static void AddSelectedCrew(std::weak_ptr<Crew> crew) { GetInstance().selectedCrewList.push_back(crew); }
-    static void ToggleSelectedCrew(const std::shared_ptr<Crew> &crew);
+    static void AddSelectedCrew(uint64_t crewId) { GetInstance().selectedCrewList.push_back(crewId); }
+    static void ToggleSelectedCrew(uint64_t crewId);
 
     static TileDef::Category GetSelectedCategory() { return GetInstance().selectedCategory; }
     static void ToggleSelectedCategory(TileDef::Category category);
@@ -129,6 +110,13 @@ public:
     static bool IsVerticalSymmetry() { return GetInstance().verticalSymmetry; }
     static void SetVerticalSymmetry(bool newState) { GetInstance().verticalSymmetry = newState; }
     static void ToggleVerticalSymmetry() { GetInstance().verticalSymmetry = !GetInstance().verticalSymmetry; }
+
+    static PlayerCam &GetCamera() { return GetInstance().camera; }
+    static void HandleStateInputs();
+
+    static void Initialize();
+    static void PrepareTestWorld();
+    static GameServer &GetServer();
 
     // Utility function for Screen to World space transformations
     static Vector2 GetWorldMousePos();

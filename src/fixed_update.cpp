@@ -16,7 +16,7 @@ void FixedUpdate(double &timeSinceFixedUpdate)
 
     while (GameManager::IsInGameSim())
     {
-        if (!GameManager::IsGamePaused())
+        if (!GameManager::GetServer().IsGamePaused())
         {
             double currentTime = GetTime();
             double deltaTime = currentTime - previousTime;
@@ -28,6 +28,8 @@ void FixedUpdate(double &timeSinceFixedUpdate)
             {
                 std::unique_lock<std::mutex> lock(updateMutex);
 
+                GameManager::GetServer().ProcessPendingActions();
+                GameManager::GetServer().HandleAutonomousCrewDecisions();
                 HandleCrewActions();
                 HandleCrewEnvironment();
                 UpdateCrewCurrentTile();
@@ -37,9 +39,11 @@ void FixedUpdate(double &timeSinceFixedUpdate)
 
                 // Build and swap new RenderSnapshot for render thread
                 auto snapshot = std::make_shared<RenderSnapshot>();
-                snapshot->station = GameManager::GetStation();
-                snapshot->crewList = GameManager::GetCrewList();
-                snapshot->selectedCrewList = GameManager::GetSelectedCrew();
+                snapshot->station = std::static_pointer_cast<const Station>(GameManager::GetServer().GetStation());
+                snapshot->crewList.clear();
+                for (const auto &entry : GameManager::GetServer().GetCrewList())
+                    snapshot->crewList[entry.first] = std::static_pointer_cast<const Crew>(entry.second);
+                snapshot->timeSinceFixedUpdate = timeSinceFixedUpdate;
                 GameManager::SetRenderSnapshot(snapshot);
 
                 fixedUpdateCondition.notify_all();

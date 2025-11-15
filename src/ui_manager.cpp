@@ -282,14 +282,14 @@ void AddBuildToggle(std::shared_ptr<UiPanel> buildMenuPanel, const TileToggleCon
     { if (state) { GameManager::SetCancelMode(false); GameManager::SetBuildTileId(config.tileId); } else { GameManager::SetBuildTileId(""); } };
 
     auto toggle = std::make_shared<UiToggle>(Vector2ToRect(togglePos, TOGGLE_SIZE),
-                                             GameManager::IsBuildTileId(config.tileId),
+                                             (GameManager::GetBuildTileId() == config.tileId),
                                              onToggle);
 
     std::weak_ptr<UiToggle> _toggle = toggle;
     toggle->SetOnUpdate([_toggle, config]()
                         {
         if (auto t = _toggle.lock())
-            t->SetToggle(GameManager::IsBuildTileId(config.tileId)); });
+            t->SetToggle(GameManager::GetBuildTileId() == config.tileId); });
 
     buildMenuPanel->AddChild(toggle);
 
@@ -412,7 +412,7 @@ void InitializeBuildCategory()
     std::weak_ptr<UiPanel> _buildCategoryPanel = buildCategoryPanel;
     buildCategoryPanel->SetOnUpdate([_buildCategoryPanel]()
                                     { if (auto buildCategoryPanel = _buildCategoryPanel.lock())
-                             { buildCategoryPanel->SetVisible(GameManager::GetCamera().IsUiClear() && GameManager::IsInBuildMode()); } });
+                                      { buildCategoryPanel->SetVisible(GameManager::GetCamera().IsUiClear() && GameManager::IsInBuildMode()); } });
     UiManager::AddElement("BUILD_CATEGORY", buildCategoryPanel);
 
     // First button will be structure button
@@ -461,8 +461,8 @@ void InitializeBuildCategory()
     std::weak_ptr<UiToggle> _cancelButton = cancelButton;
     cancelButton->SetOnUpdate([_cancelButton]()
                               { if (auto cancelButton = _cancelButton.lock())
-                         { cancelButton->SetVisible(GameManager::IsInBuildMode() && GameManager::GetCamera().IsUiClear());
-                           cancelButton->SetToggle(GameManager::IsInCancelMode()); } });
+                                                { cancelButton->SetVisible(GameManager::IsInBuildMode() && GameManager::GetCamera().IsUiClear());
+                                                    cancelButton->SetToggle(GameManager::IsInCancelMode()); } });
     buildCategoryPanel->AddChild(cancelButton);
     auto cancelIcon = std::make_shared<UiIcon>(Vector2ToRect(cancelButton->GetPosition() + ICON_OFFSET, ICON_SIZE),
                                                "ICON", Rectangle(7, 1, 1, 1) * TILE_SIZE, Fade(DARKGRAY, .8));
@@ -484,7 +484,7 @@ void InitializeBuildMenu()
     std::weak_ptr<UiPanel> _buildMenuPanel = buildMenuPanel;
     buildMenuPanel->SetOnUpdate([_buildMenuPanel]()
                                 { if (auto buildMenuPanel = _buildMenuPanel.lock())
-                             { buildMenuPanel->SetVisible(GameManager::GetCamera().IsUiClear() && GameManager::IsInBuildMode() && GameManager::GetSelectedCategory() != TileDef::Category::NONE); } });
+                                      { buildMenuPanel->SetVisible(GameManager::GetCamera().IsUiClear() && GameManager::IsInBuildMode() && GameManager::GetSelectedCategory() != TileDef::Category::NONE); } });
     UiManager::AddElement("BUILD_MENU", buildMenuPanel);
 }
 

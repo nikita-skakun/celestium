@@ -544,8 +544,11 @@ void Station::CompletePlannedTask(const Vector2Int &pos)
         return;
     const auto &task = *it;
 
-    if (task->isBuild && !Tile::CreateTile(task->tileId, pos, shared_from_this(), true, true))
-        return;
+    if (task->isBuild)
+    {
+        if (!Tile::CreateTile(task->tileId, pos, shared_from_this(), true, true))
+            return;
+    }
     else
     {
         // Remove the specific tile by id

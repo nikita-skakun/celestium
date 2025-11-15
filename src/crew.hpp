@@ -1,6 +1,7 @@
 #pragma once
 #include "utils.hpp"
 #include <deque>
+#include <atomic>
 
 struct Action;
 struct Tile;
@@ -16,25 +17,30 @@ protected:
     float health;
     bool isAlive;
     std::weak_ptr<Tile> currentTile;
+    uint64_t instanceId;
+    static std::atomic<uint64_t> nextInstanceId;
 
 public:
-    constexpr Crew(const std::string &n, const Vector2 &p, const Color &c)
-        : name(n), position(p), color(c), oxygen(CREW_OXYGEN_MAX), health(CREW_HEALTH_MAX), isAlive(true) {}
+    Crew(const std::string &n, const Vector2 &p, const Color &c)
+        : name(n), position(p), color(c), oxygen(CREW_OXYGEN_MAX), health(CREW_HEALTH_MAX), isAlive(true)
+    {
+        instanceId = nextInstanceId.fetch_add(1);
+    }
 
-    constexpr const std::string &GetName() const { return name; }
-    constexpr const Vector2 &GetPosition() const { return position; }
-    constexpr void SetPosition(const Vector2 &newPosition) { position = newPosition; }
-    constexpr Color GetColor() const { return color; }
-    constexpr const std::deque<std::shared_ptr<Action>> &GetReadOnlyActionQueue() const { return actionQueue; }
-    constexpr std::deque<std::shared_ptr<Action>> &GetActionQueue() { return actionQueue; }
-    constexpr void RemoveFirstAction() { actionQueue.pop_front(); }
-    constexpr float GetOxygen() const { return oxygen; }
-    constexpr float GetHealth() const { return health; }
-    constexpr bool IsAlive() const { return isAlive; }
+    const std::string &GetName() const { return name; }
+    const Vector2 &GetPosition() const { return position; }
+    void SetPosition(const Vector2 &newPosition) { position = newPosition; }
+    Color GetColor() const { return color; }
+    const std::deque<std::shared_ptr<Action>> &GetReadOnlyActionQueue() const { return actionQueue; }
+    std::deque<std::shared_ptr<Action>> &GetActionQueue() { return actionQueue; }
+    void RemoveFirstAction() { actionQueue.pop_front(); }
+    float GetOxygen() const { return oxygen; }
+    float GetHealth() const { return health; }
+    bool IsAlive() const { return isAlive; }
     std::shared_ptr<Tile> GetCurrentTile() const { return currentTile.lock(); }
-    constexpr void SetCurrentTile(const std::shared_ptr<Tile> &tile) { currentTile = tile; }
+    void SetCurrentTile(const std::shared_ptr<Tile> &tile) { currentTile = tile; }
 
-    constexpr void ConsumeOxygen(float deltaTime)
+    void ConsumeOxygen(float deltaTime)
     {
         if (!isAlive)
             return;
@@ -46,7 +52,7 @@ public:
         }
     }
 
-    constexpr void RefillOxygen(float deltaTime, float &sourceOxygen)
+    void RefillOxygen(float deltaTime, float &sourceOxygen)
     {
         if (isAlive && oxygen < CREW_OXYGEN_MAX && sourceOxygen > 0.f)
         {
@@ -56,7 +62,7 @@ public:
         }
     }
 
-    constexpr void SetHealth(float newHealth)
+    void SetHealth(float newHealth)
     {
         health = std::clamp(newHealth, 0.f, CREW_HEALTH_MAX);
 
@@ -66,8 +72,9 @@ public:
 
     std::string GetActionName() const;
     std::string GetInfo() const;
+    uint64_t GetInstanceId() const { return instanceId; }
 
-    constexpr void Die()
+    void Die()
     {
         isAlive = false;
         actionQueue.clear();

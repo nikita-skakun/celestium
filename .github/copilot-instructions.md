@@ -66,6 +66,11 @@ Run the produced `celestium` binary in `build/`.
 
 Use `shell.nix` if you want a nix-based development environment.
 
+### Coding style & PR guidelines
+
+- When removing code, do not replace it with commented-out code. Cleanly remove the code and ensure any necessary refactors are complete; rely on version control if you need the removed code later.
+- Prefer larger, focused changes that may be breaking if they deliver significant architectural improvement or reduce technical debt. When doing this, ensure changes are well-documented, have a clear migration plan, and include tests or a rollback path.
+
 ### Ownership & memory
 
 - `std::shared_ptr` is used for owning references to tiles, components, crew and definitions.

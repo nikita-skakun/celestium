@@ -44,9 +44,6 @@ int main()
 
         if (GameManager::IsInGameSim())
         {
-            bool shouldForcePause = camera.GetUiState() != PlayerCam::UiState::NONE || GameManager::IsInBuildMode();
-            GameManager::SetForcePaused(shouldForcePause);
-
             camera.HandleMovement();
 
             if (!UiManager::IsMouseOverUiElement())

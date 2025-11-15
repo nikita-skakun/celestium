@@ -236,7 +236,7 @@ void DrawEnvironmentalEffects()
 
     sol::state &lua = GameManager::GetLua();
     const float dt = GetFrameTime();
-    const bool paused = GameManager::IsGamePaused();
+    const bool paused = GameManager::GetServer().IsGamePaused();
 
     // Ensure render systems exist for each active effect (create on first encounter)
     for (const auto &effect : snapshot->station->effects)
@@ -382,7 +382,7 @@ void DrawEnvironmentalEffects()
     }
 }
 
-void DrawCrewCircle(const std::shared_ptr<Crew> &crew, const Vector2 &drawPosition, bool isSelected)
+void DrawCrewCircle(const std::shared_ptr<const Crew> &crew, const Vector2 &drawPosition, bool isSelected)
 {
     auto &camera = GameManager::GetCamera();
     Vector2 crewScreenPos = GameManager::WorldToScreen(drawPosition);
@@ -401,8 +401,9 @@ void DrawCrew()
     auto snapshot = GameManager::GetRenderSnapshot();
     if (!snapshot)
         return;
-    for (const auto &crew : snapshot->crewList)
+    for (const auto &kv : snapshot->crewList)
     {
+        const auto &crew = kv.second;
         Vector2 drawPosition = crew->GetPosition();
         auto &actionQueue = crew->GetReadOnlyActionQueue();
 
@@ -415,7 +416,7 @@ void DrawCrew()
                 DrawPath(moveAction->path, crew->GetPosition());
                 Vector2 nextPosition = ToVector2(moveAction->path.front());
 
-                const float moveDelta = GameManager::GetTimeSinceFixedUpdate() * CREW_MOVE_SPEED;
+                const float moveDelta = static_cast<float>(snapshot->timeSinceFixedUpdate * CREW_MOVE_SPEED);
                 const float distanceLeftSq = Vector2DistanceSq(crew->GetPosition(), nextPosition) - moveDelta * moveDelta;
                 if (distanceLeftSq <= 0)
                 {
@@ -439,9 +440,7 @@ void DrawCrew()
             }
         }
 
-        const auto &selectedCrewList = snapshot->selectedCrewList;
-        bool isSelected = std::find_if(selectedCrewList.begin(), selectedCrewList.end(), [crew](std::weak_ptr<Crew> _crew)
-                                       { return !_crew.expired() && _crew.lock() == crew; }) != selectedCrewList.end();
+        bool isSelected = Find(GameManager::GetSelectedCrew(), crew->GetInstanceId()).has_value();
         DrawCrewCircle(crew, drawPosition, isSelected);
     }
 }
@@ -452,8 +451,9 @@ void DrawCrewActionProgress()
     if (!snapshot)
         return;
 
-    for (const auto &crew : snapshot->crewList)
+    for (const auto &kv : snapshot->crewList)
     {
+        const auto &crew = kv.second;
         if (!crew->IsAlive() || crew->GetReadOnlyActionQueue().empty())
             continue;
 
@@ -530,10 +530,10 @@ void DrawFpsCounter()
 
 void DrawResourceUI()
 {
-    auto station = GameManager::GetStation();
-    if (!station)
+    auto snapshot = GameManager::GetRenderSnapshot();
+    if (!snapshot || !snapshot->station)
         return;
-
+    auto station = snapshot->station;
     Font font = AssetManager::GetFont("DEFAULT");
     float yOffset = DEFAULT_PADDING;
 

@@ -9,7 +9,7 @@
 #include "tile.hpp"
 #include "update.hpp"
 
-void HandlePlaceTile(const std::shared_ptr<Station> &station)
+void HandlePlaceTile(const std::shared_ptr<const Station> &station)
 {
     const std::string &tileIdToPlace = GameManager::GetBuildTileId();
     const auto &tileDefinition = DefinitionManager::GetTileDefinition(tileIdToPlace);
@@ -35,12 +35,12 @@ void HandlePlaceTile(const std::shared_ptr<Station> &station)
         if (station->GetTileIdAtPosition(pos, tileDefinition->GetHeight()) == tileIdToPlace)
             continue;
 
-        station->AddPlannedTask(pos, tileIdToPlace, true);
-        TraceLog(TraceLogLevel::LOG_DEBUG, std::format("Planned to place {} at {}", tileDefinition->GetName(), ToString(pos)).c_str());
+        GameManager::GetServer().RequestPlannedTask(pos, tileIdToPlace, true);
+        TraceLog(TraceLogLevel::LOG_INFO, std::format("Planned to place {} at {}", tileDefinition->GetName(), ToString(pos)).c_str());
     }
 }
 
-void HandleDeleteTile(const std::shared_ptr<Station> &station)
+void HandleDeleteTile(const std::shared_ptr<const Station> &station)
 {
     Vector2Int cursorPos = ToVector2Int(GameManager::GetWorldMousePos());
 
@@ -61,18 +61,20 @@ void HandleDeleteTile(const std::shared_ptr<Station> &station)
         if (!tilesAtPos.empty())
         {
             const auto &topTile = tilesAtPos.back();
-            station->AddPlannedTask(pos, topTile->GetId(), false);
-            TraceLog(TraceLogLevel::LOG_DEBUG, std::format("Planned to remove {} at {}", topTile->GetId(), ToString(pos)).c_str());
+            GameManager::GetServer().RequestPlannedTask(pos, topTile->GetId(), false);
+            TraceLog(TraceLogLevel::LOG_INFO, std::format("Planned to remove {} at {}", topTile->GetId(), ToString(pos)).c_str());
         }
     }
 }
 
 void HandleBuildMode()
 {
-    auto station = GameManager::GetStation();
+    auto snapshot = GameManager::GetRenderSnapshot();
+    if (!snapshot)
+        return;
+    auto station = snapshot->station;
     if (!station)
         return;
-
     // If we're in cancel mode, left-click cancels planned tasks (respecting symmetry)
     if (IsMouseButtonPressed(MOUSE_LEFT_BUTTON) && GameManager::IsInCancelMode())
     {
@@ -90,8 +92,8 @@ void HandleBuildMode()
         {
             if (station->HasPlannedTaskAt(pos))
             {
-                station->CancelPlannedTask(pos);
-                TraceLog(TraceLogLevel::LOG_DEBUG, std::format("Canceled planned task at {}", ToString(pos)).c_str());
+                GameManager::GetServer().RequestCancelPlannedTask(pos);
+                TraceLog(TraceLogLevel::LOG_INFO, std::format("Canceled planned task at {}", ToString(pos)).c_str());
             }
         }
 
@@ -107,19 +109,23 @@ void HandleBuildMode()
 
 void HandleCrewHover()
 {
-    const auto &crewList = GameManager::GetCrewList();
+    auto snapshot = GameManager::GetRenderSnapshot();
+    if (!snapshot)
+        return;
+    const auto &crewList = snapshot->crewList;
     const Vector2 worldMousePos = GameManager::GetWorldMousePos() - Vector2(.5, .5);
     const float crewSize = CREW_RADIUS / TILE_SIZE;
     const float crewSizeSq = crewSize * crewSize;
 
     GameManager::ClearHoveredCrew();
 
-    for (const auto &crew : crewList)
+    for (const auto &entry : crewList)
     {
+        const auto &crew = entry.second;
         if (!crew || Vector2DistanceSq(worldMousePos, crew->GetPosition()) > crewSizeSq)
             continue;
 
-        GameManager::AddHoveredCrew(crew);
+        GameManager::AddHoveredCrew(crew->GetInstanceId());
     }
 }
 
@@ -172,14 +178,18 @@ void HandleCrewSelection()
         GameManager::ClearSelectedCrew();
     if (camera.GetDragType() == PlayerCam::DragType::SELECT)
     {
-        auto &crewList = GameManager::GetCrewList();
-        for (const auto &crew : crewList)
+        auto snapshot = GameManager::GetRenderSnapshot();
+        if (!snapshot)
+            return;
+        auto &crewList = snapshot->crewList;
+        for (const auto &entry : crewList)
         {
+            const auto &crew = entry.second;
             bool isWithinRect = IsVector2WithinRect(camera.GetDragRect(), crew->GetPosition() + Vector2(.5, .5));
             if (!crew || !isWithinRect)
                 continue;
 
-            GameManager::AddSelectedCrew(crew);
+            GameManager::AddSelectedCrew(crew->GetInstanceId());
         }
 
         return;
@@ -189,70 +199,44 @@ void HandleCrewSelection()
     if (hoveredCrew.empty())
         return;
 
-    if (auto nextHoveredCrew = hoveredCrew.at(0).lock())
-        GameManager::ToggleSelectedCrew(nextHoveredCrew);
+    GameManager::ToggleSelectedCrew(hoveredCrew.at(0));
 }
 
 void AssignCrewActions()
 {
+    auto snapshot = GameManager::GetRenderSnapshot();
+    if (!snapshot)
+        return;
+
     const auto &selectedCrew = GameManager::GetSelectedCrew();
     if (IsMouseButtonPressed(MOUSE_RIGHT_BUTTON) && !selectedCrew.empty())
     {
         Vector2Int worldPos = ToVector2Int(GameManager::GetWorldMousePos());
-        for (const auto &_crew : selectedCrew)
+
+        for (const auto crewId : selectedCrew)
         {
-            auto crew = _crew.lock();
-            if (!crew || !crew->IsAlive() || !crew->GetCurrentTile())
+            std::shared_ptr<const Crew> snapshotCrew = nullptr;
+            auto itCrew = snapshot->crewList.find(crewId);
+            if (itCrew != snapshot->crewList.end())
+                snapshotCrew = itCrew->second;
+
+            if (!snapshotCrew || !snapshotCrew->IsAlive() || !snapshotCrew->GetCurrentTile())
                 continue;
 
             if (!IsKeyDown(KEY_LEFT_SHIFT))
-                crew->GetActionQueue().clear();
+                GameManager::GetServer().ClearCrewActions(snapshotCrew->GetInstanceId());
 
-            crew->GetActionQueue().push_back(std::make_shared<MoveAction>(worldPos));
-        }
-    }
-
-    const auto &crewList = GameManager::GetCrewList();
-    for (const auto &crew : crewList)
-    {
-        if (!crew->IsAlive() || !crew->GetActionQueue().empty() || !crew->GetCurrentTile())
-            continue;
-
-        auto station = crew->GetCurrentTile()->GetStation();
-        Vector2Int crewPos = ToVector2Int(crew->GetPosition());
-
-        if (station->GetEffectOfTypeAtPosition(crewPos, "FIRE"))
-        {
-            crew->GetActionQueue().push_back(std::make_shared<ExtinguishAction>(crewPos));
-            continue;
-        }
-
-        for (const auto &direction : ALL_DIRECTIONS)
-        {
-            Vector2Int neighborPos = crewPos + DirectionToVector2Int(direction);
-            if (station->GetEffectOfTypeAtPosition(neighborPos, "FIRE"))
-            {
-                crew->GetActionQueue().push_back(std::make_shared<ExtinguishAction>(neighborPos));
-                break;
-            }
-        }
-
-        for (const auto &task : station->plannedTasks)
-        {
-            if (Vector2IntChebyshev(crewPos, task->position) <= 1)
-            {
-                crew->GetActionQueue().push_back(std::make_shared<ConstructionAction>(task));
-                break;
-            }
+            GameManager::GetServer().SendPlayerAction(snapshotCrew->GetInstanceId(), std::make_unique<MoveAction>(worldPos));
         }
     }
 }
 
 void HandleCrewActions()
 {
-    const auto &crewList = GameManager::GetCrewList();
-    for (const auto &crew : crewList)
+    const auto &crewList = GameManager::GetServer().GetCrewList();
+    for (const auto &entry : crewList)
     {
+        const auto &crew = entry.second;
         if (!crew->IsAlive() || crew->GetActionQueue().empty())
             continue;
 
@@ -263,9 +247,10 @@ void HandleCrewActions()
 
 void HandleCrewEnvironment()
 {
-    const auto &crewList = GameManager::GetCrewList();
-    for (const auto &crew : crewList)
+    const auto &crewList = GameManager::GetServer().GetCrewList();
+    for (const auto &entry : crewList)
     {
+        const auto &crew = entry.second;
         if (!crew->IsAlive())
             continue;
 
@@ -279,21 +264,20 @@ void HandleCrewEnvironment()
 
         auto effects = tile->GetStation()->GetEffectsAtPosition(tile->GetPosition());
         for (const auto &effect : effects)
-        {
             effect->EffectCrew(crew, FIXED_DELTA_TIME);
-        }
     }
 }
 
 void UpdateCrewCurrentTile()
 {
-    auto station = GameManager::GetStation();
+    auto station = GameManager::GetServer().GetStation();
     if (!station || station->tileMap.empty())
         return;
 
-    const auto &crewList = GameManager::GetCrewList();
-    for (const auto &crew : crewList)
+    const auto &crewList = GameManager::GetServer().GetCrewList();
+    for (const auto &entry : crewList)
     {
+        const auto &crew = entry.second;
         if (!crew->IsAlive())
             continue;
 
@@ -308,7 +292,7 @@ void UpdateCrewCurrentTile()
 
 void UpdatePowerGrids()
 {
-    auto station = GameManager::GetStation();
+    auto station = GameManager::GetServer().GetStation();
     if (!station)
         return;
 
@@ -320,7 +304,7 @@ void UpdatePowerGrids()
 
 void UpdateTiles()
 {
-    auto station = GameManager::GetStation();
+    auto station = GameManager::GetServer().GetStation();
     if (!station)
         return;
 
@@ -335,21 +319,17 @@ void UpdateTiles()
             }
 
             if (auto oxygenProducer = tile->GetComponent<OxygenProducerComponent>())
-            {
                 oxygenProducer->ProduceOxygen(FIXED_DELTA_TIME);
-            }
 
             if (auto oxygen = tile->GetComponent<OxygenComponent>())
-            {
                 oxygen->Diffuse(FIXED_DELTA_TIME);
-            }
         }
     }
 }
 
 void UpdateEnvironmentalEffects()
 {
-    auto station = GameManager::GetStation();
+    auto station = GameManager::GetServer().GetStation();
     if (!station)
         return;
 

@@ -26,3 +26,5 @@ std::string Crew::GetInfo() const
 
     return info;
 }
+
+std::atomic<uint64_t> Crew::nextInstanceId{1};
