@@ -154,5 +154,6 @@ execute_process(COMMAND git -c protocol.version=2 clone --filter=blob:none --no-
 execute_process(COMMAND git -C ${CAPNPROTO_SRC_DIR} sparse-checkout init --cone)
 execute_process(COMMAND git -C ${CAPNPROTO_SRC_DIR} sparse-checkout set c++)
 execute_process(COMMAND git -C ${CAPNPROTO_SRC_DIR} checkout)
+set(BUILD_TESTING OFF CACHE BOOL "" FORCE)
 add_subdirectory(${CAPNPROTO_SRC_DIR} ${CMAKE_SOURCE_DIR}/external/capnproto-build)
 target_include_directories(celestium SYSTEM PRIVATE ${CAPNPROTO_SRC_DIR}/c++/src)
