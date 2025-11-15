@@ -124,19 +124,25 @@ add_dependencies(celestium luajit-build)
 target_link_libraries(celestium PRIVATE luajit_static)
 target_include_directories(celestium PRIVATE ${LUAJIT_SRC_DIR}/src)
 
-# Helper function to fetch, make available, and link dependencies
-function(fetch_and_link_dependency name repo tag)
-    FetchContent_Declare(
-        ${name}
-        GIT_REPOSITORY ${repo}
-        GIT_TAG ${tag}
-        GIT_SHALLOW ON
-        GIT_PROGRESS OFF
-    )
-    FetchContent_MakeAvailable(${name})
-    target_link_libraries(celestium PRIVATE ${name})
-endfunction()
+# --- sol2 ---
+set(SOL2_SRC_DIR ${CMAKE_SOURCE_DIR}/external/sol2)
+file(MAKE_DIRECTORY ${SOL2_SRC_DIR})
+execute_process(COMMAND git -c protocol.version=2 clone --filter=blob:none --no-checkout --depth 1 --branch develop https://github.com/ThePhD/sol2.git ${SOL2_SRC_DIR})
+execute_process(COMMAND git -C ${SOL2_SRC_DIR} sparse-checkout init --cone)
+execute_process(COMMAND git -C ${SOL2_SRC_DIR} sparse-checkout set cmake include/sol)
+execute_process(COMMAND git -C ${SOL2_SRC_DIR} checkout)
+add_subdirectory(${SOL2_SRC_DIR} ${CMAKE_SOURCE_DIR}/external/sol2-build)
+target_include_directories(celestium SYSTEM PRIVATE ${SOL2_SRC_DIR}/include)
 
-# --- Other Packages ---
-fetch_and_link_dependency(sol2 https://github.com/ThePhD/sol2.git develop)
-fetch_and_link_dependency(ryml https://github.com/biojppm/rapidyaml.git master)
+# --- ryml ---
+set(RYML_SRC_DIR ${CMAKE_SOURCE_DIR}/external/ryml)
+file(MAKE_DIRECTORY ${RYML_SRC_DIR})
+execute_process(COMMAND git -c protocol.version=2 clone --filter=blob:none --no-checkout --depth 1 --branch master https://github.com/biojppm/rapidyaml.git ${RYML_SRC_DIR})
+execute_process(COMMAND git -C ${RYML_SRC_DIR} sparse-checkout init --cone)
+execute_process(COMMAND git -C ${RYML_SRC_DIR} sparse-checkout set src src_extra/c4/yml/extra cmake)
+execute_process(COMMAND git -C ${RYML_SRC_DIR} checkout)
+execute_process(COMMAND git -C ${RYML_SRC_DIR} submodule update --init --depth 1 --recursive)
+add_subdirectory(${RYML_SRC_DIR} ${CMAKE_SOURCE_DIR}/external/ryml-build)
+target_include_directories(celestium SYSTEM PRIVATE ${RYML_SRC_DIR}/src)
+target_link_libraries(celestium PRIVATE c4core)
+target_link_libraries(celestium PRIVATE ryml)
