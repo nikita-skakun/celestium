@@ -39,6 +39,10 @@ public:
     virtual ComponentType GetType() const { return ComponentType::NONE; }
     std::shared_ptr<Tile> GetParent() const { return _parent.lock(); }
 
+protected:
+    void SetParent(std::shared_ptr<Tile> parent) { _parent = parent; }
+
+public:
     virtual std::optional<std::string> GetInfo() const = 0;
     std::string GetName() const { return EnumToName<ComponentType>(GetType()); }
 
@@ -60,53 +64,47 @@ namespace std
     };
 }
 
-struct WalkableComponent : Component
+template <typename Derived, ComponentType CType>
+struct ComponentBase : Component
 {
-    WalkableComponent(std::shared_ptr<Tile> parent = nullptr) : Component(parent) {}
-
+    using Component::Component;
+    ComponentBase(std::shared_ptr<Tile> parent = nullptr) : Component(parent) {}
     std::shared_ptr<Component> Clone(std::shared_ptr<Tile> newParent) const override
     {
-        return std::make_shared<WalkableComponent>(newParent);
+        auto ptr = std::make_shared<Derived>(*static_cast<const Derived*>(this));
+        ptr->SetParent(newParent);
+        return ptr;
     }
+    ComponentType GetType() const override { return CType; }
+};
 
-    ComponentType GetType() const override { return ComponentType::WALKABLE; }
+struct WalkableComponent : ComponentBase<WalkableComponent, ComponentType::WALKABLE>
+{
+    using ComponentBase::ComponentBase;
     std::optional<std::string> GetInfo() const override { return std::nullopt; }
 };
 
-struct SolidComponent : Component
+struct SolidComponent : ComponentBase<SolidComponent, ComponentType::SOLID>
 {
-    SolidComponent(std::shared_ptr<Tile> parent = nullptr) : Component(parent) {}
-
-    std::shared_ptr<Component> Clone(std::shared_ptr<Tile> newParent) const override
-    {
-        return std::make_shared<SolidComponent>(newParent);
-    }
-
-    ComponentType GetType() const override { return ComponentType::SOLID; }
+    using ComponentBase::ComponentBase;
     std::optional<std::string> GetInfo() const override { return std::nullopt; }
 };
 
-struct PowerConnectorComponent : Component
+struct PowerConnectorComponent : ComponentBase<PowerConnectorComponent, ComponentType::POWER_CONNECTOR>
 {
 protected:
     std::weak_ptr<PowerGrid> _powerGrid;
 
 public:
-    PowerConnectorComponent(std::shared_ptr<Tile> parent = nullptr) : Component(parent) {}
-
-    std::shared_ptr<Component> Clone(std::shared_ptr<Tile> newParent) const override
-    {
-        return std::make_shared<PowerConnectorComponent>(newParent);
-    }
+    using ComponentBase::ComponentBase;
 
     void SetPowerGrid(std::shared_ptr<PowerGrid> powerGrid) { _powerGrid = powerGrid; }
     std::shared_ptr<PowerGrid> GetPowerGrid() const { return _powerGrid.lock(); }
 
-    ComponentType GetType() const override { return ComponentType::POWER_CONNECTOR; }
     std::optional<std::string> GetInfo() const override { return std::nullopt; }
 };
 
-struct BatteryComponent : Component
+struct BatteryComponent : ComponentBase<BatteryComponent, ComponentType::BATTERY>
 {
 protected:
     float charge;
@@ -115,7 +113,7 @@ protected:
 
 public:
     BatteryComponent(float maxCharge, std::shared_ptr<Tile> parent = nullptr)
-        : Component(parent), charge(maxCharge), maxCharge(maxCharge), deltaCharge(0.f) {}
+        : ComponentBase(parent), charge(maxCharge), maxCharge(maxCharge), deltaCharge(0.f) {}
 
     float GetMaxChargeLevel() const { return maxCharge; }
     float GetChargeLevel() const { return charge; }
@@ -143,17 +141,11 @@ public:
     void ResetDeltaCharge() { deltaCharge = 0.f; }
     void AccumulateDeltaCharge(float amount) { deltaCharge += amount; }
 
-    std::shared_ptr<Component> Clone(std::shared_ptr<Tile> newParent) const override
-    {
-        return std::make_shared<BatteryComponent>(charge, newParent);
-    }
-
-    ComponentType GetType() const override { return ComponentType::BATTERY; }
     std::optional<std::string> GetInfo() const override { return "   + Charge Level: " + ToString(charge, 0) + " / " + ToString(maxCharge, 0) + " (" +
                                                                  (deltaCharge > 0 ? "+" : "") + ToString(deltaCharge, 0) + "/s)"; }
 };
 
-struct PowerConsumerComponent : Component
+struct PowerConsumerComponent : ComponentBase<PowerConsumerComponent, ComponentType::POWER_CONSUMER>
 {
 public:
     enum class PowerPriority : uint8_t
@@ -171,8 +163,10 @@ protected:
     PowerPriority powerPriority;
 
 public:
+    using ComponentBase::ComponentBase;
+
     PowerConsumerComponent(float powerConsumption, PowerPriority powerPriority, std::shared_ptr<Tile> parent = nullptr)
-        : Component(parent), isActive(false), powerConsumption(std::max(powerConsumption, 0.f)), powerPriority(powerPriority) {}
+        : ComponentBase(parent), isActive(false), powerConsumption(std::max(powerConsumption, 0.f)), powerPriority(powerPriority) {}
 
     bool IsActive() const { return isActive; }
     void SetActive(bool active) { isActive = active; }
@@ -182,12 +176,6 @@ public:
     PowerPriority GetPowerPriority() const { return powerPriority; }
     void SetPowerPriority(PowerPriority priority) { powerPriority = priority; }
 
-    std::shared_ptr<Component> Clone(std::shared_ptr<Tile> newParent) const override
-    {
-        return std::make_shared<PowerConsumerComponent>(powerConsumption, powerPriority, newParent);
-    }
-
-    ComponentType GetType() const override { return ComponentType::POWER_CONSUMER; }
     std::optional<std::string> GetInfo() const override
     {
         return "   + Power Priority: " + std::string(magic_enum::enum_name(powerPriority)) +
@@ -195,23 +183,19 @@ public:
     }
 };
 
-struct PowerProducerComponent : Component
+struct PowerProducerComponent : ComponentBase<PowerProducerComponent, ComponentType::POWER_PRODUCER>
 {
 protected:
     float powerProduction;
 
 public:
+    using ComponentBase::ComponentBase;
+
     PowerProducerComponent(float powerProduction, std::shared_ptr<Tile> parent = nullptr)
-        : Component(parent), powerProduction(std::max(powerProduction, 0.f)) {}
+        : ComponentBase(parent), powerProduction(std::max(powerProduction, 0.f)) {}
 
     virtual float GetPowerProduction() const { return powerProduction; }
 
-    virtual std::shared_ptr<Component> Clone(std::shared_ptr<Tile> newParent) const override
-    {
-        return std::make_shared<PowerProducerComponent>(powerProduction, newParent);
-    }
-
-    virtual ComponentType GetType() const override { return ComponentType::POWER_PRODUCER; }
     virtual std::optional<std::string> GetInfo() const override { return "   + Power Production: " + ToString(GetPowerProduction(), 0); }
 };
 
@@ -230,14 +214,16 @@ struct SolarPanelComponent : public PowerProducerComponent
     float GetPowerProduction() const override;
 };
 
-struct OxygenComponent : Component
+struct OxygenComponent : ComponentBase<OxygenComponent, ComponentType::OXYGEN>
 {
 protected:
     float oxygenLevel;
 
 public:
+    using ComponentBase::ComponentBase;
+
     OxygenComponent(float startOxygenLevel = TILE_OXYGEN_MAX, std::shared_ptr<Tile> parent = nullptr)
-        : Component(parent), oxygenLevel(startOxygenLevel) {}
+        : ComponentBase(parent), oxygenLevel(startOxygenLevel) {}
 
     void SetOxygenLevel(float oxygen)
     {
@@ -251,44 +237,34 @@ public:
 
     void Diffuse(float deltaTime);
 
-    std::shared_ptr<Component> Clone(std::shared_ptr<Tile> newParent) const override
-    {
-        return std::make_shared<OxygenComponent>(oxygenLevel, newParent);
-    }
-
-    ComponentType GetType() const override { return ComponentType::OXYGEN; }
     std::optional<std::string> GetInfo() const override { return "   + Oxygen Level: " + ToString(oxygenLevel, 0); }
 };
 
-struct OxygenProducerComponent : Component
+struct OxygenProducerComponent : ComponentBase<OxygenProducerComponent, ComponentType::OXYGEN_PRODUCER>
 {
 protected:
     float oxygenProduction;
 
 public:
+    using ComponentBase::ComponentBase;
+
     OxygenProducerComponent(float oxygenProduction, std::shared_ptr<Tile> parent = nullptr)
-        : Component(parent), oxygenProduction(oxygenProduction) {}
+        : ComponentBase(parent), oxygenProduction(oxygenProduction) {}
 
     void ProduceOxygen(float deltaTime) const;
 
     float GetOxygenProduction() const { return oxygenProduction; }
 
-    std::shared_ptr<Component> Clone(std::shared_ptr<Tile> newParent) const override
-    {
-        return std::make_shared<OxygenProducerComponent>(oxygenProduction, newParent);
-    }
-
-    ComponentType GetType() const override { return ComponentType::OXYGEN_PRODUCER; }
     std::optional<std::string> GetInfo() const override { return "   + Oxygen Production: " + ToString(oxygenProduction, 0); }
 };
 
-struct DecorativeComponent : Component
+struct DecorativeComponent : ComponentBase<DecorativeComponent, ComponentType::DECORATIVE>
 {
 protected:
     std::vector<std::shared_ptr<Sprite>> decorativeTiles;
 
 public:
-    DecorativeComponent(std::shared_ptr<Tile> parent = nullptr) : Component(parent) {}
+    using ComponentBase::ComponentBase;
 
     void AddDecorativeTile(const std::shared_ptr<Sprite> &sprite)
     {
@@ -305,16 +281,10 @@ public:
         decorativeTiles.clear();
     }
 
-    std::shared_ptr<Component> Clone(std::shared_ptr<Tile> newParent) const override
-    {
-        return std::make_shared<DecorativeComponent>(newParent);
-    }
-
-    ComponentType GetType() const override { return ComponentType::DECORATIVE; }
     std::optional<std::string> GetInfo() const override { return std::nullopt; }
 };
 
-struct DoorComponent : Component
+struct DoorComponent : ComponentBase<DoorComponent, ComponentType::DOOR>
 {
     enum class MovingState : uint8_t
     {
@@ -331,8 +301,10 @@ protected:
     float progress;
 
 public:
+    using ComponentBase::ComponentBase;
+
     DoorComponent(float movingSpeed = 1.f, bool openState = false, std::shared_ptr<Tile> parent = nullptr)
-        : Component(parent), movingSpeed(std::max(movingSpeed, 0.f)), isOpen(openState),
+        : ComponentBase(parent), movingSpeed(std::max(movingSpeed, 0.f)), isOpen(openState),
           movingState(MovingState::IDLE), progress(openState ? 0.f : 1.f) {}
 
     bool IsOpen() const { return isOpen; }
@@ -376,50 +348,42 @@ public:
         movingState = MovingState::CLOSING;
     }
 
-    std::shared_ptr<Component> Clone(std::shared_ptr<Tile> newParent) const override
-    {
-        return std::make_shared<DoorComponent>(movingSpeed, isOpen, newParent);
-    }
-
-    ComponentType GetType() const override { return ComponentType::DOOR; }
     std::optional<std::string> GetInfo() const override
     {
         return std::string("   + State: ") + (isOpen ? "Open" : "Closed") + "\n   + Action: " + GetMovementName() + "(" + ToString(progress * 100.f, 0) + "%)";
     }
 };
 
-struct DurabilityComponent : Component
+struct DurabilityComponent : ComponentBase<DurabilityComponent, ComponentType::DURABILITY>
 {
 protected:
     float maxHitpoints;
     float hitpoints;
 
 public:
+    using ComponentBase::ComponentBase;
+
     DurabilityComponent(float maxHitpoints, std::shared_ptr<Tile> parent = nullptr)
-        : Component(parent), maxHitpoints(maxHitpoints), hitpoints(maxHitpoints) {}
+        : ComponentBase(parent), maxHitpoints(maxHitpoints), hitpoints(maxHitpoints) {}
 
     float GetMaxHitpoints() const { return maxHitpoints; }
     float GetHitpoints() const { return hitpoints; }
 
     void SetHitpoints(float newHitpoints);
 
-    std::shared_ptr<Component> Clone(std::shared_ptr<Tile> newParent) const override
-    {
-        return std::make_shared<DurabilityComponent>(maxHitpoints, newParent);
-    }
-
-    ComponentType GetType() const override { return ComponentType::DURABILITY; }
     std::optional<std::string> GetInfo() const override { return "   + HP: " + ToString(hitpoints, 1) + " / " + ToString(maxHitpoints, 1); }
 };
 
-struct RotatableComponent : Component
+struct RotatableComponent : ComponentBase<RotatableComponent, ComponentType::ROTATABLE>
 {
 protected:
     Rotation rotation;
 
 public:
+    using ComponentBase::ComponentBase;
+
     RotatableComponent(Rotation rotation = Rotation::UP, std::shared_ptr<Tile> parent = nullptr)
-        : Component(parent), rotation(rotation) {}
+        : ComponentBase(parent), rotation(rotation) {}
 
     Rotation GetRotation() const { return rotation; }
     void SetRotation(Rotation newRotation) { rotation = newRotation; }
@@ -433,24 +397,11 @@ public:
             rotation = static_cast<Rotation>(static_cast<int>(rotation) << 1);
     }
 
-    std::shared_ptr<Component> Clone(std::shared_ptr<Tile> newParent) const override
-    {
-        return std::make_shared<RotatableComponent>(rotation, newParent);
-    }
-
-    ComponentType GetType() const override { return ComponentType::ROTATABLE; }
     std::optional<std::string> GetInfo() const override { return std::nullopt; }
 };
 
-struct StructureComponent : Component
+struct StructureComponent : ComponentBase<StructureComponent, ComponentType::STRUCTURE>
 {
-    StructureComponent(std::shared_ptr<Tile> parent = nullptr) : Component(parent) {}
-
-    std::shared_ptr<Component> Clone(std::shared_ptr<Tile> newParent) const override
-    {
-        return std::make_shared<StructureComponent>(newParent);
-    }
-
-    ComponentType GetType() const override { return ComponentType::STRUCTURE; }
+    using ComponentBase::ComponentBase;
     std::optional<std::string> GetInfo() const override { return std::nullopt; }
 };
