@@ -13,7 +13,7 @@ private:
     std::shared_ptr<TileDef> tileDef;
     Vector2Int position;
     std::shared_ptr<Sprite> sprite;
-    std::unordered_set<std::shared_ptr<Component>> components;
+    std::unordered_map<ComponentType, std::shared_ptr<Component>> components;
     std::shared_ptr<Station> station;
 
     Tile(const std::string &tileId, const Vector2Int &position, const std::shared_ptr<Station> &station);
@@ -44,7 +44,7 @@ public:
     template <typename T>
     std::shared_ptr<T> GetComponent() const
     {
-        for (const auto &component : components)
+        for (const auto &[type, component] : components)
         {
             if (auto castedComponent = std::dynamic_pointer_cast<T>(component))
                 return castedComponent;
@@ -57,26 +57,21 @@ public:
     template <typename T, typename... Args>
     std::shared_ptr<T> AddComponent(Args &&...args)
     {
-        if (auto existingComponent = GetComponent<T>())
-            return existingComponent;
-
+        ComponentType type = T::GetStaticType();
+        auto it = components.find(type);
+        if (it != components.end())
+        {
+            return std::dynamic_pointer_cast<T>(it->second);
+        }
         auto newComponent = std::make_shared<T>(std::forward<Args>(args)...);
-        components.insert(newComponent);
+        components[type] = newComponent;
         return newComponent;
     }
 
     template <typename T>
     bool RemoveComponent()
     {
-        for (auto it = components.begin(); it != components.end(); ++it)
-        {
-            if (std::dynamic_pointer_cast<T>(*it))
-            {
-                components.erase(it);
-                return true;
-            }
-        }
-        return false;
+        return components.erase(T::GetStaticType()) > 0;
     }
 
     static constexpr bool CompareByHeight(const std::shared_ptr<Tile> &a, const std::shared_ptr<Tile> &b)

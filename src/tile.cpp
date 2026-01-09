@@ -72,10 +72,9 @@ std::shared_ptr<Tile> Tile::CreateTile(const std::string &tileId, const Vector2I
     std::shared_ptr<Tile> tile = std::make_shared<Tile>(Tile(tileId, position, station));
 
     const auto &refComponents = tileDef->GetReferenceComponents();
-    tile->components.reserve(refComponents.size());
 
     for (const auto &refComponent : refComponents)
-        tile->components.insert(refComponent->Clone(tile));
+        tile->components[refComponent->GetType()] = refComponent->Clone(tile);
 
     tilesAtPos.push_back(tile);
     std::sort(tilesAtPos.begin(), tilesAtPos.end(), Tile::CompareByHeight);
@@ -178,7 +177,7 @@ std::string Tile::GetInfo() const
 {
     std::string tileInfo = " - " + GetName();
 
-    for (const auto &component : components)
+    for (const auto &[type, component] : components)
     {
         if (auto info = component->GetInfo())
             tileInfo += "\n" + info.value();
@@ -189,6 +188,5 @@ std::string Tile::GetInfo() const
 
 bool Tile::HasComponent(ComponentType type) const
 {
-    return std::ranges::any_of(components, [&](const auto &component)
-                               { return component->GetType() == type; });
+    return components.count(type) > 0;
 }

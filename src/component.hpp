@@ -8,7 +8,6 @@ struct Sprite;
 
 enum class ComponentType : uint8_t
 {
-    NONE,
     WALKABLE,
     SOLID,
     POWER_CONNECTOR,
@@ -36,7 +35,7 @@ public:
     virtual std::shared_ptr<Component> Clone(std::shared_ptr<Tile> newParent) const = 0;
     virtual ~Component() = default;
 
-    virtual ComponentType GetType() const { return ComponentType::NONE; }
+    virtual ComponentType GetType() const = 0;
     std::shared_ptr<Tile> GetParent() const { return _parent.lock(); }
 
 protected:
@@ -45,24 +44,7 @@ protected:
 public:
     virtual std::optional<std::string> GetInfo() const = 0;
     std::string GetName() const { return EnumToName<ComponentType>(GetType()); }
-
-    bool operator==(const Component &other) const
-    {
-        return GetName() == other.GetName();
-    }
 };
-
-namespace std
-{
-    template <>
-    struct hash<Component>
-    {
-        std::size_t operator()(const Component &component) const
-        {
-            return std::hash<std::string>()(component.GetName());
-        }
-    };
-}
 
 template <typename Derived, ComponentType CType>
 struct ComponentBase : Component
@@ -71,11 +53,12 @@ struct ComponentBase : Component
     ComponentBase(std::shared_ptr<Tile> parent = nullptr) : Component(parent) {}
     std::shared_ptr<Component> Clone(std::shared_ptr<Tile> newParent) const override
     {
-        auto ptr = std::make_shared<Derived>(*static_cast<const Derived*>(this));
+        auto ptr = std::make_shared<Derived>(*static_cast<const Derived *>(this));
         ptr->SetParent(newParent);
         return ptr;
     }
     ComponentType GetType() const override { return CType; }
+    static constexpr ComponentType GetStaticType() { return CType; }
 };
 
 struct WalkableComponent : ComponentBase<WalkableComponent, ComponentType::WALKABLE>
