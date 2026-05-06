@@ -164,7 +164,7 @@ void DefinitionManager::ParseTilesFromFile(const std::string &filename)
         std::string heightStr;
         tileNode["height"] >> heightStr;
         StringRemoveSpaces(heightStr);
-        auto height = magic_enum::enum_flags_cast<TileDef::Height>(heightStr, magic_enum::case_insensitive);
+        auto height = magic_enum::enum_flags_cast<TileDef::Height>(heightStr, '|', magic_enum::case_insensitive);
         if (!height.has_value())
             throw std::runtime_error(std::format("Parsing of height string for tile ({}) failed: {}", tileId, heightStr));
 
@@ -239,7 +239,7 @@ void DefinitionManager::ParseTilesFromFile(const std::string &filename)
 
                     // Try parse token as enum flag
                     std::vector<SpriteCondition> tokenPossibilities;
-                    auto parsed = magic_enum::enum_flags_cast<SpriteCondition>(token, magic_enum::case_insensitive);
+                    auto parsed = magic_enum::enum_flags_cast<SpriteCondition>(token, '|', magic_enum::case_insensitive);
                     if (parsed.has_value())
                     {
                         tokenPossibilities.push_back(parsed.value());

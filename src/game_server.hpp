@@ -1,7 +1,8 @@
 #pragma once
 #include "tile_def.hpp"
-#include <thread>
 #include <deque>
+#include <mutex>
+#include <thread>
 
 class Action;
 struct Crew;
