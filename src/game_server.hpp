@@ -4,7 +4,7 @@
 #include <mutex>
 #include <thread>
 
-class Action;
+struct Action;
 struct Crew;
 struct Station;
 
