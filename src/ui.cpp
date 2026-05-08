@@ -3,11 +3,13 @@
 #include "component.hpp"
 #include "crew.hpp"
 #include "env_effect.hpp"
+#include "game_server.hpp"
 #include "game_state.hpp"
 #include "lua_bindings.hpp"
 #include "particle_system.hpp"
 #include "planned_task.hpp"
 #include "power_grid.hpp"
+#include "render_snapshot.hpp"
 #include "sprite.hpp"
 #include "station.hpp"
 #include "tile.hpp"
@@ -78,18 +80,16 @@ void DrawTileGrid()
  * @param path     A queue of Vector2Int positions representing the path to draw.
  * @param startPos The starting position of the path.
  */
-void DrawPath(const std::deque<Vector2Int> &path, const Vector2 &startPos)
+void DrawPath(const std::deque<Vector2> &path, const Vector2 &startPos)
 {
     if (path.empty())
         return;
 
-    Vector2 a = startPos;
-
+    Vector2 prevPos = startPos;
     for (const auto &point : path)
     {
-        Vector2 b = ToVector2(point);
-        DrawLineEx(GameManager::WorldToScreen(a), GameManager::WorldToScreen(b), 3, Fade(GREEN, .5));
-        a = b;
+        DrawLineEx(GameManager::WorldToScreen(prevPos), GameManager::WorldToScreen(point), 3, Fade(GREEN, .5));
+        prevPos = point;
     }
 }
 
@@ -202,6 +202,32 @@ void DrawStationOverlays()
                 DrawRectangleV(topLeftPos, totalSize, Color(25, 25, 25, 200));
                 DrawRectangleV(barStartPos, barSize, Fade(YELLOW, .8));
             }
+        }
+    }
+
+    // Draw NavMesh debug outlines
+    for (int pIdx = 0; pIdx < (int)snapshot->station->navPolygons.size(); ++pIdx)
+    {
+        const auto &poly = snapshot->station->navPolygons[pIdx];
+
+        std::vector<Vector2> screenPoints;
+        for (int i = 0; i < 4; ++i)
+        {
+            screenPoints.push_back(GameManager::WorldToScreen(poly.vertices[i]));
+        }
+
+        // Draw outline
+        for (size_t i = 0; i < screenPoints.size(); ++i)
+        {
+            DrawLineEx(screenPoints[i], screenPoints[(i + 1) % screenPoints.size()], 2.0f, Fade(ORANGE, 0.5f));
+        }
+        
+        // Optional: Draw links between polygon centers
+        Vector2 center = GameManager::WorldToScreen(poly.GetCenter());
+        for (const auto& link : poly.links)
+        {
+            Vector2 nbCenter = GameManager::WorldToScreen(snapshot->station->navPolygons[link.targetPolyIdx].GetCenter());
+            DrawLineEx(center, nbCenter, 1.0f, Fade(YELLOW, 0.3f));
         }
     }
 
@@ -414,25 +440,26 @@ void DrawCrew()
             if (!GameManager::IsInBuildMode() && !moveAction->path.empty())
             {
                 DrawPath(moveAction->path, crew->GetPosition());
-                Vector2 nextPosition = ToVector2(moveAction->path.front());
+                Vector2 nextPosition = moveAction->path.front();
 
                 const float moveDelta = static_cast<float>(snapshot->timeSinceFixedUpdate * CREW_MOVE_SPEED);
-                const float distanceLeftSq = Vector2DistanceSq(crew->GetPosition(), nextPosition) - moveDelta * moveDelta;
-                if (distanceLeftSq <= 0)
+                const float distToNext = Vector2Distance(crew->GetPosition(), nextPosition);
+
+                if (distToNext <= moveDelta)
                 {
                     drawPosition = nextPosition;
 
                     if (moveAction->path.size() > 1)
                     {
-                        Vector2 futurePosition = ToVector2(moveAction->path.at(1));
-                        drawPosition += Vector2Normalize(futurePosition - drawPosition) * sqrtf(-distanceLeftSq);
+                        Vector2 futurePosition = moveAction->path.at(1);
+                        drawPosition += Vector2Normalize(futurePosition - drawPosition) * (moveDelta - distToNext);
                     }
                 }
                 else
                 {
                     bool canPath = true;
                     if (std::shared_ptr<Station> station = crew->GetCurrentTile()->GetStation())
-                        canPath = station->IsDoorFullyOpenAtPos(moveAction->path.front());
+                        canPath = station->IsDoorFullyOpenAtPos(ToVector2Int(nextPosition / TILE_SIZE));
 
                     if (canPath)
                         drawPosition += Vector2Normalize(nextPosition - crew->GetPosition()) * moveDelta;

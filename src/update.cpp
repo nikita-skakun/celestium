@@ -2,9 +2,11 @@
 #include "component.hpp"
 #include "crew.hpp"
 #include "env_effect.hpp"
+#include "game_server.hpp"
 #include "game_state.hpp"
 #include "planned_task.hpp"
 #include "power_grid.hpp"
+#include "render_snapshot.hpp"
 #include "station.hpp"
 #include "tile.hpp"
 #include "update.hpp"
@@ -226,7 +228,7 @@ void AssignCrewActions()
             if (!IsKeyDown(KEY_LEFT_SHIFT))
                 GameManager::GetServer().ClearCrewActions(snapshotCrew->GetInstanceId());
 
-            GameManager::GetServer().SendPlayerAction(snapshotCrew->GetInstanceId(), std::make_unique<MoveAction>(worldPos));
+            GameManager::GetServer().SendPlayerAction(snapshotCrew->GetInstanceId(), std::make_unique<MoveAction>(ToVector2(worldPos)));
         }
     }
 }
@@ -314,7 +316,6 @@ void UpdateTiles()
         {
             if (auto door = tile->GetComponent<DoorComponent>())
             {
-                door->KeepClosed();
                 door->Animate(FIXED_DELTA_TIME);
             }
 

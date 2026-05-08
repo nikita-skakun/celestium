@@ -1,5 +1,7 @@
 #pragma once
 #include "tile_def.hpp"
+#include "navigation.hpp"
+
 
 struct Effect;
 struct PlannedTask;
@@ -17,6 +19,11 @@ struct Station : public std::enable_shared_from_this<Station>
     std::vector<std::shared_ptr<PowerGrid>> powerGrids;
     std::vector<std::shared_ptr<PlannedTask>> plannedTasks;
     std::unordered_map<std::string, int> resources;
+    
+    // Navigation Graph
+    std::vector<ConvexPolygon> navPolygons;
+    std::vector<std::shared_ptr<Room>> rooms;
+    std::unordered_map<Vector2Int, int> tileToPoly;
 
 public:
     std::shared_ptr<Tile> GetTileAtPosition(const Vector2Int &pos, TileDef::Height height = TileDef::Height::NONE) const;
@@ -33,6 +40,7 @@ public:
 
     bool IsPositionPathable(const Vector2Int &pos) const;
     bool IsDoorFullyOpenAtPos(const Vector2Int &pos) const;
+    std::shared_ptr<Room> GetRoomAtPosition(const Vector2Int &pos) const;
 
     void RemoveEffect(const std::shared_ptr<Effect> &effect);
 
@@ -44,6 +52,8 @@ public:
     std::vector<std::shared_ptr<Tile>> GetTilesWithComponentAtPosition(const Vector2Int &pos, ComponentType type) const;
 
     void RebuildPowerGridsFromInfrastructure();
+    void RebuildNavigationGraph();
+
 
     void CreateRectRoom(const Vector2Int &pos, const Vector2Int &size);
     void CreateHorizontalCorridor(const Vector2Int &startPos, int length, int width);
@@ -58,6 +68,9 @@ public:
     bool HasResources(const std::unordered_map<std::string, int> &requiredResources) const;
     void ConsumeResources(const std::unordered_map<std::string, int> &resourcesToConsume);
     void ReturnResourcesFromTile(const std::shared_ptr<Tile> &tile);
+
+private:
+    void DecomposeRoom(const std::shared_ptr<Room> &room, const std::unordered_set<Vector2Int> &tiles, std::unordered_map<Vector2Int, int> &tileToPoly);
 };
 
 std::shared_ptr<Station> CreateStation();

@@ -1,5 +1,6 @@
 #include "asset_manager.hpp"
 #include "component.hpp"
+#include "def_manager.hpp"
 #include "game_state.hpp"
 #include "power_grid.hpp"
 #include "sprite.hpp"
@@ -103,7 +104,12 @@ std::shared_ptr<Tile> Tile::CreateTile(const std::string &tileId, const Vector2I
     }
 
     if (auto door = tile->GetComponent<DoorComponent>())
-        door->SetOpenState(door->IsOpen());
+    {
+        if (door->IsOpen())
+            tile->RemoveComponent<SolidComponent>();
+        else if (!tile->HasComponent(ComponentType::SOLID))
+            tile->AddComponent<SolidComponent>();
+    }
 
     return tile;
 }
@@ -189,4 +195,14 @@ std::string Tile::GetInfo() const
 bool Tile::HasComponent(ComponentType type) const
 {
     return components.count(type) > 0;
+}
+
+TileDef::Height Tile::GetHeight() const { return tileDef->GetHeight(); }
+TileDef::Category Tile::GetCategory() const { return tileDef->GetCategory(); }
+const std::string &Tile::GetId() const { return tileDef->GetId(); }
+std::string Tile::GetName() const { return tileDef->GetName(); }
+
+bool Tile::CompareByHeight(const std::shared_ptr<Tile> &a, const std::shared_ptr<Tile> &b)
+{
+    return magic_enum::enum_underlying(a->GetHeight()) < magic_enum::enum_underlying(b->GetHeight());
 }

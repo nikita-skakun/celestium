@@ -269,71 +269,36 @@ public:
 
 struct DoorComponent : ComponentBase<DoorComponent, ComponentType::DOOR>
 {
-    enum class MovingState : uint8_t
-    {
-        IDLE,
-        OPENING,
-        CLOSING,
-        FORCED_OPEN,
-    };
-
 protected:
     float movingSpeed;
-    bool isOpen;
-    MovingState movingState;
     float progress;
+    float forcedOpenTimer = 0.f;
 
 public:
     using ComponentBase::ComponentBase;
 
-    DoorComponent(float movingSpeed = 1.f, bool openState = false, std::shared_ptr<Tile> parent = nullptr)
-        : ComponentBase(parent), movingSpeed(std::max(movingSpeed, 0.f)), isOpen(openState),
-          movingState(MovingState::IDLE), progress(openState ? 0.f : 1.f) {}
+    DoorComponent(float movingSpeed = 1.f, bool startOpen = false, std::shared_ptr<Tile> parent = nullptr)
+        : ComponentBase(parent), movingSpeed(std::max(movingSpeed, 0.f)),
+          progress(startOpen ? 0.f : 1.f) {}
 
-    bool IsOpen() const { return isOpen; }
-    MovingState GetMovingState() const { return movingState; }
+    bool IsOpen() const { return progress <= 0.f; }
     float GetProgress() const { return progress; }
     void SetProgress(float newProgress) { progress = std::clamp(newProgress, 0.f, 1.f); }
 
-    void SetOpenState(bool openState);
+    void Open(float duration)
+    {
+        forcedOpenTimer = std::max(forcedOpenTimer, duration);
+    }
+
     void Animate(float deltaTime);
-
-    std::string GetMovementName() const { return EnumToName<MovingState>(movingState); }
-
-    void SetMovingState(MovingState newMovingState)
+    void Close()
     {
-        if (newMovingState == movingState)
-            return;
-
-        if ((progress >= 1.f && newMovingState == MovingState::CLOSING) ||
-            (progress <= 0.f && newMovingState == MovingState::OPENING))
-        {
-            movingState = MovingState::IDLE;
-            return;
-        }
-
-        movingState = newMovingState;
-    }
-
-    void PingPong()
-    {
-        if (movingState != MovingState::IDLE)
-            return;
-
-        movingState = isOpen ? MovingState::CLOSING : MovingState::OPENING;
-    }
-
-    void KeepClosed()
-    {
-        if (movingState != MovingState::IDLE)
-            return;
-
-        movingState = MovingState::CLOSING;
+        forcedOpenTimer = 0.f;
     }
 
     std::optional<std::string> GetInfo() const override
     {
-        return std::string("   + State: ") + (isOpen ? "Open" : "Closed") + "\n   + Action: " + GetMovementName() + "(" + ToString(progress * 100.f, 0) + "%)";
+        return std::string("   + State: ") + (IsOpen() ? "Open" : "Closed") + "(" + ToString(progress * 100.f, 0) + "%)";
     }
 };
 

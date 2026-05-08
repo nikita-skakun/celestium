@@ -8,6 +8,9 @@
 #include "station.hpp"
 #include "tile.hpp"
 #include <deque>
+#include <queue>
+#include <set>
+#include <unordered_set>
 
 void Station::CreateRectRoom(const Vector2Int &pos, const Vector2Int &size)
 {
@@ -56,6 +59,7 @@ std::shared_ptr<Station> CreateStation()
 {
     std::shared_ptr<Station> station = std::make_shared<Station>();
     station->CreateRectRoom(Vector2Int(-4, -4), Vector2Int(9, 9));
+    station->CreateRectRoom(Vector2Int(4, -4), Vector2Int(9, 9));
 
     // Delete the tile at the door position to make space for the door
     Tile::CreateTile("BLUE_FLOOR", Vector2Int(4, 0), station, true, false);
@@ -78,6 +82,7 @@ std::shared_ptr<Station> CreateStation()
         Tile::CreateTile("WIRE", Vector2Int(i, 0), station, true, false);
 
     station->UpdateSpriteOffsets();
+    station->RebuildNavigationGraph();
 
     // Initialize starting resources
     station->AddResource("METAL", 100);
@@ -177,12 +182,22 @@ bool Station::IsPositionPathable(const Vector2Int &pos) const
     return true;
 }
 
+std::shared_ptr<Room> Station::GetRoomAtPosition(const Vector2Int &pos) const
+{
+    if (!tileToPoly.contains(pos)) return nullptr;
+    int polyIdx = tileToPoly.at(pos);
+    const auto& poly = navPolygons[polyIdx];
+    if (poly.roomId >= 0 && poly.roomId < (int)rooms.size())
+        return rooms[poly.roomId];
+    return nullptr;
+}
+
 bool Station::IsDoorFullyOpenAtPos(const Vector2Int &pos) const
 {
     if (auto doorTile = GetTileWithComponentAtPosition(pos, ComponentType::DOOR))
     {
         auto door = doorTile->GetComponent<DoorComponent>();
-        if (door->GetProgress() > 0.f)
+        if (!door->IsOpen())
             return false;
     }
     return true;
@@ -565,6 +580,7 @@ void Station::CompletePlannedTask(const Vector2Int &pos)
 
     plannedTasks.erase(it);
     UpdateSpriteOffsets();
+    RebuildNavigationGraph();
 }
 
 void Station::CancelPlannedTask(const Vector2Int &pos)
@@ -631,5 +647,203 @@ void Station::ReturnResourcesFromTile(const std::shared_ptr<Tile> &tile)
     catch (...)
     {
         throw std::runtime_error("Error returning resources from tile " + (tile ? tile->GetId() : "null"));
+    }
+}
+
+void Station::RebuildNavigationGraph()
+{
+    navPolygons.clear();
+    rooms.clear();
+    tileToPoly.clear();
+
+    std::unordered_set<Vector2Int> globalVisited;
+    std::vector<std::pair<std::shared_ptr<Room>, std::unordered_set<Vector2Int>>> roomData;
+
+    // 1. Identify rooms
+    for (auto const &[pos, tiles] : tileMap)
+    {
+        if (globalVisited.contains(pos)) continue;
+        if (!IsPositionPathable(pos) || GetTileWithComponentAtPosition(pos, ComponentType::DOOR)) continue;
+
+        auto room = std::make_shared<Room>();
+        room->id = (int)rooms.size();
+        rooms.push_back(room);
+
+        std::unordered_set<Vector2Int> roomTiles;
+        std::queue<Vector2Int> q;
+        q.push(pos);
+        globalVisited.insert(pos);
+
+        while (!q.empty())
+        {
+            Vector2Int cur = q.front();
+            q.pop();
+            roomTiles.insert(cur);
+
+            for (const auto &dir : CARDINAL_DIRECTIONS)
+            {
+                Vector2Int nb = cur + DirectionToVector2Int(dir);
+                if (!globalVisited.contains(nb) && IsPositionPathable(nb) && !GetTileWithComponentAtPosition(nb, ComponentType::DOOR))
+                {
+                    globalVisited.insert(nb);
+                    q.push(nb);
+                }
+            }
+        }
+        roomData.push_back({room, std::move(roomTiles)});
+    }
+
+    // 2. Decompose rooms into polygons
+    for (auto &data : roomData)
+    {
+        DecomposeRoom(data.first, data.second, tileToPoly);
+    }
+
+    // 3. Create door polygons
+    for (auto const &[pos, tiles] : tileMap)
+    {
+        auto doorTile = GetTileWithComponentAtPosition(pos, ComponentType::DOOR);
+        if (!doorTile) continue;
+
+        int pIdx = (int)navPolygons.size();
+        tileToPoly[pos] = pIdx;
+
+        ConvexPolygon poly;
+        poly.roomId = -1;
+        float x = (float)pos.x - 0.5f;
+        float y = (float)pos.y - 0.5f;
+
+        poly.vertices[0] = {x, y};
+        poly.vertices[1] = {x + 1.f, y};
+        poly.vertices[2] = {x + 1.f, y + 1.f};
+        poly.vertices[3] = {x, y + 1.f};
+
+        navPolygons.push_back(poly);
+    }
+
+    // 4. Build adjacency via tile neighbors
+    for (int i = 0; i < (int)navPolygons.size(); ++i)
+    {
+        auto& poly = navPolygons[i];
+        poly.links.clear();
+
+        Vector2 p0 = poly.vertices[0];
+        Vector2 p2 = poly.vertices[2];
+        Vector2Int minTile = {(int)std::floor(p0.x + 0.5f), (int)std::floor(p0.y + 0.5f)};
+        Vector2Int maxTile = {(int)std::floor(p2.x - 0.5f), (int)std::floor(p2.y - 0.5f)};
+
+        auto addNeighbor = [&](int edgeIdx, Vector2Int nbTile) {
+            if (tileToPoly.contains(nbTile)) {
+                int nbPolyIdx = tileToPoly[nbTile];
+                if (nbPolyIdx != i) {
+                    // Check if we already have a link to this polygon on this edge
+                    bool exists = false;
+                    for (const auto& link : poly.links) {
+                        if (link.targetPolyIdx == nbPolyIdx && link.edgeIdx == edgeIdx) {
+                            exists = true;
+                            break;
+                        }
+                    }
+                    if (!exists) {
+                        auto doorTile = GetTileWithComponentAtPosition(nbTile, ComponentType::DOOR);
+                        
+                        // Calculate portal segment based on edge index and nbTile
+                        Vector2 pA = {(float)nbTile.x - 0.5f, (float)nbTile.y + 0.5f};
+                        Vector2 pB = {(float)nbTile.x + 0.5f, (float)nbTile.y + 0.5f};
+                        
+                        if (edgeIdx == 1) { // East
+                            pA = {(float)nbTile.x - 0.5f, (float)nbTile.y - 0.5f};
+                            pB = {(float)nbTile.x - 0.5f, (float)nbTile.y + 0.5f};
+                        } else if (edgeIdx == 2) { // South
+                            pA = {(float)nbTile.x - 0.5f, (float)nbTile.y - 0.5f};
+                            pB = {(float)nbTile.x + 0.5f, (float)nbTile.y - 0.5f};
+                        } else if (edgeIdx == 3) { // West
+                            pA = {(float)nbTile.x + 0.5f, (float)nbTile.y - 0.5f};
+                            pB = {(float)nbTile.x + 0.5f, (float)nbTile.y + 0.5f};
+                        }
+
+                        poly.links.push_back({nbPolyIdx, edgeIdx, pA, pB, doorTile});
+                    } else {
+                        // Expand existing portal
+                        for (auto& link : poly.links) {
+                            if (link.targetPolyIdx == nbPolyIdx && link.edgeIdx == edgeIdx) {
+                                if (edgeIdx == 0 || edgeIdx == 2) { // Horizontal edge
+                                    link.portalA.x = std::min(link.portalA.x, (float)nbTile.x - 0.5f);
+                                    link.portalB.x = std::max(link.portalB.x, (float)nbTile.x + 0.5f);
+                                } else { // Vertical edge
+                                    link.portalA.y = std::min(link.portalA.y, (float)nbTile.y - 0.5f);
+                                    link.portalB.y = std::max(link.portalB.y, (float)nbTile.y + 0.5f);
+                                }
+                                break;
+                            }
+                        }
+                    }
+                }
+            }
+        };
+
+        // North (Edge 0)
+        for (int x = minTile.x; x <= maxTile.x; ++x) addNeighbor(0, {x, minTile.y - 1});
+        // East (Edge 1)
+        for (int y = minTile.y; y <= maxTile.y; ++y) addNeighbor(1, {maxTile.x + 1, y});
+        // South (Edge 2)
+        for (int x = minTile.x; x <= maxTile.x; ++x) addNeighbor(2, {x, maxTile.y + 1});
+        // West (Edge 3)
+        for (int y = minTile.y; y <= maxTile.y; ++y) addNeighbor(3, {minTile.x - 1, y});
+    }
+}
+
+void Station::DecomposeRoom(const std::shared_ptr<Room> &room, const std::unordered_set<Vector2Int> &tiles, std::unordered_map<Vector2Int, int> &tileToPoly)
+{
+    auto comp = [](const Vector2Int& a, const Vector2Int& b) {
+        if (a.y != b.y) return a.y < b.y;
+        return a.x < b.x;
+    };
+    std::set<Vector2Int, decltype(comp)> remaining(tiles.begin(), tiles.end(), comp);
+
+    while (!remaining.empty())
+    {
+        Vector2Int start = *remaining.begin();
+
+        int width = 1;
+        while (remaining.count(start + Vector2Int(width, 0))) width++;
+
+        int height = 1;
+        bool canExpandY = true;
+        while (canExpandY)
+        {
+            for (int x = 0; x < width; ++x)
+            {
+                if (!remaining.count(start + Vector2Int(x, height)))
+                {
+                    canExpandY = false;
+                    break;
+                }
+            }
+            if (canExpandY) height++;
+        }
+
+        int polyIdx = (int)navPolygons.size();
+        ConvexPolygon poly;
+        poly.roomId = room->id;
+        float x = (float)start.x - 0.5f;
+        float y = (float)start.y - 0.5f;
+        float w = (float)width;
+        float h = (float)height;
+
+        poly.vertices[0] = {x, y};
+        poly.vertices[1] = {x + w, y};
+        poly.vertices[2] = {x + w, y + h};
+        poly.vertices[3] = {x, y + h};
+        
+        navPolygons.push_back(poly);
+        room->polygonIds.push_back(polyIdx);
+
+        for (int i = 0; i < width; ++i)
+            for (int j = 0; j < height; ++j) {
+                Vector2Int t = start + Vector2Int(i, j);
+                remaining.erase(t);
+                tileToPoly[t] = polyIdx;
+            }
     }
 }

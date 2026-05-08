@@ -1,7 +1,5 @@
 #include "utils.hpp"
-#include <raylib.h>
 #include <cmath>
-#include <random>
 #include <functional>
 
 Vector2 operator+(const Vector2 &a, const Vector2 &b) noexcept

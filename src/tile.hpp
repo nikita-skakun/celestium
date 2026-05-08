@@ -1,5 +1,8 @@
 #pragma once
-#include "def_manager.hpp"
+#include "tile_def.hpp"
+#include <memory>
+#include <unordered_map>
+#include <string>
 
 struct Station;
 struct Sprite;
@@ -26,10 +29,10 @@ public:
 
     constexpr const Vector2Int &GetPosition() const { return position; }
 
-    constexpr TileDef::Height GetHeight() const { return tileDef->GetHeight(); }
-    constexpr TileDef::Category GetCategory() const { return tileDef->GetCategory(); }
+    TileDef::Height GetHeight() const;
+    TileDef::Category GetCategory() const;
 
-    constexpr const std::shared_ptr<Sprite> &GetSprite() const { return sprite; }
+    const std::shared_ptr<Sprite> &GetSprite() const { return sprite; }
     void SetSprite(const std::shared_ptr<Sprite> &newSprite) { sprite = newSprite; }
 
     std::shared_ptr<TileDef> GetTileDefinition() const { return tileDef; }
@@ -37,8 +40,8 @@ public:
 
     bool IsActive() const;
 
-    constexpr const std::string &GetId() const { return tileDef->GetId(); }
-    constexpr std::string GetName() const { return tileDef->GetName(); }
+    const std::string &GetId() const;
+    std::string GetName() const;
     std::string GetInfo() const;
 
     template <typename T>
@@ -74,8 +77,5 @@ public:
         return components.erase(T::GetStaticType()) > 0;
     }
 
-    static constexpr bool CompareByHeight(const std::shared_ptr<Tile> &a, const std::shared_ptr<Tile> &b)
-    {
-        return magic_enum::enum_underlying(a->GetHeight()) < magic_enum::enum_underlying(b->GetHeight());
-    }
+    static bool CompareByHeight(const std::shared_ptr<Tile> &a, const std::shared_ptr<Tile> &b);
 };

@@ -1,9 +1,12 @@
 #pragma once
 #include "camera.hpp"
-#include "game_server.hpp"
-#include "render_snapshot.hpp"
 #include "tile_def.hpp"
-#include <sol/sol.hpp>
+#include <atomic>
+#include <optional>
+
+struct GameServer;
+struct RenderSnapshot;
+namespace sol { class state; }
 
 enum class GameState : uint8_t
 {
@@ -37,19 +40,11 @@ private:
     std::atomic<std::shared_ptr<RenderSnapshot>> renderSnapshot;
 
 public:
-    // Render thread: get current snapshot
-    static std::shared_ptr<RenderSnapshot> GetRenderSnapshot()
-    {
-        return GetInstance().renderSnapshot.load(std::memory_order_acquire);
-    }
-    // Simulation thread: set new snapshot
-    static void SetRenderSnapshot(std::shared_ptr<RenderSnapshot> snap)
-    {
-        GetInstance().renderSnapshot.store(std::move(snap), std::memory_order_release);
-    }
+    static std::shared_ptr<RenderSnapshot> GetRenderSnapshot();
+    static void SetRenderSnapshot(std::shared_ptr<RenderSnapshot> snap);
 
-    GameManager() = default;
-    ~GameManager() = default;
+    GameManager();
+    ~GameManager();
     GameManager(const GameManager &) = delete;
     GameManager &operator=(const GameManager &) = delete;
 
@@ -68,15 +63,7 @@ public:
     static void SetGameState(GameState state);
 
     static void RequestStateChange(GameState newState) { GetInstance().pendingState = newState; }
-    static void ApplyPendingState()
-    {
-        auto &instance = GetInstance();
-        if (instance.pendingState.has_value())
-        {
-            SetGameState(instance.pendingState.value());
-            instance.pendingState.reset();
-        }
-    }
+    static void ApplyPendingState();
 
     static const std::vector<uint64_t> &GetHoveredCrew() { return GetInstance().hoveredCrewList; }
     static void ClearHoveredCrew() { GetInstance().hoveredCrewList.clear(); }
@@ -125,6 +112,7 @@ public:
     static Vector2 WorldToScreen(const Vector2 &worldPos);
     static Vector2 WorldToScreen(const Vector2Int &worldPos);
     static Rectangle WorldToScreen(const Rectangle &worldRect);
+    static std::vector<Vector2Int> GetSymmetricPositions(const Vector2Int &pos);
     static const Vector2 &GetOriginalScreenSize();
     static void SetOriginalScreenSize();
 };

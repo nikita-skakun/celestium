@@ -1,127 +1,238 @@
 #include "astar.hpp"
+#include <algorithm>
+#include <cmath>
 #include <queue>
-#include <unordered_set>
+#include <unordered_map>
 
-/**
- * Implements the A* pathfinding algorithm to find the shortest path
- * from a start position to an end position in a grid-based environment.
- *
- * @param start     The starting position as a Vector2Int.
- * @param end       The target position as a Vector2Int.
- * @param heuristic A function that estimates the cost between two points.
- * @param pathable  A callable that returns true if a given position is
- *                  traversable (e.g. calls Station::IsPositionPathable).
- * @return          A deque of Vector2Int positions representing the path
- *                  from start (exclusive) to end (inclusive). If no path
- *                  is found, an empty deque is returned.
- */
-std::deque<Vector2Int> AStar(const Vector2Int &start, const Vector2Int &end, const HeuristicFunction &heuristic, const PathableFunction &pathable)
+// Funnel algorithm for a sequence of shared edges
+std::deque<Vector2> Funnel(Vector2 start, Vector2 end, const std::vector<std::pair<Vector2, Vector2>> &portals)
 {
-    if (start == end)
-        return {};
-
-    // Combined cost map for tracking both g and f costs
-    std::unordered_map<Vector2Int, Vector2> costMap;
-    // Map to reconstruct the path
-    std::unordered_map<Vector2Int, Vector2Int> cameFrom;
-    // Map of nodes already evaluated
-    std::unordered_set<Vector2Int> closedSet;
-
-    // Comparator for the priority queue
-    auto compare = [&costMap](const Vector2Int &a, const Vector2Int &b)
+    std::deque<Vector2> waypoints;
+    if (portals.empty())
     {
-        return costMap[a].y > costMap[b].y;
+        waypoints.push_back(end);
+        return waypoints;
+    }
+
+    std::vector<std::pair<Vector2, Vector2>> segments = portals;
+    segments.push_back({end, end});
+
+    Vector2 apex = start;
+    Vector2 funnelLeft = segments[0].first;
+    Vector2 funnelRight = segments[0].second;
+    int leftIdx = 0, rightIdx = 0;
+
+    auto CrossProduct = [](Vector2 a, Vector2 b, Vector2 c) {
+        return (b.x - a.x) * (c.y - a.y) - (b.y - a.y) * (c.x - a.x);
     };
-    // Sorted queue of open nodes
-    std::priority_queue<Vector2Int, std::vector<Vector2Int>, decltype(compare)> openQueue(compare);
 
-    // Initialize costs for the start node
-    costMap[start] = Vector2(0, heuristic(start, end));
-    // Add start to the queue of open nodes
-    openQueue.emplace(start);
-
-    const Vector2Int neighborOffsets[] = {{1, 0}, {-1, 0}, {0, 1}, {0, -1}, {1, 1}, {-1, 1}, {1, -1}, {-1, -1}};
-
-    // Main loop of the A* algorithm
-    while (!openQueue.empty())
+    for (int i = 1; i < (int)segments.size(); ++i)
     {
-        // Get the node with the lowest fCost
-        Vector2Int current = openQueue.top();
-        openQueue.pop();
+        Vector2 left = segments[i].first;
+        Vector2 right = segments[i].second;
 
-        // If we reach the end node, reconstruct the path
-        if (current == end)
+        // Update right leg
+        if (CrossProduct(apex, funnelRight, right) <= 0.0f)
         {
-            std::deque<Vector2Int> path;
-            Vector2Int step = end;
-            Vector2Int prev = cameFrom[end];
-            while (step != start)
+            if (apex == funnelRight || CrossProduct(apex, funnelLeft, right) > 0.0f)
             {
-                path.push_front(step);
-                step = prev;
-                prev = cameFrom[step];
+                funnelRight = right;
+                rightIdx = i;
             }
-            return path;
+            else
+            {
+                apex = funnelLeft;
+                waypoints.push_back(apex);
+                funnelLeft = apex;
+                funnelRight = apex;
+                i = leftIdx;
+                leftIdx = i;
+                rightIdx = i;
+                continue;
+            }
         }
 
-        // Mark the current node as evaluated
-        closedSet.insert(current);
-
-        // Check neighboring nodes
-        for (const Vector2Int &offset : neighborOffsets)
+        // Update left leg
+        if (CrossProduct(apex, funnelLeft, left) >= 0.0f)
         {
-            // Calculate neighbor position
-            Vector2Int neighborPos = current + offset;
-
-            // Check if the move is diagonal
-            if (offset.x != 0 && offset.y != 0)
+            if (apex == funnelLeft || CrossProduct(apex, funnelRight, left) < 0.0f)
             {
-                // Ensure both adjacent sides are walkable for diagonals
-                if (!pathable(Vector2Int(current.x + offset.x, current.y)) ||
-                    !pathable(Vector2Int(current.x, current.y + offset.y)))
-                    continue; // Skip to the next neighbor
+                funnelLeft = left;
+                leftIdx = i;
             }
-
-            // Check if neighbor is pathable and not in the closed set
-            if (pathable(neighborPos) && !Contains(closedSet, neighborPos))
+            else
             {
-                // Calculate tentative G cost
-                float tentativeGCost = costMap[current].x + heuristic(current, neighborPos);
-                // Insert or get existing cost
-                float inf = std::numeric_limits<float>::infinity();
-                auto [iter, inserted] = costMap.try_emplace(neighborPos, Vector2(inf, inf));
-
-                // If the new cost is lower, update costs and path tracking
-                if (tentativeGCost < iter->second.x)
-                {
-                    // Update G cost
-                    iter->second.x = tentativeGCost;
-                    // Update F cost
-                    iter->second.y = tentativeGCost + heuristic(neighborPos, end);
-                    // Track the path
-                    cameFrom[neighborPos] = current;
-
-                    // Add neighbor to the open list
-                    openQueue.push(neighborPos);
-                }
+                apex = funnelRight;
+                waypoints.push_back(apex);
+                funnelLeft = apex;
+                funnelRight = apex;
+                i = rightIdx;
+                leftIdx = i;
+                rightIdx = i;
+                continue;
             }
         }
     }
 
-    // Return an empty queue if no path found
-    return {};
+    waypoints.push_back(end);
+    return waypoints;
 }
 
-/**
- * Checks if there are any obstacles along the given path using the
- * provided pathability callback.
- *
- * @param path     The deque of Vector2Int positions representing the path.
- * @param pathable Callable that returns true when a tile is traversable.
- * @return         True if any position on the path is not traversable.
- */
-bool DoesPathHaveObstacles(const std::deque<Vector2Int> &path, const PathableFunction &pathable)
+std::deque<Vector2> FindPath(
+    const Vector2 &start, 
+    const Vector2 &end, 
+    const std::vector<ConvexPolygon> &polygons, 
+    std::function<bool(const ConvexPolygon::Link&)> isLinkTraversable
+)
 {
-    return std::ranges::any_of(path, [&pathable](const Vector2Int &step)
-                               { return !pathable(step); });
+    int startPoly = -1, endPoly = -1;
+    for (int i = 0; i < (int)polygons.size(); ++i)
+    {
+        if (startPoly == -1 && polygons[i].Contains(start)) startPoly = i;
+        if (endPoly == -1 && polygons[i].Contains(end)) endPoly = i;
+    }
+
+    if (startPoly == -1 || endPoly == -1) return {};
+    if (startPoly == endPoly) return {end};
+
+    // A* on polygons
+    struct Node {
+        int polyIdx;
+        float gCost, fCost;
+        bool operator>(const Node &o) const { return fCost > o.fCost; }
+    };
+
+    std::priority_queue<Node, std::vector<Node>, std::greater<Node>> open;
+    std::unordered_map<int, float> minGCost;
+    std::unordered_map<int, int> cameFrom;
+
+    open.push({startPoly, 0.0f, Vector2Distance(start, end)});
+    minGCost[startPoly] = 0.0f;
+
+    while (!open.empty())
+    {
+        Node cur = open.top();
+        open.pop();
+
+        if (cur.gCost > minGCost[cur.polyIdx]) continue;
+        if (cur.polyIdx == endPoly) break;
+
+        const auto &poly = polygons[cur.polyIdx];
+        Vector2 curCenter = poly.GetCenter();
+
+        for (const auto &link : poly.links)
+        {
+            if (isLinkTraversable && !isLinkTraversable(link)) continue;
+
+            int nbIdx = link.targetPolyIdx;
+            const auto &nbPoly = polygons[nbIdx];
+            
+            Vector2 fromPos = (cur.polyIdx == startPoly) ? start : curCenter;
+            float dist;
+            if (nbIdx == endPoly) dist = Vector2Distance(fromPos, end);
+            else dist = Vector2Distance(fromPos, nbPoly.GetCenter());
+
+            // Add door penalty (e.g. 5 tiles distance equivalent)
+            if (link.door.lock()) dist += 5.0f;
+
+            float newG = cur.gCost + dist;
+
+            if (!minGCost.contains(nbIdx) || newG < minGCost[nbIdx])
+            {
+                minGCost[nbIdx] = newG;
+                cameFrom[nbIdx] = cur.polyIdx;
+                float h = (nbIdx == endPoly) ? 0.0f : Vector2Distance(nbPoly.GetCenter(), end);
+                open.push({nbIdx, newG, newG + h});
+            }
+        }
+    }
+
+    if (!minGCost.contains(endPoly)) 
+    {
+        TraceLog(LOG_INFO, "FindPath: No path found from %d to %d", startPoly, endPoly);
+        return {};
+    }
+
+    // Reconstruct path and segments
+    std::vector<int> path;
+    for (int curr = endPoly; curr != startPoly; curr = cameFrom[curr]) path.push_back(curr);
+    path.push_back(startPoly);
+    std::reverse(path.begin(), path.end());
+
+    std::string pathStr = "";
+    for (int p : path) pathStr += std::to_string(p) + " ";
+    TraceLog(LOG_INFO, "FindPath: Start (%f, %f) -> End (%f, %f)", start.x, start.y, end.x, end.y);
+    TraceLog(LOG_INFO, "FindPath: Path: %s", pathStr.c_str());
+    for (int p : path) {
+        const auto& poly = polygons[p];
+        TraceLog(LOG_INFO, "  Poly %d: (%.1f, %.1f) to (%.1f, %.1f)", p, poly.vertices[0].x, poly.vertices[0].y, poly.vertices[2].x, poly.vertices[2].y);
+    }
+
+    std::vector<std::pair<Vector2, Vector2>> segments;
+    for (size_t i = 0; i < path.size() - 1; ++i)
+    {
+        const auto &p1 = polygons[path[i]];
+        int nextPolyIdx = path[i + 1];
+        
+        for (const auto &link : p1.links)
+        {
+            if (link.targetPolyIdx == nextPolyIdx)
+            {
+                Vector2 left = link.portalA;
+                Vector2 right = link.portalB;
+                
+                Vector2 center = p1.GetCenter();
+                auto cp = (left.x - center.x) * (right.y - center.y) - (left.y - center.y) * (right.x - center.x);
+                if (cp < 0) std::swap(left, right);
+
+                float padding = 0.5f;
+                Vector2 dir = {right.x - left.x, right.y - left.y};
+                float dist = std::sqrt(dir.x * dir.x + dir.y * dir.y);
+                
+                if (dist > 0.001f) {
+                    if (dist <= padding * 2.0f) {
+                        Vector2 mid = {(left.x + right.x) * 0.5f, (left.y + right.y) * 0.5f};
+                        left = mid;
+                        right = mid;
+                    } else {
+                        left.x += (dir.x / dist) * padding;
+                        left.y += (dir.y / dist) * padding;
+                        right.x -= (dir.x / dist) * padding;
+                        right.y -= (dir.y / dist) * padding;
+                    }
+                }
+
+                // Double-portal padding: one offset into current, one into next
+                Vector2 normal = {0, 0};
+                if (link.edgeIdx == 0) normal.y = 1;       // North edge of p1
+                else if (link.edgeIdx == 1) normal.x = -1; // East
+                else if (link.edgeIdx == 2) normal.y = -1; // South
+                else if (link.edgeIdx == 3) normal.x = 1;  // West
+
+                segments.push_back({
+                    {left.x + normal.x * padding, left.y + normal.y * padding},
+                    {right.x + normal.x * padding, right.y + normal.y * padding}
+                });
+
+                segments.push_back({
+                    {left.x - normal.x * padding, left.y - normal.y * padding},
+                    {right.x - normal.x * padding, right.y - normal.y * padding}
+                });
+
+                break;
+            }
+        }
+    }
+
+    for (int i = 0; i < (int)segments.size(); ++i) {
+        TraceLog(LOG_INFO, "  Portal %d: (%f, %f) - (%f, %f)", i, segments[i].first.x, segments[i].first.y, segments[i].second.x, segments[i].second.y);
+    }
+
+    auto finalPath = Funnel(start, end, segments);
+    TraceLog(LOG_INFO, "FindPath: Waypoints (%d):", (int)finalPath.size());
+    for (int i = 0; i < (int)finalPath.size(); ++i) {
+        TraceLog(LOG_INFO, "  WP %d: (%f, %f)", i, finalPath[i].x, finalPath[i].y);
+    }
+
+    return finalPath;
 }

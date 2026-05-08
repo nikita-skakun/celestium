@@ -3,9 +3,11 @@
 #include "fixed_update.hpp"
 #include "game_server.hpp"
 #include "game_state.hpp"
+#include "render_snapshot.hpp"
 #include "station.hpp"
 #include "ui_manager.hpp"
 #include "ui.hpp"
+#include <sol/sol.hpp>
 
 void GameManager::SetGameState(GameState state)
 {
@@ -206,3 +208,44 @@ GameServer &GameManager::GetServer()
         instance.server = std::make_unique<GameServer>();
     return *instance.server;
 }
+
+std::vector<Vector2Int> GameManager::GetSymmetricPositions(const Vector2Int &pos)
+{
+    std::vector<Vector2Int> out;
+    out.push_back(pos);
+
+    bool hor = IsHorizontalSymmetry();
+    bool ver = IsVerticalSymmetry();
+
+    if (hor)
+        out.push_back({pos.x, -pos.y - 1});
+    if (ver)
+        out.push_back({-pos.x - 1, pos.y});
+    if (hor && ver)
+        out.push_back({-pos.x - 1, -pos.y - 1});
+
+    return out;
+}
+
+std::shared_ptr<RenderSnapshot> GameManager::GetRenderSnapshot()
+{
+    return GetInstance().renderSnapshot.load(std::memory_order_acquire);
+}
+
+void GameManager::SetRenderSnapshot(std::shared_ptr<RenderSnapshot> snap)
+{
+    GetInstance().renderSnapshot.store(std::move(snap), std::memory_order_release);
+}
+
+void GameManager::ApplyPendingState()
+{
+    auto &instance = GetInstance();
+    if (instance.pendingState.has_value())
+    {
+        SetGameState(instance.pendingState.value());
+        instance.pendingState.reset();
+    }
+}
+
+GameManager::GameManager() : renderSnapshot(nullptr) {}
+GameManager::~GameManager() = default;

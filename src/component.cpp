@@ -16,39 +16,42 @@ void OxygenProducerComponent::ProduceOxygen(float deltaTime) const
     oxygen->SetOxygenLevel(std::min(oxygen->GetOxygenLevel() + oxygenProduction * deltaTime, TILE_OXYGEN_MAX));
 }
 
-void DoorComponent::SetOpenState(bool openState)
-{
-    auto parent = GetParent();
-    if (!parent)
-        return;
-
-    if (openState)
-        parent->RemoveComponent<SolidComponent>();
-    else
-        parent->AddComponent<SolidComponent>();
-
-    isOpen = openState;
-
-    if (movingState != MovingState::FORCED_OPEN)
-        movingState = MovingState::IDLE;
-}
-
 void DoorComponent::Animate(float deltaTime)
 {
-    if (movingState == MovingState::IDLE)
-        return;
+    if (forcedOpenTimer > 0.f)
+        forcedOpenTimer -= deltaTime;
 
     auto parent = GetParent();
-    if (!parent->IsActive())
+    if (!parent || !parent->IsActive())
         return;
 
-    float direction = movingState == MovingState::CLOSING ? 1.f : -1.f;
+    float targetProgress = (forcedOpenTimer > 0.f) ? 0.f : 1.f;
+    
+    // Handle SolidComponent toggle based on progress
+    if (progress <= 0.f && targetProgress > 0.f) {
+        // Starting to close
+    } else if (progress >= 1.f && targetProgress < 1.f) {
+        // Starting to open
+        parent->RemoveComponent<SolidComponent>();
+    }
 
-    SetProgress(progress + direction * movingSpeed * deltaTime);
-    if (progress >= 1.f)
-        SetOpenState(false);
-    if (progress <= 0.f)
-        SetOpenState(true);
+    if (progress == targetProgress) {
+        if (progress >= 1.f && !parent->HasComponent(ComponentType::SOLID))
+            parent->AddComponent<SolidComponent>();
+        return;
+    }
+
+    float direction = (targetProgress > progress) ? 1.f : -1.f;
+    float nextProgress = progress + direction * movingSpeed * deltaTime;
+    
+    if (direction > 0 && nextProgress >= 1.f) {
+        nextProgress = 1.f;
+        parent->AddComponent<SolidComponent>();
+    } else if (direction < 0 && nextProgress <= 0.f) {
+        nextProgress = 0.f;
+    }
+
+    SetProgress(nextProgress);
 }
 
 void DurabilityComponent::SetHitpoints(float newHitpoints)

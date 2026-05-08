@@ -25,10 +25,10 @@ struct Action
 
 struct MoveAction : Action
 {
-    Vector2Int targetPosition;
-    std::deque<Vector2Int> path;
+    Vector2 targetPosition;
+    std::deque<Vector2> path;
 
-    MoveAction(const Vector2Int &position) : targetPosition(position) {}
+    MoveAction(const Vector2 &position) : targetPosition(position) {}
 
     void Update(const std::shared_ptr<Crew> &crew) override;
 

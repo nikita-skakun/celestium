@@ -18,42 +18,72 @@ void MoveAction::Update(const std::shared_ptr<Crew> &crew)
         return;
     }
 
-    Vector2Int floorCrewPos = ToVector2Int(crew->GetPosition());
-
     if (path.empty())
     {
-        path = AStar(floorCrewPos, targetPosition, Vector2IntDistanceSq,
-                     [station](const Vector2Int &p)
-                     { return station->IsPositionPathable(p); });
+        path = FindPath(crew->GetPosition(), targetPosition, station->navPolygons, 
+            [](const ConvexPolygon::Link& link) {
+                if (auto doorTile = link.door.lock()) {
+                    return doorTile->IsActive(); // Only path through powered doors
+                }
+                return true;
+            });
 
         if (path.empty())
         {
-            if (ToVector2(targetPosition) == crew->GetPosition())
+            TraceLog(LOG_INFO, "MoveAction: FindPath returned empty. Target: (%f, %f), Pos: (%f, %f)", targetPosition.x, targetPosition.y, crew->GetPosition().x, crew->GetPosition().y);
+            if (targetPosition == crew->GetPosition())
             {
                 crew->RemoveFirstAction();
                 return;
             }
 
-            targetPosition = floorCrewPos;
-            path = {floorCrewPos};
+            targetPosition = crew->GetPosition();
+            crew->RemoveFirstAction();
+            return;
         }
     }
 
     const float moveDelta = CREW_MOVE_SPEED * FIXED_DELTA_TIME;
-    Vector2 stepPos = ToVector2(path.front());
-    const float distanceLeftSq = Vector2DistanceSq(crew->GetPosition(), stepPos) - moveDelta * moveDelta;
-    float distanceToTravel = moveDelta;
+    Vector2 nextWaypoint = path.front();
+    Vector2 dir = Vector2Normalize(nextWaypoint - crew->GetPosition());
+    
+    // Check for door at current position or slightly ahead
+    std::shared_ptr<Tile> doorTile = nullptr;
+    Vector2Int currentTilePos = {(int)std::floor(crew->GetPosition().x + 0.5f), (int)std::floor(crew->GetPosition().y + 0.5f)};
+    doorTile = station->GetTileWithComponentAtPosition(currentTilePos, ComponentType::DOOR);
+    
+    if (!doorTile) {
+        Vector2 checkPos = crew->GetPosition() + dir * 0.6f;
+        Vector2Int checkTilePos = {(int)std::floor(checkPos.x + 0.5f), (int)std::floor(checkPos.y + 0.5f)};
+        doorTile = station->GetTileWithComponentAtPosition(checkTilePos, ComponentType::DOOR);
+    }
 
-    // Crew can reach or pass the current waypoint
-    if (distanceLeftSq <= 0)
+    if (doorTile)
     {
-        if (auto doorTile = station->GetTileWithComponentAtPosition(floorCrewPos, ComponentType::DOOR))
+        if (auto door = doorTile->GetComponent<DoorComponent>())
+        {
+            door->Open(1.0f / CREW_MOVE_SPEED);
+
+            if (!door->IsOpen())
+                return; // Wait for the door to be fully open
+        }
+    }
+
+    float distToWaypoint = Vector2Distance(crew->GetPosition(), nextWaypoint);
+    
+    if (distToWaypoint <= moveDelta)
+    {
+        // Reach waypoint
+        crew->SetPosition(nextWaypoint);
+        
+        // Reset door state if we just passed through one
+        Vector2Int currentTilePos = ToVector2Int(crew->GetPosition() / TILE_SIZE);
+        if (auto doorTile = station->GetTileWithComponentAtPosition(currentTilePos, ComponentType::DOOR))
         {
             if (auto door = doorTile->GetComponent<DoorComponent>())
-                door->SetMovingState(DoorComponent::MovingState::IDLE);
+                door->Close();
         }
 
-        crew->SetPosition(stepPos);
         path.pop_front();
 
         if (path.empty())
@@ -61,34 +91,12 @@ void MoveAction::Update(const std::shared_ptr<Crew> &crew)
             crew->RemoveFirstAction();
             return;
         }
-
-        // If there are any tiles in the way, clear path for recalculation
-        if (DoesPathHaveObstacles(path, [station](const Vector2Int &p)
-                                  { return station->IsPositionPathable(p); }))
-        {
-            path.clear();
-            return;
-        }
-
-        distanceToTravel = std::sqrt(-distanceLeftSq);
-        stepPos = ToVector2(path.front());
     }
-    // Crew cannot reach the current waypoint in this frame
     else
     {
-        if (auto doorTile = station->GetTileWithComponentAtPosition(path.front(), ComponentType::DOOR))
-        {
-            if (auto door = doorTile->GetComponent<DoorComponent>())
-            {
-                door->SetMovingState(DoorComponent::MovingState::FORCED_OPEN);
-
-                if (door->GetProgress() > 0) // Door is still opening/closing
-                    return;                  // Wait for the door
-            }
-        }
+        // Move towards waypoint
+        crew->SetPosition(crew->GetPosition() + Vector2Normalize(nextWaypoint - crew->GetPosition()) * moveDelta);
     }
-
-    crew->SetPosition(crew->GetPosition() + Vector2Normalize(stepPos - crew->GetPosition()) * distanceToTravel);
 }
 
 void ExtinguishAction::Update(const std::shared_ptr<Crew> &crew)
