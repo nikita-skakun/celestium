@@ -8,9 +8,9 @@ struct Effect;
 
 struct LuaParticle
 {
-    std::shared_ptr<ParticleSystem> system;
+    std::shared_ptr<ParticleSystem> particleSystem;
     size_t index;
-    LuaParticle(std::shared_ptr<ParticleSystem> s = nullptr, size_t i = SIZE_MAX) : system(s), index(i) {}
+    LuaParticle(std::shared_ptr<ParticleSystem> s = nullptr, size_t i = SIZE_MAX) : particleSystem(s), index(i) {}
 
     float lifetime() const;
     void set_lifetime(float v);
@@ -33,8 +33,8 @@ struct LuaParticle
 
 struct LuaParticleSystem
 {
-    std::shared_ptr<ParticleSystem> system;
-    LuaParticleSystem(std::shared_ptr<ParticleSystem> sys) : system(sys) {}
+    std::shared_ptr<ParticleSystem> particleSystem;
+    LuaParticleSystem(std::shared_ptr<ParticleSystem> sys) : particleSystem(sys) {}
 
     void set_blend_mode(const std::string &mode);
     LuaParticle emit();

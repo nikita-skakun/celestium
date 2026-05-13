@@ -7,9 +7,9 @@ namespace
     template <typename T, typename Getter>
     T GetProperty(const LuaParticle &lp, T defaultValue, Getter getter)
     {
-        if (!lp.system || lp.index == SIZE_MAX)
+        if (!lp.particleSystem || lp.index == SIZE_MAX)
             return defaultValue;
-        if (auto p = lp.system->GetParticlePtr(lp.index))
+        if (auto p = lp.particleSystem->GetParticlePtr(lp.index))
             return getter(p);
         return defaultValue;
     }
@@ -22,9 +22,9 @@ float LuaParticle::lifetime() const
 
 void LuaParticle::set_lifetime(float v)
 {
-    if (!system || index == SIZE_MAX)
+    if (!particleSystem || index == SIZE_MAX)
         return;
-    if (auto p = system->GetParticlePtr(index))
+    if (auto p = particleSystem->GetParticlePtr(index))
         p->lifetime = v;
 }
 
@@ -35,9 +35,9 @@ float LuaParticle::size() const
 
 void LuaParticle::set_size(float v)
 {
-    if (!system || index == SIZE_MAX)
+    if (!particleSystem || index == SIZE_MAX)
         return;
-    if (auto p = system->GetParticlePtr(index))
+    if (auto p = particleSystem->GetParticlePtr(index))
         p->size = v;
 }
 
@@ -48,9 +48,9 @@ float LuaParticle::age() const
 
 void LuaParticle::set_age(float v)
 {
-    if (!system || index == SIZE_MAX)
+    if (!particleSystem || index == SIZE_MAX)
         return;
-    if (auto p = system->GetParticlePtr(index))
+    if (auto p = particleSystem->GetParticlePtr(index))
         p->age = v;
 }
 
@@ -58,9 +58,9 @@ sol::table LuaParticle::velocity(sol::this_state s)
 {
     sol::state_view lua(s);
     sol::table t = lua.create_table();
-    if (system && index != SIZE_MAX)
+    if (particleSystem && index != SIZE_MAX)
     {
-        if (auto particle = system->GetParticlePtr(index))
+        if (auto particle = particleSystem->GetParticlePtr(index))
         {
             t["x"] = particle->velocity.x;
             t["y"] = particle->velocity.y;
@@ -81,9 +81,9 @@ sol::table LuaParticle::velocity(sol::this_state s)
 
 void LuaParticle::set_velocity(sol::table t)
 {
-    if (!system || index == SIZE_MAX)
+    if (!particleSystem || index == SIZE_MAX)
         return;
-    if (auto particle = system->GetParticlePtr(index))
+    if (auto particle = particleSystem->GetParticlePtr(index))
     {
         sol::optional<float> ox = t["x"];
         sol::optional<float> oy = t["y"];
@@ -98,9 +98,9 @@ sol::table LuaParticle::position(sol::this_state s)
 {
     sol::state_view lua(s);
     sol::table t = lua.create_table();
-    if (system && index != SIZE_MAX)
+    if (particleSystem && index != SIZE_MAX)
     {
-        if (auto particle = system->GetParticlePtr(index))
+        if (auto particle = particleSystem->GetParticlePtr(index))
         {
             t["x"] = particle->position.x;
             t["y"] = particle->position.y;
@@ -121,9 +121,9 @@ sol::table LuaParticle::position(sol::this_state s)
 
 void LuaParticle::set_position(sol::table t)
 {
-    if (!system || index == SIZE_MAX)
+    if (!particleSystem || index == SIZE_MAX)
         return;
-    if (auto particle = system->GetParticlePtr(index))
+    if (auto particle = particleSystem->GetParticlePtr(index))
     {
         sol::optional<float> ox = t["x"];
         sol::optional<float> oy = t["y"];
@@ -146,9 +146,9 @@ sol::table LuaParticle::color(sol::this_state s)
 
 void LuaParticle::set_color(sol::table t)
 {
-    if (!system || index == SIZE_MAX)
+    if (!particleSystem || index == SIZE_MAX)
         return;
-    if (auto particle = system->GetParticlePtr(index))
+    if (auto particle = particleSystem->GetParticlePtr(index))
     {
         sol::optional<int> or_ = t["r"];
         sol::optional<int> og = t["g"];
@@ -167,31 +167,31 @@ void LuaParticle::set_color(sol::table t)
 
 void LuaParticleSystem::set_blend_mode(const std::string &mode)
 {
-    if (system)
-        system->SetBlendMode(magic_enum::enum_cast<BlendMode>(mode, magic_enum::case_insensitive).value_or(BLEND_ALPHA));
+    if (particleSystem)
+        particleSystem->SetBlendMode(magic_enum::enum_cast<BlendMode>(mode, magic_enum::case_insensitive).value_or(BLEND_ALPHA));
 }
 
 LuaParticle LuaParticleSystem::emit()
 {
-    if (!system)
+    if (!particleSystem)
         return LuaParticle(nullptr);
-    size_t idx = system->Emit();
+    size_t idx = particleSystem->Emit();
     if (idx == SIZE_MAX)
         return LuaParticle(nullptr);
-    return LuaParticle(system, idx);
+    return LuaParticle(particleSystem, idx);
 }
 
 sol::table LuaParticleSystem::get_particles(sol::this_state s)
 {
     sol::state_view lua(s);
     sol::table t = lua.create_table();
-    if (!system)
+    if (!particleSystem)
         return t;
 
-    size_t count = system->GetParticleCount();
+    size_t count = particleSystem->GetParticleCount();
     for (size_t i = 0; i < count; ++i)
     {
-        t[i + 1] = LuaParticle(system, i);
+        t[i + 1] = LuaParticle(particleSystem, i);
     }
 
     return t;
