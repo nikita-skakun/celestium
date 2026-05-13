@@ -197,10 +197,6 @@ bool Tile::HasComponent(ComponentType type) const
     return components.count(type) > 0;
 }
 
-TileDef::Height Tile::GetHeight() const { return tileDef->GetHeight(); }
-TileDef::Category Tile::GetCategory() const { return tileDef->GetCategory(); }
-const std::string &Tile::GetId() const { return tileDef->GetId(); }
-std::string Tile::GetName() const { return tileDef->GetName(); }
 
 bool Tile::CompareByHeight(const std::shared_ptr<Tile> &a, const std::shared_ptr<Tile> &b)
 {

@@ -236,23 +236,6 @@ GameServer &GameManager::GetServer()
     return *instance.server;
 }
 
-std::vector<Vector2Int> GameManager::GetSymmetricPositions(const Vector2Int &pos)
-{
-    std::vector<Vector2Int> out;
-    out.push_back(pos);
-
-    bool hor = IsHorizontalSymmetry();
-    bool ver = IsVerticalSymmetry();
-
-    if (hor)
-        out.push_back({pos.x, -pos.y - 1});
-    if (ver)
-        out.push_back({-pos.x - 1, pos.y});
-    if (hor && ver)
-        out.push_back({-pos.x - 1, -pos.y - 1});
-
-    return out;
-}
 
 std::shared_ptr<RenderSnapshot> GameManager::GetRenderSnapshot()
 {

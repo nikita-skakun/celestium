@@ -29,8 +29,8 @@ public:
 
     constexpr const Vector2Int &GetPosition() const { return position; }
 
-    TileDef::Height GetHeight() const;
-    TileDef::Category GetCategory() const;
+    TileDef::Height GetHeight() const { return tileDef->GetHeight(); }
+    TileDef::Category GetCategory() const { return tileDef->GetCategory(); }
 
     const std::shared_ptr<Sprite> &GetSprite() const { return sprite; }
     void SetSprite(const std::shared_ptr<Sprite> &newSprite) { sprite = newSprite; }
@@ -40,8 +40,8 @@ public:
 
     bool IsActive() const;
 
-    const std::string &GetId() const;
-    std::string GetName() const;
+    const std::string &GetId() const { return tileDef->GetId(); }
+    std::string GetName() const { return tileDef->GetName(); }
     std::string GetInfo() const;
 
     template <typename T>

@@ -114,7 +114,7 @@ public:
     static Vector2 WorldToScreen(const Vector2 &worldPos);
     static Vector2 WorldToScreen(const Vector2Int &worldPos);
     static Rectangle WorldToScreen(const Rectangle &worldRect);
-    static std::vector<Vector2Int> GetSymmetricPositions(const Vector2Int &pos);
+
     static const Vector2 &GetOriginalScreenSize();
     static void SetOriginalScreenSize();
 };
