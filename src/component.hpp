@@ -50,7 +50,6 @@ template <typename Derived, ComponentType CType>
 struct ComponentBase : Component
 {
     using Component::Component;
-    ComponentBase(std::shared_ptr<Tile> parent = nullptr) : Component(parent) {}
     std::shared_ptr<Component> Clone(std::shared_ptr<Tile> newParent) const override
     {
         auto ptr = std::make_shared<Derived>(*static_cast<const Derived *>(this));

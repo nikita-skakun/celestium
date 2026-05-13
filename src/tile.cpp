@@ -84,7 +84,7 @@ std::shared_ptr<Tile> Tile::CreateTile(const std::string &tileId, const Vector2I
         station->RebuildPowerGridsFromInfrastructure();
     else if (auto powerConnector = tile->GetComponent<PowerConnectorComponent>())
     {
-        if (auto powerWireTile = station->GetTileWithHeightAtPosition(position, TileDef::Height::POWER))
+        if (auto powerWireTile = station->GetTileAtPosition(position, TileDef::Height::POWER))
         {
             if (auto powerWireConnector = powerWireTile->GetComponent<PowerConnectorComponent>())
             {

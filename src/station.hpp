@@ -26,12 +26,27 @@ struct Station : public std::enable_shared_from_this<Station>
     std::unordered_map<Vector2Int, int> tileToPoly;
 
 public:
+    template <typename Predicate>
+    std::shared_ptr<Tile> FindTile(const Vector2Int &pos, Predicate pred) const
+    {
+        for (const auto &tile : GetTilesAtPosition(pos))
+            if (pred(tile)) return tile;
+        return nullptr;
+    }
+
+    template <typename Predicate>
+    std::vector<std::shared_ptr<Tile>> FindTiles(const Vector2Int &pos, Predicate pred) const
+    {
+        std::vector<std::shared_ptr<Tile>> found;
+        for (const auto &tile : GetTilesAtPosition(pos))
+            if (pred(tile)) found.push_back(tile);
+        return found;
+    }
+
     std::shared_ptr<Tile> GetTileAtPosition(const Vector2Int &pos, TileDef::Height height = TileDef::Height::NONE) const;
     const std::vector<std::shared_ptr<Tile>> &GetTilesAtPosition(const Vector2Int &pos) const;
     std::vector<std::shared_ptr<Tile>> GetDecorativeTilesAtPosition(const Vector2Int &pos) const;
     std::vector<std::shared_ptr<Tile>> GetAllTilesAtPosition(const Vector2Int &pos) const;
-    std::shared_ptr<Tile> GetTileWithHeightAtPosition(const Vector2Int &pos, TileDef::Height height) const;
-    std::vector<std::shared_ptr<Tile>> GetTilesWithHeightAtPosition(const Vector2Int &pos, TileDef::Height height) const;
     std::string GetTileIdAtPosition(const Vector2Int &pos, TileDef::Height height = TileDef::Height::NONE) const;
     bool CheckAdjacentTile(const Vector2Int &tilePos, const std::string &tileId, Direction direction, TileDef::Height height = TileDef::Height::NONE) const;
 
