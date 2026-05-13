@@ -27,6 +27,34 @@ namespace
         toggle->SetOnUpdate([weak, stateFunc, visibilityFunc]()
                             { if (auto t = weak.lock()) { t->SetVisible(visibilityFunc()); t->SetToggle(stateFunc()); } });
     }
+
+    void AddVolumeSlider(std::shared_ptr<UiPanel> parent, Rectangle textRect, Rectangle sliderRect, const std::string &label, std::function<float()> getVolume, std::function<void(float)> setVolume)
+    {
+        auto text = std::make_shared<UiStatusBar>(textRect, label);
+        parent->AddChild(text);
+
+        auto slider = std::make_shared<UiSlider>(sliderRect, getVolume(), 0, 1, setVolume);
+        std::weak_ptr<UiSlider> weakSlider = slider;
+        slider->SetOnUpdate([weakSlider, getVolume]()
+                            { if (auto s = weakSlider.lock()) s->SetValue(getVolume()); });
+        parent->AddChild(slider);
+    }
+
+    void AddBuildCategoryToggle(std::shared_ptr<UiPanel> parent, Vector2 pos, Vector2 size, TileDef::Category category, Vector2Int iconOffset)
+    {
+        auto toggle = std::make_shared<UiToggle>(Vector2ToRect(pos, size),
+                                                 GameManager::GetSelectedCategory() == category, [category](bool)
+                                                 { ToggleBuildCategory(category); });
+        LinkToggle(toggle, [category]()
+                   { return GameManager::GetSelectedCategory() == category; });
+        parent->AddChild(toggle);
+
+        const Vector2 iconSize = size * 3.f / 4.f;
+        const Vector2 iconPadding = (size - iconSize) / 2.;
+        auto icon = std::make_shared<UiIcon>(Vector2ToRect(pos + iconPadding, iconSize),
+                                              "ICON", Rectangle((float)iconOffset.x, (float)iconOffset.y, 1, 1) * TILE_SIZE, Fade(DARKGRAY, .8));
+        toggle->AddChild(icon);
+    }
 }
 
 
@@ -89,43 +117,16 @@ void InitializeSettingsMenu()
     monitorSelect->SetOnPress(monitorSelectOnPress);
 
     Rectangle masterVolumeTextRect = Rectangle(menuPos.x + spacing.x, fpsSelectRect.y + settingHeight + spacing.y, halfPanelWidth, settingHeight);
-    auto masterVolumeText = std::make_shared<UiStatusBar>(masterVolumeTextRect, "Master Volume:");
-    menuBackground->AddChild(masterVolumeText);
-
     Rectangle masterVolumeSliderRect = Rectangle(masterVolumeTextRect.x + halfPanelWidth + spacing.x, masterVolumeTextRect.y, halfPanelWidth, settingHeight);
-    auto masterVolumeSlider = std::make_shared<UiSlider>(masterVolumeSliderRect, AudioManager::GetMasterVolume(), 0, 1, [](float volume)
-                                                         { AudioManager::SetMasterVolume(volume); });
-    std::weak_ptr<UiSlider> _masterVolumeSlider = masterVolumeSlider;
-    masterVolumeSlider->SetOnUpdate([_masterVolumeSlider]()
-                                    { if (auto masterVolumeSlider = _masterVolumeSlider.lock())
-                                      { masterVolumeSlider->SetValue(AudioManager::GetMasterVolume()); } });
-    menuBackground->AddChild(masterVolumeSlider);
+    AddVolumeSlider(menuBackground, masterVolumeTextRect, masterVolumeSliderRect, "Master Volume:", &AudioManager::GetMasterVolume, &AudioManager::SetMasterVolume);
 
     Rectangle musicVolumeTextRect = Rectangle(menuPos.x + spacing.x, masterVolumeTextRect.y + settingHeight + spacing.y, halfPanelWidth, settingHeight);
-    auto musicVolumeText = std::make_shared<UiStatusBar>(musicVolumeTextRect, "Music Volume:");
-    menuBackground->AddChild(musicVolumeText);
-
     Rectangle musicVolumeSliderRect = Rectangle(musicVolumeTextRect.x + halfPanelWidth + spacing.x, musicVolumeTextRect.y, halfPanelWidth, settingHeight);
-    auto musicVolumeSlider = std::make_shared<UiSlider>(musicVolumeSliderRect, AudioManager::GetMusicVolume(), 0, 1, [](float volume)
-                                                        { AudioManager::SetMusicVolume(volume); });
-    std::weak_ptr<UiSlider> _musicVolumeSlider = musicVolumeSlider;
-    musicVolumeSlider->SetOnUpdate([_musicVolumeSlider]()
-                                   { if (auto musicVolumeSlider = _musicVolumeSlider.lock())
-                             { musicVolumeSlider->SetValue(AudioManager::GetMusicVolume()); } });
-    menuBackground->AddChild(musicVolumeSlider);
+    AddVolumeSlider(menuBackground, musicVolumeTextRect, musicVolumeSliderRect, "Music Volume:", &AudioManager::GetMusicVolume, &AudioManager::SetMusicVolume);
 
     Rectangle effectsVolumeTextRect = Rectangle(menuPos.x + spacing.x, musicVolumeTextRect.y + settingHeight + spacing.y, halfPanelWidth, settingHeight);
-    auto effectsVolumeText = std::make_shared<UiStatusBar>(effectsVolumeTextRect, "Effects Volume:");
-    menuBackground->AddChild(effectsVolumeText);
-
     Rectangle effectsVolumeSliderRect = Rectangle(effectsVolumeTextRect.x + halfPanelWidth + spacing.x, effectsVolumeTextRect.y, halfPanelWidth, settingHeight);
-    auto effectsVolumeSlider = std::make_shared<UiSlider>(effectsVolumeSliderRect, AudioManager::GetEffectsVolume(), 0, 1, [](float volume)
-                                                          { AudioManager::SetEffectsVolume(volume); });
-    std::weak_ptr<UiSlider> _effectsVolumeSlider = effectsVolumeSlider;
-    effectsVolumeSlider->SetOnUpdate([_effectsVolumeSlider]()
-                                     { if (auto effectsVolumeSlider = _effectsVolumeSlider.lock())
-                             { effectsVolumeSlider->SetValue(AudioManager::GetEffectsVolume()); } });
-    menuBackground->AddChild(effectsVolumeSlider);
+    AddVolumeSlider(menuBackground, effectsVolumeTextRect, effectsVolumeSliderRect, "Effects Volume:", &AudioManager::GetEffectsVolume, &AudioManager::SetEffectsVolume);
 
     UiManager::AddElement("SETTINGS_MENU", settingsMenu);
 }
@@ -382,41 +383,23 @@ void UiManager::InitializeGameSim()
         LinkVisibility(buildCategoryPanel, []() { return GameManager::GetCamera().IsUiClear() && GameManager::IsInBuildMode(); });
         UiManager::AddElement("BUILD_CATEGORY", buildCategoryPanel);
 
-        // First button will be structure button
-        auto structureButton = std::make_shared<UiToggle>(Vector2ToRect(Vector2(PANEL_POS.x + SPACING.x, PANEL_POS.y + SPACING.y), BUTTON_SIZE),
-                                                          GameManager::GetSelectedCategory() == TileDef::Category::STRUCTURE, [](bool)
-                                                          { ToggleBuildCategory(TileDef::Category::STRUCTURE); });
-        LinkToggle(structureButton, []() { return GameManager::GetSelectedCategory() == TileDef::Category::STRUCTURE; });
-        buildCategoryPanel->AddChild(structureButton);
-        auto structureIcon = std::make_shared<UiIcon>(Vector2ToRect(Vector2(PANEL_POS.x + SPACING.x, PANEL_POS.y + SPACING.y) + ICON_OFFSET, ICON_SIZE),
-                                                      "ICON", Rectangle(1, 0, 1, 1) * TILE_SIZE, Fade(DARKGRAY, .8));
-        structureButton->AddChild(structureIcon);
+        // Category buttons
+        Vector2 buttonPos = PANEL_POS + SPACING;
+        AddBuildCategoryToggle(buildCategoryPanel, buttonPos, BUTTON_SIZE, TileDef::Category::STRUCTURE, Vector2Int(1, 0));
 
-        // Second button will be power button
-        auto powerButton = std::make_shared<UiToggle>(Vector2ToRect(structureButton->GetPosition() + Vector2(BUTTON_SIZE.x + SPACING.x * 2., 0), BUTTON_SIZE),
-                                                      GameManager::GetSelectedCategory() == TileDef::Category::POWER, [](bool)
-                                                      { ToggleBuildCategory(TileDef::Category::POWER); });
-        LinkToggle(powerButton, []() { return GameManager::GetSelectedCategory() == TileDef::Category::POWER; });
-        buildCategoryPanel->AddChild(powerButton);
-        auto powerIcon = std::make_shared<UiIcon>(Vector2ToRect(powerButton->GetPosition() + ICON_OFFSET, ICON_SIZE),
-                                                  "ICON", Rectangle(2, 0, 1, 1) * TILE_SIZE, Fade(DARKGRAY, .8));
-        powerButton->AddChild(powerIcon);
+        buttonPos.x += BUTTON_SIZE.x + SPACING.x * 2.;
+        AddBuildCategoryToggle(buildCategoryPanel, buttonPos, BUTTON_SIZE, TileDef::Category::POWER, Vector2Int(2, 0));
 
-        auto oxygenButton = std::make_shared<UiToggle>(Vector2ToRect(powerButton->GetPosition() + Vector2(BUTTON_SIZE.x + SPACING.x * 2., 0), BUTTON_SIZE),
-                                                       GameManager::GetSelectedCategory() == TileDef::Category::OXYGEN, [](bool)
-                                                       { ToggleBuildCategory(TileDef::Category::OXYGEN); });
-        LinkToggle(oxygenButton, []() { return GameManager::GetSelectedCategory() == TileDef::Category::OXYGEN; });
-        buildCategoryPanel->AddChild(oxygenButton);
-        auto oxygenIcon = std::make_shared<UiIcon>(Vector2ToRect(oxygenButton->GetPosition() + ICON_OFFSET, ICON_SIZE),
-                                                   "ICON", Rectangle(0, 0, 1, 1) * TILE_SIZE, Fade(DARKGRAY, .8));
-        oxygenButton->AddChild(oxygenIcon);
+        buttonPos.x += BUTTON_SIZE.x + SPACING.x * 2.;
+        AddBuildCategoryToggle(buildCategoryPanel, buttonPos, BUTTON_SIZE, TileDef::Category::OXYGEN, Vector2Int(0, 0));
 
-        auto cancelButton = std::make_shared<UiToggle>(Vector2ToRect(oxygenButton->GetPosition() + Vector2(BUTTON_SIZE.x + SPACING.x * 2., 0), BUTTON_SIZE),
+        buttonPos.x += BUTTON_SIZE.x + SPACING.x * 2.;
+        auto cancelButton = std::make_shared<UiToggle>(Vector2ToRect(buttonPos, BUTTON_SIZE),
                                                        GameManager::IsInCancelMode(), [](bool state)
                                                        { GameManager::SetCancelMode(state); if (state) GameManager::SetBuildTileId(""); });
         LinkToggleWithVisibility(cancelButton, []() { return GameManager::IsInCancelMode(); }, []() { return GameManager::IsInBuildMode() && GameManager::GetCamera().IsUiClear(); });
         buildCategoryPanel->AddChild(cancelButton);
-        auto cancelIcon = std::make_shared<UiIcon>(Vector2ToRect(cancelButton->GetPosition() + ICON_OFFSET, ICON_SIZE),
+        auto cancelIcon = std::make_shared<UiIcon>(Vector2ToRect(buttonPos + ICON_OFFSET, ICON_SIZE),
                                                    "ICON", Rectangle(7, 1, 1, 1) * TILE_SIZE, Fade(DARKGRAY, .8));
         cancelButton->AddChild(cancelIcon);
     }

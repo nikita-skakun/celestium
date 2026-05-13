@@ -1,12 +1,18 @@
 #pragma once
-#include "const.hpp"
 #include <algorithm>
+#include <cmath>
 #include <format>
 #include <magic_enum/magic_enum_flags.hpp>
 #include <magic_enum/magic_enum.hpp>
 #include <memory>
 #include <optional>
 #include <random>
+#include <string>
+
+// Forward declarations for Raylib types
+struct Vector2;
+struct Rectangle;
+struct Color;
 
 using namespace magic_enum::bitwise_operators;
 

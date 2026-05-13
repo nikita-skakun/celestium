@@ -464,9 +464,7 @@ void Station::CompletePlannedTask(const Vector2Int &pos)
     }
     else
     {
-        // Remove the specific tile by id
-        const auto &tilesHere = GetTilesAtPosition(pos);
-        for (const auto &tile : tilesHere)
+        for (const auto &tile : GetTilesAtPosition(pos))
         {
             if (tile->GetId() == task->tileId)
             {
