@@ -35,7 +35,7 @@ private:
     uint16_t fpsIndex;
 
 public:
-    PlayerCam() {}
+    PlayerCam() : fpsIndex(0) {}
 
     constexpr const Vector2 &GetPosition() const { return position; }
 

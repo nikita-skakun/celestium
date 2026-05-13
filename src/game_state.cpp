@@ -91,7 +91,10 @@ void GameManager::Initialize()
 {
     auto &manager = GetInstance();
 
+    uint16_t currentFpsIndex = manager.camera.GetFpsIndex();
     manager.camera = PlayerCam();
+    manager.camera.SetFpsIndex(currentFpsIndex);
+
     manager.server = std::make_unique<GameServer>();
     manager.server->Initialize();
 }
@@ -121,7 +124,10 @@ void GameManager::PrepareTestWorld()
 {
     auto &manager = GetInstance();
 
+    uint16_t currentFpsIndex = manager.camera.GetFpsIndex();
     manager.camera = PlayerCam();
+    manager.camera.SetFpsIndex(currentFpsIndex);
+
     if (!manager.server)
         manager.server = std::make_unique<GameServer>();
     manager.server->PrepareTestWorld();
