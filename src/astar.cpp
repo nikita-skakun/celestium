@@ -103,8 +103,8 @@ std::deque<Vector2> FindPath(
     };
 
     std::priority_queue<Node, std::vector<Node>, std::greater<Node>> open;
-    std::unordered_map<int, float> minGCost;
-    std::unordered_map<int, int> cameFrom;
+    std::vector<float> minGCost(polygons.size(), std::numeric_limits<float>::max());
+    std::vector<int> cameFrom(polygons.size(), -1);
 
     open.push({startPoly, 0.0f, Vector2Distance(start, end)});
     minGCost[startPoly] = 0.0f;
@@ -137,7 +137,7 @@ std::deque<Vector2> FindPath(
 
             float newG = cur.gCost + dist;
 
-            if (!minGCost.contains(nbIdx) || newG < minGCost[nbIdx])
+            if (newG < minGCost[nbIdx])
             {
                 minGCost[nbIdx] = newG;
                 cameFrom[nbIdx] = cur.polyIdx;
@@ -147,9 +147,8 @@ std::deque<Vector2> FindPath(
         }
     }
 
-    if (!minGCost.contains(endPoly)) 
+    if (minGCost[endPoly] == std::numeric_limits<float>::max()) 
     {
-        TraceLog(LOG_INFO, "FindPath: No path found from %d to %d", startPoly, endPoly);
         return {};
     }
 
@@ -158,15 +157,6 @@ std::deque<Vector2> FindPath(
     for (int curr = endPoly; curr != startPoly; curr = cameFrom[curr]) path.push_back(curr);
     path.push_back(startPoly);
     std::reverse(path.begin(), path.end());
-
-    std::string pathStr = "";
-    for (int p : path) pathStr += std::to_string(p) + " ";
-    TraceLog(LOG_INFO, "FindPath: Start (%f, %f) -> End (%f, %f)", start.x, start.y, end.x, end.y);
-    TraceLog(LOG_INFO, "FindPath: Path: %s", pathStr.c_str());
-    for (int p : path) {
-        const auto& poly = polygons[p];
-        TraceLog(LOG_INFO, "  Poly %d: (%.1f, %.1f) to (%.1f, %.1f)", p, poly.vertices[0].x, poly.vertices[0].y, poly.vertices[2].x, poly.vertices[2].y);
-    }
 
     std::vector<std::pair<Vector2, Vector2>> segments;
     for (size_t i = 0; i < path.size() - 1; ++i)
@@ -224,15 +214,5 @@ std::deque<Vector2> FindPath(
         }
     }
 
-    for (int i = 0; i < (int)segments.size(); ++i) {
-        TraceLog(LOG_INFO, "  Portal %d: (%f, %f) - (%f, %f)", i, segments[i].first.x, segments[i].first.y, segments[i].second.x, segments[i].second.y);
-    }
-
-    auto finalPath = Funnel(start, end, segments);
-    TraceLog(LOG_INFO, "FindPath: Waypoints (%d):", (int)finalPath.size());
-    for (int i = 0; i < (int)finalPath.size(); ++i) {
-        TraceLog(LOG_INFO, "  WP %d: (%f, %f)", i, finalPath[i].x, finalPath[i].y);
-    }
-
-    return finalPath;
+    return Funnel(start, end, segments);
 }

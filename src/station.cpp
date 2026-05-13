@@ -688,6 +688,11 @@ void Station::RebuildNavigationGraph()
         // West (Edge 3)
         for (int y = minTile.y; y <= maxTile.y; ++y) addNeighbor(3, {minTile.x - 1, y});
     }
+
+    // 5. Finalize polygons
+    for (auto& poly : navPolygons) {
+        poly.RecalculateBounds();
+    }
 }
 
 void Station::DecomposeRoom(const std::shared_ptr<Room> &room, const std::unordered_set<Vector2Int> &tiles, std::unordered_map<Vector2Int, int> &tileToPoly)

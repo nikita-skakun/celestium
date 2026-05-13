@@ -20,6 +20,18 @@ struct ConvexPolygon {
     };
     std::vector<Link> links;
     int roomId = -1;                        // The room this polygon belongs to
+    Rectangle bounds = {0, 0, 0, 0};        // Bounding box for fast Contains check
+
+    void RecalculateBounds() {
+        float minX = 1e9, maxX = -1e9, minY = 1e9, maxY = -1e9;
+        for (int i = 0; i < 4; ++i) {
+            minX = std::min(minX, vertices[i].x);
+            maxX = std::max(maxX, vertices[i].x);
+            minY = std::min(minY, vertices[i].y);
+            maxY = std::max(maxY, vertices[i].y);
+        }
+        bounds = {minX, minY, maxX - minX, maxY - minY};
+    }
 
     /**
      * @brief Gets the center point of the polygon.
@@ -36,14 +48,7 @@ struct ConvexPolygon {
      * @brief Checks if a point is inside the polygon.
      */
     bool Contains(const Vector2 &p) const {
-        float minX = 1e9, maxX = -1e9, minY = 1e9, maxY = -1e9;
-        for (int i = 0; i < 4; ++i) {
-            minX = std::min(minX, vertices[i].x);
-            maxX = std::max(maxX, vertices[i].x);
-            minY = std::min(minY, vertices[i].y);
-            maxY = std::max(maxY, vertices[i].y);
-        }
-        return p.x >= minX && p.x <= maxX && p.y >= minY && p.y <= maxY;
+        return IsVector2WithinRect(bounds, p);
     }
 };
 
