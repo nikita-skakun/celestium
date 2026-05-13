@@ -88,8 +88,8 @@ std::deque<Vector2> FindPath(
     int startPoly = -1, endPoly = -1;
     for (int i = 0; i < (int)polygons.size(); ++i)
     {
-        if (startPoly == -1 && polygons[i].Contains(start)) startPoly = i;
-        if (endPoly == -1 && polygons[i].Contains(end)) endPoly = i;
+        if (startPoly == -1 && IsVector2WithinRect(polygons[i].bounds, start)) startPoly = i;
+        if (endPoly == -1 && IsVector2WithinRect(polygons[i].bounds, end)) endPoly = i;
     }
 
     if (startPoly == -1 || endPoly == -1) return {};

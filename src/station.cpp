@@ -99,7 +99,6 @@ void Station::UpdateSpriteOffsets() const
         {
             tile->RemoveComponent<DecorativeComponent>();
 
-            SpriteCondition status = GetSpriteConditionForTile(tile);
 
             if (auto spriteDef = tile->GetTileDefinition()->GetReferenceSprite())
             {
@@ -109,6 +108,7 @@ void Station::UpdateSpriteOffsets() const
                 }
                 else if (auto multiSliceSpriteDef = std::dynamic_pointer_cast<MultiSliceSpriteDef>(spriteDef))
                 {
+                    SpriteCondition status = GetSpriteConditionForTile(tile);
                     std::vector<SpriteSlice> slices;
                     for (const auto &sliceCondition : multiSliceSpriteDef->slices)
                     {

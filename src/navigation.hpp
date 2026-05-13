@@ -43,13 +43,6 @@ struct ConvexPolygon {
         center.y /= 4.f;
         return center;
     }
-
-    /**
-     * @brief Checks if a point is inside the polygon.
-     */
-    bool Contains(const Vector2 &p) const {
-        return IsVector2WithinRect(bounds, p);
-    }
 };
 
 /**
@@ -58,6 +51,5 @@ struct ConvexPolygon {
  */
 struct Room {
     int id = -1;
-    std::string name;
-    std::vector<int> polygonIds; // Indices of polygons belonging to this room
+    std::vector<int> polygonIds;
 };
