@@ -54,10 +54,11 @@ jobs:
           set -e
           . /home/runner/.nix-profile/etc/profile.d/nix.sh
           nix-shell --run "
+            set -e
             mkdir -p build;
             cd build;
             cmake ..;
-            codeql database create /tmp/codeql-db --language=cpp --command='make -j$(nproc)';
+            codeql database create /tmp/codeql-db --language=cpp --command='make -j$(nproc)' --overwrite;
             codeql database analyze /tmp/codeql-db --format=sarif-latest --output=/tmp/codeql-results.sarif --threads=$(nproc)
           "
 
