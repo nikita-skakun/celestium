@@ -134,16 +134,6 @@ void Station::UpdateSpriteOffsets() const
     }
 }
 
-std::string Station::GetTileIdAtPosition(const Vector2Int &pos, TileDef::Height height) const
-{
-    const auto &tile = GetTileAtPosition(pos, height);
-    return tile ? tile->GetId() : "";
-}
-
-bool Station::CheckAdjacentTile(const Vector2Int &tilePos, const std::string &tileId, Direction direction, TileDef::Height height) const
-{
-    return GetTileIdAtPosition(tilePos + DirectionToVector2Int(direction), height) == tileId;
-}
 
 SpriteCondition Station::GetSpriteConditionForTile(const std::shared_ptr<Tile> &tile) const
 {
@@ -152,33 +142,42 @@ SpriteCondition Station::GetSpriteConditionForTile(const std::shared_ptr<Tile> &
 
     const Vector2Int &tilePos = tile->GetPosition();
     const std::string &tileId = tile->GetId();
+    const auto height = tile->GetHeight();
+
+    auto isSame = [&](Direction dir) {
+        auto t = GetTileAtPosition(tilePos + DirectionToVector2Int(dir), height);
+        return t && t->GetId() == tileId;
+    };
 
     SpriteCondition status = SpriteCondition::NONE;
-    auto height = tile->GetHeight();
-    status |= CheckAdjacentTile(tilePos, tileId, Direction::N, height) ? SpriteCondition::NORTH_SAME : SpriteCondition::NORTH_DIFFERENT;
-    status |= CheckAdjacentTile(tilePos, tileId, Direction::E, height) ? SpriteCondition::EAST_SAME : SpriteCondition::EAST_DIFFERENT;
-    status |= CheckAdjacentTile(tilePos, tileId, Direction::S, height) ? SpriteCondition::SOUTH_SAME : SpriteCondition::SOUTH_DIFFERENT;
-    status |= CheckAdjacentTile(tilePos, tileId, Direction::W, height) ? SpriteCondition::WEST_SAME : SpriteCondition::WEST_DIFFERENT;
-    status |= CheckAdjacentTile(tilePos, tileId, Direction::N | Direction::E, height) ? SpriteCondition::NORTH_EAST_SAME : SpriteCondition::NORTH_EAST_DIFFERENT;
-    status |= CheckAdjacentTile(tilePos, tileId, Direction::S | Direction::E, height) ? SpriteCondition::SOUTH_EAST_SAME : SpriteCondition::SOUTH_EAST_DIFFERENT;
-    status |= CheckAdjacentTile(tilePos, tileId, Direction::S | Direction::W, height) ? SpriteCondition::SOUTH_WEST_SAME : SpriteCondition::SOUTH_WEST_DIFFERENT;
-    status |= CheckAdjacentTile(tilePos, tileId, Direction::N | Direction::W, height) ? SpriteCondition::NORTH_WEST_SAME : SpriteCondition::NORTH_WEST_DIFFERENT;
+    status |= isSame(Direction::N) ? SpriteCondition::NORTH_SAME : SpriteCondition::NORTH_DIFFERENT;
+    status |= isSame(Direction::E) ? SpriteCondition::EAST_SAME : SpriteCondition::EAST_DIFFERENT;
+    status |= isSame(Direction::S) ? SpriteCondition::SOUTH_SAME : SpriteCondition::SOUTH_DIFFERENT;
+    status |= isSame(Direction::W) ? SpriteCondition::WEST_SAME : SpriteCondition::WEST_DIFFERENT;
+    status |= isSame(Direction::N | Direction::E) ? SpriteCondition::NORTH_EAST_SAME : SpriteCondition::NORTH_EAST_DIFFERENT;
+    status |= isSame(Direction::S | Direction::E) ? SpriteCondition::SOUTH_EAST_SAME : SpriteCondition::SOUTH_EAST_DIFFERENT;
+    status |= isSame(Direction::S | Direction::W) ? SpriteCondition::SOUTH_WEST_SAME : SpriteCondition::SOUTH_WEST_DIFFERENT;
+    status |= isSame(Direction::N | Direction::W) ? SpriteCondition::NORTH_WEST_SAME : SpriteCondition::NORTH_WEST_DIFFERENT;
 
     return status;
 }
 
 bool Station::IsPositionPathable(const Vector2Int &pos) const
 {
-    if (!GetTileWithComponentAtPosition(pos, ComponentType::WALKABLE))
-        return false;
+    bool walkable = false;
+    bool solid = false;
+    std::shared_ptr<Tile> doorTile = nullptr;
 
-    auto doorTile = GetTileWithComponentAtPosition(pos, ComponentType::DOOR);
-    if (GetTileWithComponentAtPosition(pos, ComponentType::SOLID) && !doorTile)
-        return false;
+    for (const auto &tile : GetTilesAtPosition(pos))
+    {
+        if (tile->HasComponent(ComponentType::WALKABLE)) walkable = true;
+        if (tile->HasComponent(ComponentType::SOLID)) solid = true;
+        if (tile->HasComponent(ComponentType::DOOR)) doorTile = tile;
+    }
 
-    if (doorTile && !doorTile->IsActive())
-        return false;
-
+    if (!walkable) return false;
+    if (solid && !doorTile) return false;
+    if (doorTile && !doorTile->IsActive()) return false;
     return true;
 }
 
@@ -329,8 +328,8 @@ void Station::RebuildPowerGridsFromInfrastructure()
             }
 
             // Collect producers/consumers/batteries/connectors at this position once
-            auto allTilesHere = GetAllTilesAtPosition(cur);
-            for (const auto &tile : allTilesHere)
+            const auto &tilesHere = GetTilesAtPosition(cur);
+            for (const auto &tile : tilesHere)
             {
                 if (auto prod = tile->GetComponent<PowerProducerComponent>())
                     comp.producers.emplace_back(cur, std::weak_ptr<PowerProducerComponent>(prod));
@@ -439,38 +438,6 @@ const std::vector<std::shared_ptr<Tile>> &Station::GetTilesAtPosition(const Vect
     return (*tilesAtPosOpt)->second;
 }
 
-std::vector<std::shared_ptr<Tile>> Station::GetDecorativeTilesAtPosition(const Vector2Int &pos) const
-{
-    std::vector<std::shared_ptr<Tile>> decorativeTiles;
-    for (const auto &tilesAtPos : tileMap)
-    {
-        for (const auto &tile : tilesAtPos.second)
-        {
-            if (auto decorative = tile->GetComponent<DecorativeComponent>())
-            {
-                for (const auto &dTiles : decorative->GetDecorativeTiles())
-                {
-                    if (pos == tile->GetPosition() + dTiles->GetOffsetFromMainTile())
-                    {
-                        decorativeTiles.push_back(tile);
-                        continue;
-                    }
-                }
-            }
-        }
-    }
-
-    return decorativeTiles;
-}
-
-std::vector<std::shared_ptr<Tile>> Station::GetAllTilesAtPosition(const Vector2Int &pos) const
-{
-    auto tilesAtPos = GetDecorativeTilesAtPosition(pos);
-    const auto &tiles = GetTilesAtPosition(pos);
-    tilesAtPos.insert(tilesAtPos.begin(), tiles.begin(), tiles.end());
-
-    return tilesAtPos;
-}
 
 void Station::AddPlannedTask(const Vector2Int &pos, const std::string &tileId, bool isBuild)
 {
@@ -518,7 +485,6 @@ void Station::CancelPlannedTask(const Vector2Int &pos)
 {
     std::erase_if(plannedTasks, [pos](const std::shared_ptr<PlannedTask> &task)
                   { return task->position == pos; });
-    UpdateSpriteOffsets();
 }
 
 bool Station::HasPlannedTaskAt(const Vector2Int &pos) const

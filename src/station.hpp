@@ -45,10 +45,6 @@ public:
 
     std::shared_ptr<Tile> GetTileAtPosition(const Vector2Int &pos, TileDef::Height height = TileDef::Height::NONE) const;
     const std::vector<std::shared_ptr<Tile>> &GetTilesAtPosition(const Vector2Int &pos) const;
-    std::vector<std::shared_ptr<Tile>> GetDecorativeTilesAtPosition(const Vector2Int &pos) const;
-    std::vector<std::shared_ptr<Tile>> GetAllTilesAtPosition(const Vector2Int &pos) const;
-    std::string GetTileIdAtPosition(const Vector2Int &pos, TileDef::Height height = TileDef::Height::NONE) const;
-    bool CheckAdjacentTile(const Vector2Int &tilePos, const std::string &tileId, Direction direction, TileDef::Height height = TileDef::Height::NONE) const;
 
     SpriteCondition GetSpriteConditionForTile(const std::shared_ptr<Tile> &tile) const;
     void UpdateSpriteOffsets() const;

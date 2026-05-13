@@ -24,8 +24,9 @@ void HandlePlaceTile(const std::shared_ptr<const Station> &station)
     for (const auto &pos : posListToPlace)
     {
         // Don't plan if the same tile already exists at this position and height
-        if (station->GetTileIdAtPosition(pos, tileDefinition->GetHeight()) == tileIdToPlace)
-            continue;
+        if (auto t = station->GetTileAtPosition(pos, tileDefinition->GetHeight()))
+            if (t->GetId() == tileIdToPlace)
+                continue;
 
         GameManager::GetServer().RequestPlannedTask(pos, tileIdToPlace, true);
         TraceLog(TraceLogLevel::LOG_INFO, std::format("Planned to place {} at {}", tileDefinition->GetName(), ToString(pos)).c_str());
