@@ -25,12 +25,14 @@ pkgs.mkShell {
     libxinerama # Xinerama library
     libxkbcommon # Keymap handling library (shared between X11 and Wayland)
     libxrandr # XRandR library
+    openssl # OpenSSL library
     opusfile.dev # Opus for audio handling
     pkg-config # pkg-config to manage library paths
     pulseaudio # PulseAudio for audio handling
     rtaudio_6 # RtAudio for audio handling
     wayland # Wayland development libraries
     wayland-protocols # Wayland protocols for Wayland support
+    zlib # Zlib library
   ];
 
   shellHook = ''
