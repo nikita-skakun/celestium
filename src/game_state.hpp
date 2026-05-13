@@ -4,7 +4,7 @@
 #include <atomic>
 #include <optional>
 
-struct GameServer;
+class GameServer;
 struct RenderSnapshot;
 namespace sol { class state; }
 
