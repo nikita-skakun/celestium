@@ -6,10 +6,13 @@
 constexpr std::uintmax_t MAX_FILE_SIZE = 100 * 1024 * 1024; // 100 MB limit
 
 template <class CharContainer>
-constexpr CharContainer ReadFromFile(const std::filesystem::path &filepath)
+CharContainer ReadFromFile(const std::filesystem::path &filepath)
 {
     if (!std::filesystem::exists(filepath))
         throw std::runtime_error(std::format("File does not exist: {}", filepath.string()));
+
+    if (!std::filesystem::is_regular_file(filepath))
+        throw std::runtime_error(std::format("Not a regular file: {}", filepath.string()));
 
     auto fileSize = std::filesystem::file_size(filepath);
     if (fileSize > MAX_FILE_SIZE)
@@ -26,7 +29,8 @@ constexpr CharContainer ReadFromFile(const std::filesystem::path &filepath)
 
     try
     {
-        file.read(cc.data(), fileSize);
+        if (fileSize > 0)
+            file.read(cc.data(), static_cast<std::streamsize>(cc.size()));
     }
     catch (const std::ios_base::failure &e)
     {
