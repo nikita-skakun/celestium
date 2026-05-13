@@ -107,7 +107,7 @@ float SolarPanelComponent::GetPowerProduction() const
     {
         if (auto station = tile->GetStation())
         {
-            if (auto oxygenTile = station->GetTileWithComponentAtPosition(tile->GetPosition(), ComponentType::OXYGEN))
+            if (station->GetTileWithComponentAtPosition(tile->GetPosition(), ComponentType::OXYGEN))
                 return 0.f;
         }
     }

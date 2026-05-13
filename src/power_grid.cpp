@@ -126,7 +126,6 @@ void PowerGrid::Update(float deltaTime)
     if (dirty)
         RebuildCaches();
 
-    const auto producers = LockWeakVector<PowerProducerComponent>(cachedProducers);
     const auto consumers = LockWeakVector<PowerConsumerComponent>(cachedConsumers);
     auto batteries = LockWeakVector<BatteryComponent>(cachedBatteries);
 
