@@ -23,12 +23,7 @@ protected:
     Color debugColor = WHITE;
 
 public:
-    PowerGrid()
-    {
-        debugColor = RandomColor();
-        debugColor.a = 192;
-        dirty = false;
-    }
+    PowerGrid() : dirty(false), debugColor(RandomColor()) { debugColor.a = 192; }
 
     constexpr void SetDebugColor(const Color &c) { debugColor = c; }
     constexpr Color GetDebugColor() const { return debugColor; }

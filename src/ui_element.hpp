@@ -104,7 +104,7 @@ struct TextAttrs
     int fontSize;
     int horizontalAlignment;
 
-    TextAttrs(const Font &font = AssetManager::GetFont("DEFAULT"), int fontSize = DEFAULT_FONT_SIZE, int horizontalAlignment = 1)
+    explicit TextAttrs(const Font &font = AssetManager::GetFont("DEFAULT"), int fontSize = DEFAULT_FONT_SIZE, int horizontalAlignment = 1)
         : font(font), fontSize(fontSize), horizontalAlignment(horizontalAlignment) {}
 };
 

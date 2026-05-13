@@ -28,7 +28,7 @@ struct MoveAction : Action
     Vector2 targetPosition;
     std::deque<Vector2> path;
 
-    MoveAction(const Vector2 &position) : targetPosition(position) {}
+    explicit MoveAction(const Vector2 &position) : targetPosition(position) {}
 
     bool Update(const std::shared_ptr<Crew> &crew) override;
 
@@ -43,7 +43,7 @@ protected:
     float progress;
 
 public:
-    ExtinguishAction(const Vector2Int &position) : targetPosition(position), progress(0) {}
+    explicit ExtinguishAction(const Vector2Int &position) : targetPosition(position), progress(0) {}
 
     bool Update(const std::shared_ptr<Crew> &crew) override;
 
@@ -60,7 +60,7 @@ protected:
     std::weak_ptr<Tile> _targetTile;
 
 public:
-    RepairAction(std::shared_ptr<Tile> tile) : _targetTile(tile) {}
+    explicit RepairAction(std::shared_ptr<Tile> tile) : _targetTile(tile) {}
 
     bool Update(const std::shared_ptr<Crew> &crew) override;
 
@@ -76,7 +76,7 @@ protected:
     std::weak_ptr<PlannedTask> _task;
 
 public:
-    ConstructionAction(std::shared_ptr<PlannedTask> task) : _task(task) {}
+    explicit ConstructionAction(std::shared_ptr<PlannedTask> task) : _task(task) {}
 
     bool Update(const std::shared_ptr<Crew> &crew) override;
 

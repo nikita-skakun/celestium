@@ -9,9 +9,8 @@
 std::atomic<uint64_t> Effect::nextInstanceId{1};
 
 Effect::Effect(const std::string &defName, const Vector2Int &position, float s)
-    : position(position)
+    : effectDef(DefinitionManager::GetEffectDefinition(defName)), position(position)
 {
-    effectDef = DefinitionManager::GetEffectDefinition(defName);
     if (!effectDef)
         throw std::runtime_error("Effect definition not found: " + defName);
 

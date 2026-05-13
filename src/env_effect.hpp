@@ -45,7 +45,7 @@ struct FireEffect : Effect
     static constexpr float SPREAD_CHANCE_PER_SECOND = .2f;
     static constexpr float DAMAGE_PER_SECOND = 2.f;
 
-    FireEffect(const Vector2Int &position, float size = 0) : Effect("FIRE", position, size) {}
+    explicit FireEffect(const Vector2Int &position, float size = 0) : Effect("FIRE", position, size) {}
 
     void EffectCrew(const std::shared_ptr<Crew> &crew, float deltaTime) const override;
     void Update(const std::shared_ptr<Station> &station, size_t index) override;
@@ -55,7 +55,7 @@ struct FireEffect : Effect
 
 struct FoamEffect : Effect
 {
-    FoamEffect(const Vector2Int &position, float size = 0) : Effect("FOAM", position, size) {}
+    explicit FoamEffect(const Vector2Int &position, float size = 0) : Effect("FOAM", position, size) {}
 
     void EffectCrew(const std::shared_ptr<Crew> &, float) const override {}
     void Update(const std::shared_ptr<Station> &station, size_t index) override;

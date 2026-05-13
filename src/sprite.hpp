@@ -57,14 +57,14 @@ struct BasicSpriteDef : public SpriteDef
 {
     Vector2Int spriteOffset;
 
-    BasicSpriteDef(const Vector2Int &offset) : spriteOffset(offset) {}
+    explicit BasicSpriteDef(const Vector2Int &offset) : spriteOffset(offset) {}
 };
 
 struct MultiSliceSpriteDef : public SpriteDef
 {
     std::vector<SliceWithConditions> slices;
 
-    MultiSliceSpriteDef(const std::vector<SliceWithConditions> &slices) : slices(slices) {}
+    explicit MultiSliceSpriteDef(const std::vector<SliceWithConditions> &slices) : slices(slices) {}
 };
 
 struct Sprite
@@ -84,7 +84,7 @@ struct BasicSprite : public Sprite
 {
     Vector2Int spriteOffset;
 
-    BasicSprite(const Vector2Int &spriteOffset, const Vector2Int &offsetFromMainTile = Vector2Int())
+    explicit BasicSprite(const Vector2Int &spriteOffset, const Vector2Int &offsetFromMainTile = Vector2Int())
         : Sprite(offsetFromMainTile), spriteOffset(spriteOffset) {}
 
     void Draw(const Vector2Int &position, const Color &tint, float rotation = 0) const override;
@@ -94,7 +94,7 @@ struct MultiSliceSprite : public Sprite
 {
     std::vector<SpriteSlice> slices;
 
-    MultiSliceSprite(const std::vector<SpriteSlice> &slices, const Vector2Int &offsetFromMainTile = Vector2Int())
+    explicit MultiSliceSprite(const std::vector<SpriteSlice> &slices, const Vector2Int &offsetFromMainTile = Vector2Int())
         : Sprite(offsetFromMainTile), slices(slices) {}
 
     void Draw(const Vector2Int &position, const Color &tint, float rotation = 0) const override;

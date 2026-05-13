@@ -94,7 +94,7 @@ protected:
     float deltaCharge;
 
 public:
-    BatteryComponent(float maxCharge, std::shared_ptr<Tile> parent = nullptr)
+    explicit BatteryComponent(float maxCharge, std::shared_ptr<Tile> parent = nullptr)
         : ComponentBase(parent), charge(maxCharge), maxCharge(maxCharge), deltaCharge(0.f) {}
 
     float GetMaxChargeLevel() const { return maxCharge; }
@@ -173,7 +173,7 @@ protected:
 public:
     using ComponentBase::ComponentBase;
 
-    PowerProducerComponent(float powerProduction, std::shared_ptr<Tile> parent = nullptr)
+    explicit PowerProducerComponent(float powerProduction, std::shared_ptr<Tile> parent = nullptr)
         : ComponentBase(parent), powerProduction(std::max(powerProduction, 0.f)) {}
 
     virtual float GetPowerProduction() const { return powerProduction; }
@@ -183,7 +183,7 @@ public:
 
 struct SolarPanelComponent : public PowerProducerComponent
 {
-    SolarPanelComponent(float powerProduction, std::shared_ptr<Tile> parent = nullptr) : PowerProducerComponent(powerProduction, parent) {}
+    explicit SolarPanelComponent(float powerProduction, std::shared_ptr<Tile> parent = nullptr) : PowerProducerComponent(powerProduction, parent) {}
 
     std::shared_ptr<Component> Clone(std::shared_ptr<Tile> newParent) const override
     {
@@ -204,7 +204,7 @@ protected:
 public:
     using ComponentBase::ComponentBase;
 
-    OxygenComponent(float startOxygenLevel = TILE_OXYGEN_MAX, std::shared_ptr<Tile> parent = nullptr)
+    explicit OxygenComponent(float startOxygenLevel = TILE_OXYGEN_MAX, std::shared_ptr<Tile> parent = nullptr)
         : ComponentBase(parent), oxygenLevel(startOxygenLevel) {}
 
     void SetOxygenLevel(float oxygen)
@@ -230,7 +230,7 @@ protected:
 public:
     using ComponentBase::ComponentBase;
 
-    OxygenProducerComponent(float oxygenProduction, std::shared_ptr<Tile> parent = nullptr)
+    explicit OxygenProducerComponent(float oxygenProduction, std::shared_ptr<Tile> parent = nullptr)
         : ComponentBase(parent), oxygenProduction(oxygenProduction) {}
 
     void ProduceOxygen(float deltaTime) const;
@@ -276,7 +276,7 @@ protected:
 public:
     using ComponentBase::ComponentBase;
 
-    DoorComponent(float movingSpeed = 1.f, bool startOpen = false, std::shared_ptr<Tile> parent = nullptr)
+    explicit DoorComponent(float movingSpeed = 1.f, bool startOpen = false, std::shared_ptr<Tile> parent = nullptr)
         : ComponentBase(parent), movingSpeed(std::max(movingSpeed, 0.f)),
           progress(startOpen ? 0.f : 1.f) {}
 
@@ -310,7 +310,7 @@ protected:
 public:
     using ComponentBase::ComponentBase;
 
-    DurabilityComponent(float maxHitpoints, std::shared_ptr<Tile> parent = nullptr)
+    explicit DurabilityComponent(float maxHitpoints, std::shared_ptr<Tile> parent = nullptr)
         : ComponentBase(parent), maxHitpoints(maxHitpoints), hitpoints(maxHitpoints) {}
 
     float GetMaxHitpoints() const { return maxHitpoints; }
@@ -329,7 +329,7 @@ protected:
 public:
     using ComponentBase::ComponentBase;
 
-    RotatableComponent(Rotation rotation = Rotation::UP, std::shared_ptr<Tile> parent = nullptr)
+    explicit RotatableComponent(Rotation rotation = Rotation::UP, std::shared_ptr<Tile> parent = nullptr)
         : ComponentBase(parent), rotation(rotation) {}
 
     Rotation GetRotation() const { return rotation; }

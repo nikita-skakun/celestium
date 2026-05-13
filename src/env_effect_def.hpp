@@ -20,7 +20,7 @@ private:
     std::vector<ParticleSystemDef> particleSystems;
 
 public:
-    EffectDef(const std::string &id, uint16_t sizeIncrements = 1, std::vector<ParticleSystemDef> psystems = {})
+    explicit EffectDef(const std::string &id, uint16_t sizeIncrements = 1, std::vector<ParticleSystemDef> psystems = {})
         : id(id), sizeIncrements(sizeIncrements), particleSystems(std::move(psystems)) {}
 
     constexpr const std::string &GetId() const { return id; }

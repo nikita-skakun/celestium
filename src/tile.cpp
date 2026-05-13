@@ -35,10 +35,7 @@ void MultiSliceSprite::Draw(const Vector2Int &position, const Color &tint, float
 }
 
 Tile::Tile(const std::string &tileId, const Vector2Int &position, const std::shared_ptr<Station> &station)
-    : position(position), station(station)
-{
-    tileDef = DefinitionManager::GetTileDefinition(tileId);
-}
+    : tileDef(DefinitionManager::GetTileDefinition(tileId)), position(position), station(station) { }
 
 std::shared_ptr<Tile> Tile::CreateTile(const std::string &tileId, const Vector2Int &position, const std::shared_ptr<Station> &station, bool overwriteExisting, bool useResources)
 {
