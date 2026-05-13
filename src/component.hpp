@@ -179,7 +179,7 @@ public:
 
     virtual float GetPowerProduction() const { return powerProduction; }
 
-    virtual std::optional<std::string> GetInfo() const override { return "   + Power Production: " + ToString(GetPowerProduction(), 0); }
+    std::optional<std::string> GetInfo() const override { return "   + Power Production: " + ToString(GetPowerProduction(), 0); }
 };
 
 struct SolarPanelComponent : public PowerProducerComponent
