@@ -42,8 +42,7 @@ jobs:
       - name: Download CodeQL CLI
         run: |
           set -e
-          latest_version=$(curl -s https://api.github.com/repos/github/codeql-action/releases/latest | jq -r .tag_name)
-          curl -L -o codeql-bundle.tar.gz https://github.com/github/codeql-action/releases/download/${latest_version}/codeql-bundle-linux64.tar.gz
+          curl -Lf -o codeql-bundle.tar.gz https://github.com/github/codeql-action/releases/latest/download/codeql-bundle-linux64.tar.gz
           tar -xzf codeql-bundle.tar.gz
           ls -l codeql
           sudo mv codeql /usr/local/codeql
