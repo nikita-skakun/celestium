@@ -74,16 +74,27 @@ public:
 
     static std::shared_ptr<UiElement> FindChildAtPos(const std::shared_ptr<UiElement> &element, const Vector2 &pos)
     {
-        if (!element->IsVisible() || !IsVector2WithinRect(element->GetRect(), pos))
+        std::shared_ptr<UiElement> current = element;
+        if (!current->IsVisible() || !IsVector2WithinRect(current->GetRect(), pos))
             return nullptr;
 
-        for (const auto &child : element->children)
+        while (true)
         {
-            if (auto found = FindChildAtPos(child, pos))
-                return found;
-        }
+            bool foundChild = false;
+            for (auto it = current->children.rbegin(); it != current->children.rend(); ++it)
+            {
+                const auto &child = *it;
+                if (child->IsVisible() && IsVector2WithinRect(child->GetRect(), pos))
+                {
+                    current = child;
+                    foundChild = true;
+                    break;
+                }
+            }
 
-        return element;
+            if (!foundChild)
+                return current;
+        }
     }
 };
 
