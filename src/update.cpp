@@ -19,17 +19,7 @@ void HandlePlaceTile(const std::shared_ptr<const Station> &station)
         return;
 
     Vector2Int cursorPos = ToVector2Int(GameManager::GetWorldMousePos());
-
-    std::vector<Vector2Int> posListToPlace;
-    posListToPlace.push_back(cursorPos);
-    if (GameManager::IsHorizontalSymmetry())
-        posListToPlace.push_back(Vector2Int(cursorPos.x, -cursorPos.y - 1));
-
-    if (GameManager::IsVerticalSymmetry())
-        posListToPlace.push_back(Vector2Int(-cursorPos.x - 1, cursorPos.y));
-
-    if (GameManager::IsHorizontalSymmetry() && GameManager::IsVerticalSymmetry())
-        posListToPlace.push_back(Vector2Int(-cursorPos.x - 1, -cursorPos.y - 1));
+    std::vector<Vector2Int> posListToPlace = GameManager::GetSymmetryPositions(cursorPos);
 
     for (const auto &pos : posListToPlace)
     {
@@ -45,17 +35,7 @@ void HandlePlaceTile(const std::shared_ptr<const Station> &station)
 void HandleDeleteTile(const std::shared_ptr<const Station> &station)
 {
     Vector2Int cursorPos = ToVector2Int(GameManager::GetWorldMousePos());
-
-    std::vector<Vector2Int> posListToDelete;
-    posListToDelete.push_back(cursorPos);
-    if (GameManager::IsHorizontalSymmetry())
-        posListToDelete.push_back(Vector2Int(cursorPos.x, -cursorPos.y - 1));
-
-    if (GameManager::IsVerticalSymmetry())
-        posListToDelete.push_back(Vector2Int(-cursorPos.x - 1, cursorPos.y));
-
-    if (GameManager::IsHorizontalSymmetry() && GameManager::IsVerticalSymmetry())
-        posListToDelete.push_back(Vector2Int(-cursorPos.x - 1, -cursorPos.y - 1));
+    std::vector<Vector2Int> posListToDelete = GameManager::GetSymmetryPositions(cursorPos);
 
     for (const auto &pos : posListToDelete)
     {
@@ -81,14 +61,7 @@ void HandleBuildMode()
     if (IsMouseButtonPressed(MOUSE_LEFT_BUTTON) && GameManager::IsInCancelMode())
     {
         Vector2Int cursorPos = ToVector2Int(GameManager::GetWorldMousePos());
-        std::vector<Vector2Int> posListToCancel;
-        posListToCancel.push_back(cursorPos);
-        if (GameManager::IsHorizontalSymmetry())
-            posListToCancel.push_back(Vector2Int(cursorPos.x, -cursorPos.y - 1));
-        if (GameManager::IsVerticalSymmetry())
-            posListToCancel.push_back(Vector2Int(-cursorPos.x - 1, cursorPos.y));
-        if (GameManager::IsHorizontalSymmetry() && GameManager::IsVerticalSymmetry())
-            posListToCancel.push_back(Vector2Int(-cursorPos.x - 1, -cursorPos.y - 1));
+        std::vector<Vector2Int> posListToCancel = GameManager::GetSymmetryPositions(cursorPos);
 
         for (const auto &pos : posListToCancel)
         {
@@ -243,7 +216,8 @@ void HandleCrewActions()
             continue;
 
         const auto &currentAction = crew->GetActionQueue().front();
-        currentAction->Update(crew);
+        if (currentAction->Update(crew))
+            crew->RemoveFirstAction();
     }
 }
 

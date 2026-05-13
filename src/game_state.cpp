@@ -96,6 +96,27 @@ void GameManager::Initialize()
     manager.server->Initialize();
 }
 
+std::vector<Vector2Int> GameManager::GetSymmetryPositions(const Vector2Int &pos)
+{
+    std::vector<Vector2Int> positions;
+    positions.push_back(pos);
+    if (IsHorizontalSymmetry())
+        positions.push_back(Vector2Int(pos.x, -pos.y - 1));
+    if (IsVerticalSymmetry())
+        positions.push_back(Vector2Int(-pos.x - 1, pos.y));
+    if (IsHorizontalSymmetry() && IsVerticalSymmetry())
+        positions.push_back(Vector2Int(-pos.x - 1, -pos.y - 1));
+
+    std::ranges::sort(positions, [](const Vector2Int &a, const Vector2Int &b)
+                      {
+        if (a.x != b.x) return a.x < b.x;
+        return a.y < b.y; });
+    auto [first, last] = std::ranges::unique(positions);
+    positions.erase(first, last);
+
+    return positions;
+}
+
 void GameManager::PrepareTestWorld()
 {
     auto &manager = GetInstance();

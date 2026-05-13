@@ -48,6 +48,26 @@ Color GetTileTint(const std::shared_ptr<Tile> &)
     return tint;
 }
 
+void DrawSpriteDefGhost(const std::shared_ptr<SpriteDef> &spriteDef, const Vector2Int &pos, const Color &tint = Fade(WHITE, 0.5f))
+{
+    if (!spriteDef)
+        return;
+
+    if (auto basicDef = std::dynamic_pointer_cast<BasicSpriteDef>(spriteDef))
+    {
+        BasicSprite ghostSprite(basicDef->spriteOffset);
+        ghostSprite.Draw(pos, tint, 0);
+    }
+    else if (auto multiDef = std::dynamic_pointer_cast<MultiSliceSpriteDef>(spriteDef))
+    {
+        std::vector<SpriteSlice> slices;
+        for (const auto &swc : multiDef->slices)
+            slices.push_back(swc.slice);
+        MultiSliceSprite ghostSprite(slices);
+        ghostSprite.Draw(pos, tint, 0);
+    }
+}
+
 /**
  * Draws a grid of tiles on the screen based on the current camera position and zoom level.
  */
@@ -681,44 +701,12 @@ void DrawBuildUi()
     if (buildTileId.empty())
         return;
 
-    auto tileDefs = DefinitionManager::GetTileDefinitions();
-    auto it = tileDefs.find(buildTileId);
-    if (it == tileDefs.end())
-        return;
-    auto tileDef = it->second;
+    auto tileDef = DefinitionManager::GetTileDefinition(buildTileId);
     if (!tileDef || !tileDef->GetReferenceSprite())
         return;
-    const auto &spriteDef = tileDef->GetReferenceSprite();
 
-    auto drawGhost = [&](const Vector2Int &pos)
-    {
-        if (auto basicDef = std::dynamic_pointer_cast<BasicSpriteDef>(spriteDef))
-        {
-            BasicSprite ghostSprite(basicDef->spriteOffset);
-            ghostSprite.Draw(pos, Fade(WHITE, 0.5f), 0);
-        }
-        else if (auto multiDef = std::dynamic_pointer_cast<MultiSliceSpriteDef>(spriteDef))
-        {
-            std::vector<SpriteSlice> slices;
-            for (const auto &swc : multiDef->slices)
-                slices.push_back(swc.slice);
-            MultiSliceSprite ghostSprite(slices);
-            ghostSprite.Draw(pos, Fade(WHITE, 0.5f), 0);
-        }
-    };
-
-    // Collect all unique positions to draw (main + symmetry)
-    std::unordered_set<Vector2Int> ghostPositions;
-    ghostPositions.insert(cursorPos);
-    if (GameManager::IsHorizontalSymmetry())
-        ghostPositions.insert(Vector2Int(cursorPos.x, -cursorPos.y - 1));
-    if (GameManager::IsVerticalSymmetry())
-        ghostPositions.insert(Vector2Int(-cursorPos.x - 1, cursorPos.y));
-    if (GameManager::IsHorizontalSymmetry() && GameManager::IsVerticalSymmetry())
-        ghostPositions.insert(Vector2Int(-cursorPos.x - 1, -cursorPos.y - 1));
-
-    for (const auto &pos : ghostPositions)
-        drawGhost(pos);
+    for (const auto &pos : GameManager::GetSymmetryPositions(cursorPos))
+        DrawSpriteDefGhost(tileDef->GetReferenceSprite(), pos);
 }
 
 void DrawPlannedTasks()
@@ -734,33 +722,9 @@ void DrawPlannedTasks()
     {
         if (task->isBuild)
         {
-            auto tileDefs = DefinitionManager::GetTileDefinitions();
-            auto it = tileDefs.find(task->tileId);
-            if (it == tileDefs.end())
-                continue;
-            auto tileDef = it->second;
-            if (!tileDef || !tileDef->GetReferenceSprite())
-                continue;
-            const auto &spriteDef = tileDef->GetReferenceSprite();
-
-            auto drawGhost = [&](const Vector2Int &pos)
-            {
-                if (auto basicDef = std::dynamic_pointer_cast<BasicSpriteDef>(spriteDef))
-                {
-                    BasicSprite ghostSprite(basicDef->spriteOffset);
-                    ghostSprite.Draw(pos, Fade(WHITE, 0.5f), 0);
-                }
-                else if (auto multiDef = std::dynamic_pointer_cast<MultiSliceSpriteDef>(spriteDef))
-                {
-                    std::vector<SpriteSlice> slices;
-                    for (const auto &swc : multiDef->slices)
-                        slices.push_back(swc.slice);
-                    MultiSliceSprite ghostSprite(slices);
-                    ghostSprite.Draw(pos, Fade(WHITE, 0.5f), 0);
-                }
-            };
-
-            drawGhost(task->position);
+            auto tileDef = DefinitionManager::GetTileDefinition(task->tileId);
+            if (tileDef)
+                DrawSpriteDefGhost(tileDef->GetReferenceSprite(), task->position);
         }
 
         Rectangle sourceRect = (task->isBuild ? Rectangle(1, 1, 1, 1) : Rectangle(3, 1, 1, 1)) * TILE_SIZE;

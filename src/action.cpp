@@ -6,17 +6,14 @@
 #include "station.hpp"
 #include "tile.hpp"
 
-void MoveAction::Update(const std::shared_ptr<Crew> &crew)
+bool MoveAction::Update(const std::shared_ptr<Crew> &crew)
 {
     if (!crew)
-        return;
+        return true;
 
     auto station = crew->GetCurrentTile()->GetStation();
     if (!station)
-    {
-        crew->RemoveFirstAction();
-        return;
-    }
+        return true;
 
     if (path.empty())
     {
@@ -31,15 +28,7 @@ void MoveAction::Update(const std::shared_ptr<Crew> &crew)
         if (path.empty())
         {
             TraceLog(LOG_INFO, "MoveAction: FindPath returned empty. Target: (%f, %f), Pos: (%f, %f)", targetPosition.x, targetPosition.y, crew->GetPosition().x, crew->GetPosition().y);
-            if (targetPosition == crew->GetPosition())
-            {
-                crew->RemoveFirstAction();
-                return;
-            }
-
-            targetPosition = crew->GetPosition();
-            crew->RemoveFirstAction();
-            return;
+            return true;
         }
     }
 
@@ -65,7 +54,7 @@ void MoveAction::Update(const std::shared_ptr<Crew> &crew)
             door->Open(1.0f / CREW_MOVE_SPEED);
 
             if (!door->IsOpen())
-                return; // Wait for the door to be fully open
+                return false; // Wait for the door to be fully open
         }
     }
 
@@ -87,96 +76,79 @@ void MoveAction::Update(const std::shared_ptr<Crew> &crew)
         path.pop_front();
 
         if (path.empty())
-        {
-            crew->RemoveFirstAction();
-            return;
-        }
+            return true;
     }
     else
     {
         // Move towards waypoint
         crew->SetPosition(crew->GetPosition() + Vector2Normalize(nextWaypoint - crew->GetPosition()) * moveDelta);
     }
+    return false;
 }
 
-void ExtinguishAction::Update(const std::shared_ptr<Crew> &crew)
+bool ExtinguishAction::Update(const std::shared_ptr<Crew> &crew)
 {
     if (!crew)
-        return;
+        return true;
 
     auto station = crew->GetCurrentTile()->GetStation();
     if (!station)
-    {
-        crew->RemoveFirstAction();
-        return;
-    }
+        return true;
 
     if (auto fire = station->GetEffectOfTypeAtPosition(targetPosition, "FIRE"))
     {
-        // Fire effect exists at the target position
         if (progress > 1.f)
         {
             station->RemoveEffect(fire);
-            crew->RemoveFirstAction();
-            return;
+            return true;
         }
 
         progress += CREW_EXTINGUISH_SPEED * FIXED_DELTA_TIME;
     }
     else
-    {
-        // No fire effect at the target position; action cannot proceed
-        crew->RemoveFirstAction();
-    }
+        return true;
+
+    return false;
 }
 
-void RepairAction::Update(const std::shared_ptr<Crew> &crew)
+bool RepairAction::Update(const std::shared_ptr<Crew> &crew)
 {
     if (!crew)
-        return;
+        return true;
 
     auto targetTile = _targetTile.lock();
     auto durability = targetTile ? targetTile->GetComponent<DurabilityComponent>() : nullptr;
 
     if (!targetTile || !durability)
-    {
-        crew->RemoveFirstAction();
-        return;
-    }
+        return true;
 
     const float maxHitpoints = durability->GetMaxHitpoints();
     float newHitpoints = std::min(durability->GetHitpoints() + CREW_REPAIR_SPEED * (float)FIXED_DELTA_TIME, maxHitpoints);
 
     durability->SetHitpoints(newHitpoints);
 
-    if (newHitpoints >= maxHitpoints)
-        crew->RemoveFirstAction();
+    return newHitpoints >= maxHitpoints;
 }
 
-void ConstructionAction::Update(const std::shared_ptr<Crew> &crew)
+bool ConstructionAction::Update(const std::shared_ptr<Crew> &crew)
 {
     if (!crew)
-        return;
+        return true;
 
     auto task = _task.lock();
     if (!task)
-    {
-        crew->RemoveFirstAction();
-        return;
-    }
+        return true;
 
     auto station = crew->GetCurrentTile()->GetStation();
     if (!station)
-    {
-        crew->RemoveFirstAction();
-        return;
-    }
+        return true;
 
     task->progress += CREW_BUILD_SPEED * FIXED_DELTA_TIME;
 
     if (task->progress >= 1.f)
     {
         station->CompletePlannedTask(task->position);
-        crew->RemoveFirstAction();
+        return true;
     }
+    return false;
 }

@@ -2,12 +2,22 @@
 #include "lua_bindings.hpp"
 #include "particle_system.hpp"
 
+namespace
+{
+    template <typename T, typename Getter>
+    T GetProperty(const LuaParticle &lp, T defaultValue, Getter getter)
+    {
+        if (!lp.system || lp.index == SIZE_MAX)
+            return defaultValue;
+        if (auto p = lp.system->GetParticlePtr(lp.index))
+            return getter(p);
+        return defaultValue;
+    }
+}
+
 float LuaParticle::lifetime() const
 {
-    if (!system || index == SIZE_MAX)
-        return 0.0f;
-    auto p = system->GetParticlePtr(index);
-    return p ? p->lifetime : 0.0f;
+    return GetProperty(*this, 0.0f, [](auto p) { return p->lifetime; });
 }
 
 void LuaParticle::set_lifetime(float v)
@@ -20,10 +30,7 @@ void LuaParticle::set_lifetime(float v)
 
 float LuaParticle::size() const
 {
-    if (!system || index == SIZE_MAX)
-        return 0.0f;
-    auto p = system->GetParticlePtr(index);
-    return p ? p->size : 0.0f;
+    return GetProperty(*this, 0.0f, [](auto p) { return p->size; });
 }
 
 void LuaParticle::set_size(float v)
@@ -36,10 +43,7 @@ void LuaParticle::set_size(float v)
 
 float LuaParticle::age() const
 {
-    if (!system || index == SIZE_MAX)
-        return 0.0f;
-    auto p = system->GetParticlePtr(index);
-    return p ? p->age : 0.0f;
+    return GetProperty(*this, 0.0f, [](auto p) { return p->age; });
 }
 
 void LuaParticle::set_age(float v)
@@ -133,32 +137,11 @@ void LuaParticle::set_position(sol::table t)
 sol::table LuaParticle::color(sol::this_state s)
 {
     sol::state_view lua(s);
-    sol::table t = lua.create_table();
-    if (system && index != SIZE_MAX)
-    {
-        if (auto particle = system->GetParticlePtr(index))
-        {
-            t["r"] = particle->color.r;
-            t["g"] = particle->color.g;
-            t["b"] = particle->color.b;
-            t["a"] = particle->color.a;
-        }
-        else
-        {
-            t["r"] = 255;
-            t["g"] = 255;
-            t["b"] = 255;
-            t["a"] = 255;
-        }
-    }
-    else
-    {
-        t["r"] = 255;
-        t["g"] = 255;
-        t["b"] = 255;
-        t["a"] = 255;
-    }
-    return t;
+    return GetProperty(*this, lua.create_table(), [&](auto p)
+                       {
+        sol::table t = lua.create_table();
+        t["r"] = p->color.r; t["g"] = p->color.g; t["b"] = p->color.b; t["a"] = p->color.a;
+        return t; });
 }
 
 void LuaParticle::set_color(sol::table t)

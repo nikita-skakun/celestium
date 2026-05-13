@@ -7,45 +7,25 @@ void PowerGrid::Disconnect(const std::shared_ptr<Tile> &parentTile)
     if (!parentTile)
         return;
 
-    for (auto it = _consumers.begin(); it != _consumers.end();)
+    auto disconnectFromMap = [&](auto &map, auto onDisconnect)
     {
-        if (auto ptr = it->second.lock())
-        {
-            if (ptr->GetParent() == parentTile)
+        std::erase_if(map, [&](const auto &entry)
+                      {
+            if (auto sp = entry.second.lock())
             {
-                ptr->SetActive(false);
-                it = _consumers.erase(it);
-                continue;
+                if (sp->GetParent() == parentTile)
+                {
+                    onDisconnect(sp);
+                    return true;
+                }
             }
-        }
-        ++it;
-    }
+            return false; });
+    };
 
-    for (auto it = _producers.begin(); it != _producers.end();)
-    {
-        if (auto ptr = it->second.lock())
-        {
-            if (ptr->GetParent() == parentTile)
-            {
-                it = _producers.erase(it);
-                continue;
-            }
-        }
-        ++it;
-    }
-
-    for (auto it = _batteries.begin(); it != _batteries.end();)
-    {
-        if (auto ptr = it->second.lock())
-        {
-            if (ptr->GetParent() == parentTile)
-            {
-                it = _batteries.erase(it);
-                continue;
-            }
-        }
-        ++it;
-    }
+    disconnectFromMap(_consumers, [](auto sp)
+                      { sp->SetActive(false); });
+    disconnectFromMap(_producers, [](auto) {});
+    disconnectFromMap(_batteries, [](auto) {});
 
     if (auto connector = parentTile->GetComponent<PowerConnectorComponent>())
         connector->SetPowerGrid(nullptr);

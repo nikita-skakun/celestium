@@ -82,6 +82,8 @@ public:
     static void ToggleBuildTileId(const std::string &tileId) { GetInstance().buildTileId = GetInstance().buildTileId == tileId ? "" : tileId; }
     static bool IsBuildTileId(const std::string &tileId) { return GetInstance().buildTileId == tileId; }
 
+    static std::vector<Vector2Int> GetSymmetryPositions(const Vector2Int &pos);
+
     static bool IsInBuildMode() { return GetInstance().buildMode; }
     static void SetBuildModeState(bool newState) { GetInstance().buildMode = newState; }
     static void ToggleBuildGameState() { GetInstance().buildMode = !GetInstance().buildMode; }
