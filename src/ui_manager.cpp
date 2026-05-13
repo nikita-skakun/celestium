@@ -7,6 +7,9 @@
 
 namespace
 {
+    void ToggleBuildCategory(TileDef::Category category);
+    void InitializeCategorySpecificMenu();
+
     void LinkToggle(std::shared_ptr<UiToggle> toggle, std::function<bool()> stateFunc)
     {
         std::weak_ptr<UiToggle> weak = toggle;
@@ -28,139 +31,155 @@ namespace
                             { if (auto t = weak.lock()) { t->SetVisible(visibilityFunc()); t->SetToggle(stateFunc()); } });
     }
 
+    std::shared_ptr<UiToggle> AddIconButton(std::shared_ptr<UiPanel> parent, Rectangle rect, const std::string &id,
+                                            std::function<bool()> stateFunc, std::function<void(bool)> onToggle,
+                                            const std::string &iconSheet = "", Rectangle iconSource = {0, 0, 0, 0}, Color iconTint = WHITE,
+                                            std::function<bool()> visibilityFunc = nullptr)
+    {
+        auto toggle = std::make_shared<UiToggle>(rect, stateFunc(), onToggle);
+        if (visibilityFunc)
+            LinkToggleWithVisibility(toggle, stateFunc, visibilityFunc);
+        else
+            LinkToggle(toggle, stateFunc);
+
+        if (!iconSheet.empty())
+        {
+            Vector2 size = RectToSize(rect);
+            Vector2 iconSize = size * 0.75f;
+            Vector2 iconPos = RectToPos(rect) + (size - iconSize) / 2.0f;
+            toggle->AddChild(std::make_shared<UiIcon>(Vector2ToRect(iconPos, iconSize), iconSheet, iconSource, iconTint));
+        }
+
+        if (parent)
+            parent->AddChild(toggle);
+        if (!id.empty())
+            UiManager::AddElement(id, toggle);
+        return toggle;
+    }
+
+    void AddButtonList(std::shared_ptr<UiPanel> panel, Vector2 pos, float width, float height, float spacing,
+                       const std::vector<std::pair<std::string, std::function<void()>>> &buttons)
+    {
+        for (size_t i = 0; i < buttons.size(); ++i)
+        {
+            Rectangle rect = {pos.x, pos.y + i * (height + spacing), width, height};
+            panel->AddChild(std::make_shared<UiButton>(rect, buttons[i].first, buttons[i].second));
+        }
+    }
+
     void AddVolumeSlider(std::shared_ptr<UiPanel> parent, Rectangle textRect, Rectangle sliderRect, const std::string &label, std::function<float()> getVolume, std::function<void(float)> setVolume)
     {
-        auto text = std::make_shared<UiStatusBar>(textRect, label);
-        parent->AddChild(text);
-
+        parent->AddChild(std::make_shared<UiStatusBar>(textRect, label));
         auto slider = std::make_shared<UiSlider>(sliderRect, getVolume(), 0, 1, setVolume);
-        std::weak_ptr<UiSlider> weakSlider = slider;
-        slider->SetOnUpdate([weakSlider, getVolume]()
-                            { if (auto s = weakSlider.lock()) s->SetValue(getVolume()); });
+        std::weak_ptr<UiSlider> weak = slider;
+        slider->SetOnUpdate([weak, getVolume]()
+                            { if (auto s = weak.lock()) s->SetValue(getVolume()); });
         parent->AddChild(slider);
     }
 
-    void AddBuildCategoryToggle(std::shared_ptr<UiPanel> parent, Vector2 pos, Vector2 size, TileDef::Category category, Vector2Int iconOffset)
+    void InitializeSettingsMenu()
     {
-        auto toggle = std::make_shared<UiToggle>(Vector2ToRect(pos, size),
-                                                 GameManager::GetSelectedCategory() == category, [category](bool)
-                                                 { ToggleBuildCategory(category); });
-        LinkToggle(toggle, [category]()
-                   { return GameManager::GetSelectedCategory() == category; });
-        parent->AddChild(toggle);
+        const Vector2 size = Vector2(1, 1) * 2. / 3.;
+        const Vector2 pos = Vector2(.5, .5) - size / 2.;
+        const Vector2 spacing = Vector2ScreenScale(Vector2(DEFAULT_PADDING, DEFAULT_PADDING));
+        const float height = 1. / 36.;
+        const float halfWidth = size.x / 2. - spacing.x * 1.5;
 
-        const Vector2 iconSize = size * 3.f / 4.f;
-        const Vector2 iconPadding = (size - iconSize) / 2.;
-        auto icon = std::make_shared<UiIcon>(Vector2ToRect(pos + iconPadding, iconSize),
-                                              "ICON", Rectangle((float)iconOffset.x, (float)iconOffset.y, 1, 1) * TILE_SIZE, Fade(DARKGRAY, .8));
-        toggle->AddChild(icon);
+        auto settingsMenu = std::make_shared<UiPanel>(Rectangle(0, 0, 1, 1), Fade(BLACK, .2));
+        LinkVisibility(settingsMenu, []() { return GameManager::GetCamera().IsUiState(PlayerCam::UiState::SETTINGS_MENU); });
+        UiManager::AddElement("SETTINGS_MENU", settingsMenu);
+
+        auto menuBg = std::make_shared<UiPanel>(Vector2ToRect(pos, size), Fade(BLACK, .5));
+        settingsMenu->AddChild(menuBg);
+
+        float currentY = pos.y + spacing.y;
+        auto getRect = [&](bool right) { return Rectangle(pos.x + spacing.x + (right ? halfWidth + spacing.x : 0), currentY, halfWidth, height); };
+
+        // Monitor & FPS
+        menuBg->AddChild(std::make_shared<UiStatusBar>(getRect(false), "Render Monitor:"));
+        std::string monitorNames;
+        for (int i = 0; i < GetMonitorCount(); i++) monitorNames += (i > 0 ? ";" : "") + std::string(GetMonitorName(i));
+        auto monitorSelect = std::make_shared<UiComboBox>(getRect(true), monitorNames, GetCurrentMonitor());
+        menuBg->AddChild(monitorSelect);
+        currentY += height + spacing.y;
+
+        menuBg->AddChild(std::make_shared<UiStatusBar>(getRect(false), "Monitor FPS:"));
+        auto fpsSelect = std::make_shared<UiComboBox>(getRect(true), GameManager::GetCamera().GetFpsOptions(), GameManager::GetCamera().GetFpsIndex(),
+                                                       [](int idx) { GameManager::GetCamera().SetFpsIndex(idx); });
+        menuBg->AddChild(fpsSelect);
+
+        std::weak_ptr<UiComboBox> weakFps = fpsSelect;
+        monitorSelect->SetOnPress([weakFps](int monitor) {
+            SetWindowMonitor(monitor);
+            GameManager::GetCamera().SetFps(GetMonitorRefreshRate(monitor));
+            if (auto f = weakFps.lock()) { f->SetText(GameManager::GetCamera().GetFpsOptions()); f->SetState(GameManager::GetCamera().GetFpsIndex()); }
+        });
+        currentY += height + spacing.y;
+
+        // Volume Sliders
+        auto addSlider = [&](const std::string &label, auto get, auto set) {
+            AddVolumeSlider(menuBg, getRect(false), getRect(true), label, get, set);
+            currentY += height + spacing.y;
+        };
+        addSlider("Master Volume:", &AudioManager::GetMasterVolume, &AudioManager::SetMasterVolume);
+        addSlider("Music Volume:", &AudioManager::GetMusicVolume, &AudioManager::SetMusicVolume);
+        addSlider("Effects Volume:", &AudioManager::GetEffectsVolume, &AudioManager::SetEffectsVolume);
     }
-}
 
-
-void InitializeSettingsMenu()
-{
-    const Vector2 menuSize = Vector2(1, 1) * 2. / 3.;
-    const Vector2 menuPos = Vector2(.5, .5) - menuSize / 2.;
-    const Vector2 spacing = Vector2ScreenScale(Vector2(DEFAULT_PADDING, DEFAULT_PADDING));
-    const double settingHeight = 1. / 36.;
-    const double halfPanelWidth = menuSize.x / 2. - spacing.x * 1.5;
-
-    // Darken the background to draw focus to the UI
-    auto settingsMenu = std::make_shared<UiPanel>(Rectangle(0, 0, 1, 1), Fade(BLACK, .2));
-    LinkVisibility(settingsMenu, []() { return GameManager::GetCamera().IsUiState(PlayerCam::UiState::SETTINGS_MENU); });
-
-    // Draw a rectangle for the menu background
-    auto menuBackground = std::make_shared<UiPanel>(Vector2ToRect(menuPos, menuSize), Fade(BLACK, .5));
-    settingsMenu->AddChild(menuBackground);
-
-    Rectangle monitorTextRect = Rectangle(menuPos.x + spacing.x, menuPos.y + spacing.y, halfPanelWidth, settingHeight);
-    auto monitorText = std::make_shared<UiStatusBar>(monitorTextRect, "Render Monitor:");
-    menuBackground->AddChild(monitorText);
-
-    std::string monitorNames;
-    for (int i = 0; i < GetMonitorCount(); i++)
+    struct TileToggleConfig
     {
-        if (i > 0)
-            monitorNames += ";";
-        monitorNames += GetMonitorName(i);
-    }
-
-    int selectedMonitor = GetCurrentMonitor();
-    Rectangle monitorSelectRect = Rectangle(monitorTextRect.x + halfPanelWidth + spacing.x, menuPos.y + spacing.y, halfPanelWidth, settingHeight);
-    auto monitorSelect = std::make_shared<UiComboBox>(monitorSelectRect, monitorNames, selectedMonitor);
-    menuBackground->AddChild(monitorSelect);
-
-    Rectangle fpsSelectTextRect = Rectangle(menuPos.x + spacing.x, monitorTextRect.y + settingHeight + spacing.y, halfPanelWidth, settingHeight);
-    auto fpsSelectText = std::make_shared<UiStatusBar>(fpsSelectTextRect, "Monitor FPS:");
-    menuBackground->AddChild(fpsSelectText);
-
-    const std::string availableFpsOptions = GameManager::GetCamera().GetFpsOptions();
-
-    Rectangle fpsSelectRect = Rectangle(fpsSelectTextRect.x + halfPanelWidth + spacing.x, fpsSelectTextRect.y, halfPanelWidth, settingHeight);
-    auto fpsSelect = std::make_shared<UiComboBox>(fpsSelectRect, availableFpsOptions, GameManager::GetCamera().GetFpsIndex(), [](int fpsIndex)
-                                                  { GameManager::GetCamera().SetFpsIndex(fpsIndex); });
-    menuBackground->AddChild(fpsSelect);
-
-    std::weak_ptr<UiComboBox> _fpsSelect = fpsSelect;
-    auto monitorSelectOnPress = [_fpsSelect](int monitor)
-    {
-        SetWindowMonitor(monitor);
-        GameManager::GetCamera().SetFps(GetMonitorRefreshRate(monitor));
-        if (auto fpsSelect = _fpsSelect.lock())
-        {
-            std::string availableFpsOptions = GameManager::GetCamera().GetFpsOptions();
-            fpsSelect->SetText(availableFpsOptions);
-            fpsSelect->SetState(GameManager::GetCamera().GetFpsIndex());
-        }
+        std::string tileId;
+        std::string iconSheet;
+        Vector2Int iconOffset;
     };
-    monitorSelect->SetOnPress(monitorSelectOnPress);
 
-    Rectangle masterVolumeTextRect = Rectangle(menuPos.x + spacing.x, fpsSelectRect.y + settingHeight + spacing.y, halfPanelWidth, settingHeight);
-    Rectangle masterVolumeSliderRect = Rectangle(masterVolumeTextRect.x + halfPanelWidth + spacing.x, masterVolumeTextRect.y, halfPanelWidth, settingHeight);
-    AddVolumeSlider(menuBackground, masterVolumeTextRect, masterVolumeSliderRect, "Master Volume:", &AudioManager::GetMasterVolume, &AudioManager::SetMasterVolume);
+    void AddBuildToggle(std::shared_ptr<UiPanel> panel, const TileToggleConfig &cfg, int idx)
+    {
+        const Vector2 SPACING = Vector2ScreenScale(Vector2(DEFAULT_PADDING, DEFAULT_PADDING));
+        const Vector2 SIZE = Vector2ScreenScale(Vector2(64, 64));
+        const Vector2 PANEL_POS = Vector2(.5 - .8 / 2., 1. - (SIZE.y + SPACING.y * 2.) - SPACING.y * 4. - SIZE.y);
+        Vector2 pos = PANEL_POS + Vector2(SPACING.x + idx * (SIZE.x + SPACING.x), SPACING.y);
 
-    Rectangle musicVolumeTextRect = Rectangle(menuPos.x + spacing.x, masterVolumeTextRect.y + settingHeight + spacing.y, halfPanelWidth, settingHeight);
-    Rectangle musicVolumeSliderRect = Rectangle(musicVolumeTextRect.x + halfPanelWidth + spacing.x, musicVolumeTextRect.y, halfPanelWidth, settingHeight);
-    AddVolumeSlider(menuBackground, musicVolumeTextRect, musicVolumeSliderRect, "Music Volume:", &AudioManager::GetMusicVolume, &AudioManager::SetMusicVolume);
+        AddIconButton(panel, Vector2ToRect(pos, SIZE), "",
+            [&cfg]() { return GameManager::GetBuildTileId() == cfg.tileId; },
+            [&cfg](bool s) { GameManager::SetBuildTileId(s ? cfg.tileId : ""); if (s) GameManager::SetCancelMode(false); },
+            cfg.iconSheet, Vector2ToRect(ToVector2(cfg.iconOffset), {1, 1}) * TILE_SIZE);
+    }
 
-    Rectangle effectsVolumeTextRect = Rectangle(menuPos.x + spacing.x, musicVolumeTextRect.y + settingHeight + spacing.y, halfPanelWidth, settingHeight);
-    Rectangle effectsVolumeSliderRect = Rectangle(effectsVolumeTextRect.x + halfPanelWidth + spacing.x, effectsVolumeTextRect.y, halfPanelWidth, settingHeight);
-    AddVolumeSlider(menuBackground, effectsVolumeTextRect, effectsVolumeSliderRect, "Effects Volume:", &AudioManager::GetEffectsVolume, &AudioManager::SetEffectsVolume);
+    void InitializeCategorySpecificMenu()
+    {
+        TileDef::Category selectedCategory = GameManager::GetSelectedCategory();
+        auto tileDefs = DefinitionManager::GetTileDefinitions();
 
-    UiManager::AddElement("SETTINGS_MENU", settingsMenu);
+        int index = 0;
+        for (const auto &pair : tileDefs)
+        {
+            const auto &tileDef = pair.second;
+            if (tileDef->GetCategory() == selectedCategory)
+            {
+                TileToggleConfig config;
+                config.tileId = tileDef->GetId();
+                config.iconSheet = "STATION";
+                config.iconOffset = tileDef->GetIconOffset();
+
+                AddBuildToggle(std::dynamic_pointer_cast<UiPanel>(UiManager::GetElement("BUILD_MENU")), config, index);
+                index++;
+            }
+        }
+    }
+
+    void ToggleBuildCategory(TileDef::Category category)
+    {
+        if (auto buildMenu = std::dynamic_pointer_cast<UiPanel>(UiManager::GetElement("BUILD_MENU")))
+        {
+            buildMenu->ClearChildren();
+        }
+
+        GameManager::ToggleSelectedCategory(category);
+        InitializeCategorySpecificMenu();
+    }
 }
 
-struct TileToggleConfig
-{
-    std::string tileId;
-    std::string iconSpritesheetName;
-    Vector2Int iconOffset;
-};
-
-void AddBuildToggle(std::shared_ptr<UiPanel> buildMenuPanel, const TileToggleConfig &config, int index)
-{
-    const Vector2 SPACING = Vector2ScreenScale(Vector2(DEFAULT_PADDING, DEFAULT_PADDING));
-    const Vector2 TOGGLE_SIZE = Vector2ScreenScale(Vector2(64, 64));
-    const Vector2 PANEL_SIZE = Vector2(.8, TOGGLE_SIZE.y + SPACING.y * 2.);
-    const Vector2 PANEL_POS = Vector2(.5 - PANEL_SIZE.x / 2., 1. - PANEL_SIZE.y - SPACING.y * 4. - TOGGLE_SIZE.y);
-
-    Vector2 togglePos = PANEL_POS + Vector2(SPACING.x + index * (TOGGLE_SIZE.x + SPACING.x), SPACING.y);
-
-    auto onToggle = [config](bool state)
-    { if (state) { GameManager::SetCancelMode(false); GameManager::SetBuildTileId(config.tileId); } else { GameManager::SetBuildTileId(""); } };
-
-    auto toggle = std::make_shared<UiToggle>(Vector2ToRect(togglePos, TOGGLE_SIZE),
-                                             (GameManager::GetBuildTileId() == config.tileId),
-                                             onToggle);
-    LinkToggle(toggle, [config]() { return GameManager::GetBuildTileId() == config.tileId; });
-
-    buildMenuPanel->AddChild(toggle);
-
-    Rectangle iconRect = Vector2ToRect(togglePos + TOGGLE_SIZE / 8.f, TOGGLE_SIZE * 0.75f);
-    auto icon = std::make_shared<UiIcon>(iconRect, config.iconSpritesheetName, Vector2ToRect(ToVector2(config.iconOffset), Vector2(1, 1)) * TILE_SIZE, WHITE);
-    toggle->AddChild(icon);
-}
 
 void UiManager::Update()
 {
@@ -186,235 +205,96 @@ void UiManager::Render()
 
 void UiManager::InitializeMainMenu()
 {
-    const int buttonCount = 4;
-    const double buttonWidth = 1. / 6.; // Menu width
     const Vector2 spacing = Vector2ScreenScale(Vector2(DEFAULT_PADDING, DEFAULT_PADDING));
-    const double buttonHeight = 1. / 18.;
-    const double totalButtonHeight = buttonCount * buttonHeight + (buttonCount - 1) * spacing.y;
-
-    const Vector2 menuSize = Vector2(buttonWidth, totalButtonHeight) + spacing * 2;
+    const float btnW = 1. / 6., btnH = 1. / 18.;
+    const Vector2 menuSize = Vector2(btnW, 4 * btnH + 3 * spacing.y) + spacing * 2;
     const Vector2 menuPos = Vector2(1. - menuSize.x - spacing.x, (1. - menuSize.y) / 2.);
 
-    auto mainMenuPanel = std::make_shared<UiPanel>(Vector2ToRect(menuPos, menuSize), Fade(BLACK, .5));
-    LinkVisibility(mainMenuPanel, []() { return GameManager::GetCamera().IsUiClear(); });
+    auto panel = std::make_shared<UiPanel>(Vector2ToRect(menuPos, menuSize), Fade(BLACK, .5));
+    LinkVisibility(panel, []() { return GameManager::GetCamera().IsUiClear(); });
 
-    double firstButtonPosY = menuPos.y + (menuSize.y - totalButtonHeight) / 2.;
-    const double buttonPosX = menuPos.x + (menuSize.x - buttonWidth) / 2.; // Center buttons within the panel
+    AddButtonList(panel, menuPos + spacing, btnW, btnH, spacing.y, {
+        {"New Game", []() { GameManager::RequestStateChange(GameState::GAME_SIM); }},
+        {"Load Game", []() {}},
+        {"Settings", []() { GameManager::GetCamera().SetUiState(PlayerCam::UiState::SETTINGS_MENU); }},
+        {"Exit", []() { GameManager::RequestStateChange(GameState::NONE); }}
+    });
 
-    Rectangle newGameButtonRect = Rectangle(buttonPosX, firstButtonPosY, buttonWidth, buttonHeight);
-    auto newGameButton = std::make_shared<UiButton>(newGameButtonRect, "New Game", []()
-                                                    { GameManager::RequestStateChange(GameState::GAME_SIM); });
-    mainMenuPanel->AddChild(newGameButton);
-
-    Rectangle loadGameButtonRect = Rectangle(buttonPosX, firstButtonPosY + (buttonHeight + spacing.y), buttonWidth, buttonHeight);
-    auto loadGameButton = std::make_shared<UiButton>(loadGameButtonRect, "Load Game", []() { /* TODO: Implement load game functionality */ });
-    mainMenuPanel->AddChild(loadGameButton);
-
-    Rectangle settingsButtonRect = Rectangle(buttonPosX, firstButtonPosY + 2. * (buttonHeight + spacing.y), buttonWidth, buttonHeight);
-    auto settingsButton = std::make_shared<UiButton>(settingsButtonRect, "Settings", []()
-                                                     { GameManager::GetCamera().SetUiState(PlayerCam::UiState::SETTINGS_MENU); });
-    mainMenuPanel->AddChild(settingsButton);
-
-    Rectangle exitButtonRect = Rectangle(buttonPosX, firstButtonPosY + 3. * (buttonHeight + spacing.y), buttonWidth, buttonHeight);
-    auto exitButton = std::make_shared<UiButton>(exitButtonRect, "Exit", []()
-                                                 { GameManager::RequestStateChange(GameState::NONE); });
-    mainMenuPanel->AddChild(exitButton);
-
-    UiManager::AddElement("MAIN_MENU", mainMenuPanel);
-
+    UiManager::AddElement("MAIN_MENU", panel);
     InitializeSettingsMenu();
 }
-
-void InitializeCategorySpecificMenu()
-{
-    TileDef::Category selectedCategory = GameManager::GetSelectedCategory();
-    auto tileDefs = DefinitionManager::GetTileDefinitions();
-
-    int index = 0;
-    for (const auto &pair : tileDefs)
-    {
-        const auto &tileDef = pair.second;
-        if (tileDef->GetCategory() == selectedCategory)
-        {
-            TileToggleConfig config;
-            config.tileId = tileDef->GetId();
-            config.iconSpritesheetName = "STATION";
-            config.iconOffset = tileDef->GetIconOffset();
-
-            AddBuildToggle(std::dynamic_pointer_cast<UiPanel>(UiManager::GetElement("BUILD_MENU")), config, index);
-            index++;
-        }
-    }
-}
-
-void ToggleBuildCategory(TileDef::Category category)
-{
-    if (auto buildMenu = std::dynamic_pointer_cast<UiPanel>(UiManager::GetElement("BUILD_MENU")))
-    {
-        buildMenu->ClearChildren();
-    }
-
-    GameManager::ToggleSelectedCategory(category);
-    InitializeCategorySpecificMenu();
-}
-
 
 
 void UiManager::InitializeGameSim()
 {
-    { // InitializeSidebar
-        const Vector2 largeButtonSize = Vector2ScreenScale(Vector2(64, 64));
-        const Vector2 smallButtonSize = largeButtonSize / 2.;
-        const Vector2 spacing = Vector2ScreenScale(Vector2(DEFAULT_PADDING, DEFAULT_PADDING));
+    const Vector2 largeSize = Vector2ScreenScale(Vector2(64, 64)), smallSize = largeSize / 2.;
+    const Vector2 spacing = Vector2ScreenScale(Vector2(DEFAULT_PADDING, DEFAULT_PADDING));
 
-        Rectangle buildButtonRect = Vector2ToRect(Vector2(1. - spacing.x - largeButtonSize.x, (1. - largeButtonSize.y) / 2.), largeButtonSize);
-        bool isInBuildMode = GameManager::IsInBuildMode();
-        auto buildToggle = std::make_shared<UiToggle>(buildButtonRect, isInBuildMode, [](bool state)
-                                                      { GameManager::SetBuildModeState(state); });
-        LinkToggleWithVisibility(buildToggle, []() { return GameManager::IsInBuildMode(); }, []() { return GameManager::GetCamera().IsUiClear(); });
+    // Sidebar & Overlays
+    AddIconButton(nullptr, Vector2ToRect({1.f - spacing.x - largeSize.x, (1.f - largeSize.y) / 2.f}, largeSize), "BUILD_TGL",
+                  []() { return GameManager::IsInBuildMode(); }, [](bool s) { GameManager::SetBuildModeState(s); },
+                  "ICON", {TILE_SIZE, TILE_SIZE, TILE_SIZE, TILE_SIZE}, WHITE, []() { return GameManager::GetCamera().IsUiClear(); });
 
-        UiManager::AddElement("BUILD_TGL", buildToggle);
-
-        Rectangle overlayRect = Vector2ToRect(Vector2(1. - spacing.x - smallButtonSize.x, (1. + largeButtonSize.y) / 2. + spacing.y), smallButtonSize);
-
-        for (auto overlay : magic_enum::enum_values<PlayerCam::Overlay>())
-        {
-            if (overlay == PlayerCam::Overlay::NONE)
-                continue;
-
-            bool isOverlayActive = GameManager::GetCamera().IsOverlay(overlay);
-            auto overlayToggle = std::make_shared<UiToggle>(overlayRect, isOverlayActive, [overlay](bool)
-                                                            { GameManager::GetCamera().ToggleOverlay(overlay); });
-            LinkToggleWithVisibility(overlayToggle, [overlay]() { return GameManager::GetCamera().IsOverlay(overlay); }, []() { return GameManager::GetCamera().IsUiClear(); });
-
-            UiManager::AddElement(std::format("OVERLAY_{}_TGL", magic_enum::enum_name(overlay)), overlayToggle);
-
-            overlayRect.y += smallButtonSize.y + spacing.y;
-        }
+    Vector2 overlayPos = {1.f - spacing.x - smallSize.x, (1.f + largeSize.y) / 2.f + spacing.y};
+    for (auto o : magic_enum::enum_values<PlayerCam::Overlay>())
+    {
+        if (o == PlayerCam::Overlay::NONE) continue;
+        AddIconButton(nullptr, Vector2ToRect(overlayPos, smallSize), std::format("OVERLAY_{}_TGL", magic_enum::enum_name(o)),
+                      [o]() { return GameManager::GetCamera().IsOverlay(o); }, [o](bool) { GameManager::GetCamera().ToggleOverlay(o); },
+                      "", {}, WHITE, []() { return GameManager::GetCamera().IsUiClear(); });
+        overlayPos.y += smallSize.y + spacing.y;
     }
 
-    { // InitializeEscapeMenu
-        const int buttonCount = 4;
-        const double buttonWidth = 1. / 12.;
-        const Vector2 spacing = Vector2ScreenScale(Vector2(DEFAULT_PADDING, DEFAULT_PADDING));
-        const double buttonHeight = 1. / 24.;
-        const double totalButtonHeight = buttonCount * buttonHeight + (buttonCount - 1) * spacing.y;
-
-        // Calculate menu dimensions
-        const Vector2 menuSize = Vector2(buttonWidth, totalButtonHeight) + spacing * 2;
-
-        const Vector2 menuPos = Vector2(.5, .5) - menuSize / 2.;
-
-        // Darken the background to draw focus to the UI
-        auto escMenu = std::make_shared<UiPanel>(Rectangle(0, 0, 1, 1), Fade(BLACK, .2));
-        LinkVisibility(escMenu, []() { return GameManager::GetCamera().IsUiState(PlayerCam::UiState::ESC_MENU); });
-
-        // Draw a rectangle for the menu background
-        auto menuBackground = std::make_shared<UiPanel>(Vector2ToRect(menuPos, menuSize), Fade(BLACK, .5));
-        escMenu->AddChild(menuBackground);
-
-        // Dynamically position buttons in the center of the menu
-        const double firstButtonPosY = menuPos.y + (menuSize.y - totalButtonHeight) / 2.;
-        const double buttonPosX = .5 - buttonWidth / 2.;
-
-        Rectangle resumeButtonRect = Rectangle(buttonPosX, firstButtonPosY, buttonWidth, buttonHeight);
-        auto resumeButton = std::make_shared<UiButton>(resumeButtonRect, "Resume", []()
-                                                       { GameManager::GetCamera().SetUiState(PlayerCam::UiState::NONE); });
-        menuBackground->AddChild(resumeButton);
-
-        Rectangle settingsButtonRect = Rectangle(buttonPosX, firstButtonPosY + (buttonHeight + spacing.y), buttonWidth, buttonHeight);
-        auto settingsButton = std::make_shared<UiButton>(settingsButtonRect, "Settings", []()
-                                                         { GameManager::GetCamera().SetUiState(PlayerCam::UiState::SETTINGS_MENU); });
-        menuBackground->AddChild(settingsButton);
-
-        Rectangle mainMenuButtonRect = Rectangle(buttonPosX, firstButtonPosY + 2. * (buttonHeight + spacing.y), buttonWidth, buttonHeight);
-        auto mainMenuButton = std::make_shared<UiButton>(mainMenuButtonRect, "Main Menu", []()
-                                                         { GameManager::RequestStateChange(GameState::MAIN_MENU); });
-        menuBackground->AddChild(mainMenuButton);
-
-        Rectangle exitButtonRect = Rectangle(buttonPosX, firstButtonPosY + 3. * (buttonHeight + spacing.y), buttonWidth, buttonHeight);
-        auto exitButton = std::make_shared<UiButton>(exitButtonRect, "Exit", []()
-                                                     { GameManager::RequestStateChange(GameState::NONE); });
-        menuBackground->AddChild(exitButton);
-
-        UiManager::AddElement("ESC_MENU", escMenu);
-    }
-
+    // Escape Menu
+    const float escW = 1. / 12., escH = 1. / 24.;
+    const Vector2 escSize = Vector2(escW, 4 * escH + 3 * spacing.y) + spacing * 2;
+    const Vector2 escPos = Vector2(.5, .5) - escSize / 2.;
+    auto escMenu = std::make_shared<UiPanel>(Rectangle(0, 0, 1, 1), Fade(BLACK, .2));
+    LinkVisibility(escMenu, []() { return GameManager::GetCamera().IsUiState(PlayerCam::UiState::ESC_MENU); });
+    auto escBg = std::make_shared<UiPanel>(Vector2ToRect(escPos, escSize), Fade(BLACK, .5));
+    escMenu->AddChild(escBg);
+    AddButtonList(escBg, escPos + spacing, escW, escH, spacing.y, {
+        {"Resume", []() { GameManager::GetCamera().SetUiState(PlayerCam::UiState::NONE); }},
+        {"Settings", []() { GameManager::GetCamera().SetUiState(PlayerCam::UiState::SETTINGS_MENU); }},
+        {"Main Menu", []() { GameManager::RequestStateChange(GameState::MAIN_MENU); }},
+        {"Exit", []() { GameManager::RequestStateChange(GameState::NONE); }}
+    });
+    UiManager::AddElement("ESC_MENU", escMenu);
     InitializeSettingsMenu();
 
-    { // InitializeBuildWorldUi
-        const Vector2 SPACING = Vector2ScreenScale(Vector2(DEFAULT_PADDING, DEFAULT_PADDING));
-        const Vector2 BUTTON_SIZE = Vector2ScreenScale(Vector2(32, 32));
-        const Vector2 ICON_SIZE = BUTTON_SIZE * 3.f / 4.f;
-        const Vector2 ICON_OFFSET = (BUTTON_SIZE - ICON_SIZE) / 2.;
-        const Vector2 PANEL_SIZE = Vector2(.8, BUTTON_SIZE.y + SPACING.y * 2.);
-        const Vector2 PANEL_POS = Vector2(.5 - PANEL_SIZE.x / 2., 1. - PANEL_SIZE.y - SPACING.y);
+    // Symmetry Buttons
+    Vector2 panelPos = {.5f - .8f / 2.f, 1.f - (smallSize.y * 2 + spacing.y * 2) - spacing.y};
+    Vector2 symPos = {panelPos.x - smallSize.x - spacing.x, 1.f - spacing.y * 1.5f - smallSize.y};
+    auto addSym = [&](const std::string &id, auto get, auto tgl, Rectangle offset) {
+        AddIconButton(nullptr, Vector2ToRect(symPos, smallSize), id, get, [tgl](bool) { tgl(); }, "ICON", offset * TILE_SIZE, Fade(DARKGRAY, .8f),
+                      []() { return GameManager::IsInBuildMode() && GameManager::GetCamera().IsUiClear(); });
+        symPos.y -= smallSize.y + spacing.y;
+    };
+    addSym("BUILD_HOR_SYM_BTN", GameManager::IsHorizontalSymmetry, GameManager::ToggleHorizontalSymmetry, {6, 1, 1, 1});
+    addSym("BUILD_VER_SYM_BTN", GameManager::IsVerticalSymmetry, GameManager::ToggleVerticalSymmetry, {5, 1, 1, 1});
 
-        auto onHorizontalSymmetryToggle = [](bool)
-        { GameManager::ToggleHorizontalSymmetry(); };
-        Vector2 horizontalSymmetryPos = Vector2(PANEL_POS.x - BUTTON_SIZE.x - SPACING.x, 1.f - SPACING.y * 1.5f - BUTTON_SIZE.y);
-        auto horizontalSymmetryToggle = std::make_shared<UiToggle>(Vector2ToRect(horizontalSymmetryPos, BUTTON_SIZE), GameManager::IsHorizontalSymmetry(), onHorizontalSymmetryToggle);
-        LinkToggleWithVisibility(horizontalSymmetryToggle, []() { return GameManager::IsHorizontalSymmetry(); }, []() { return GameManager::IsInBuildMode() && GameManager::GetCamera().IsUiClear(); });
+    // Build Category Panel
+    auto buildCatPanel = std::make_shared<UiPanel>(Vector2ToRect(panelPos, {.8f, largeSize.y + spacing.y * 2}), Fade(BLACK, .5f));
+    LinkVisibility(buildCatPanel, []() { return GameManager::GetCamera().IsUiClear() && GameManager::IsInBuildMode(); });
+    UiManager::AddElement("BUILD_CATEGORY", buildCatPanel);
 
-        auto horizontalSymmetryIcon = std::make_shared<UiIcon>(Vector2ToRect(horizontalSymmetryPos + ICON_OFFSET, ICON_SIZE), "ICON", Rectangle(6, 1, 1, 1) * TILE_SIZE, Fade(DARKGRAY, .8));
-        horizontalSymmetryToggle->AddChild(horizontalSymmetryIcon);
-        UiManager::AddElement("BUILD_HOR_SYM_BTN", horizontalSymmetryToggle);
-
-        auto onVerticalSymmetryToggle = [](bool)
-        { GameManager::ToggleVerticalSymmetry(); };
-        Vector2 verticalTogglePos = horizontalSymmetryPos - Vector2(0, BUTTON_SIZE.y + SPACING.y);
-        auto verticalSymmetryToggle = std::make_shared<UiToggle>(Vector2ToRect(verticalTogglePos, BUTTON_SIZE), GameManager::IsVerticalSymmetry(), onVerticalSymmetryToggle);
-        LinkToggleWithVisibility(verticalSymmetryToggle, []() { return GameManager::IsVerticalSymmetry(); }, []() { return GameManager::IsInBuildMode() && GameManager::GetCamera().IsUiClear(); });
-
-        auto verticalSymIcon = std::make_shared<UiIcon>(Vector2ToRect(verticalTogglePos + ICON_OFFSET, ICON_SIZE), "ICON", Rectangle(5, 1, 1, 1) * TILE_SIZE, Fade(DARKGRAY, .8));
-        verticalSymmetryToggle->AddChild(verticalSymIcon);
-        UiManager::AddElement("BUILD_VER_SYM_BTN", verticalSymmetryToggle);
+    Vector2 catPos = panelPos + spacing;
+    struct CatCfg { TileDef::Category c; Vector2Int off; };
+    for (auto &c : {CatCfg{TileDef::Category::STRUCTURE, {1, 0}}, CatCfg{TileDef::Category::POWER, {2, 0}}, CatCfg{TileDef::Category::OXYGEN, {0, 0}}})
+    {
+        AddIconButton(buildCatPanel, Vector2ToRect(catPos, largeSize), "", [c]() { return GameManager::GetSelectedCategory() == c.c; },
+                      [c](bool) { ToggleBuildCategory(c.c); }, "ICON", Rectangle((float)c.off.x, (float)c.off.y, 1, 1) * TILE_SIZE, Fade(DARKGRAY, .8f));
+        catPos.x += largeSize.x + spacing.x * 2;
     }
+    AddIconButton(buildCatPanel, Vector2ToRect(catPos, largeSize), "", GameManager::IsInCancelMode,
+                  [](bool s) { GameManager::SetCancelMode(s); if (s) GameManager::SetBuildTileId(""); },
+                  "ICON", Rectangle{7, 1, 1, 1} * TILE_SIZE, Fade(DARKGRAY, .8f),
+                  []() { return GameManager::IsInBuildMode() && GameManager::GetCamera().IsUiClear(); });
 
-    { // InitializeBuildCategory
-        const Vector2 SPACING = Vector2ScreenScale(Vector2(DEFAULT_PADDING, DEFAULT_PADDING));
-        const Vector2 BUTTON_SIZE = Vector2ScreenScale(Vector2(64, 64));
-        const Vector2 ICON_SIZE = BUTTON_SIZE * 3.f / 4.f;
-        const Vector2 ICON_OFFSET = (BUTTON_SIZE - ICON_SIZE) / 2.;
-
-        const Vector2 PANEL_SIZE = Vector2(.8, BUTTON_SIZE.y + SPACING.y * 2.);
-        const Vector2 PANEL_POS = Vector2(.5 - PANEL_SIZE.x / 2., 1. - PANEL_SIZE.y - SPACING.y);
-        auto buildCategoryPanel = std::make_shared<UiPanel>(Vector2ToRect(PANEL_POS, PANEL_SIZE), Fade(BLACK, .5));
-        LinkVisibility(buildCategoryPanel, []() { return GameManager::GetCamera().IsUiClear() && GameManager::IsInBuildMode(); });
-        UiManager::AddElement("BUILD_CATEGORY", buildCategoryPanel);
-
-        // Category buttons
-        Vector2 buttonPos = PANEL_POS + SPACING;
-        AddBuildCategoryToggle(buildCategoryPanel, buttonPos, BUTTON_SIZE, TileDef::Category::STRUCTURE, Vector2Int(1, 0));
-
-        buttonPos.x += BUTTON_SIZE.x + SPACING.x * 2.;
-        AddBuildCategoryToggle(buildCategoryPanel, buttonPos, BUTTON_SIZE, TileDef::Category::POWER, Vector2Int(2, 0));
-
-        buttonPos.x += BUTTON_SIZE.x + SPACING.x * 2.;
-        AddBuildCategoryToggle(buildCategoryPanel, buttonPos, BUTTON_SIZE, TileDef::Category::OXYGEN, Vector2Int(0, 0));
-
-        buttonPos.x += BUTTON_SIZE.x + SPACING.x * 2.;
-        auto cancelButton = std::make_shared<UiToggle>(Vector2ToRect(buttonPos, BUTTON_SIZE),
-                                                       GameManager::IsInCancelMode(), [](bool state)
-                                                       { GameManager::SetCancelMode(state); if (state) GameManager::SetBuildTileId(""); });
-        LinkToggleWithVisibility(cancelButton, []() { return GameManager::IsInCancelMode(); }, []() { return GameManager::IsInBuildMode() && GameManager::GetCamera().IsUiClear(); });
-        buildCategoryPanel->AddChild(cancelButton);
-        auto cancelIcon = std::make_shared<UiIcon>(Vector2ToRect(buttonPos + ICON_OFFSET, ICON_SIZE),
-                                                   "ICON", Rectangle(7, 1, 1, 1) * TILE_SIZE, Fade(DARKGRAY, .8));
-        cancelButton->AddChild(cancelIcon);
-    }
-
-    { // InitializeBuildMenu
-        // Panel right above the build category panel
-        const Vector2 SPACING = Vector2ScreenScale(Vector2(DEFAULT_PADDING, DEFAULT_PADDING));
-        const Vector2 BUTTON_SIZE = Vector2ScreenScale(Vector2(64, 64));
-        const Vector2 PANEL_SIZE = Vector2(.8, BUTTON_SIZE.y + SPACING.y * 2.);
-        const Vector2 PANEL_POS = Vector2(.5 - PANEL_SIZE.x / 2., 1. - PANEL_SIZE.y - SPACING.y * 4. - BUTTON_SIZE.y);
-
-        auto buildMenuPanel = std::make_shared<UiPanel>(Vector2ToRect(PANEL_POS, PANEL_SIZE), Fade(BLACK, .5));
-        LinkVisibility(buildMenuPanel, []() { return GameManager::GetCamera().IsUiClear() && GameManager::IsInBuildMode() && GameManager::GetSelectedCategory() != TileDef::Category::NONE; });
-        UiManager::AddElement("BUILD_MENU", buildMenuPanel);
-    }
+    // Build Menu Panel
+    auto buildMenuPanel = std::make_shared<UiPanel>(Vector2ToRect({.5f - .8f / 2.f, 1.f - (largeSize.y + spacing.y * 2) - spacing.y * 4 - largeSize.y}, {.8f, largeSize.y + spacing.y * 2}), Fade(BLACK, .5f));
+    LinkVisibility(buildMenuPanel, []() { return GameManager::GetCamera().IsUiClear() && GameManager::IsInBuildMode() && GameManager::GetSelectedCategory() != TileDef::Category::NONE; });
+    UiManager::AddElement("BUILD_MENU", buildMenuPanel);
 }
 
 std::shared_ptr<UiElement> UiManager::FindUiElementAtPos(const Vector2 &pos)
