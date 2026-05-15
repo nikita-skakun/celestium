@@ -1,13 +1,13 @@
 #pragma once
 
 void HandleBuildMode();
-void HandleCrewHover();
+void HandlePawnHover();
 void HandleMouseDrag();
-void HandleCrewSelection();
-void AssignCrewActions();
-void HandleCrewActions();
-void HandleCrewEnvironment();
-void UpdateCrewCurrentTile();
+void HandlePawnSelection();
+void AssignPawnActions();
+void HandlePawnActions();
+void HandlePawnEnvironment();
+void UpdatePawnCurrentTile();
 void UpdatePowerGrids();
 void UpdateTiles();
 void UpdateEnvironmentalEffects();

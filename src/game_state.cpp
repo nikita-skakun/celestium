@@ -1,8 +1,8 @@
-#include "crew.hpp"
 #include "direction.hpp"
 #include "fixed_update.hpp"
 #include "game_server.hpp"
 #include "game_state.hpp"
+#include "pawn.hpp"
 #include "render_snapshot.hpp"
 #include "station.hpp"
 #include "ui_manager.hpp"
@@ -133,14 +133,14 @@ void GameManager::PrepareTestWorld()
     manager.server->PrepareTestWorld();
 }
 
-void GameManager::ToggleSelectedCrew(uint64_t crewId)
+void GameManager::ToggleSelectedPawn(uint64_t pawnId)
 {
-    auto &selectedCrewList = GetInstance().selectedCrewList;
-    const auto crewIter = std::find(selectedCrewList.begin(), selectedCrewList.end(), crewId);
-    if (crewIter == selectedCrewList.end())
-        selectedCrewList.push_back(crewId);
+    auto &selectedPawnList = GetInstance().selectedPawnList;
+    const auto pawnIter = std::find(selectedPawnList.begin(), selectedPawnList.end(), pawnId);
+    if (pawnIter == selectedPawnList.end())
+        selectedPawnList.push_back(pawnId);
     else
-        selectedCrewList.erase(crewIter);
+        selectedPawnList.erase(pawnIter);
 }
 
 void GameManager::ToggleSelectedCategory(TileDef::Category category)

@@ -1,12 +1,12 @@
 #include "action.hpp"
 #include "asset_manager.hpp"
 #include "component.hpp"
-#include "crew.hpp"
 #include "env_effect.hpp"
 #include "game_server.hpp"
 #include "game_state.hpp"
 #include "lua_bindings.hpp"
 #include "particle_system.hpp"
+#include "pawn.hpp"
 #include "planned_task.hpp"
 #include "power_grid.hpp"
 #include "render_snapshot.hpp"
@@ -428,30 +428,30 @@ void DrawEnvironmentalEffects()
     }
 }
 
-void DrawCrewCircle(const std::shared_ptr<const Crew> &crew, const Vector2 &drawPosition, bool isSelected)
+void DrawPawnCircle(const std::shared_ptr<const Pawn> &pawn, const Vector2 &drawPosition, bool isSelected)
 {
     auto &camera = GameManager::GetCamera();
-    Vector2 crewScreenPos = GameManager::WorldToScreen(drawPosition);
+    Vector2 pawnScreenPos = GameManager::WorldToScreen(drawPosition);
 
     if (isSelected)
-        DrawCircleV(crewScreenPos, (CREW_RADIUS + OUTLINE_SIZE) * camera.GetZoom(), OUTLINE_COLOR);
+        DrawCircleV(pawnScreenPos, (PAWN_RADIUS + OUTLINE_SIZE) * camera.GetZoom(), OUTLINE_COLOR);
 
-    DrawCircleV(crewScreenPos, CREW_RADIUS * camera.GetZoom(), crew->IsAlive() ? crew->GetColor() : GRAY);
+    DrawCircleV(pawnScreenPos, PAWN_RADIUS * camera.GetZoom(), pawn->IsAlive() ? pawn->GetColor() : GRAY);
 }
 
 /**
- * Draws the crew members on the screen, accounting for their movement.
+ * Draws the pawn members on the screen, accounting for their movement.
  */
-void DrawCrew()
+void DrawPawn()
 {
     auto snapshot = GameManager::GetRenderSnapshot();
     if (!snapshot)
         return;
-    for (const auto &kv : snapshot->crewList)
+    for (const auto &kv : snapshot->pawnList)
     {
-        const auto &crew = kv.second;
-        Vector2 drawPosition = crew->GetPosition();
-        auto &actionQueue = crew->GetReadOnlyActionQueue();
+        const auto &pawn = kv.second;
+        Vector2 drawPosition = pawn->GetPosition();
+        auto &actionQueue = pawn->GetReadOnlyActionQueue();
 
         if (!actionQueue.empty() && actionQueue.front()->GetType() == Action::Type::MOVE)
         {
@@ -459,11 +459,11 @@ void DrawCrew()
 
             if (!GameManager::IsInBuildMode() && !moveAction->path.empty())
             {
-                DrawPath(moveAction->path, crew->GetPosition());
+                DrawPath(moveAction->path, pawn->GetPosition());
                 Vector2 nextPosition = moveAction->path.front();
 
-                const float moveDelta = static_cast<float>(snapshot->timeSinceFixedUpdate * CREW_MOVE_SPEED);
-                const float distToNext = Vector2Distance(crew->GetPosition(), nextPosition);
+                const float moveDelta = static_cast<float>(snapshot->timeSinceFixedUpdate * PAWN_MOVE_SPEED);
+                const float distToNext = Vector2Distance(pawn->GetPosition(), nextPosition);
 
                 if (distToNext <= moveDelta)
                 {
@@ -478,33 +478,33 @@ void DrawCrew()
                 else
                 {
                     bool canPath = true;
-                    if (std::shared_ptr<Station> station = crew->GetCurrentTile()->GetStation())
+                    if (std::shared_ptr<Station> station = pawn->GetCurrentTile()->GetStation())
                         canPath = station->IsDoorFullyOpenAtPos(ToVector2Int(nextPosition / TILE_SIZE));
 
                     if (canPath)
-                        drawPosition += Vector2Normalize(nextPosition - crew->GetPosition()) * moveDelta;
+                        drawPosition += Vector2Normalize(nextPosition - pawn->GetPosition()) * moveDelta;
                 }
             }
         }
 
-        bool isSelected = Find(GameManager::GetSelectedCrew(), crew->GetInstanceId()).has_value();
-        DrawCrewCircle(crew, drawPosition, isSelected);
+        bool isSelected = Find(GameManager::GetSelectedPawn(), pawn->GetInstanceId()).has_value();
+        DrawPawnCircle(pawn, drawPosition, isSelected);
     }
 }
 
-void DrawCrewActionProgress()
+void DrawPawnActionProgress()
 {
     auto snapshot = GameManager::GetRenderSnapshot();
     if (!snapshot)
         return;
 
-    for (const auto &kv : snapshot->crewList)
+    for (const auto &kv : snapshot->pawnList)
     {
-        const auto &crew = kv.second;
-        if (!crew->IsAlive() || crew->GetReadOnlyActionQueue().empty())
+        const auto &pawn = kv.second;
+        if (!pawn->IsAlive() || pawn->GetReadOnlyActionQueue().empty())
             continue;
 
-        const auto &action = crew->GetReadOnlyActionQueue().front();
+        const auto &action = pawn->GetReadOnlyActionQueue().front();
 
         switch (action->GetType())
         {
@@ -637,7 +637,7 @@ void DrawTooltip(const std::string &tooltip, const Vector2 &pos, float padding, 
 }
 
 /**
- * Draws a tooltip about the crew member or station tile under the mouse cursor.
+ * Draws a tooltip about the pawn member or station tile under the mouse cursor.
  */
 void DrawMainTooltip()
 {
@@ -651,12 +651,12 @@ void DrawMainTooltip()
     if (!GameManager::IsInBuildMode())
     {
         Vector2 worldMousePos = GameManager::GetWorldMousePos() - Vector2(.5, .5);
-        auto hoveredCrew = snapshot->GetCrewAtPosition(worldMousePos);
-        for (const auto &crew : hoveredCrew)
+        auto hoveredPawn = snapshot->GetPawnAtPosition(worldMousePos);
+        for (const auto &pawn : hoveredPawn)
         {
             if (!hoverText.empty())
                 hoverText += "\n";
-            hoverText += crew->GetInfo();
+            hoverText += pawn->GetInfo();
         }
     }
 

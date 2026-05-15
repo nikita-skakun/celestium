@@ -54,9 +54,9 @@ int main()
                 }
                 else
                 {
-                    HandleCrewHover();
-                    HandleCrewSelection();
-                    AssignCrewActions();
+                    HandlePawnHover();
+                    HandlePawnSelection();
+                    AssignPawnActions();
                     HandleMouseDrag();
                 }
             }
@@ -70,9 +70,9 @@ int main()
 
             if (!GameManager::IsInBuildMode())
             {
-                DrawCrew();
+                DrawPawn();
                 DrawEnvironmentalEffects();
-                DrawCrewActionProgress();
+                DrawPawnActionProgress();
             }
             else
             {

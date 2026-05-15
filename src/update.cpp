@@ -1,9 +1,9 @@
 #include "action.hpp"
 #include "component.hpp"
-#include "crew.hpp"
 #include "env_effect.hpp"
 #include "game_server.hpp"
 #include "game_state.hpp"
+#include "pawn.hpp"
 #include "planned_task.hpp"
 #include "power_grid.hpp"
 #include "render_snapshot.hpp"
@@ -83,25 +83,25 @@ void HandleBuildMode()
         HandleDeleteTile(station);
 }
 
-void HandleCrewHover()
+void HandlePawnHover()
 {
     auto snapshot = GameManager::GetRenderSnapshot();
     if (!snapshot)
         return;
-    const auto &crewList = snapshot->crewList;
+    const auto &pawnList = snapshot->pawnList;
     const Vector2 worldMousePos = GameManager::GetWorldMousePos() - Vector2(.5, .5);
-    const float crewSize = CREW_RADIUS / TILE_SIZE;
-    const float crewSizeSq = crewSize * crewSize;
+    const float pawnSize = PAWN_RADIUS / TILE_SIZE;
+    const float pawnSizeSq = pawnSize * pawnSize;
 
-    GameManager::ClearHoveredCrew();
+    GameManager::ClearHoveredPawn();
 
-    for (const auto &entry : crewList)
+    for (const auto &entry : pawnList)
     {
-        const auto &crew = entry.second;
-        if (!crew || Vector2DistanceSq(worldMousePos, crew->GetPosition()) > crewSizeSq)
+        const auto &pawn = entry.second;
+        if (!pawn || Vector2DistanceSq(worldMousePos, pawn->GetPosition()) > pawnSizeSq)
             continue;
 
-        GameManager::AddHoveredCrew(crew->GetInstanceId());
+        GameManager::AddHoveredPawn(pawn->GetInstanceId());
     }
 }
 
@@ -141,7 +141,7 @@ void HandleMouseDrag()
     HandleMouseDragEnd();
 }
 
-void HandleCrewSelection()
+void HandlePawnSelection()
 {
     if (!IsMouseButtonReleased(MOUSE_LEFT_BUTTON))
         return;
@@ -151,119 +151,119 @@ void HandleCrewSelection()
         return;
 
     if (!IsKeyDown(KEY_LEFT_SHIFT))
-        GameManager::ClearSelectedCrew();
+        GameManager::ClearSelectedPawn();
     if (camera.GetDragType() == PlayerCam::DragType::SELECT)
     {
         auto snapshot = GameManager::GetRenderSnapshot();
         if (!snapshot)
             return;
-        auto &crewList = snapshot->crewList;
-        for (const auto &entry : crewList)
+        auto &pawnList = snapshot->pawnList;
+        for (const auto &entry : pawnList)
         {
-            const auto &crew = entry.second;
-            bool isWithinRect = IsVector2WithinRect(camera.GetDragRect(), crew->GetPosition() + Vector2(.5, .5));
-            if (!crew || !isWithinRect)
+            const auto &pawn = entry.second;
+            bool isWithinRect = IsVector2WithinRect(camera.GetDragRect(), pawn->GetPosition() + Vector2(.5, .5));
+            if (!pawn || !isWithinRect)
                 continue;
 
-            GameManager::AddSelectedCrew(crew->GetInstanceId());
+            GameManager::AddSelectedPawn(pawn->GetInstanceId());
         }
 
         return;
     }
 
-    const auto &hoveredCrew = GameManager::GetHoveredCrew();
-    if (hoveredCrew.empty())
+    const auto &hoveredPawn = GameManager::GetHoveredPawn();
+    if (hoveredPawn.empty())
         return;
 
-    GameManager::ToggleSelectedCrew(hoveredCrew.at(0));
+    GameManager::ToggleSelectedPawn(hoveredPawn.at(0));
 }
 
-void AssignCrewActions()
+void AssignPawnActions()
 {
     auto snapshot = GameManager::GetRenderSnapshot();
     if (!snapshot)
         return;
 
-    const auto &selectedCrew = GameManager::GetSelectedCrew();
-    if (IsMouseButtonPressed(MOUSE_RIGHT_BUTTON) && !selectedCrew.empty())
+    const auto &selectedPawn = GameManager::GetSelectedPawn();
+    if (IsMouseButtonPressed(MOUSE_RIGHT_BUTTON) && !selectedPawn.empty())
     {
         Vector2Int worldPos = ToVector2Int(GameManager::GetWorldMousePos());
 
-        for (const auto crewId : selectedCrew)
+        for (const auto pawnId : selectedPawn)
         {
-            std::shared_ptr<const Crew> snapshotCrew = nullptr;
-            auto itCrew = snapshot->crewList.find(crewId);
-            if (itCrew != snapshot->crewList.end())
-                snapshotCrew = itCrew->second;
+            std::shared_ptr<const Pawn> snapshotPawn = nullptr;
+            auto itPawn = snapshot->pawnList.find(pawnId);
+            if (itPawn != snapshot->pawnList.end())
+                snapshotPawn = itPawn->second;
 
-            if (!snapshotCrew || !snapshotCrew->IsAlive() || !snapshotCrew->GetCurrentTile())
+            if (!snapshotPawn || !snapshotPawn->IsAlive() || !snapshotPawn->GetCurrentTile())
                 continue;
 
             if (!IsKeyDown(KEY_LEFT_SHIFT))
-                GameManager::GetServer().ClearCrewActions(snapshotCrew->GetInstanceId());
+                GameManager::GetServer().ClearPawnActions(snapshotPawn->GetInstanceId());
 
-            GameManager::GetServer().SendPlayerAction(snapshotCrew->GetInstanceId(), std::make_unique<MoveAction>(ToVector2(worldPos)));
+            GameManager::GetServer().SendPlayerAction(snapshotPawn->GetInstanceId(), std::make_unique<MoveAction>(ToVector2(worldPos)));
         }
     }
 }
 
-void HandleCrewActions()
+void HandlePawnActions()
 {
-    const auto &crewList = GameManager::GetServer().GetCrewList();
-    for (const auto &entry : crewList)
+    const auto &pawnList = GameManager::GetServer().GetPawnList();
+    for (const auto &entry : pawnList)
     {
-        const auto &crew = entry.second;
-        if (!crew->IsAlive() || crew->GetActionQueue().empty())
+        const auto &pawn = entry.second;
+        if (!pawn->IsAlive() || pawn->GetActionQueue().empty())
             continue;
 
-        const auto &currentAction = crew->GetActionQueue().front();
-        if (currentAction->Update(crew))
-            crew->RemoveFirstAction();
+        const auto &currentAction = pawn->GetActionQueue().front();
+        if (currentAction->Update(pawn))
+            pawn->RemoveFirstAction();
     }
 }
 
-void HandleCrewEnvironment()
+void HandlePawnEnvironment()
 {
-    const auto &crewList = GameManager::GetServer().GetCrewList();
-    for (const auto &entry : crewList)
+    const auto &pawnList = GameManager::GetServer().GetPawnList();
+    for (const auto &entry : pawnList)
     {
-        const auto &crew = entry.second;
-        if (!crew->IsAlive())
+        const auto &pawn = entry.second;
+        if (!pawn->IsAlive())
             continue;
 
-        crew->ConsumeOxygen(FIXED_DELTA_TIME);
-        auto tile = crew->GetCurrentTile();
+        pawn->ConsumeOxygen(FIXED_DELTA_TIME);
+        auto tile = pawn->GetCurrentTile();
         if (!tile)
             continue;
 
         if (auto oxygen = tile->GetComponent<OxygenComponent>())
-            crew->RefillOxygen(FIXED_DELTA_TIME, oxygen->GetOxygenLevel());
+            pawn->RefillOxygen(FIXED_DELTA_TIME, oxygen->GetOxygenLevel());
 
         auto effects = tile->GetStation()->GetEffectsAtPosition(tile->GetPosition());
         for (const auto &effect : effects)
-            effect->EffectCrew(crew, FIXED_DELTA_TIME);
+            effect->EffectPawn(pawn, FIXED_DELTA_TIME);
     }
 }
 
-void UpdateCrewCurrentTile()
+void UpdatePawnCurrentTile()
 {
     auto station = GameManager::GetServer().GetStation();
     if (!station || station->tileMap.empty())
         return;
 
-    const auto &crewList = GameManager::GetServer().GetCrewList();
-    for (const auto &entry : crewList)
+    const auto &pawnList = GameManager::GetServer().GetPawnList();
+    for (const auto &entry : pawnList)
     {
-        const auto &crew = entry.second;
-        if (!crew->IsAlive())
+        const auto &pawn = entry.second;
+        if (!pawn->IsAlive())
             continue;
 
-        Vector2Int floorCrewPos = ToVector2Int(crew->GetPosition());
+        Vector2Int floorPawnPos = ToVector2Int(pawn->GetPosition());
 
-        if (crew->GetCurrentTile() && crew->GetCurrentTile()->GetPosition() == floorCrewPos)
+        if (pawn->GetCurrentTile() && pawn->GetCurrentTile()->GetPosition() == floorPawnPos)
             continue;
 
-        crew->SetCurrentTile(station->GetTileAtPosition(floorCrewPos, TileDef::Height::FLOOR));
+        pawn->SetCurrentTile(station->GetTileAtPosition(floorPawnPos, TileDef::Height::FLOOR));
     }
 }
 

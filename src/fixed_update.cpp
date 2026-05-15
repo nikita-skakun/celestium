@@ -1,9 +1,9 @@
-#include "crew.hpp"
 #include "direction.hpp"
 #include "env_effect.hpp"
 #include "fixed_update.hpp"
 #include "game_server.hpp"
 #include "game_state.hpp"
+#include "pawn.hpp"
 #include "render_snapshot.hpp"
 #include "station.hpp"
 #include "tile.hpp"
@@ -32,10 +32,10 @@ void FixedUpdate(double &timeSinceFixedUpdate)
                 std::unique_lock<std::mutex> lock(updateMutex);
 
                 GameManager::GetServer().ProcessPendingActions();
-                GameManager::GetServer().HandleAutonomousCrewDecisions();
-                HandleCrewActions();
-                HandleCrewEnvironment();
-                UpdateCrewCurrentTile();
+                GameManager::GetServer().HandleAutonomousPawnDecisions();
+                HandlePawnActions();
+                HandlePawnEnvironment();
+                UpdatePawnCurrentTile();
                 UpdateEnvironmentalEffects();
                 UpdatePowerGrids();
                 UpdateTiles();
@@ -43,9 +43,9 @@ void FixedUpdate(double &timeSinceFixedUpdate)
                 // Build and swap new RenderSnapshot for render thread
                 auto snapshot = std::make_shared<RenderSnapshot>();
                 snapshot->station = std::static_pointer_cast<const Station>(GameManager::GetServer().GetStation());
-                snapshot->crewList.clear();
-                for (const auto &entry : GameManager::GetServer().GetCrewList())
-                    snapshot->crewList[entry.first] = std::static_pointer_cast<const Crew>(entry.second);
+                snapshot->pawnList.clear();
+                for (const auto &entry : GameManager::GetServer().GetPawnList())
+                    snapshot->pawnList[entry.first] = std::static_pointer_cast<const Pawn>(entry.second);
                 snapshot->timeSinceFixedUpdate = timeSinceFixedUpdate;
                 GameManager::SetRenderSnapshot(snapshot);
 

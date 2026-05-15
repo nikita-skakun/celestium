@@ -2,7 +2,7 @@
 #include "def_manager.hpp"
 #include <atomic>
 
-struct Crew;
+struct Pawn;
 struct PlayerCam;
 struct Station;
 
@@ -30,7 +30,7 @@ public:
 
     uint64_t GetInstanceId() const { return instanceId; }
     std::string GetInfo() const;
-    virtual void EffectCrew(const std::shared_ptr<Crew> &crew, float deltaTime) const = 0;
+    virtual void EffectPawn(const std::shared_ptr<Pawn> &pawn, float deltaTime) const = 0;
     virtual void Update(const std::shared_ptr<Station> &station, size_t index) = 0;
 
     float GetRoundedSize() const { return std::ceil(size * effectDef->GetSizeIncrements()) / (float)effectDef->GetSizeIncrements(); }
@@ -47,7 +47,7 @@ struct FireEffect : Effect
 
     explicit FireEffect(const Vector2Int &position, float size = 0) : Effect("FIRE", position, size) {}
 
-    void EffectCrew(const std::shared_ptr<Crew> &crew, float deltaTime) const override;
+    void EffectPawn(const std::shared_ptr<Pawn> &pawn, float deltaTime) const override;
     void Update(const std::shared_ptr<Station> &station, size_t index) override;
 
     float GetOxygenConsumption() const { return OXYGEN_CONSUMPTION_PER_SECOND * GetRoundedSize(); }
@@ -57,6 +57,6 @@ struct FoamEffect : Effect
 {
     explicit FoamEffect(const Vector2Int &position, float size = 0) : Effect("FOAM", position, size) {}
 
-    void EffectCrew(const std::shared_ptr<Crew> &, float) const override {}
+    void EffectPawn(const std::shared_ptr<Pawn> &, float) const override {}
     void Update(const std::shared_ptr<Station> &station, size_t index) override;
 };

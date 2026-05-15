@@ -1,7 +1,7 @@
 #include "action.hpp"
-#include "crew.hpp"
+#include "pawn.hpp"
 
-std::string Crew::GetActionName() const
+std::string Pawn::GetActionName() const
 {
     if (actionQueue.empty())
         return "Idle";
@@ -9,7 +9,7 @@ std::string Crew::GetActionName() const
     return actionQueue.front()->GetActionName();
 }
 
-std::string Crew::GetInfo() const
+std::string Pawn::GetInfo() const
 {
     std::string info = " - " + GetName();
 
@@ -27,4 +27,4 @@ std::string Crew::GetInfo() const
     return info;
 }
 
-std::atomic<uint64_t> Crew::nextInstanceId{1};
+std::atomic<uint64_t> Pawn::nextInstanceId{1};

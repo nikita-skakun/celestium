@@ -32,8 +32,8 @@ private:
     bool verticalSymmetry = false;
     TileDef::Category selectedCategory = TileDef::Category::NONE;
     std::string buildTileId = "";
-    std::vector<uint64_t> hoveredCrewList;
-    std::vector<uint64_t> selectedCrewList;
+    std::vector<uint64_t> hoveredPawnList;
+    std::vector<uint64_t> selectedPawnList;
     Vector2 originalScreenSize;
 
     // Double-buffered render state
@@ -65,14 +65,14 @@ public:
     static void RequestStateChange(GameState newState) { GetInstance().pendingState = newState; }
     static void ApplyPendingState();
 
-    static const std::vector<uint64_t> &GetHoveredCrew() { return GetInstance().hoveredCrewList; }
-    static void ClearHoveredCrew() { GetInstance().hoveredCrewList.clear(); }
-    static void AddHoveredCrew(uint64_t crewId) { GetInstance().hoveredCrewList.push_back(crewId); }
+    static const std::vector<uint64_t> &GetHoveredPawn() { return GetInstance().hoveredPawnList; }
+    static void ClearHoveredPawn() { GetInstance().hoveredPawnList.clear(); }
+    static void AddHoveredPawn(uint64_t pawnId) { GetInstance().hoveredPawnList.push_back(pawnId); }
 
-    static const std::vector<uint64_t> &GetSelectedCrew() { return GetInstance().selectedCrewList; }
-    static void ClearSelectedCrew() { GetInstance().selectedCrewList.clear(); }
-    static void AddSelectedCrew(uint64_t crewId) { GetInstance().selectedCrewList.push_back(crewId); }
-    static void ToggleSelectedCrew(uint64_t crewId);
+    static const std::vector<uint64_t> &GetSelectedPawn() { return GetInstance().selectedPawnList; }
+    static void ClearSelectedPawn() { GetInstance().selectedPawnList.clear(); }
+    static void AddSelectedPawn(uint64_t pawnId) { GetInstance().selectedPawnList.push_back(pawnId); }
+    static void ToggleSelectedPawn(uint64_t pawnId);
 
     static TileDef::Category GetSelectedCategory() { return GetInstance().selectedCategory; }
     static void ToggleSelectedCategory(TileDef::Category category);

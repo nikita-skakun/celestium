@@ -1,7 +1,7 @@
 #include "component.hpp"
-#include "crew.hpp"
 #include "env_effect.hpp"
 #include "lua_bindings.hpp"
+#include "pawn.hpp"
 #include "station.hpp"
 #include "tile.hpp"
 
@@ -28,9 +28,9 @@ std::string Effect::GetInfo() const
     return effectInfo;
 }
 
-void FireEffect::EffectCrew(const std::shared_ptr<Crew> &crew, float deltaTime) const
+void FireEffect::EffectPawn(const std::shared_ptr<Pawn> &pawn, float deltaTime) const
 {
-    crew->SetHealth(crew->GetHealth() - DAMAGE_PER_SECOND * deltaTime);
+    pawn->SetHealth(pawn->GetHealth() - DAMAGE_PER_SECOND * deltaTime);
 }
 
 void FireEffect::Update(const std::shared_ptr<Station> &station, size_t index)

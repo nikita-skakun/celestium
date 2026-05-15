@@ -1,23 +1,23 @@
 #include "action.hpp"
 #include "astar.hpp"
 #include "component.hpp"
-#include "crew.hpp"
+#include "pawn.hpp"
 #include "planned_task.hpp"
 #include "station.hpp"
 #include "tile.hpp"
 
-bool MoveAction::Update(const std::shared_ptr<Crew> &crew)
+bool MoveAction::Update(const std::shared_ptr<Pawn> &pawn)
 {
-    if (!crew)
+    if (!pawn)
         return true;
 
-    auto station = crew->GetCurrentTile()->GetStation();
+    auto station = pawn->GetCurrentTile()->GetStation();
     if (!station)
         return true;
 
     if (path.empty())
     {
-        path = FindPath(crew->GetPosition(), targetPosition, station->navPolygons, 
+        path = FindPath(pawn->GetPosition(), targetPosition, station->navPolygons, 
             [](const ConvexPolygon::Link& link) {
                 if (auto doorTile = link.door.lock()) {
                     return doorTile->IsActive(); // Only path through powered doors
@@ -27,22 +27,22 @@ bool MoveAction::Update(const std::shared_ptr<Crew> &crew)
 
         if (path.empty())
         {
-            TraceLog(LOG_INFO, "MoveAction: FindPath returned empty. Target: (%f, %f), Pos: (%f, %f)", targetPosition.x, targetPosition.y, crew->GetPosition().x, crew->GetPosition().y);
+            TraceLog(LOG_INFO, "MoveAction: FindPath returned empty. Target: (%f, %f), Pos: (%f, %f)", targetPosition.x, targetPosition.y, pawn->GetPosition().x, pawn->GetPosition().y);
             return true;
         }
     }
 
-    const float moveDelta = CREW_MOVE_SPEED * FIXED_DELTA_TIME;
+    const float moveDelta = PAWN_MOVE_SPEED * FIXED_DELTA_TIME;
     Vector2 nextWaypoint = path.front();
-    Vector2 dir = Vector2Normalize(nextWaypoint - crew->GetPosition());
+    Vector2 dir = Vector2Normalize(nextWaypoint - pawn->GetPosition());
     
     // Check for door at current position or slightly ahead
     std::shared_ptr<Tile> doorTile = nullptr;
-    Vector2Int currentTilePos = {(int)std::floor(crew->GetPosition().x + 0.5f), (int)std::floor(crew->GetPosition().y + 0.5f)};
+    Vector2Int currentTilePos = {(int)std::floor(pawn->GetPosition().x + 0.5f), (int)std::floor(pawn->GetPosition().y + 0.5f)};
     doorTile = station->GetTileWithComponentAtPosition(currentTilePos, ComponentType::DOOR);
     
     if (!doorTile) {
-        Vector2 checkPos = crew->GetPosition() + dir * 0.6f;
+        Vector2 checkPos = pawn->GetPosition() + dir * 0.6f;
         Vector2Int checkTilePos = {(int)std::floor(checkPos.x + 0.5f), (int)std::floor(checkPos.y + 0.5f)};
         doorTile = station->GetTileWithComponentAtPosition(checkTilePos, ComponentType::DOOR);
     }
@@ -51,22 +51,22 @@ bool MoveAction::Update(const std::shared_ptr<Crew> &crew)
     {
         if (auto door = doorTile->GetComponent<DoorComponent>())
         {
-            door->Open(1.0f / CREW_MOVE_SPEED);
+            door->Open(1.0f / PAWN_MOVE_SPEED);
 
             if (!door->IsOpen())
                 return false; // Wait for the door to be fully open
         }
     }
 
-    float distToWaypoint = Vector2Distance(crew->GetPosition(), nextWaypoint);
+    float distToWaypoint = Vector2Distance(pawn->GetPosition(), nextWaypoint);
     
     if (distToWaypoint <= moveDelta)
     {
         // Reach waypoint
-        crew->SetPosition(nextWaypoint);
+        pawn->SetPosition(nextWaypoint);
         
         // Reset door state if we just passed through one
-        Vector2Int currentTilePos = ToVector2Int(crew->GetPosition() / TILE_SIZE);
+        Vector2Int currentTilePos = ToVector2Int(pawn->GetPosition() / TILE_SIZE);
         if (auto doorTile = station->GetTileWithComponentAtPosition(currentTilePos, ComponentType::DOOR))
         {
             if (auto door = doorTile->GetComponent<DoorComponent>())
@@ -81,17 +81,17 @@ bool MoveAction::Update(const std::shared_ptr<Crew> &crew)
     else
     {
         // Move towards waypoint
-        crew->SetPosition(crew->GetPosition() + Vector2Normalize(nextWaypoint - crew->GetPosition()) * moveDelta);
+        pawn->SetPosition(pawn->GetPosition() + Vector2Normalize(nextWaypoint - pawn->GetPosition()) * moveDelta);
     }
     return false;
 }
 
-bool ExtinguishAction::Update(const std::shared_ptr<Crew> &crew)
+bool ExtinguishAction::Update(const std::shared_ptr<Pawn> &pawn)
 {
-    if (!crew)
+    if (!pawn)
         return true;
 
-    auto station = crew->GetCurrentTile()->GetStation();
+    auto station = pawn->GetCurrentTile()->GetStation();
     if (!station)
         return true;
 
@@ -103,7 +103,7 @@ bool ExtinguishAction::Update(const std::shared_ptr<Crew> &crew)
             return true;
         }
 
-        progress += CREW_EXTINGUISH_SPEED * FIXED_DELTA_TIME;
+        progress += PAWN_EXTINGUISH_SPEED * FIXED_DELTA_TIME;
     }
     else
         return true;
@@ -111,9 +111,9 @@ bool ExtinguishAction::Update(const std::shared_ptr<Crew> &crew)
     return false;
 }
 
-bool RepairAction::Update(const std::shared_ptr<Crew> &crew)
+bool RepairAction::Update(const std::shared_ptr<Pawn> &pawn)
 {
-    if (!crew)
+    if (!pawn)
         return true;
 
     auto targetTile = _targetTile.lock();
@@ -123,27 +123,27 @@ bool RepairAction::Update(const std::shared_ptr<Crew> &crew)
         return true;
 
     const float maxHitpoints = durability->GetMaxHitpoints();
-    float newHitpoints = std::min(durability->GetHitpoints() + CREW_REPAIR_SPEED * (float)FIXED_DELTA_TIME, maxHitpoints);
+    float newHitpoints = std::min(durability->GetHitpoints() + PAWN_REPAIR_SPEED * (float)FIXED_DELTA_TIME, maxHitpoints);
 
     durability->SetHitpoints(newHitpoints);
 
     return newHitpoints >= maxHitpoints;
 }
 
-bool ConstructionAction::Update(const std::shared_ptr<Crew> &crew)
+bool ConstructionAction::Update(const std::shared_ptr<Pawn> &pawn)
 {
-    if (!crew)
+    if (!pawn)
         return true;
 
     auto task = _task.lock();
     if (!task)
         return true;
 
-    auto station = crew->GetCurrentTile()->GetStation();
+    auto station = pawn->GetCurrentTile()->GetStation();
     if (!station)
         return true;
 
-    task->progress += CREW_BUILD_SPEED * FIXED_DELTA_TIME;
+    task->progress += PAWN_BUILD_SPEED * FIXED_DELTA_TIME;
 
     if (task->progress >= 1.f)
     {

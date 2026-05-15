@@ -6,7 +6,7 @@
 struct Action;
 struct Tile;
 
-struct Crew
+struct Pawn
 {
 protected:
     std::string name;
@@ -21,8 +21,8 @@ protected:
     static std::atomic<uint64_t> nextInstanceId;
 
 public:
-    Crew(const std::string &n, const Vector2 &p, const Color &c)
-        : name(n), position(p), color(c), oxygen(CREW_OXYGEN_MAX), health(CREW_HEALTH_MAX), isAlive(true)
+    Pawn(const std::string &n, const Vector2 &p, const Color &c)
+        : name(n), position(p), color(c), oxygen(PAWN_OXYGEN_MAX), health(PAWN_HEALTH_MAX), isAlive(true)
     {
         instanceId = nextInstanceId.fetch_add(1);
     }
@@ -45,7 +45,7 @@ public:
         if (!isAlive)
             return;
 
-        oxygen -= CREW_OXYGEN_USE * deltaTime;
+        oxygen -= PAWN_OXYGEN_USE * deltaTime;
         if (oxygen <= 0)
         {
             Die();
@@ -54,9 +54,9 @@ public:
 
     void RefillOxygen(float deltaTime, float &sourceOxygen)
     {
-        if (isAlive && oxygen < CREW_OXYGEN_MAX && sourceOxygen > 0.f)
+        if (isAlive && oxygen < PAWN_OXYGEN_MAX && sourceOxygen > 0.f)
         {
-            float usedOxygen = std::min(std::min(sourceOxygen, CREW_OXYGEN_REFILL * deltaTime), CREW_OXYGEN_MAX - oxygen);
+            float usedOxygen = std::min(std::min(sourceOxygen, PAWN_OXYGEN_REFILL * deltaTime), PAWN_OXYGEN_MAX - oxygen);
             oxygen += usedOxygen;
             sourceOxygen -= usedOxygen;
         }
@@ -64,7 +64,7 @@ public:
 
     void SetHealth(float newHealth)
     {
-        health = std::clamp(newHealth, 0.f, CREW_HEALTH_MAX);
+        health = std::clamp(newHealth, 0.f, PAWN_HEALTH_MAX);
 
         if (health <= 0)
             Die();

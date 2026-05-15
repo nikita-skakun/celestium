@@ -420,17 +420,17 @@ void DefinitionManager::ParseConstantsFromFile(const std::string &filename)
     OUTLINE_SIZE = GetRequiredValue<float>(root, "outline/outlineSize");
     OUTLINE_COLOR = ReadColorAt("outline/outlineColor");
 
-    // crew (required)
-    CREW_RADIUS = GetRequiredValue<float>(root, "crew/radius");
-    CREW_MOVE_SPEED = GetRequiredValue<float>(root, "crew/moveSpeed");
-    CREW_OXYGEN_MAX = GetRequiredValue<float>(root, "crew/oxygenMax");
-    CREW_OXYGEN_USE = GetRequiredValue<float>(root, "crew/oxygenUse");
-    CREW_OXYGEN_REFILL = GetRequiredValue<float>(root, "crew/oxygenRefill");
-    CREW_HEALTH_MAX = GetRequiredValue<float>(root, "crew/healthMax");
-    CREW_EXTINGUISH_SPEED = GetRequiredValue<float>(root, "crew/extinguishSpeed");
-    CREW_REPAIR_SPEED = GetRequiredValue<float>(root, "crew/repairSpeed");
-    CREW_BUILD_SPEED = GetRequiredValue<float>(root, "crew/buildSpeed");
-    CREW_DECONSTRUCT_EFFICIENCY = GetRequiredValue<float>(root, "crew/deconstructEfficiency");
+    // pawn (required)
+    PAWN_RADIUS = GetRequiredValue<float>(root, "pawn/radius");
+    PAWN_MOVE_SPEED = GetRequiredValue<float>(root, "pawn/moveSpeed");
+    PAWN_OXYGEN_MAX = GetRequiredValue<float>(root, "pawn/oxygenMax");
+    PAWN_OXYGEN_USE = GetRequiredValue<float>(root, "pawn/oxygenUse");
+    PAWN_OXYGEN_REFILL = GetRequiredValue<float>(root, "pawn/oxygenRefill");
+    PAWN_HEALTH_MAX = GetRequiredValue<float>(root, "pawn/healthMax");
+    PAWN_EXTINGUISH_SPEED = GetRequiredValue<float>(root, "pawn/extinguishSpeed");
+    PAWN_REPAIR_SPEED = GetRequiredValue<float>(root, "pawn/repairSpeed");
+    PAWN_BUILD_SPEED = GetRequiredValue<float>(root, "pawn/buildSpeed");
+    PAWN_DECONSTRUCT_EFFICIENCY = GetRequiredValue<float>(root, "pawn/deconstructEfficiency");
 }
 
 void DefinitionManager::ParseResourcesFromFile(const std::string &filename)

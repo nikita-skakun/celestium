@@ -2,7 +2,7 @@
 #include "utils.hpp"
 #include <deque>
 
-struct Crew;
+struct Pawn;
 struct Tile;
 struct PlannedTask;
 
@@ -17,7 +17,7 @@ struct Action
         CONSTRUCTION,
     };
 
-    virtual bool Update(const std::shared_ptr<Crew> &crew) = 0;
+    virtual bool Update(const std::shared_ptr<Pawn> &pawn) = 0;
     virtual std::string GetActionName() const = 0;
     virtual Type GetType() const = 0;
     virtual ~Action() = default;
@@ -30,7 +30,7 @@ struct MoveAction : Action
 
     explicit MoveAction(const Vector2 &position) : targetPosition(position) {}
 
-    bool Update(const std::shared_ptr<Crew> &crew) override;
+    bool Update(const std::shared_ptr<Pawn> &pawn) override;
 
     std::string GetActionName() const override { return "Moving"; }
     Type GetType() const override { return Type::MOVE; }
@@ -45,7 +45,7 @@ protected:
 public:
     explicit ExtinguishAction(const Vector2Int &position) : targetPosition(position), progress(0) {}
 
-    bool Update(const std::shared_ptr<Crew> &crew) override;
+    bool Update(const std::shared_ptr<Pawn> &pawn) override;
 
     float GetProgress() const { return progress; }
     const Vector2Int &GetTargetPosition() const { return targetPosition; }
@@ -62,7 +62,7 @@ protected:
 public:
     explicit RepairAction(std::shared_ptr<Tile> tile) : _targetTile(tile) {}
 
-    bool Update(const std::shared_ptr<Crew> &crew) override;
+    bool Update(const std::shared_ptr<Pawn> &pawn) override;
 
     std::shared_ptr<Tile> GetTargetTile() const { return _targetTile.lock(); }
 
@@ -78,7 +78,7 @@ protected:
 public:
     explicit ConstructionAction(std::shared_ptr<PlannedTask> task) : _task(task) {}
 
-    bool Update(const std::shared_ptr<Crew> &crew) override;
+    bool Update(const std::shared_ptr<Pawn> &pawn) override;
 
     std::weak_ptr<PlannedTask> GetPlanned() const { return _task; }
 

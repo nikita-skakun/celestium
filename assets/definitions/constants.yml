@@ -29,7 +29,7 @@ outline:
   outlineSize: 1.0
   outlineColor: [0, 0, 0, 255]
 
-crew:
+pawn:
   radius: 12.0
   moveSpeed: 2.0
   oxygenMax: 100.0

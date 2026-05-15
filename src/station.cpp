@@ -533,7 +533,7 @@ void Station::ReturnResourcesFromTile(const std::shared_ptr<Tile> &tile)
         {
             const std::string &resId = p.first;
             int amount = p.second;
-            float returnedF = std::ceil(amount * CREW_DECONSTRUCT_EFFICIENCY);
+            float returnedF = std::ceil(amount * PAWN_DECONSTRUCT_EFFICIENCY);
             int returned = static_cast<int>(returnedF);
             if (returned > 0)
                 AddResource(resId, returned);

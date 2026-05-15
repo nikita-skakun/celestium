@@ -5,7 +5,7 @@
 #include <thread>
 
 struct Action;
-struct Crew;
+struct Pawn;
 struct Station;
 
 class GameServer
@@ -21,7 +21,7 @@ public:
     void StopSimulation();
 
     // Simulation getters
-    const std::unordered_map<uint64_t, std::shared_ptr<Crew>> &GetCrewList() const { return crewList; }
+    const std::unordered_map<uint64_t, std::shared_ptr<Pawn>> &GetPawnList() const { return pawnList; }
     std::shared_ptr<Station> GetStation() const { return station; }
     bool IsGamePaused() const { return paused.load(); }
 
@@ -38,15 +38,15 @@ public:
             paused.store(!paused.load());
     }
     bool IsLocal() const { return isLocal.load(); }
-    void SendPlayerAction(uint64_t crewId, std::unique_ptr<Action> action);
-    void ClearCrewActions(uint64_t crewId);
-    void HandleAutonomousCrewDecisions();
+    void SendPlayerAction(uint64_t pawnId, std::unique_ptr<Action> action);
+    void ClearPawnActions(uint64_t pawnId);
+    void HandleAutonomousPawnDecisions();
     void ProcessPendingActions();
 
     double &GetTimeSinceFixedUpdate() { return timeSinceFixedUpdate; }
 
 private:
-    std::unordered_map<uint64_t, std::shared_ptr<Crew>> crewList;
+    std::unordered_map<uint64_t, std::shared_ptr<Pawn>> pawnList;
     std::shared_ptr<Station> station;
 
     std::atomic<bool> paused = false;
@@ -57,5 +57,5 @@ private:
     std::deque<std::pair<uint64_t, std::unique_ptr<Action>>> pendingActions;
     std::mutex pendingActionsMutex;
 
-    std::shared_ptr<Crew> GetCrewById(uint64_t id) const;
+    std::shared_ptr<Pawn> GetPawnById(uint64_t id) const;
 };

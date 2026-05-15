@@ -1,8 +1,8 @@
 #include "action.hpp"
-#include "crew.hpp"
 #include "direction.hpp"
 #include "fixed_update.hpp"
 #include "game_server.hpp"
+#include "pawn.hpp"
 #include "planned_task.hpp"
 #include "station.hpp"
 #include "tile.hpp"
@@ -15,7 +15,7 @@ GameServer::~GameServer()
 
 void GameServer::Initialize()
 {
-    crewList.clear();
+    pawnList.clear();
     station = nullptr;
     paused = false;
 
@@ -30,14 +30,14 @@ void GameServer::Initialize()
 void GameServer::PrepareTestWorld()
 {
     station = CreateStation();
-    std::vector<std::shared_ptr<Crew>> tmpCrewList = {
-        std::make_shared<Crew>("ALICE", Vector2(-2, 2), RED),
-        std::make_shared<Crew>("BOB", Vector2(3, 2), GREEN),
-        std::make_shared<Crew>("CHARLIE", Vector2(-3, -3), ORANGE)};
+    std::vector<std::shared_ptr<Pawn>> tmpPawnList = {
+        std::make_shared<Pawn>("ALICE", Vector2(-2, 2), RED),
+        std::make_shared<Pawn>("BOB", Vector2(3, 2), GREEN),
+        std::make_shared<Pawn>("CHARLIE", Vector2(-3, -3), ORANGE)};
 
-    crewList.clear();
-    for (const auto &crew : tmpCrewList)
-        crewList[crew->GetInstanceId()] = crew;
+    pawnList.clear();
+    for (const auto &pawn : tmpPawnList)
+        pawnList[pawn->GetInstanceId()] = pawn;
 
     {
         std::lock_guard<std::mutex> lock(pendingActionsMutex);
@@ -49,10 +49,10 @@ void GameServer::PrepareTestWorld()
     timeSinceFixedUpdate = 0;
 }
 
-std::shared_ptr<Crew> GameServer::GetCrewById(uint64_t id) const
+std::shared_ptr<Pawn> GameServer::GetPawnById(uint64_t id) const
 {
-    auto it = crewList.find(id);
-    return it != crewList.end() ? it->second : nullptr;
+    auto it = pawnList.find(id);
+    return it != pawnList.end() ? it->second : nullptr;
 }
 
 void GameServer::StartSimulation()
@@ -70,29 +70,29 @@ void GameServer::StopSimulation()
         updateThread.join();
 }
 
-void GameServer::SendPlayerAction(uint64_t crewId, std::unique_ptr<Action> action)
+void GameServer::SendPlayerAction(uint64_t pawnId, std::unique_ptr<Action> action)
 {
     std::lock_guard<std::mutex> lock(pendingActionsMutex);
-    pendingActions.emplace_back(crewId, std::move(action));
+    pendingActions.emplace_back(pawnId, std::move(action));
 }
 
-void GameServer::ClearCrewActions(uint64_t crewId)
+void GameServer::ClearPawnActions(uint64_t pawnId)
 {
     // Lock updateMutex first, then pendingActionsMutex to match ProcessPendingActions lock order
     std::unique_lock<std::mutex> lock(updateMutex);
     {
         std::lock_guard<std::mutex> pendingLock(pendingActionsMutex);
-        // Remove any pending actions for this crew so they don't get re-applied on next fixed update
+        // Remove any pending actions for this pawn so they don't get re-applied on next fixed update
         pendingActions.erase(
             std::remove_if(pendingActions.begin(), pendingActions.end(),
-                           [crewId](const std::pair<uint64_t, std::unique_ptr<Action>> &p)
-                           { return p.first == crewId; }),
+                           [pawnId](const std::pair<uint64_t, std::unique_ptr<Action>> &p)
+                           { return p.first == pawnId; }),
             pendingActions.end());
     }
 
-    if (auto _crew = Find(crewList, crewId))
-        if (auto crew = _crew.value()->second)
-            crew->GetActionQueue().clear();
+    if (auto _pawn = Find(pawnList, pawnId))
+        if (auto pawn = _pawn.value()->second)
+            pawn->GetActionQueue().clear();
 }
 
 void GameServer::ProcessPendingActions()
@@ -105,59 +105,59 @@ void GameServer::ProcessPendingActions()
 
     for (auto &entry : actionsToProcess)
     {
-        if (auto crew = GetCrewById(entry.first))
+        if (auto pawn = GetPawnById(entry.first))
         {
-            if (!crew->IsAlive())
+            if (!pawn->IsAlive())
             {
-                TraceLog(TraceLogLevel::LOG_WARNING, std::format("Dropping action for dead crew {}", crew->GetName()).c_str());
+                TraceLog(TraceLogLevel::LOG_WARNING, std::format("Dropping action for dead pawn {}", pawn->GetName()).c_str());
                 continue;
             }
-            if (!crew->GetCurrentTile())
+            if (!pawn->GetCurrentTile())
             {
-                TraceLog(TraceLogLevel::LOG_WARNING, std::format("Dropping action for crew {} with no current tile", crew->GetName()).c_str());
+                TraceLog(TraceLogLevel::LOG_WARNING, std::format("Dropping action for pawn {} with no current tile", pawn->GetName()).c_str());
                 continue;
             }
 
-            crew->GetActionQueue().push_back(std::move(entry.second));
+            pawn->GetActionQueue().push_back(std::move(entry.second));
         }
     }
 }
 
-void GameServer::HandleAutonomousCrewDecisions()
+void GameServer::HandleAutonomousPawnDecisions()
 {
     if (!station)
         return;
 
-    for (const auto &entry : crewList)
+    for (const auto &entry : pawnList)
     {
-        const auto &crew = entry.second;
-        if (!crew->IsAlive() || !crew->GetActionQueue().empty() || !crew->GetCurrentTile())
+        const auto &pawn = entry.second;
+        if (!pawn->IsAlive() || !pawn->GetActionQueue().empty() || !pawn->GetCurrentTile())
             continue;
 
-        auto stationPtr = crew->GetCurrentTile()->GetStation();
-        Vector2Int crewPos = ToVector2Int(crew->GetPosition());
+        auto stationPtr = pawn->GetCurrentTile()->GetStation();
+        Vector2Int pawnPos = ToVector2Int(pawn->GetPosition());
 
-        if (stationPtr->GetEffectOfTypeAtPosition(crewPos, "FIRE"))
+        if (stationPtr->GetEffectOfTypeAtPosition(pawnPos, "FIRE"))
         {
-            crew->GetActionQueue().push_back(std::make_shared<ExtinguishAction>(crewPos));
+            pawn->GetActionQueue().push_back(std::make_shared<ExtinguishAction>(pawnPos));
             continue;
         }
 
         for (const auto &direction : ALL_DIRECTIONS)
         {
-            Vector2Int neighborPos = crewPos + DirectionToVector2Int(direction);
+            Vector2Int neighborPos = pawnPos + DirectionToVector2Int(direction);
             if (stationPtr->GetEffectOfTypeAtPosition(neighborPos, "FIRE"))
             {
-                crew->GetActionQueue().push_back(std::make_shared<ExtinguishAction>(neighborPos));
+                pawn->GetActionQueue().push_back(std::make_shared<ExtinguishAction>(neighborPos));
                 break;
             }
         }
 
         for (const auto &task : stationPtr->plannedTasks)
         {
-            if (Vector2IntChebyshev(crewPos, task->position) <= 1)
+            if (Vector2IntChebyshev(pawnPos, task->position) <= 1)
             {
-                crew->GetActionQueue().push_back(std::make_shared<ConstructionAction>(task));
+                pawn->GetActionQueue().push_back(std::make_shared<ConstructionAction>(task));
                 break;
             }
         }
