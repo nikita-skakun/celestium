@@ -8,7 +8,7 @@ struct PlannedTask;
 
 struct Action
 {
-    enum class Type : u_int8_t
+    enum class Type : uint8_t
     {
         NONE,
         MOVE,

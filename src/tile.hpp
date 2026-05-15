@@ -1,14 +1,11 @@
 #pragma once
 #include "tile_def.hpp"
-#include <memory>
 #include <unordered_map>
 #include <string>
 
 struct Station;
 struct Sprite;
 struct Component;
-
-enum class ComponentType : uint8_t;
 
 struct Tile : public std::enable_shared_from_this<Tile>
 {
@@ -29,8 +26,8 @@ public:
 
     constexpr const Vector2Int &GetPosition() const { return position; }
 
-    TileDef::Height GetHeight() const { return tileDef->GetHeight(); }
-    TileDef::Category GetCategory() const { return tileDef->GetCategory(); }
+    TileHeight GetHeight() const { return tileDef->GetHeight(); }
+    TileCategory GetCategory() const { return tileDef->GetCategory(); }
 
     const std::shared_ptr<Sprite> &GetSprite() const { return sprite; }
     void SetSprite(const std::shared_ptr<Sprite> &newSprite) { sprite = newSprite; }

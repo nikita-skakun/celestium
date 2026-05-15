@@ -5,7 +5,7 @@
 
 namespace
 {
-    std::optional<PowerConsumerComponent::PowerPriority> ParsePowerPriority(const ryml::ConstNodeRef &node)
+    std::optional<PowerPriority> ParsePowerPriority(const ryml::ConstNodeRef &node)
     {
         std::string powerPriorityStr;
         node["powerPriority"] >> powerPriorityStr;
@@ -14,7 +14,7 @@ namespace
         if (powerPriorityStr.empty())
             return std::nullopt;
 
-        auto powerPriority = magic_enum::enum_cast<PowerConsumerComponent::PowerPriority>(powerPriorityStr, magic_enum::case_insensitive);
+        auto powerPriority = magic_enum::enum_cast<PowerPriority>(powerPriorityStr, magic_enum::case_insensitive);
         if (!powerPriority.has_value())
             throw std::runtime_error(std::format("Parsing of power priority string failed: {}", powerPriorityStr));
 
@@ -164,7 +164,7 @@ void DefinitionManager::ParseTilesFromFile(const std::string &filename)
         std::string heightStr;
         tileNode["height"] >> heightStr;
         StringRemoveSpaces(heightStr);
-        auto height = magic_enum::enum_flags_cast<TileDef::Height>(heightStr, '|', magic_enum::case_insensitive);
+        auto height = magic_enum::enum_flags_cast<TileHeight>(heightStr, '|', magic_enum::case_insensitive);
         if (!height.has_value())
             throw std::runtime_error(std::format("Parsing of height string for tile ({}) failed: {}", tileId, heightStr));
 
@@ -172,7 +172,7 @@ void DefinitionManager::ParseTilesFromFile(const std::string &filename)
         std::string categoryStr;
         tileNode["category"] >> categoryStr;
         StringRemoveSpaces(categoryStr);
-        auto category = magic_enum::enum_cast<TileDef::Category>(categoryStr, magic_enum::case_insensitive);
+        auto category = magic_enum::enum_cast<TileCategory>(categoryStr, magic_enum::case_insensitive);
         if (!category.has_value())
             throw std::runtime_error(std::format("Parsing of category string for tile ({}) failed: {}", tileId, categoryStr));
 

@@ -1,14 +1,13 @@
 #pragma once
-#include "tile_def.hpp"
+#include "tile_enums.hpp"
 #include "navigation.hpp"
-
+#include <unordered_set>
 
 struct Effect;
 struct PlannedTask;
 struct PowerGrid;
 struct Tile;
 
-enum class ComponentType : uint8_t;
 enum class Direction : uint8_t;
 enum class SpriteCondition : uint32_t;
 
@@ -43,7 +42,7 @@ public:
         return found;
     }
 
-    std::shared_ptr<Tile> GetTileAtPosition(const Vector2Int &pos, TileDef::Height height = TileDef::Height::NONE) const;
+    std::shared_ptr<Tile> GetTileAtPosition(const Vector2Int &pos, TileHeight height = TileHeight::NONE) const;
     const std::vector<std::shared_ptr<Tile>> &GetTilesAtPosition(const Vector2Int &pos) const;
 
     SpriteCondition GetSpriteConditionForTile(const std::shared_ptr<Tile> &tile) const;

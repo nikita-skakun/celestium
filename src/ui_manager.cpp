@@ -1,13 +1,14 @@
 #include "audio_manager.hpp"
+#include "camera.hpp"
 #include "def_manager.hpp"
 #include "game_state.hpp"
-#include "tile.hpp"
+#include "tile_def.hpp"
 #include "ui_element.hpp"
 #include "ui_manager.hpp"
 
 namespace
 {
-    void ToggleBuildCategory(TileDef::Category category);
+    void ToggleBuildCategory(TileCategory category);
     void InitializeCategorySpecificMenu();
 
     void LinkToggle(std::shared_ptr<UiToggle> toggle, std::function<bool()> stateFunc)
@@ -148,7 +149,7 @@ namespace
 
     void InitializeCategorySpecificMenu()
     {
-        TileDef::Category selectedCategory = GameManager::GetSelectedCategory();
+        TileCategory selectedCategory = GameManager::GetSelectedCategory();
         auto tileDefs = DefinitionManager::GetTileDefinitions();
 
         int index = 0;
@@ -168,7 +169,7 @@ namespace
         }
     }
 
-    void ToggleBuildCategory(TileDef::Category category)
+    void ToggleBuildCategory(TileCategory category)
     {
         if (auto buildMenu = std::dynamic_pointer_cast<UiPanel>(UiManager::GetElement("BUILD_MENU")))
         {
@@ -279,8 +280,8 @@ void UiManager::InitializeGameSim()
     UiManager::AddElement("BUILD_CATEGORY", buildCatPanel);
 
     Vector2 catPos = panelPos + spacing;
-    struct CatCfg { TileDef::Category c; Vector2Int off; };
-    for (auto &c : {CatCfg{TileDef::Category::STRUCTURE, {1, 0}}, CatCfg{TileDef::Category::POWER, {2, 0}}, CatCfg{TileDef::Category::OXYGEN, {0, 0}}})
+    struct CatCfg { TileCategory c; Vector2Int off; };
+    for (auto &c : {CatCfg{TileCategory::STRUCTURE, {1, 0}}, CatCfg{TileCategory::POWER, {2, 0}}, CatCfg{TileCategory::OXYGEN, {0, 0}}})
     {
         AddIconButton(buildCatPanel, Vector2ToRect(catPos, largeSize), "", [c]() { return GameManager::GetSelectedCategory() == c.c; },
                       [c](bool) { ToggleBuildCategory(c.c); }, "ICON", Rectangle((float)c.off.x, (float)c.off.y, 1, 1) * TILE_SIZE, Fade(DARKGRAY, .8f));
@@ -293,7 +294,7 @@ void UiManager::InitializeGameSim()
 
     // Build Menu Panel
     auto buildMenuPanel = std::make_shared<UiPanel>(Vector2ToRect({.5f - .8f / 2.f, 1.f - (largeSize.y + spacing.y * 2) - spacing.y * 4 - largeSize.y}, {.8f, largeSize.y + spacing.y * 2}), Fade(BLACK, .5f));
-    LinkVisibility(buildMenuPanel, []() { return GameManager::GetCamera().IsUiClear() && GameManager::IsInBuildMode() && GameManager::GetSelectedCategory() != TileDef::Category::NONE; });
+    LinkVisibility(buildMenuPanel, []() { return GameManager::GetCamera().IsUiClear() && GameManager::IsInBuildMode() && GameManager::GetSelectedCategory() != TileCategory::NONE; });
     UiManager::AddElement("BUILD_MENU", buildMenuPanel);
 }
 

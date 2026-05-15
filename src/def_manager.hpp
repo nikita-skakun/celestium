@@ -1,10 +1,11 @@
 #pragma once
 #include "env_effect_def.hpp"
 #include "fs_utils.hpp"
-#include "tile_def.hpp"
 #include <c4/format.hpp>
 #include <ryml_std.hpp>
 #include <ryml.hpp>
+
+struct TileDef;
 
 namespace c4
 {

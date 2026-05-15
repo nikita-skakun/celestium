@@ -1,4 +1,5 @@
 #pragma once
+#include "tile_enums.hpp"
 #include "utils.hpp"
 #include <unordered_set>
 
@@ -7,51 +8,26 @@ struct SpriteDef;
 
 struct TileDef
 {
-    enum class Height : uint8_t
-    {
-        NONE = 0,
-        FLOOR = 1 << 0,
-        KNEE = 1 << 1,
-        WAIST = 1 << 2,
-        CHEST = 1 << 3,
-        HEAD = 1 << 4,
-        POWER = 1 << 5,
-    };
-
-    enum class Category : uint8_t
-    {
-        NONE,
-        STRUCTURE,
-        POWER,
-        OXYGEN,
-    };
-
 private:
     const std::string id;
-    const Height height;
-    const Category category;
+    const TileHeight height;
+    const TileCategory category;
     const std::unordered_set<std::shared_ptr<Component>> refComponents;
     const std::shared_ptr<SpriteDef> refSprite;
     const Vector2Int iconOffset;
     const std::unordered_map<std::string, int> buildResources;
 
 public:
-    TileDef(const std::string &id, Height height, Category category, const std::unordered_set<std::shared_ptr<Component>> &refComponents,
+    TileDef(const std::string &id, TileHeight height, TileCategory category, const std::unordered_set<std::shared_ptr<Component>> &refComponents,
             const std::shared_ptr<SpriteDef> &refSprite, const Vector2Int &iconOffset, const std::unordered_map<std::string, int> &buildResources)
         : id(id), height(height), category(category), refComponents(refComponents), refSprite(refSprite), iconOffset(iconOffset), buildResources(buildResources) {}
 
     constexpr const std::string &GetId() const { return id; }
     constexpr std::string GetName() const { return MacroCaseToName(id); }
-    constexpr Height GetHeight() const { return height; }
-    constexpr Category GetCategory() const { return category; }
+    constexpr TileHeight GetHeight() const { return height; }
+    constexpr TileCategory GetCategory() const { return category; }
     constexpr const std::unordered_set<std::shared_ptr<Component>> &GetReferenceComponents() const { return refComponents; }
     constexpr const std::shared_ptr<SpriteDef> &GetReferenceSprite() const { return refSprite; }
     constexpr const Vector2Int &GetIconOffset() const { return iconOffset; }
     constexpr const std::unordered_map<std::string, int> &GetBuildResources() const { return buildResources; }
-};
-
-template <>
-struct magic_enum::customize::enum_range<TileDef::Height>
-{
-    static constexpr bool is_flags = true;
 };

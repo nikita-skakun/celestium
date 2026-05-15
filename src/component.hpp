@@ -1,28 +1,10 @@
 #pragma once
-#include "utils.hpp"
 #include "direction.hpp"
+#include "tile_enums.hpp"
 
 struct Tile;
 struct PowerGrid;
 struct Sprite;
-
-enum class ComponentType : uint8_t
-{
-    WALKABLE,
-    SOLID,
-    POWER_CONNECTOR,
-    BATTERY,
-    POWER_CONSUMER,
-    POWER_PRODUCER,
-    SOLAR_PANEL,
-    OXYGEN,
-    OXYGEN_PRODUCER,
-    DECORATIVE,
-    DOOR,
-    DURABILITY,
-    ROTATABLE,
-    STRUCTURE,
-};
 
 struct Component : public std::enable_shared_from_this<Component>
 {
@@ -129,16 +111,6 @@ public:
 
 struct PowerConsumerComponent : ComponentBase<PowerConsumerComponent, ComponentType::POWER_CONSUMER>
 {
-public:
-    enum class PowerPriority : uint8_t
-    {
-        CRITICAL = 0, // Life support, etc.
-        HIGH = 1,     // Main systems
-        MEDIUM = 2,   // General equipment
-        LOW = 3,      // Convenience, decoration
-        OFFLINE = 255 // Manually turned off
-    };
-
 protected:
     bool isActive;
     float powerConsumption;

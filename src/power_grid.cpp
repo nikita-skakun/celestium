@@ -91,7 +91,7 @@ void PowerGrid::RebuildCaches()
 
     cachedConsumers.reserve(_consumers.size());
     for (auto &c : _consumers)
-        if (c.second.lock()->GetPowerPriority() != PowerConsumerComponent::PowerPriority::OFFLINE)
+        if (c.second.lock()->GetPowerPriority() != PowerPriority::OFFLINE)
             cachedConsumers.push_back(c.second);
 
     cachedBatteries.reserve(_batteries.size());

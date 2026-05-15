@@ -1,9 +1,9 @@
 #pragma once
-#include "camera.hpp"
-#include "tile_def.hpp"
+#include "tile_enums.hpp"
+#include "utils.hpp"
 #include <atomic>
-#include <optional>
 
+struct PlayerCam;
 class GameServer;
 struct RenderSnapshot;
 namespace sol { class state; }
@@ -20,7 +20,7 @@ struct GameManager
 private:
     GameState state = GameState::NONE;
     std::optional<GameState> pendingState = std::nullopt;
-    PlayerCam camera = PlayerCam();
+    std::unique_ptr<PlayerCam> camera;
     // Server: owns the authoritative simulation state. For single-player, this will
     // be a local server instance; for multiplayer, this can be a network client
     // forwarding requests to a remote server.
@@ -30,7 +30,7 @@ private:
     bool cancelMode = false;
     bool horizontalSymmetry = true;
     bool verticalSymmetry = false;
-    TileDef::Category selectedCategory = TileDef::Category::NONE;
+    TileCategory selectedCategory = TileCategory::NONE;
     std::string buildTileId = "";
     std::vector<uint64_t> hoveredPawnList;
     std::vector<uint64_t> selectedPawnList;
@@ -74,8 +74,8 @@ public:
     static void AddSelectedPawn(uint64_t pawnId) { GetInstance().selectedPawnList.push_back(pawnId); }
     static void ToggleSelectedPawn(uint64_t pawnId);
 
-    static TileDef::Category GetSelectedCategory() { return GetInstance().selectedCategory; }
-    static void ToggleSelectedCategory(TileDef::Category category);
+    static TileCategory GetSelectedCategory() { return GetInstance().selectedCategory; }
+    static void ToggleSelectedCategory(TileCategory category);
 
     static const std::string &GetBuildTileId() { return GetInstance().buildTileId; }
     static void SetBuildTileId(const std::string &tileId) { GetInstance().buildTileId = tileId; }
@@ -100,7 +100,7 @@ public:
     static void SetVerticalSymmetry(bool newState) { GetInstance().verticalSymmetry = newState; }
     static void ToggleVerticalSymmetry() { GetInstance().verticalSymmetry = !GetInstance().verticalSymmetry; }
 
-    static PlayerCam &GetCamera() { return GetInstance().camera; }
+    static PlayerCam &GetCamera();
     static void HandleStateInputs();
 
     static void Initialize();

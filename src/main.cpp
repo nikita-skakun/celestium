@@ -1,5 +1,6 @@
 #include "asset_manager.hpp"
 #include "audio_manager.hpp"
+#include "camera.hpp"
 #include "def_manager.hpp"
 #include "game_state.hpp"
 #include "lua_bindings.hpp"
@@ -29,8 +30,6 @@ int main()
 
     GameManager::SetGameState(GameState::MAIN_MENU);
 
-    auto &camera = GameManager::GetCamera();
-
     TraceLog(TraceLogLevel::LOG_INFO, "Initialization Complete");
 
     while (GameManager::IsGameRunning())
@@ -44,7 +43,7 @@ int main()
 
         if (GameManager::IsInGameSim())
         {
-            camera.HandleMovement();
+            GameManager::GetCamera().HandleMovement();
 
             if (!UiManager::IsMouseOverUiElement())
             {
@@ -79,7 +78,7 @@ int main()
                 DrawBuildUi();
             }
 
-            if (camera.IsUiClear())
+            if (GameManager::GetCamera().IsUiClear())
             {
                 DrawDragSelectBox();
                 DrawMainTooltip();

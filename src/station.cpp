@@ -252,7 +252,7 @@ void Station::RebuildPowerGridsFromInfrastructure()
     for (const auto &tilesAtPos : tileMap)
     {
         const Vector2Int &pos = tilesAtPos.first;
-        if (auto powerTile = GetTileAtPosition(pos, TileDef::Height::POWER))
+        if (auto powerTile = GetTileAtPosition(pos, TileHeight::POWER))
         {
             if (auto connector = powerTile->GetComponent<PowerConnectorComponent>())
             {
@@ -297,7 +297,7 @@ void Station::RebuildPowerGridsFromInfrastructure()
             continue;
 
         if (!FindTile(start, [](const auto &tile)
-                      { return magic_enum::enum_flags_test_any(tile->GetHeight(), TileDef::Height::POWER); }))
+                      { return magic_enum::enum_flags_test_any(tile->GetHeight(), TileHeight::POWER); }))
             continue; // skip non-power positions
 
         ComponentInfo comp;
@@ -314,7 +314,7 @@ void Station::RebuildPowerGridsFromInfrastructure()
 
             // Only consider positions that actually have a POWER-layer tile
             if (!FindTile(cur, [](const auto &tile)
-                          { return magic_enum::enum_flags_test_any(tile->GetHeight(), TileDef::Height::POWER); }))
+                          { return magic_enum::enum_flags_test_any(tile->GetHeight(), TileHeight::POWER); }))
                 continue;
 
             comp.positions.push_back(cur);
@@ -348,7 +348,7 @@ void Station::RebuildPowerGridsFromInfrastructure()
                 if (visited.contains(nb))
                     continue;
                 if (FindTile(nb, [](const auto &tile)
-                             { return magic_enum::enum_flags_test_any(tile->GetHeight(), TileDef::Height::POWER); }))
+                             { return magic_enum::enum_flags_test_any(tile->GetHeight(), TileHeight::POWER); }))
                     q.push_back(nb);
             }
         }
@@ -418,9 +418,9 @@ void Station::RebuildPowerGridsFromInfrastructure()
     }
 }
 
-std::shared_ptr<Tile> Station::GetTileAtPosition(const Vector2Int &pos, TileDef::Height height) const
+std::shared_ptr<Tile> Station::GetTileAtPosition(const Vector2Int &pos, TileHeight height) const
 {
-    if (height == TileDef::Height::NONE)
+    if (height == TileHeight::NONE)
         return FindTile(pos, [](const auto &)
                         { return true; });
 

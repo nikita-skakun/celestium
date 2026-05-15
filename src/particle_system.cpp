@@ -1,3 +1,4 @@
+#include "camera.hpp"
 #include "game_state.hpp"
 #include "particle_system.hpp"
 

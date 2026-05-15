@@ -3,7 +3,6 @@
 #include <atomic>
 
 struct Pawn;
-struct PlayerCam;
 struct Station;
 
 struct Effect

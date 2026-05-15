@@ -1,4 +1,5 @@
 #include "action.hpp"
+#include "camera.hpp"
 #include "component.hpp"
 #include "env_effect.hpp"
 #include "game_server.hpp"
@@ -263,7 +264,7 @@ void UpdatePawnCurrentTile()
         if (pawn->GetCurrentTile() && pawn->GetCurrentTile()->GetPosition() == floorPawnPos)
             continue;
 
-        pawn->SetCurrentTile(station->GetTileAtPosition(floorPawnPos, TileDef::Height::FLOOR));
+        pawn->SetCurrentTile(station->GetTileAtPosition(floorPawnPos, TileHeight::FLOOR));
     }
 }
 

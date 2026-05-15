@@ -1,5 +1,6 @@
 #include "action.hpp"
 #include "asset_manager.hpp"
+#include "camera.hpp"
 #include "component.hpp"
 #include "env_effect.hpp"
 #include "game_server.hpp"
@@ -29,7 +30,7 @@ struct RenderParticleSystem
 
 struct StarfieldParticle
 {
-    u_int16_t x, y;
+    uint16_t x, y;
     u_char z, size;
     Color color;
 };
@@ -196,7 +197,7 @@ void DrawStationOverlays()
                 doorSourceRect2.width = -doorSourceRect2.width;
                 DrawTexturePro(stationTileset, doorSourceRect2, destRect, pivot, rotation + 180., tint);
             }
-            if (isPowerOverlay && magic_enum::enum_flags_test_any(tile->GetHeight(), TileDef::Height::POWER))
+            if (isPowerOverlay && magic_enum::enum_flags_test_any(tile->GetHeight(), TileHeight::POWER))
             {
                 if (auto connector = tile->GetComponent<PowerConnectorComponent>())
                 {

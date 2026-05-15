@@ -1,10 +1,7 @@
-#include "direction.hpp"
-#include "fixed_update.hpp"
+#include "camera.hpp"
 #include "game_server.hpp"
 #include "game_state.hpp"
-#include "pawn.hpp"
 #include "render_snapshot.hpp"
-#include "station.hpp"
 #include "ui_manager.hpp"
 #include "ui.hpp"
 #include <sol/sol.hpp>
@@ -58,7 +55,7 @@ void GameManager::SetGameState(GameState state)
  */
 void GameManager::HandleStateInputs()
 {
-    auto &camera = GetInstance().camera;
+    auto &camera = GetCamera();
 
     if (IsKeyPressed(KEY_ESCAPE))
     {
@@ -91,9 +88,9 @@ void GameManager::Initialize()
 {
     auto &manager = GetInstance();
 
-    uint16_t currentFpsIndex = manager.camera.GetFpsIndex();
-    manager.camera = PlayerCam();
-    manager.camera.SetFpsIndex(currentFpsIndex);
+    uint16_t currentFpsIndex = manager.camera->GetFpsIndex();
+    manager.camera = std::make_unique<PlayerCam>();
+    manager.camera->SetFpsIndex(currentFpsIndex);
 
     manager.server = std::make_unique<GameServer>();
     manager.server->Initialize();
@@ -124,9 +121,9 @@ void GameManager::PrepareTestWorld()
 {
     auto &manager = GetInstance();
 
-    uint16_t currentFpsIndex = manager.camera.GetFpsIndex();
-    manager.camera = PlayerCam();
-    manager.camera.SetFpsIndex(currentFpsIndex);
+    uint16_t currentFpsIndex = manager.camera->GetFpsIndex();
+    manager.camera = std::make_unique<PlayerCam>();
+    manager.camera->SetFpsIndex(currentFpsIndex);
 
     if (!manager.server)
         manager.server = std::make_unique<GameServer>();
@@ -143,10 +140,10 @@ void GameManager::ToggleSelectedPawn(uint64_t pawnId)
         selectedPawnList.erase(pawnIter);
 }
 
-void GameManager::ToggleSelectedCategory(TileDef::Category category)
+void GameManager::ToggleSelectedCategory(TileCategory category)
 {
     auto &selectedCategory = GetInstance().selectedCategory;
-    selectedCategory = (selectedCategory == category) ? TileDef::Category::NONE : category;
+    selectedCategory = (selectedCategory == category) ? TileCategory::NONE : category;
 }
 
 /**
@@ -167,7 +164,7 @@ Vector2 GameManager::GetWorldMousePos()
  */
 Vector2 GameManager::ScreenToWorld(const Vector2 &screenPos)
 {
-    auto &camera = GetInstance().camera;
+    auto &camera = GetCamera();
     return (screenPos - (GetScreenSize() / 2.)) / camera.GetZoom() / TILE_SIZE + camera.GetPosition();
 }
 
@@ -190,7 +187,7 @@ Vector2Int GameManager::ScreenToTile(const Vector2 &screenPos)
  */
 Vector2 GameManager::WorldToScreen(const Vector2 &worldPos)
 {
-    auto &camera = GetInstance().camera;
+    auto &camera = GetCamera();
     return (worldPos + Vector2(.5, .5) - camera.GetPosition()) * TILE_SIZE * camera.GetZoom() + (GetScreenSize() / 2.);
 }
 
@@ -202,13 +199,13 @@ Vector2 GameManager::WorldToScreen(const Vector2 &worldPos)
  */
 Vector2 GameManager::WorldToScreen(const Vector2Int &worldPos)
 {
-    auto &camera = GetInstance().camera;
+    auto &camera = GetCamera();
     return (ToVector2(worldPos) + Vector2(.5, .5) - camera.GetPosition()) * TILE_SIZE * camera.GetZoom() + (GetScreenSize() / 2.);
 }
 
 Rectangle GameManager::WorldToScreen(const Rectangle &worldRect)
 {
-    auto &camera = GetInstance().camera;
+    auto &camera = GetCamera();
     Vector2 screenPos = (RectToPos(worldRect) - camera.GetPosition()) * TILE_SIZE * camera.GetZoom() + (GetScreenSize() / 2.);
     Vector2 screenSize = RectToSize(worldRect) * TILE_SIZE * camera.GetZoom();
 
@@ -236,6 +233,14 @@ GameServer &GameManager::GetServer()
     return *instance.server;
 }
 
+PlayerCam &GameManager::GetCamera()
+{
+    auto &instance = GetInstance();
+    if (!instance.camera)
+        instance.camera = std::make_unique<PlayerCam>();
+    return *instance.camera;
+}
+
 
 std::shared_ptr<RenderSnapshot> GameManager::GetRenderSnapshot()
 {
@@ -257,5 +262,5 @@ void GameManager::ApplyPendingState()
     }
 }
 
-GameManager::GameManager() : renderSnapshot(nullptr) {}
+GameManager::GameManager() : camera(std::make_unique<PlayerCam>()), renderSnapshot(nullptr) {}
 GameManager::~GameManager() = default;

@@ -1,4 +1,5 @@
 #include "asset_manager.hpp"
+#include "camera.hpp"
 #include "component.hpp"
 #include "def_manager.hpp"
 #include "game_state.hpp"
@@ -77,11 +78,11 @@ std::shared_ptr<Tile> Tile::CreateTile(const std::string &tileId, const Vector2I
     tilesAtPos.push_back(tile);
     std::sort(tilesAtPos.begin(), tilesAtPos.end(), Tile::CompareByHeight);
 
-    if (magic_enum::enum_flags_test_any(tile->GetHeight(), TileDef::Height::POWER))
+    if (magic_enum::enum_flags_test_any(tile->GetHeight(), TileHeight::POWER))
         station->RebuildPowerGridsFromInfrastructure();
     else if (auto powerConnector = tile->GetComponent<PowerConnectorComponent>())
     {
-        if (auto powerWireTile = station->GetTileAtPosition(position, TileDef::Height::POWER))
+        if (auto powerWireTile = station->GetTileAtPosition(position, TileHeight::POWER))
         {
             if (auto powerWireConnector = powerWireTile->GetComponent<PowerConnectorComponent>())
             {
@@ -156,7 +157,7 @@ void Tile::DeleteTile(bool returnResources)
         std::erase_if(tilesAtPos, [&self](const std::shared_ptr<Tile> &tile)
                       { return tile == self; });
 
-        if (magic_enum::enum_flags_test_any(GetHeight(), TileDef::Height::POWER))
+        if (magic_enum::enum_flags_test_any(GetHeight(), TileHeight::POWER))
             station->RebuildPowerGridsFromInfrastructure();
 
         if (returnResources)
