@@ -7,6 +7,7 @@
 #include "game_state.hpp"
 #include "lua_bindings.hpp"
 #include "particle_system.hpp"
+#include "pawn_def.hpp"
 #include "pawn.hpp"
 #include "planned_task.hpp"
 #include "power_grid.hpp"
@@ -242,10 +243,10 @@ void DrawStationOverlays()
         {
             DrawLineEx(screenPoints[i], screenPoints[(i + 1) % screenPoints.size()], 2.0f, Fade(ORANGE, 0.5f));
         }
-        
+
         // Optional: Draw links between polygon centers
         Vector2 center = GameManager::WorldToScreen(poly.GetCenter());
-        for (const auto& link : poly.links)
+        for (const auto &link : poly.links)
         {
             Vector2 nbCenter = GameManager::WorldToScreen(snapshot->station->navPolygons[link.targetPolyIdx].GetCenter());
             DrawLineEx(center, nbCenter, 1.0f, Fade(YELLOW, 0.3f));
@@ -429,15 +430,62 @@ void DrawEnvironmentalEffects()
     }
 }
 
-void DrawPawnCircle(const std::shared_ptr<const Pawn> &pawn, const Vector2 &drawPosition, bool isSelected)
+void DrawPawnSprite(const std::shared_ptr<const Pawn> &pawn, const Vector2 &drawPosition, bool isSelected, bool isMoving)
 {
     auto &camera = GameManager::GetCamera();
     Vector2 pawnScreenPos = GameManager::WorldToScreen(drawPosition);
+    float pawnRadius = (PAWN_DRAW_SIZE * 0.5f) * camera.GetZoom();
 
-    if (isSelected)
-        DrawCircleV(pawnScreenPos, (PAWN_RADIUS + OUTLINE_SIZE) * camera.GetZoom(), OUTLINE_COLOR);
+    auto DrawPawnOutline = [&](float radius, Color color)
+    {
+        float innerRadius = radius - OUTLINE_SIZE * camera.GetZoom();
+        if (innerRadius < 0.f)
+            innerRadius = 0.f;
+        DrawRing(pawnScreenPos, innerRadius, radius, 0.f, 360.f, 24, color);
+    };
 
-    DrawCircleV(pawnScreenPos, PAWN_RADIUS * camera.GetZoom(), pawn->IsAlive() ? pawn->GetColor() : GRAY);
+    float outlineOpacity = isSelected ? .75f : .5f;
+    bool isDead = !pawn->IsAlive();
+
+    if (isDead)
+        DrawPawnOutline(pawnRadius * 1.25f, Fade(GRAY, outlineOpacity));
+    else
+        DrawPawnOutline(pawnRadius * 1.25f, Fade(pawn->GetColor(), outlineOpacity));
+
+    // Try to draw sprite, but fall back to circle on any error
+    try
+    {
+        // Determine animation type
+        PawnAnimationType animType = PawnAnimationType::IDLE;
+        if (!isDead && isMoving)
+            animType = PawnAnimationType::WALKING;
+
+        // Get pawn definition
+        auto pawnDef = DefinitionManager::GetPawnDefinition("BASE");
+        if (!pawnDef)
+            return;
+
+        // Get animation and frame
+        float animSpeed = pawnDef->GetAnimationSpeed(animType);
+
+        // Update animation elapsed time
+        pawn->AddAnimationElapsedTime(GetFrameTime());
+        size_t frameIndex = static_cast<size_t>(pawn->GetAnimationElapsedTime() / animSpeed);
+
+        Vector2Int frameOffset = pawnDef->GetFrame(animType, pawn->GetFacingDirection(), frameIndex);
+
+        // Draw sprite from spritesheet
+        Vector2 tileSize = Vector2(PAWN_DRAW_SIZE, PAWN_DRAW_SIZE) * camera.GetZoom();
+        Rectangle sourceRect = Rectangle(frameOffset.x * PAWN_SPRITE_SIZE, frameOffset.y * PAWN_SPRITE_SIZE, PAWN_SPRITE_SIZE, PAWN_SPRITE_SIZE);
+        Rectangle destRect = Vector2ToRect(pawnScreenPos, tileSize);
+        Color spriteTint = isDead ? Fade(GRAY, .5f) : WHITE;
+
+        DrawTexturePro(AssetManager::GetTexture("PAWN"), sourceRect, destRect, tileSize / 2.f, 0, spriteTint);
+    }
+    catch (const std::exception &e)
+    {
+        TraceLog(LOG_WARNING, "Error drawing pawn sprite: %s", e.what());
+    }
 }
 
 /**
@@ -453,12 +501,14 @@ void DrawPawn()
         const auto &pawn = kv.second;
         Vector2 drawPosition = pawn->GetPosition();
         auto &actionQueue = pawn->GetReadOnlyActionQueue();
+        bool isMoving = false;
 
         if (!actionQueue.empty() && actionQueue.front()->GetType() == Action::Type::MOVE)
         {
             const auto moveAction = std::dynamic_pointer_cast<MoveAction>(actionQueue.front());
+            isMoving = moveAction && moveAction->IsMoving();
 
-            if (!GameManager::IsInBuildMode() && !moveAction->path.empty())
+            if (isMoving && !GameManager::IsInBuildMode() && !moveAction->path.empty())
             {
                 DrawPath(moveAction->path, pawn->GetPosition());
                 Vector2 nextPosition = moveAction->path.front();
@@ -489,7 +539,7 @@ void DrawPawn()
         }
 
         bool isSelected = Find(GameManager::GetSelectedPawn(), pawn->GetInstanceId()).has_value();
-        DrawPawnCircle(pawn, drawPosition, isSelected);
+        DrawPawnSprite(pawn, drawPosition, isSelected, isMoving);
     }
 }
 

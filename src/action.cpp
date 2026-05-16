@@ -8,6 +8,8 @@
 
 bool MoveAction::Update(const std::shared_ptr<Pawn> &pawn)
 {
+    isMoving = false;
+
     if (!pawn)
         return true;
 
@@ -17,13 +19,13 @@ bool MoveAction::Update(const std::shared_ptr<Pawn> &pawn)
 
     if (path.empty())
     {
-        path = FindPath(pawn->GetPosition(), targetPosition, station->navPolygons, 
-            [](const ConvexPolygon::Link& link) {
-                if (auto doorTile = link.door.lock()) {
-                    return doorTile->IsActive(); // Only path through powered doors
-                }
-                return true;
-            });
+        path = FindPath(pawn->GetPosition(), targetPosition, station->navPolygons,
+                        [](const ConvexPolygon::Link &link)
+                        {
+                            if (auto doorTile = link.door.lock())
+                                return doorTile->IsActive(); // Only path through powered doors
+                            return true;
+                        });
 
         if (path.empty())
         {
@@ -35,15 +37,33 @@ bool MoveAction::Update(const std::shared_ptr<Pawn> &pawn)
     const float moveDelta = PAWN_MOVE_SPEED * FIXED_DELTA_TIME;
     Vector2 nextWaypoint = path.front();
     Vector2 dir = Vector2Normalize(nextWaypoint - pawn->GetPosition());
-    
+
+    // Update pawn facing direction based on movement direction
+    // Determine the closest cardinal direction to the movement vector
+    Direction closestDir = Direction::S; // Default
+    float maxDot = -2.f;
+    for (auto cardinalDir : CARDINAL_DIRECTIONS)
+    {
+        Vector2Int dirVec = DirectionToVector2Int(cardinalDir);
+        Vector2 normDir = Vector2Normalize(Vector2(static_cast<float>(dirVec.x), static_cast<float>(dirVec.y)));
+        float dot = Vector2Dot(dir, normDir);
+        if (dot > maxDot)
+        {
+            maxDot = dot;
+            closestDir = cardinalDir;
+        }
+    }
+    pawn->SetFacingDirection(closestDir);
+
     // Check for door at current position or slightly ahead
     std::shared_ptr<Tile> doorTile = nullptr;
-    Vector2Int currentTilePos = {(int)std::floor(pawn->GetPosition().x + 0.5f), (int)std::floor(pawn->GetPosition().y + 0.5f)};
+    Vector2Int currentTilePos = {(int)std::floor(pawn->GetPosition().x + .5f), (int)std::floor(pawn->GetPosition().y + .5f)};
     doorTile = station->GetTileWithComponentAtPosition(currentTilePos, ComponentType::DOOR);
-    
-    if (!doorTile) {
-        Vector2 checkPos = pawn->GetPosition() + dir * 0.6f;
-        Vector2Int checkTilePos = {(int)std::floor(checkPos.x + 0.5f), (int)std::floor(checkPos.y + 0.5f)};
+
+    if (!doorTile)
+    {
+        Vector2 checkPos = pawn->GetPosition() + dir * .6f;
+        Vector2Int checkTilePos = {(int)std::floor(checkPos.x + .5f), (int)std::floor(checkPos.y + .5f)};
         doorTile = station->GetTileWithComponentAtPosition(checkTilePos, ComponentType::DOOR);
     }
 
@@ -59,12 +79,13 @@ bool MoveAction::Update(const std::shared_ptr<Pawn> &pawn)
     }
 
     float distToWaypoint = Vector2Distance(pawn->GetPosition(), nextWaypoint);
-    
+
     if (distToWaypoint <= moveDelta)
     {
         // Reach waypoint
+        isMoving = distToWaypoint > 0.f;
         pawn->SetPosition(nextWaypoint);
-        
+
         // Reset door state if we just passed through one
         Vector2Int currentTilePos = ToVector2Int(pawn->GetPosition() / TILE_SIZE);
         if (auto doorTile = station->GetTileWithComponentAtPosition(currentTilePos, ComponentType::DOOR))
@@ -81,6 +102,7 @@ bool MoveAction::Update(const std::shared_ptr<Pawn> &pawn)
     else
     {
         // Move towards waypoint
+        isMoving = true;
         pawn->SetPosition(pawn->GetPosition() + Vector2Normalize(nextWaypoint - pawn->GetPosition()) * moveDelta);
     }
     return false;

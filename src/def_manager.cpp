@@ -421,7 +421,8 @@ void DefinitionManager::ParseConstantsFromFile(const std::string &filename)
     OUTLINE_COLOR = ReadColorAt("outline/outlineColor");
 
     // pawn (required)
-    PAWN_RADIUS = GetRequiredValue<float>(root, "pawn/radius");
+    PAWN_DRAW_SIZE = GetRequiredValue<float>(root, "pawn/drawSize");
+    PAWN_SPRITE_SIZE = GetRequiredValue<float>(root, "pawn/spriteSize");
     PAWN_MOVE_SPEED = GetRequiredValue<float>(root, "pawn/moveSpeed");
     PAWN_OXYGEN_MAX = GetRequiredValue<float>(root, "pawn/oxygenMax");
     PAWN_OXYGEN_USE = GetRequiredValue<float>(root, "pawn/oxygenUse");
@@ -456,4 +457,67 @@ void DefinitionManager::ParseResourcesFromFile(const std::string &filename)
 
         DefinitionManager::GetInstance().resourceDefinitions[resourceId] = std::make_shared<ResourceDef>(resourceId, price);
     }
+}
+
+void DefinitionManager::ParsePawnsFromFile(const std::string &filename)
+{
+    std::vector<char> contents = ReadFromFile<std::vector<char>>(filename);
+    ryml::Tree tree = ryml::parse_in_place(ryml::to_substr(contents));
+
+    if (tree.empty())
+        throw std::runtime_error(std::format("The pawn definition file is empty or unreadable: {}", filename));
+
+    for (ryml::ConstNodeRef pawnNode : tree["pawns"])
+    {
+        // Retrieve the pawn ID string
+        std::string pawnId;
+        pawnNode["id"] >> pawnId;
+        StringRemoveSpaces(pawnId);
+
+        if (pawnId.empty())
+            throw std::runtime_error(std::format("Parsing of pawn ID string failed: {}", pawnId));
+
+        std::unordered_map<PawnAnimationType, PawnAnimation> animations;
+
+        // Parse animations
+        if (pawnNode.has_child("animations"))
+        {
+            for (ryml::ConstNodeRef animNode : pawnNode["animations"])
+            {
+                // Get animation type from key
+                std::string animTypeStr = std::string(animNode.key().data(), animNode.key().size());
+                StringRemoveSpaces(animTypeStr);
+                auto animType = magic_enum::enum_cast<PawnAnimationType>(animTypeStr, magic_enum::case_insensitive);
+                if (!animType.has_value())
+                    throw std::runtime_error(std::format("Parsing of animation type string for pawn ({}) failed: {}", pawnId, animTypeStr));
+
+                PawnAnimationType type = animType.value();
+                float speed = GetValue<float>(animNode, "speed", 0.25f);
+                if (speed <= 0.f)
+                    throw std::runtime_error(std::format("Pawn animation speed for '{}' (type {}) must be > 0 (found {})", pawnId, animTypeStr, speed));
+
+                std::unordered_map<Direction, std::vector<Vector2Int>> framesByDirection;
+
+                // Parse directions
+                for (auto &dirEntry : ALL_DIRECTIONS)
+                {
+                    std::string dirStr = std::string(magic_enum::enum_name(dirEntry));
+                    ryml::csubstr dirCstr(dirStr.c_str(), dirStr.size());
+
+                    if (animNode.has_child(dirCstr))
+                    {
+                        std::vector<Vector2Int> frames;
+                        animNode[dirCstr] >> frames;
+                        framesByDirection[dirEntry] = frames;
+                    }
+                }
+
+                animations[type] = PawnAnimation{speed, framesByDirection};
+            }
+        }
+
+        DefinitionManager::GetInstance().pawnDefinitions[pawnId] = std::make_shared<PawnDef>(pawnId, animations);
+        TraceLog(LOG_INFO, "Loaded pawn definition: %s with %zu animations", pawnId.c_str(), animations.size());
+    }
+    TraceLog(LOG_INFO, "Finished parsing pawns file: %s", filename.c_str());
 }

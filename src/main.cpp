@@ -25,6 +25,7 @@ int main()
     DefinitionManager::ParseResourcesFromFile("../assets/definitions/resources.yml");
     DefinitionManager::ParseTilesFromFile("../assets/definitions/tiles.yml");
     DefinitionManager::ParseEffectsFromFile("../assets/definitions/env_effects.yml");
+    DefinitionManager::ParsePawnsFromFile("../assets/definitions/pawns.yml");
 
     AudioManager::Initialize();
 

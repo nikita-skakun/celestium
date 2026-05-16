@@ -1,6 +1,7 @@
 #pragma once
 #include "env_effect_def.hpp"
 #include "fs_utils.hpp"
+#include "pawn_def.hpp"
 #include <c4/format.hpp>
 #include <ryml_std.hpp>
 #include <ryml.hpp>
@@ -45,6 +46,7 @@ protected:
     std::unordered_map<std::string, std::shared_ptr<TileDef>> tileDefinitions;
     std::unordered_map<std::string, std::shared_ptr<EffectDef>> effectDefinitions;
     std::unordered_map<std::string, std::shared_ptr<ResourceDef>> resourceDefinitions;
+    std::unordered_map<std::string, std::shared_ptr<PawnDef>> pawnDefinitions;
 
     DefinitionManager() = default;
     ~DefinitionManager() = default;
@@ -104,6 +106,18 @@ public:
         }
     }
 
+    static std::shared_ptr<PawnDef> GetPawnDefinition(const std::string &pawnId)
+    {
+        try
+        {
+            return DefinitionManager::GetInstance().pawnDefinitions.at(pawnId);
+        }
+        catch (...)
+        {
+            return nullptr;
+        }
+    }
+
     // Resolve a slash-separated path (e.g. "ui/textColor") against a node and return
     // the child node reference. Throws if any path component is missing.
     static ryml::ConstNodeRef GetNodeByPath(const ryml::ConstNodeRef &root, const std::string &path)
@@ -150,4 +164,5 @@ public:
     static void ParseEffectsFromFile(const std::string &filename);
     static void ParseResourcesFromFile(const std::string &filename);
     static void ParseConstantsFromFile(const std::string &filename);
+    static void ParsePawnsFromFile(const std::string &filename);
 };

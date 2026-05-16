@@ -26,6 +26,7 @@ public:
 
         assetManager.textures.emplace("STATION", LoadTexture("../assets/tilesets/station.png"));
         assetManager.textures.emplace("ICON", LoadTexture("../assets/tilesets/icons.png"));
+        assetManager.textures.emplace("PAWN", LoadTexture("../assets/sprites/pawn.png"));
         assetManager.fonts.emplace("DEFAULT", LoadFontEx("../assets/fonts/Jersey25.ttf", DEFAULT_FONT_SIZE, NULL, 0));
     }
 

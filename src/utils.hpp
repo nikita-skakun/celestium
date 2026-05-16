@@ -151,6 +151,8 @@ struct Vector2Hash
 };
 
 Vector2 Vector2Normalize(const Vector2 &a) noexcept;
+float Vector2Dot(const Vector2 &a, const Vector2 &b) noexcept;
+float Vector2Cross(const Vector2 &a, const Vector2 &b, const Vector2 &c) noexcept;
 float Vector2LengthSq(const Vector2 &a) noexcept;
 float Vector2Distance(const Vector2 &a, const Vector2 &b) noexcept;
 float Vector2DistanceSq(const Vector2 &a, const Vector2 &b) noexcept;

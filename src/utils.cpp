@@ -62,17 +62,25 @@ std::size_t Vector2Hash::operator()(const Vector2 &v) const noexcept
 
 Vector2 Vector2Normalize(const Vector2 &a) noexcept
 {
-    float lengthSq = a.x * a.x + a.y * a.y;
+    float lengthSq = Vector2Dot(a, a);
     if (lengthSq == 0)
-    {
         return a;
-    }
     return a / std::sqrt(lengthSq);
+}
+
+float Vector2Dot(const Vector2 &a, const Vector2 &b) noexcept
+{
+    return a.x * b.x + a.y * b.y;
+}
+
+float Vector2Cross(const Vector2 &a, const Vector2 &b, const Vector2 &c) noexcept
+{
+    return (b.x - a.x) * (c.y - a.y) - (b.y - a.y) * (c.x - a.x);
 }
 
 float Vector2LengthSq(const Vector2 &a) noexcept
 {
-    return a.x * a.x + a.y * a.y;
+    return Vector2Dot(a, a);
 }
 
 float Vector2Distance(const Vector2 &a, const Vector2 &b) noexcept
@@ -263,7 +271,7 @@ float DistanceSqFromPointToLine(const Vector2 &a, const Vector2 &b, const Vector
     float abLengthSquared = Vector2LengthSq(ab);
 
     // Project point P onto line AB, computing parameterized position t
-    float t = (ap.x * ab.x + ap.y * ab.y) / abLengthSquared;
+    float t = Vector2Dot(ap, ab) / abLengthSquared;
     if (t < 0)
         t = 0;
     else if (t > 1)

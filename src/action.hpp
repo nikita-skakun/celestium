@@ -27,10 +27,12 @@ struct MoveAction : Action
 {
     Vector2 targetPosition;
     std::deque<Vector2> path;
+    bool isMoving = false;
 
     explicit MoveAction(const Vector2 &position) : targetPosition(position) {}
 
     bool Update(const std::shared_ptr<Pawn> &pawn) override;
+    bool IsMoving() const { return isMoving; }
 
     std::string GetActionName() const override { return "Moving"; }
     Type GetType() const override { return Type::MOVE; }

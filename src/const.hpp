@@ -27,7 +27,8 @@ inline float DRAG_THRESHOLD;
 inline float OUTLINE_SIZE;
 inline Color OUTLINE_COLOR;
 
-inline float PAWN_RADIUS;
+inline float PAWN_DRAW_SIZE;
+inline float PAWN_SPRITE_SIZE;
 inline float PAWN_MOVE_SPEED;
 inline float PAWN_OXYGEN_MAX;
 inline float PAWN_OXYGEN_USE;

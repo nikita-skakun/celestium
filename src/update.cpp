@@ -91,15 +91,15 @@ void HandlePawnHover()
         return;
     const auto &pawnList = snapshot->pawnList;
     const Vector2 worldMousePos = GameManager::GetWorldMousePos() - Vector2(.5, .5);
-    const float pawnSize = PAWN_RADIUS / TILE_SIZE;
-    const float pawnSizeSq = pawnSize * pawnSize;
+    const float pawnRadius = (PAWN_DRAW_SIZE * .5f * 1.25f) / TILE_SIZE;
+    const float pawnRadiusSq = pawnRadius * pawnRadius;
 
     GameManager::ClearHoveredPawn();
 
     for (const auto &entry : pawnList)
     {
         const auto &pawn = entry.second;
-        if (!pawn || Vector2DistanceSq(worldMousePos, pawn->GetPosition()) > pawnSizeSq)
+        if (!pawn || Vector2DistanceSq(worldMousePos, pawn->GetPosition()) > pawnRadiusSq)
             continue;
 
         GameManager::AddHoveredPawn(pawn->GetInstanceId());
