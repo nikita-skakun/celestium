@@ -5,6 +5,7 @@
 #include "tile_def.hpp"
 #include "ui_element.hpp"
 #include "ui_manager.hpp"
+#include <raygui.h>
 
 namespace
 {
@@ -87,38 +88,43 @@ namespace
         const float halfWidth = size.x / 2. - spacing.x * 1.5;
 
         auto settingsMenu = std::make_shared<UiPanel>(Rectangle(0, 0, 1, 1), Fade(BLACK, .2));
-        LinkVisibility(settingsMenu, []() { return GameManager::GetCamera().IsUiState(PlayerCam::UiState::SETTINGS_MENU); });
+        LinkVisibility(settingsMenu, []()
+                       { return GameManager::GetCamera().IsUiState(PlayerCam::UiState::SETTINGS_MENU); });
         UiManager::AddElement("SETTINGS_MENU", settingsMenu);
 
         auto menuBg = std::make_shared<UiPanel>(Vector2ToRect(pos, size), Fade(BLACK, .5));
         settingsMenu->AddChild(menuBg);
 
         float currentY = pos.y + spacing.y;
-        auto getRect = [&](bool right) { return Rectangle(pos.x + spacing.x + (right ? halfWidth + spacing.x : 0), currentY, halfWidth, height); };
+        auto getRect = [&](bool right)
+        { return Rectangle(pos.x + spacing.x + (right ? halfWidth + spacing.x : 0), currentY, halfWidth, height); };
 
         // Monitor & FPS
         menuBg->AddChild(std::make_shared<UiStatusBar>(getRect(false), "Render Monitor:"));
         std::string monitorNames;
-        for (int i = 0; i < GetMonitorCount(); i++) monitorNames += (i > 0 ? ";" : "") + std::string(GetMonitorName(i));
+        for (int i = 0; i < GetMonitorCount(); i++)
+            monitorNames += (i > 0 ? ";" : "") + std::string(GetMonitorName(i));
         auto monitorSelect = std::make_shared<UiComboBox>(getRect(true), monitorNames, GetCurrentMonitor());
         menuBg->AddChild(monitorSelect);
         currentY += height + spacing.y;
 
         menuBg->AddChild(std::make_shared<UiStatusBar>(getRect(false), "Monitor FPS:"));
         auto fpsSelect = std::make_shared<UiComboBox>(getRect(true), GameManager::GetCamera().GetFpsOptions(), GameManager::GetCamera().GetFpsIndex(),
-                                                       [](int idx) { GameManager::GetCamera().SetFpsIndex(idx); });
+                                                      [](int idx)
+                                                      { GameManager::GetCamera().SetFpsIndex(idx); });
         menuBg->AddChild(fpsSelect);
 
         std::weak_ptr<UiComboBox> weakFps = fpsSelect;
-        monitorSelect->SetOnPress([weakFps](int monitor) {
+        monitorSelect->SetOnPress([weakFps](int monitor)
+                                  {
             SetWindowMonitor(monitor);
             GameManager::GetCamera().SetFps(GetMonitorRefreshRate(monitor));
-            if (auto f = weakFps.lock()) { f->SetText(GameManager::GetCamera().GetFpsOptions()); f->SetState(GameManager::GetCamera().GetFpsIndex()); }
-        });
+            if (auto f = weakFps.lock()) { f->SetText(GameManager::GetCamera().GetFpsOptions()); f->SetState(GameManager::GetCamera().GetFpsIndex()); } });
         currentY += height + spacing.y;
 
         // Volume Sliders
-        auto addSlider = [&](const std::string &label, auto get, auto set) {
+        auto addSlider = [&](const std::string &label, auto get, auto set)
+        {
             AddVolumeSlider(menuBg, getRect(false), getRect(true), label, get, set);
             currentY += height + spacing.y;
         };
@@ -140,17 +146,19 @@ namespace
         const Vector2 SIZE = Vector2ScreenScale(Vector2(64, 64));
         const Vector2 PANEL_POS = Vector2(.5 - .8 / 2., 1. - (SIZE.y + SPACING.y * 2.) - SPACING.y * 4. - SIZE.y);
         Vector2 pos = PANEL_POS + Vector2(SPACING.x + idx * (SIZE.x + SPACING.x), SPACING.y);
+        const std::string tileId = cfg.tileId;
+        const std::string iconSheet = cfg.iconSheet;
+        const Vector2Int iconOffset = cfg.iconOffset;
 
-        AddIconButton(panel, Vector2ToRect(pos, SIZE), "",
-            [&cfg]() { return GameManager::GetBuildTileId() == cfg.tileId; },
-            [&cfg](bool s) { GameManager::SetBuildTileId(s ? cfg.tileId : ""); if (s) GameManager::SetCancelMode(false); },
-            cfg.iconSheet, Vector2ToRect(ToVector2(cfg.iconOffset), {1, 1}) * TILE_SIZE);
+        AddIconButton(panel, Vector2ToRect(pos, SIZE), "", [tileId]()
+                      { return GameManager::GetBuildTileId() == tileId; }, [tileId](bool s)
+                      { GameManager::SetBuildTileId(s ? tileId : ""); if (s) GameManager::SetCancelMode(false); }, iconSheet, Vector2ToRect(ToVector2(iconOffset), {1, 1}) * TILE_SIZE);
     }
 
     void InitializeCategorySpecificMenu()
     {
         TileCategory selectedCategory = GameManager::GetSelectedCategory();
-        auto tileDefs = DefinitionManager::GetTileDefinitions();
+        const auto &tileDefs = DefinitionManager::GetTileDefinitions();
 
         int index = 0;
         for (const auto &pair : tileDefs)
@@ -180,7 +188,6 @@ namespace
         InitializeCategorySpecificMenu();
     }
 }
-
 
 void UiManager::Update()
 {
@@ -212,63 +219,74 @@ void UiManager::InitializeMainMenu()
     const Vector2 menuPos = Vector2(1. - menuSize.x - spacing.x, (1. - menuSize.y) / 2.);
 
     auto panel = std::make_shared<UiPanel>(Vector2ToRect(menuPos, menuSize), Fade(BLACK, .5));
-    LinkVisibility(panel, []() { return GameManager::GetCamera().IsUiClear(); });
+    LinkVisibility(panel, []()
+                   { return GameManager::GetCamera().IsUiClear(); });
 
-    AddButtonList(panel, menuPos + spacing, btnW, btnH, spacing.y, {
-        {"New Game", []() { GameManager::RequestStateChange(GameState::GAME_SIM); }},
-        {"Load Game", []() {}},
-        {"Settings", []() { GameManager::GetCamera().SetUiState(PlayerCam::UiState::SETTINGS_MENU); }},
-        {"Exit", []() { GameManager::RequestStateChange(GameState::NONE); }}
-    });
+    AddButtonList(panel, menuPos + spacing, btnW, btnH, spacing.y, {{"New Game", []()
+                                                                     { GameManager::RequestStateChange(GameState::GAME_SIM); }},
+                                                                    {"Load Game", []() {}},
+                                                                    {"Settings", []()
+                                                                     { GameManager::GetCamera().SetUiState(PlayerCam::UiState::SETTINGS_MENU); }},
+                                                                    {"Exit", []()
+                                                                     { GameManager::RequestStateChange(GameState::NONE); }}});
 
     UiManager::AddElement("MAIN_MENU", panel);
     InitializeSettingsMenu();
 }
 
-
 void UiManager::InitializeGameSim()
 {
     const Vector2 largeSize = Vector2ScreenScale(Vector2(64, 64)), smallSize = largeSize / 2.;
     const Vector2 spacing = Vector2ScreenScale(Vector2(DEFAULT_PADDING, DEFAULT_PADDING));
+    const Color buttonTextColor = GetColor(GuiGetStyle(BUTTON, TEXT_COLOR_NORMAL));
 
     // Sidebar & Overlays
-    AddIconButton(nullptr, Vector2ToRect({1.f - spacing.x - largeSize.x, (1.f - largeSize.y) / 2.f}, largeSize), "BUILD_TGL",
-                  []() { return GameManager::IsInBuildMode(); }, [](bool s) { GameManager::SetBuildModeState(s); },
-                  "ICON", {TILE_SIZE, TILE_SIZE, TILE_SIZE, TILE_SIZE}, WHITE, []() { return GameManager::GetCamera().IsUiClear(); });
+    AddIconButton(nullptr, Vector2ToRect({1.f - spacing.x - largeSize.x, (1.f - largeSize.y) / 2.f}, largeSize), "BUILD_TGL", []()
+                  { return GameManager::IsInBuildMode(); }, [](bool s)
+                  { GameManager::SetBuildModeState(s); }, "ICON", {TILE_SIZE, TILE_SIZE, TILE_SIZE, TILE_SIZE}, buttonTextColor, []()
+                  { return GameManager::GetCamera().IsUiClear(); });
 
     Vector2 overlayPos = {1.f - spacing.x - smallSize.x, (1.f + largeSize.y) / 2.f + spacing.y};
-    for (auto o : magic_enum::enum_values<PlayerCam::Overlay>())
+    auto addOverlayButton = [&](PlayerCam::Overlay overlay, const char *id, Vector2Int iconOffset)
     {
-        if (o == PlayerCam::Overlay::NONE) continue;
-        AddIconButton(nullptr, Vector2ToRect(overlayPos, smallSize), std::format("OVERLAY_{}_TGL", magic_enum::enum_name(o)),
-                      [o]() { return GameManager::GetCamera().IsOverlay(o); }, [o](bool) { GameManager::GetCamera().ToggleOverlay(o); },
-                      "", {}, WHITE, []() { return GameManager::GetCamera().IsUiClear(); });
+        AddIconButton(nullptr, Vector2ToRect(overlayPos, smallSize), id, [overlay]()
+                      { return GameManager::GetCamera().IsOverlay(overlay); }, [overlay](bool)
+                      { GameManager::GetCamera().ToggleOverlay(overlay); }, "ICON", Rectangle((float)iconOffset.x, (float)iconOffset.y, 1, 1) * TILE_SIZE, buttonTextColor, []()
+                      { return GameManager::GetCamera().IsUiClear(); });
         overlayPos.y += smallSize.y + spacing.y;
-    }
+    };
+    addOverlayButton(PlayerCam::Overlay::OXYGEN, "OVERLAY_OXYGEN_TGL", {0, 0});
+    addOverlayButton(PlayerCam::Overlay::WALL, "OVERLAY_WALL_TGL", {1, 0});
+    addOverlayButton(PlayerCam::Overlay::POWER, "OVERLAY_POWER_TGL", {2, 0});
 
     // Escape Menu
     const float escW = 1. / 12., escH = 1. / 24.;
     const Vector2 escSize = Vector2(escW, 4 * escH + 3 * spacing.y) + spacing * 2;
     const Vector2 escPos = Vector2(.5, .5) - escSize / 2.;
     auto escMenu = std::make_shared<UiPanel>(Rectangle(0, 0, 1, 1), Fade(BLACK, .2));
-    LinkVisibility(escMenu, []() { return GameManager::GetCamera().IsUiState(PlayerCam::UiState::ESC_MENU); });
+    LinkVisibility(escMenu, []()
+                   { return GameManager::GetCamera().IsUiState(PlayerCam::UiState::ESC_MENU); });
     auto escBg = std::make_shared<UiPanel>(Vector2ToRect(escPos, escSize), Fade(BLACK, .5));
     escMenu->AddChild(escBg);
-    AddButtonList(escBg, escPos + spacing, escW, escH, spacing.y, {
-        {"Resume", []() { GameManager::GetCamera().SetUiState(PlayerCam::UiState::NONE); }},
-        {"Settings", []() { GameManager::GetCamera().SetUiState(PlayerCam::UiState::SETTINGS_MENU); }},
-        {"Main Menu", []() { GameManager::RequestStateChange(GameState::MAIN_MENU); }},
-        {"Exit", []() { GameManager::RequestStateChange(GameState::NONE); }}
-    });
+    AddButtonList(escBg, escPos + spacing, escW, escH, spacing.y, {{"Resume", []()
+                                                                    { GameManager::GetCamera().SetUiState(PlayerCam::UiState::NONE); }},
+                                                                   {"Settings", []()
+                                                                    { GameManager::GetCamera().SetUiState(PlayerCam::UiState::SETTINGS_MENU); }},
+                                                                   {"Main Menu", []()
+                                                                    { GameManager::RequestStateChange(GameState::MAIN_MENU); }},
+                                                                   {"Exit", []()
+                                                                    { GameManager::RequestStateChange(GameState::NONE); }}});
     UiManager::AddElement("ESC_MENU", escMenu);
     InitializeSettingsMenu();
 
     // Symmetry Buttons
     Vector2 panelPos = {.5f - .8f / 2.f, 1.f - (smallSize.y * 2 + spacing.y * 2) - spacing.y};
     Vector2 symPos = {panelPos.x - smallSize.x - spacing.x, 1.f - spacing.y * 1.5f - smallSize.y};
-    auto addSym = [&](const std::string &id, auto get, auto tgl, Rectangle offset) {
-        AddIconButton(nullptr, Vector2ToRect(symPos, smallSize), id, get, [tgl](bool) { tgl(); }, "ICON", offset * TILE_SIZE, Fade(DARKGRAY, .8f),
-                      []() { return GameManager::IsInBuildMode() && GameManager::GetCamera().IsUiClear(); });
+    auto addSym = [&](const std::string &id, auto get, auto tgl, Rectangle offset)
+    {
+        AddIconButton(nullptr, Vector2ToRect(symPos, smallSize), id, get, [tgl](bool)
+                      { tgl(); }, "ICON", offset * TILE_SIZE, Fade(DARKGRAY, .8f), []()
+                      { return GameManager::IsInBuildMode() && GameManager::GetCamera().IsUiClear(); });
         symPos.y -= smallSize.y + spacing.y;
     };
     addSym("BUILD_HOR_SYM_BTN", GameManager::IsHorizontalSymmetry, GameManager::ToggleHorizontalSymmetry, {6, 1, 1, 1});
@@ -276,25 +294,29 @@ void UiManager::InitializeGameSim()
 
     // Build Category Panel
     auto buildCatPanel = std::make_shared<UiPanel>(Vector2ToRect(panelPos, {.8f, largeSize.y + spacing.y * 2}), Fade(BLACK, .5f));
-    LinkVisibility(buildCatPanel, []() { return GameManager::GetCamera().IsUiClear() && GameManager::IsInBuildMode(); });
+    LinkVisibility(buildCatPanel, []()
+                   { return GameManager::GetCamera().IsUiClear() && GameManager::IsInBuildMode(); });
     UiManager::AddElement("BUILD_CATEGORY", buildCatPanel);
 
     Vector2 catPos = panelPos + spacing;
-    struct CatCfg { TileCategory c; Vector2Int off; };
-    for (auto &c : {CatCfg{TileCategory::STRUCTURE, {1, 0}}, CatCfg{TileCategory::POWER, {2, 0}}, CatCfg{TileCategory::OXYGEN, {0, 0}}})
+    auto addCategoryButton = [&](TileCategory category, Vector2Int iconOffset)
     {
-        AddIconButton(buildCatPanel, Vector2ToRect(catPos, largeSize), "", [c]() { return GameManager::GetSelectedCategory() == c.c; },
-                      [c](bool) { ToggleBuildCategory(c.c); }, "ICON", Rectangle((float)c.off.x, (float)c.off.y, 1, 1) * TILE_SIZE, Fade(DARKGRAY, .8f));
+        AddIconButton(buildCatPanel, Vector2ToRect(catPos, largeSize), "", [category]()
+                      { return GameManager::GetSelectedCategory() == category; }, [category](bool)
+                      { ToggleBuildCategory(category); }, "ICON", Rectangle((float)iconOffset.x, (float)iconOffset.y, 1, 1) * TILE_SIZE, buttonTextColor);
         catPos.x += largeSize.x + spacing.x * 2;
-    }
-    AddIconButton(buildCatPanel, Vector2ToRect(catPos, largeSize), "", GameManager::IsInCancelMode,
-                  [](bool s) { GameManager::SetCancelMode(s); if (s) GameManager::SetBuildTileId(""); },
-                  "ICON", Rectangle{7, 1, 1, 1} * TILE_SIZE, Fade(DARKGRAY, .8f),
-                  []() { return GameManager::IsInBuildMode() && GameManager::GetCamera().IsUiClear(); });
+    };
+    addCategoryButton(TileCategory::STRUCTURE, {1, 0});
+    addCategoryButton(TileCategory::POWER, {2, 0});
+    addCategoryButton(TileCategory::OXYGEN, {0, 0});
+    AddIconButton(buildCatPanel, Vector2ToRect(catPos, largeSize), "", GameManager::IsInCancelMode, [](bool s)
+                  { GameManager::SetCancelMode(s); if (s) GameManager::SetBuildTileId(""); }, "ICON", Rectangle{7, 1, 1, 1} * TILE_SIZE, buttonTextColor, []()
+                  { return GameManager::IsInBuildMode() && GameManager::GetCamera().IsUiClear(); });
 
     // Build Menu Panel
     auto buildMenuPanel = std::make_shared<UiPanel>(Vector2ToRect({.5f - .8f / 2.f, 1.f - (largeSize.y + spacing.y * 2) - spacing.y * 4 - largeSize.y}, {.8f, largeSize.y + spacing.y * 2}), Fade(BLACK, .5f));
-    LinkVisibility(buildMenuPanel, []() { return GameManager::GetCamera().IsUiClear() && GameManager::IsInBuildMode() && GameManager::GetSelectedCategory() != TileCategory::NONE; });
+    LinkVisibility(buildMenuPanel, []()
+                   { return GameManager::GetCamera().IsUiClear() && GameManager::IsInBuildMode() && GameManager::GetSelectedCategory() != TileCategory::NONE; });
     UiManager::AddElement("BUILD_MENU", buildMenuPanel);
 }
 
