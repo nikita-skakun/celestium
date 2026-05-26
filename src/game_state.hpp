@@ -1,4 +1,5 @@
 #pragma once
+#include "direction.hpp"
 #include "tile_enums.hpp"
 #include "utils.hpp"
 #include <atomic>
@@ -6,7 +7,10 @@
 struct PlayerCam;
 class GameServer;
 struct RenderSnapshot;
-namespace sol { class state; }
+namespace sol
+{
+    class state;
+}
 
 enum class GameState : uint8_t
 {
@@ -32,6 +36,7 @@ private:
     bool verticalSymmetry = false;
     TileCategory selectedCategory = TileCategory::NONE;
     std::string buildTileId = "";
+    Rotation buildRotation = Rotation::UP;
     std::vector<uint64_t> hoveredPawnList;
     std::vector<uint64_t> selectedPawnList;
     Vector2 originalScreenSize;
@@ -78,9 +83,20 @@ public:
     static void ToggleSelectedCategory(TileCategory category);
 
     static const std::string &GetBuildTileId() { return GetInstance().buildTileId; }
-    static void SetBuildTileId(const std::string &tileId) { GetInstance().buildTileId = tileId; }
-    static void ToggleBuildTileId(const std::string &tileId) { GetInstance().buildTileId = GetInstance().buildTileId == tileId ? "" : tileId; }
+    static void SetBuildTileId(const std::string &tileId)
+    {
+        GetInstance().buildTileId = tileId;
+        GetInstance().buildRotation = Rotation::UP;
+    }
+    static void ToggleBuildTileId(const std::string &tileId)
+    {
+        GetInstance().buildTileId = GetInstance().buildTileId == tileId ? "" : tileId;
+        GetInstance().buildRotation = Rotation::UP;
+    }
     static bool IsBuildTileId(const std::string &tileId) { return GetInstance().buildTileId == tileId; }
+
+    static Rotation GetBuildRotation() { return GetInstance().buildRotation; }
+    static void SetBuildRotation(Rotation newRotation) { GetInstance().buildRotation = newRotation; }
 
     static std::vector<Vector2Int> GetSymmetryPositions(const Vector2Int &pos);
 

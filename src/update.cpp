@@ -30,7 +30,7 @@ void HandlePlaceTile(const std::shared_ptr<const Station> &station)
             if (t->GetId() == tileIdToPlace)
                 continue;
 
-        GameManager::GetServer().RequestPlannedTask(pos, tileIdToPlace, true);
+        GameManager::GetServer().RequestPlannedTask(pos, tileIdToPlace, true, GameManager::GetBuildRotation());
         TraceLog(TraceLogLevel::LOG_INFO, std::format("Planned to place {} at {}", tileDefinition->GetName(), ToString(pos)).c_str());
     }
 }
@@ -76,6 +76,14 @@ void HandleBuildMode()
         }
 
         return; // Don't also place/delete while canceling
+    }
+
+    if (!GameManager::GetBuildTileId().empty())
+    {
+        if (IsKeyPressed(KEY_E))
+            GameManager::SetBuildRotation(RotateClockwise(GameManager::GetBuildRotation()));
+        else if (IsKeyPressed(KEY_Q))
+            GameManager::SetBuildRotation(RotateCounterClockwise(GameManager::GetBuildRotation()));
     }
 
     if (IsMouseButtonPressed(MOUSE_LEFT_BUTTON) && !GameManager::GetBuildTileId().empty())

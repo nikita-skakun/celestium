@@ -442,13 +442,13 @@ const std::vector<std::shared_ptr<Tile>> &Station::GetTilesAtPosition(const Vect
     return (*tilesAtPosOpt)->second;
 }
 
-void Station::AddPlannedTask(const Vector2Int &pos, const std::string &tileId, bool isBuild)
+void Station::AddPlannedTask(const Vector2Int &pos, const std::string &tileId, bool isBuild, Rotation rotation)
 {
     // Remove any existing plan at this position
     std::erase_if(plannedTasks, [pos](const std::shared_ptr<PlannedTask> &task)
                   { return task->position == pos; });
 
-    plannedTasks.push_back(std::make_shared<PlannedTask>(PlannedTask(pos, tileId, isBuild)));
+    plannedTasks.push_back(std::make_shared<PlannedTask>(PlannedTask(pos, tileId, isBuild, rotation)));
 }
 
 void Station::CompletePlannedTask(const Vector2Int &pos)
@@ -462,7 +462,7 @@ void Station::CompletePlannedTask(const Vector2Int &pos)
 
     if (task->isBuild)
     {
-        if (!Tile::CreateTile(task->tileId, pos, shared_from_this(), true, true))
+        if (!Tile::CreateTile(task->tileId, pos, shared_from_this(), true, true, task->rotation))
             return;
     }
     else

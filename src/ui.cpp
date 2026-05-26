@@ -144,6 +144,19 @@ void DrawPath(const std::deque<Vector2> &path, const Vector2 &startPos)
     }
 }
 
+static std::vector<std::shared_ptr<Tile>> GetUniqueTiles(const std::shared_ptr<const Station> &station)
+{
+    std::vector<std::shared_ptr<Tile>> tiles;
+    if (!station)
+        return tiles;
+    std::unordered_set<std::shared_ptr<Tile>> uniqueTiles;
+    for (const auto &kv : station->tileMap)
+        for (const auto &tile : kv.second)
+            if (uniqueTiles.insert(tile).second)
+                tiles.push_back(tile);
+    return tiles;
+}
+
 /**
  * Draws the station tiles and direct overlays.
  */
@@ -157,41 +170,52 @@ void DrawStationTiles()
     const float zoom = camera.GetZoom();
     const Vector2 tileSize = Vector2(1, 1) * TILE_SIZE * zoom;
 
-    std::unordered_set<std::shared_ptr<Tile>> drawnTiles;
+    auto tiles = GetUniqueTiles(snapshot->station);
 
-    for (const auto &kv : snapshot->station->tileMap)
+    // Pass 1: Draw main/reference sprites for all tiles
+    for (const auto &tile : tiles)
     {
-        for (const auto &tile : kv.second)
+        float rotation = 0;
+        if (auto rotatable = tile->GetComponent<RotatableComponent>())
+            rotation = RotationToAngle(rotatable->GetRotation());
+
+        Color tint = GetTileTint(tile);
+        if (!tile->GetSprites().empty() && tile->GetSprites().front())
+            tile->GetSprites().front()->Draw(tile->GetPosition(), tint, rotation);
+    }
+
+    // Pass 2: Draw extra parts / offset sprites for all tiles
+    for (const auto &tile : tiles)
+    {
+        float rotation = 0;
+        if (auto rotatable = tile->GetComponent<RotatableComponent>())
+            rotation = RotationToAngle(rotatable->GetRotation());
+
+        Color tint = GetTileTint(tile);
+        const auto &sprites = tile->GetSprites();
+        for (size_t i = 1; i < sprites.size(); ++i)
         {
-            if (drawnTiles.contains(tile))
-                continue;
-            drawnTiles.insert(tile);
-
-            float rotation = 0;
-            if (auto rotatable = tile->GetComponent<RotatableComponent>())
-                rotation = RotationToAngle(rotatable->GetRotation());
-
-            Color tint = GetTileTint(tile);
-            for (const auto &sprite : tile->GetSprites())
-            {
-                if (sprite)
-                    sprite->Draw(tile->GetPosition(), tint, rotation);
-            }
-
-            Vector2 startPos = GameManager::WorldToScreen(ToVector2(tile->GetPosition()) - Vector2(.5, .5));
-
-            if (camera.IsOverlay(PlayerCam::Overlay::OXYGEN))
-            {
-                if (auto oxygen = tile->GetComponent<OxygenComponent>())
-                {
-                    Color color = Color(50, 150, 255, oxygen->GetOxygenLevel() / TILE_OXYGEN_MAX * 255 * .8);
-                    DrawRectangleV(startPos, tileSize, color);
-                }
-            }
-
-            if (camera.IsOverlay(PlayerCam::Overlay::WALL) && tile->HasComponent(ComponentType::SOLID))
-                DrawRectangleV(startPos, tileSize, Color(255, 0, 0, 64));
+            if (sprites[i])
+                sprites[i]->Draw(tile->GetPosition(), tint, rotation);
         }
+    }
+
+    // Pass 3: Draw oxygen and wall debug overlays
+    for (const auto &tile : tiles)
+    {
+        Vector2 startPos = GameManager::WorldToScreen(ToVector2(tile->GetPosition()) - Vector2(.5f, .5f));
+
+        if (camera.IsOverlay(PlayerCam::Overlay::OXYGEN))
+        {
+            if (auto oxygen = tile->GetComponent<OxygenComponent>())
+            {
+                Color color = Color(50, 150, 255, oxygen->GetOxygenLevel() / TILE_OXYGEN_MAX * 255 * .8f);
+                DrawRectangleV(startPos, tileSize, color);
+            }
+        }
+
+        if (camera.IsOverlay(PlayerCam::Overlay::WALL) && tile->HasComponent(ComponentType::SOLID))
+            DrawRectangleV(startPos, tileSize, Color(255, 0, 0, 64));
     }
 }
 
@@ -206,51 +230,45 @@ void DrawStationOverlays()
     bool isPowerOverlay = GameManager::GetCamera().IsOverlay(PlayerCam::Overlay::POWER);
     Texture2D iconTileset = AssetManager::GetTexture("ICON");
 
-    std::unordered_set<std::shared_ptr<Tile>> drawnOverlays;
+    auto tiles = GetUniqueTiles(snapshot->station);
 
-    for (const auto &kv : snapshot->station->tileMap)
+    for (const auto &tile : tiles)
     {
-        for (const auto &tile : kv.second)
+        Color tint = GetTileTint(tile);
+        float rotation = 0;
+        if (auto rotatable = tile->GetComponent<RotatableComponent>())
+            rotation = RotationToAngle(rotatable->GetRotation());
+
+        if (auto door = tile->GetComponent<DoorComponent>())
+            DrawDoorPanels(tile->GetPosition(), door->GetProgress(), rotation, tint);
+
+        if (isPowerOverlay && magic_enum::enum_flags_test_any(tile->GetHeight(), TileHeight::POWER))
         {
-            if (drawnOverlays.contains(tile))
-                continue;
-            drawnOverlays.insert(tile);
+            if (auto connector = tile->GetComponent<PowerConnectorComponent>())
+            {
+                auto grid = connector->GetPowerGrid();
+                Color gridColor = grid ? grid->GetDebugColor() : Color(200, 200, 200, 128);
+                DrawCircleV(GameManager::WorldToScreen(ToVector2(tile->GetPosition())), 3.f * zoom, gridColor);
+            }
+        }
 
-            Color tint = GetTileTint(tile);
-            float rotation = 0;
-            if (auto rotatable = tile->GetComponent<RotatableComponent>())
-                rotation = RotationToAngle(rotatable->GetRotation());
+        if (tile->HasComponent(ComponentType::POWER_CONSUMER) && !tile->IsActive())
+        {
+            Vector2 startScreenPos = GameManager::WorldToScreen(ToVector2(tile->GetPosition()) + Vector2(2. / 3., 0));
+            Rectangle destRect = Vector2ToRect(startScreenPos, tileSize / 3.);
+            Rectangle sourceRect = Rectangle(0, 1, 1, 1) * TILE_SIZE;
+            DrawTexturePro(iconTileset, sourceRect, destRect, tileSize / 2., 0, Fade(YELLOW, .8));
+        }
 
-            if (auto door = tile->GetComponent<DoorComponent>())
-            {
-                DrawDoorPanels(tile->GetPosition(), door->GetProgress(), rotation, tint);
-            }
-            if (isPowerOverlay && magic_enum::enum_flags_test_any(tile->GetHeight(), TileHeight::POWER))
-            {
-                if (auto connector = tile->GetComponent<PowerConnectorComponent>())
-                {
-                    auto grid = connector->GetPowerGrid();
-                    Color gridColor = grid ? grid->GetDebugColor() : Color(200, 200, 200, 128);
-                    DrawCircleV(GameManager::WorldToScreen(ToVector2(tile->GetPosition())), 3.0f * zoom, gridColor);
-                }
-            }
-            if (tile->HasComponent(ComponentType::POWER_CONSUMER) && !tile->IsActive())
-            {
-                Vector2 startScreenPos = GameManager::WorldToScreen(ToVector2(tile->GetPosition()) + Vector2(2. / 3., 0));
-                Rectangle destRect = Vector2ToRect(startScreenPos, tileSize / 3.);
-                Rectangle sourceRect = Rectangle(0, 1, 1, 1) * TILE_SIZE;
-                DrawTexturePro(iconTileset, sourceRect, destRect, tileSize / 2., 0, Fade(YELLOW, .8));
-            }
-            if (auto battery = tile->GetComponent<BatteryComponent>())
-            {
-                float barProgress = battery->GetChargeLevel() / battery->GetMaxChargeLevel();
-                Vector2 topLeftPos = GameManager::WorldToScreen(ToVector2(tile->GetPosition()) - Vector2(.5 - 1. / 16., .5));
-                Vector2 barStartPos = GameManager::WorldToScreen(ToVector2(tile->GetPosition()) - Vector2(.5 - 1. / 16., barProgress - .5));
-                Vector2 totalSize = Vector2(1. / 8., 1) * TILE_SIZE * zoom;
-                Vector2 barSize = Vector2(1. / 8., barProgress) * TILE_SIZE * zoom;
-                DrawRectangleV(topLeftPos, totalSize, Color(25, 25, 25, 200));
-                DrawRectangleV(barStartPos, barSize, Fade(YELLOW, .8));
-            }
+        if (auto battery = tile->GetComponent<BatteryComponent>())
+        {
+            float barProgress = battery->GetChargeLevel() / battery->GetMaxChargeLevel();
+            Vector2 topLeftPos = GameManager::WorldToScreen(ToVector2(tile->GetPosition()) - Vector2(.5 - 1. / 16., .5));
+            Vector2 barStartPos = GameManager::WorldToScreen(ToVector2(tile->GetPosition()) - Vector2(.5 - 1. / 16., barProgress - .5));
+            Vector2 totalSize = Vector2(1. / 8., 1) * TILE_SIZE * zoom;
+            Vector2 barSize = Vector2(1. / 8., barProgress) * TILE_SIZE * zoom;
+            DrawRectangleV(topLeftPos, totalSize, Color(25, 25, 25, 200));
+            DrawRectangleV(barStartPos, barSize, Fade(YELLOW, .8));
         }
     }
 
@@ -261,23 +279,16 @@ void DrawStationOverlays()
 
         std::vector<Vector2> screenPoints;
         for (int i = 0; i < 4; ++i)
-        {
             screenPoints.push_back(GameManager::WorldToScreen(poly.vertices[i]));
-        }
 
         // Draw outline
         for (size_t i = 0; i < screenPoints.size(); ++i)
-        {
             DrawLineEx(screenPoints[i], screenPoints[(i + 1) % screenPoints.size()], 2.0f, Fade(ORANGE, 0.5f));
-        }
 
         // Optional: Draw links between polygon centers
         Vector2 center = GameManager::WorldToScreen(poly.GetCenter());
         for (const auto &link : poly.links)
-        {
-            Vector2 nbCenter = GameManager::WorldToScreen(snapshot->station->navPolygons[link.targetPolyIdx].GetCenter());
-            DrawLineEx(center, nbCenter, 1.0f, Fade(YELLOW, 0.3f));
-        }
+            DrawLineEx(center, GameManager::WorldToScreen(snapshot->station->navPolygons[link.targetPolyIdx].GetCenter()), 1.0f, Fade(YELLOW, 0.3f));
     }
 
     if (GameManager::IsInBuildMode() && GameManager::IsHorizontalSymmetry())
@@ -783,8 +794,9 @@ void DrawBuildUi()
     if (!tileDef)
         return;
 
+    float rotAngle = RotationToAngle(GameManager::GetBuildRotation());
     for (const auto &pos : GameManager::GetSymmetryPositions(cursorPos))
-        DrawTileDefGhost(tileDef, pos, Fade(WHITE, 0.5f), 0, snapshot->station);
+        DrawTileDefGhost(tileDef, pos, Fade(WHITE, 0.5f), rotAngle, snapshot->station);
 }
 
 void DrawPlannedTasks()
@@ -802,7 +814,7 @@ void DrawPlannedTasks()
         {
             auto tileDef = DefinitionManager::GetTileDefinition(task->tileId);
             if (tileDef)
-                DrawTileDefGhost(tileDef, task->position, Fade(WHITE, 0.4f), 0, snapshot->station);
+                DrawTileDefGhost(tileDef, task->position, Fade(WHITE, 0.4f), RotationToAngle(task->rotation), snapshot->station);
         }
 
         Rectangle sourceRect = (task->isBuild ? Rectangle(1, 1, 1, 1) : Rectangle(3, 1, 1, 1)) * TILE_SIZE;

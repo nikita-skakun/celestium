@@ -164,12 +164,12 @@ void GameServer::HandleAutonomousPawnDecisions()
     }
 }
 
-void GameServer::RequestPlannedTask(const Vector2Int &pos, const std::string &tileId, bool place)
+void GameServer::RequestPlannedTask(const Vector2Int &pos, const std::string &tileId, bool place, Rotation rotation)
 {
     std::unique_lock<std::mutex> lock(updateMutex);
     if (!station)
         return;
-    station->AddPlannedTask(pos, tileId, place);
+    station->AddPlannedTask(pos, tileId, place, rotation);
 }
 
 void GameServer::RequestCancelPlannedTask(const Vector2Int &pos)

@@ -1,6 +1,7 @@
 #pragma once
-#include "tile_enums.hpp"
+#include "direction.hpp"
 #include "navigation.hpp"
+#include "tile_enums.hpp"
 #include <unordered_set>
 
 struct Effect;
@@ -71,7 +72,7 @@ public:
     void CreateRectRoom(const Vector2Int &pos, const Vector2Int &size);
     void CreateHorizontalCorridor(const Vector2Int &startPos, int length, int width);
 
-    void AddPlannedTask(const Vector2Int &pos, const std::string &tileId, bool isBuild);
+    void AddPlannedTask(const Vector2Int &pos, const std::string &tileId, bool isBuild, Rotation rotation = Rotation::UP);
     void CompletePlannedTask(const Vector2Int &pos);
     void CancelPlannedTask(const Vector2Int &pos);
     bool HasPlannedTaskAt(const Vector2Int &pos) const;

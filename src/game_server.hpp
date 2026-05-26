@@ -1,4 +1,5 @@
 #pragma once
+#include "direction.hpp"
 #include "utils.hpp"
 #include <deque>
 #include <mutex>
@@ -25,7 +26,7 @@ public:
     std::shared_ptr<Station> GetStation() const { return station; }
     bool IsGamePaused() const { return paused.load(); }
 
-    void RequestPlannedTask(const Vector2Int &pos, const std::string &tileId, bool place);
+    void RequestPlannedTask(const Vector2Int &pos, const std::string &tileId, bool place, Rotation rotation = Rotation::UP);
     void RequestCancelPlannedTask(const Vector2Int &pos);
     void SetGamePaused(bool newState)
     {

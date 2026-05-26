@@ -19,7 +19,7 @@ private:
     Tile(const std::string &tileId, const Vector2Int &position, const std::shared_ptr<Station> &station);
 
 public:
-    static std::shared_ptr<Tile> CreateTile(const std::string &tileId, const Vector2Int &position, const std::shared_ptr<Station> &station, bool overwriteExisting, bool useResources);
+    static std::shared_ptr<Tile> CreateTile(const std::string &tileId, const Vector2Int &position, const std::shared_ptr<Station> &station, bool overwriteExisting, bool useResources, Rotation rotation = Rotation::UP);
     static std::shared_ptr<Tile> CreatePreviewTile(const std::string &tileId, const Vector2Int &position, const std::shared_ptr<Station> &station);
     void MoveTile(const Vector2Int &newPosition);
     void RotateTile();
@@ -45,11 +45,7 @@ public:
     }
     const std::vector<std::shared_ptr<Sprite>> &GetSprites() const { return sprites; }
     void ClearSprites() { sprites.clear(); }
-    void AddSprite(const std::shared_ptr<Sprite> &newSprite)
-    {
-        if (newSprite)
-            sprites.push_back(newSprite);
-    }
+    void AddSprite(const std::shared_ptr<Sprite> &newSprite) { sprites.push_back(newSprite); }
 
     std::shared_ptr<TileDef> GetTileDefinition() const { return tileDef; }
     std::shared_ptr<Station> GetStation() const { return station; }

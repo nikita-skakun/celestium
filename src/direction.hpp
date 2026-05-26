@@ -68,6 +68,16 @@ constexpr float RotationToAngle(Rotation rotation)
     }
 }
 
+constexpr Rotation RotateClockwise(Rotation rotation)
+{
+    return rotation == Rotation::LEFT ? Rotation::UP : static_cast<Rotation>(static_cast<uint8_t>(rotation) << 1);
+}
+
+constexpr Rotation RotateCounterClockwise(Rotation rotation)
+{
+    return rotation == Rotation::UP ? Rotation::LEFT : static_cast<Rotation>(static_cast<uint8_t>(rotation) >> 1);
+}
+
 constexpr Vector2 OffsetWithRotation(Rotation rotation, const Vector2 &offset)
 {
     switch (rotation)

@@ -38,7 +38,7 @@ void MultiSliceSprite::Draw(const Vector2Int &position, const Color &tint, float
 Tile::Tile(const std::string &tileId, const Vector2Int &position, const std::shared_ptr<Station> &station)
     : tileDef(DefinitionManager::GetTileDefinition(tileId)), position(position), station(station) {}
 
-std::shared_ptr<Tile> Tile::CreateTile(const std::string &tileId, const Vector2Int &position, const std::shared_ptr<Station> &station, bool overwriteExisting, bool useResources)
+std::shared_ptr<Tile> Tile::CreateTile(const std::string &tileId, const Vector2Int &position, const std::shared_ptr<Station> &station, bool overwriteExisting, bool useResources, Rotation rotation)
 {
     if (!station)
         throw std::runtime_error("Cannot create tile without a valid station.");
@@ -49,7 +49,7 @@ std::shared_ptr<Tile> Tile::CreateTile(const std::string &tileId, const Vector2I
     std::vector<Vector2Int> occupiedPositions = {position};
     for (const auto &cell : tileDef->GetExtraParts())
         if (cell.blocksPlacement)
-            occupiedPositions.push_back(position + cell.offset);
+            occupiedPositions.push_back(position + OffsetWithRotation(rotation, cell.offset));
 
     if (useResources)
     {
@@ -76,6 +76,9 @@ std::shared_ptr<Tile> Tile::CreateTile(const std::string &tileId, const Vector2I
     std::shared_ptr<Tile> tile = std::shared_ptr<Tile>(new Tile(tileId, position, station));
     for (const auto &refComponent : tileDef->GetReferenceComponents())
         tile->components[refComponent->GetType()] = refComponent->Clone(tile);
+
+    if (auto rotatable = tile->GetComponent<RotatableComponent>())
+        rotatable->SetRotation(rotation);
 
     for (const auto &pos : occupiedPositions)
     {
@@ -166,7 +169,8 @@ void Tile::RotateTile()
     auto self = shared_from_this();
 
     for (const auto &pos : GetOccupiedPositions())
-        std::erase_if(station->tileMap[pos], [&self](const std::shared_ptr<Tile> &t) { return t == self; });
+        std::erase_if(station->tileMap[pos], [&self](const std::shared_ptr<Tile> &t)
+                      { return t == self; });
 
     rotatable->RotateClockwise();
 
@@ -214,18 +218,13 @@ std::string Tile::GetInfo() const
     std::string tileInfo = " - " + GetName();
 
     for (const auto &[type, component] : components)
-    {
         if (auto info = component->GetInfo())
             tileInfo += "\n" + info.value();
-    }
 
     return tileInfo;
 }
 
-bool Tile::HasComponent(ComponentType type) const
-{
-    return components.count(type) > 0;
-}
+bool Tile::HasComponent(ComponentType type) const { return components.count(type) > 0; }
 
 bool Tile::CompareByHeight(const std::shared_ptr<Tile> &a, const std::shared_ptr<Tile> &b)
 {
