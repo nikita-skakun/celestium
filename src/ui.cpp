@@ -573,8 +573,9 @@ void DrawPawn()
                 else
                 {
                     bool canPath = true;
-                    if (std::shared_ptr<Station> station = pawn->GetCurrentTile()->GetStation())
-                        canPath = station->IsDoorFullyOpenAtPos(ToVector2Int(nextPosition));
+                    if (auto tile = pawn->GetCurrentTile())
+                        if (std::shared_ptr<Station> station = tile->GetStation())
+                            canPath = station->IsDoorFullyOpenAtPos(ToVector2Int(nextPosition));
 
                     if (canPath)
                         drawPosition += Vector2Normalize(nextPosition - pawn->GetPosition()) * moveDelta;

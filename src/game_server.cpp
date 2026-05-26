@@ -135,6 +135,8 @@ void GameServer::HandleAutonomousPawnDecisions()
             continue;
 
         auto stationPtr = pawn->GetCurrentTile()->GetStation();
+        if (!stationPtr)
+            continue;
         Vector2Int pawnPos = ToVector2Int(pawn->GetPosition());
 
         if (stationPtr->GetEffectOfTypeAtPosition(pawnPos, "FIRE"))

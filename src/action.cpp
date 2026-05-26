@@ -13,7 +13,8 @@ bool MoveAction::Update(const std::shared_ptr<Pawn> &pawn)
     if (!pawn)
         return true;
 
-    auto station = pawn->GetCurrentTile()->GetStation();
+    auto currentTile = pawn->GetCurrentTile();
+    auto station = currentTile ? currentTile->GetStation() : nullptr;
     if (!station)
         return true;
 
@@ -113,7 +114,8 @@ bool ExtinguishAction::Update(const std::shared_ptr<Pawn> &pawn)
     if (!pawn)
         return true;
 
-    auto station = pawn->GetCurrentTile()->GetStation();
+    auto currentTile = pawn->GetCurrentTile();
+    auto station = currentTile ? currentTile->GetStation() : nullptr;
     if (!station)
         return true;
 
@@ -161,7 +163,8 @@ bool ConstructionAction::Update(const std::shared_ptr<Pawn> &pawn)
     if (!task)
         return true;
 
-    auto station = pawn->GetCurrentTile()->GetStation();
+    auto currentTile = pawn->GetCurrentTile();
+    auto station = currentTile ? currentTile->GetStation() : nullptr;
     if (!station)
         return true;
 

@@ -249,9 +249,12 @@ void HandlePawnEnvironment()
         if (auto oxygen = tile->GetComponent<OxygenComponent>())
             pawn->RefillOxygen(FIXED_DELTA_TIME, oxygen->GetOxygenLevel());
 
-        auto effects = tile->GetStation()->GetEffectsAtPosition(tile->GetPosition());
-        for (const auto &effect : effects)
-            effect->EffectPawn(pawn, FIXED_DELTA_TIME);
+        if (auto tileStation = tile->GetStation())
+        {
+            auto effects = tileStation->GetEffectsAtPosition(tile->GetPosition());
+            for (const auto &effect : effects)
+                effect->EffectPawn(pawn, FIXED_DELTA_TIME);
+        }
     }
 }
 
