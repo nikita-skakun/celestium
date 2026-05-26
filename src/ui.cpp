@@ -507,7 +507,8 @@ void DrawPawnSprite(const std::shared_ptr<const Pawn> &pawn, const Vector2 &draw
         float animSpeed = pawnDef->GetAnimationSpeed(animType);
 
         // Update animation elapsed time
-        pawn->AddAnimationElapsedTime(GetFrameTime());
+        if (!GameManager::GetServer().IsGamePaused())
+            pawn->AddAnimationElapsedTime(GetFrameTime());
         size_t frameIndex = static_cast<size_t>(pawn->GetAnimationElapsedTime() / animSpeed);
 
         Vector2Int frameOffset = pawnDef->GetFrame(animType, pawn->GetFacingDirection(), frameIndex);
