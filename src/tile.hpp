@@ -12,7 +12,7 @@ struct Tile : public std::enable_shared_from_this<Tile>
 private:
     std::shared_ptr<TileDef> tileDef;
     Vector2Int position;
-    std::shared_ptr<Sprite> sprite;
+    std::vector<std::shared_ptr<Sprite>> sprites;
     std::unordered_map<ComponentType, std::shared_ptr<Component>> components;
     std::shared_ptr<Station> station;
 
@@ -20,17 +20,36 @@ private:
 
 public:
     static std::shared_ptr<Tile> CreateTile(const std::string &tileId, const Vector2Int &position, const std::shared_ptr<Station> &station, bool overwriteExisting, bool useResources);
+    static std::shared_ptr<Tile> CreatePreviewTile(const std::string &tileId, const Vector2Int &position, const std::shared_ptr<Station> &station);
     void MoveTile(const Vector2Int &newPosition);
     void RotateTile();
     void DeleteTile(bool returnResources);
 
     constexpr const Vector2Int &GetPosition() const { return position; }
+    void SetPosition(const Vector2Int &newPos) { position = newPos; }
+    std::vector<Vector2Int> GetOccupiedPositions() const;
 
     TileHeight GetHeight() const { return tileDef->GetHeight(); }
     TileCategory GetCategory() const { return tileDef->GetCategory(); }
 
-    const std::shared_ptr<Sprite> &GetSprite() const { return sprite; }
-    void SetSprite(const std::shared_ptr<Sprite> &newSprite) { sprite = newSprite; }
+    const std::shared_ptr<Sprite> &GetSprite() const
+    {
+        static const std::shared_ptr<Sprite> nullSprite = nullptr;
+        return sprites.empty() ? nullSprite : sprites.front();
+    }
+    void SetSprite(const std::shared_ptr<Sprite> &newSprite)
+    {
+        sprites.clear();
+        if (newSprite)
+            sprites.push_back(newSprite);
+    }
+    const std::vector<std::shared_ptr<Sprite>> &GetSprites() const { return sprites; }
+    void ClearSprites() { sprites.clear(); }
+    void AddSprite(const std::shared_ptr<Sprite> &newSprite)
+    {
+        if (newSprite)
+            sprites.push_back(newSprite);
+    }
 
     std::shared_ptr<TileDef> GetTileDefinition() const { return tileDef; }
     std::shared_ptr<Station> GetStation() const { return station; }

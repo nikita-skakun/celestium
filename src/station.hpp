@@ -18,7 +18,7 @@ struct Station : public std::enable_shared_from_this<Station>
     std::vector<std::shared_ptr<PowerGrid>> powerGrids;
     std::vector<std::shared_ptr<PlannedTask>> plannedTasks;
     std::unordered_map<std::string, int> resources;
-    
+
     // Navigation Graph
     std::vector<ConvexPolygon> navPolygons;
     std::vector<std::shared_ptr<Room>> rooms;
@@ -29,7 +29,8 @@ public:
     std::shared_ptr<Tile> FindTile(const Vector2Int &pos, Predicate pred) const
     {
         for (const auto &tile : GetTilesAtPosition(pos))
-            if (pred(tile)) return tile;
+            if (pred(tile))
+                return tile;
         return nullptr;
     }
 
@@ -38,14 +39,17 @@ public:
     {
         std::vector<std::shared_ptr<Tile>> found;
         for (const auto &tile : GetTilesAtPosition(pos))
-            if (pred(tile)) found.push_back(tile);
+            if (pred(tile))
+                found.push_back(tile);
         return found;
     }
 
     std::shared_ptr<Tile> GetTileAtPosition(const Vector2Int &pos, TileHeight height = TileHeight::NONE) const;
     const std::vector<std::shared_ptr<Tile>> &GetTilesAtPosition(const Vector2Int &pos) const;
 
+    SpriteCondition GetSpriteConditionForPosition(const Vector2Int &pos, const std::string &tileId, TileHeight height) const;
     SpriteCondition GetSpriteConditionForTile(const std::shared_ptr<Tile> &tile) const;
+    void UpdateTileSpriteOffsets(const std::shared_ptr<Tile> &tile) const;
     void UpdateSpriteOffsets() const;
 
     bool IsPositionPathable(const Vector2Int &pos) const;
@@ -63,7 +67,6 @@ public:
 
     void RebuildPowerGridsFromInfrastructure();
     void RebuildNavigationGraph();
-
 
     void CreateRectRoom(const Vector2Int &pos, const Vector2Int &size);
     void CreateHorizontalCorridor(const Vector2Int &startPos, int length, int width);

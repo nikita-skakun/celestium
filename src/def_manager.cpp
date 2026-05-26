@@ -1,5 +1,7 @@
 #include "component.hpp"
 #include "def_manager.hpp"
+#include "env_effect_def.hpp"
+#include "pawn_def.hpp"
 #include "sprite.hpp"
 #include "tile.hpp"
 
@@ -53,9 +55,6 @@ namespace
 
         case ComponentType::OXYGEN_PRODUCER:
             return std::make_shared<OxygenProducerComponent>(DefinitionManager::GetRequiredValue<float>(node, "oxygenProduction"));
-
-        case ComponentType::DECORATIVE:
-            return std::make_shared<DecorativeComponent>();
 
         case ComponentType::DOOR:
             return std::make_shared<DoorComponent>(DefinitionManager::GetRequiredValue<float>(node, "movingSpeed"));
@@ -140,6 +139,72 @@ namespace
         // Unknown utility, return empty to indicate not handled
         return out;
     }
+
+    static std::shared_ptr<SpriteDef> ParseSlicedSpriteDef(const ryml::ConstNodeRef &node, const std::string &tileId)
+    {
+        std::vector<SliceWithConditions> slices;
+        for (ryml::ConstNodeRef sliceNode : node)
+        {
+            std::string conditionsStr;
+            sliceNode["conditions"] >> conditionsStr;
+            StringRemoveSpaces(conditionsStr);
+
+            Rectangle sourceRect;
+            sliceNode["sourceRect"] >> sourceRect;
+
+            Vector2 destOffset;
+            sliceNode["destOffset"] >> destOffset;
+
+            if (conditionsStr.empty() || conditionsStr == "NONE")
+            {
+                slices.emplace_back(SpriteCondition::NONE, SpriteSlice(sourceRect, destOffset));
+                continue;
+            }
+
+            std::vector<SpriteCondition> combos;
+            combos.push_back(SpriteCondition::NONE);
+
+            size_t start = 0;
+            while (start < conditionsStr.size())
+            {
+                size_t sep = conditionsStr.find('|', start);
+                std::string token = (sep == std::string::npos) ? conditionsStr.substr(start) : conditionsStr.substr(start, sep - start);
+                start = (sep == std::string::npos) ? conditionsStr.size() : sep + 1;
+
+                if (token.empty())
+                    continue;
+
+                // Try parse token as enum flag
+                std::vector<SpriteCondition> tokenPossibilities;
+                auto parsed = magic_enum::enum_flags_cast<SpriteCondition>(token, '|', magic_enum::case_insensitive);
+                if (parsed.has_value())
+                    tokenPossibilities.push_back(parsed.value());
+                else
+                {
+                    // Try utility expansion
+                    auto expandedToken = ExpandUtilityConditions(token);
+                    if (!expandedToken.empty())
+                        tokenPossibilities.insert(tokenPossibilities.end(), expandedToken.begin(), expandedToken.end());
+                }
+
+                if (tokenPossibilities.empty())
+                    throw std::runtime_error(std::format("Parsing of conditions string for tile ({}) failed: {}", tileId, token));
+
+                // Build new combos by OR-ing existing combos with each possibility
+                std::vector<SpriteCondition> newCombos;
+                for (auto &existing : combos)
+                    for (auto &poss : tokenPossibilities)
+                        newCombos.push_back(existing | poss);
+                combos.swap(newCombos);
+            }
+
+            // Add a slice for each resulting combination
+            for (auto &cond : combos)
+                slices.emplace_back(cond, SpriteSlice(sourceRect, destOffset));
+        }
+
+        return std::make_shared<MultiSliceSpriteDef>(slices);
+    }
 }
 
 void DefinitionManager::ParseTilesFromFile(const std::string &filename)
@@ -204,76 +269,31 @@ void DefinitionManager::ParseTilesFromFile(const std::string &filename)
             refSprite = std::make_shared<BasicSpriteDef>(sprite);
         }
         else if (tileNode.has_child("slicedSprite"))
+            refSprite = ParseSlicedSpriteDef(tileNode["slicedSprite"], tileId);
+
+        // Parse Extra Parts
+        std::vector<ExtraPartDef> extraParts;
+        if (tileNode.has_child("extraParts"))
         {
-            std::vector<SliceWithConditions> slices;
-            for (ryml::ConstNodeRef sliceNode : tileNode["slicedSprite"])
+            for (ryml::ConstNodeRef cellNode : tileNode["extraParts"])
             {
-                std::string conditionsStr;
-                sliceNode["conditions"] >> conditionsStr;
-                StringRemoveSpaces(conditionsStr);
+                ExtraPartDef cell;
+                cellNode["offset"] >> cell.offset;
 
-                Rectangle sourceRect;
-                sliceNode["sourceRect"] >> sourceRect;
+                cell.blocksPlacement = DefinitionManager::GetValue<bool>(cellNode, "blocksPlacement", true);
 
-                Vector2 destOffset;
-                sliceNode["destOffset"] >> destOffset;
-
-                if (conditionsStr.empty() || conditionsStr == "NONE")
+                cell.spriteDef = nullptr;
+                if (cellNode.has_child("sprite"))
                 {
-                    slices.emplace_back(SpriteCondition::NONE, SpriteSlice(sourceRect, destOffset));
-                    continue;
+                    Vector2Int sprite;
+                    cellNode["sprite"] >> sprite;
+                    cell.spriteDef = std::make_shared<BasicSpriteDef>(sprite);
                 }
+                else if (cellNode.has_child("slicedSprite"))
+                    cell.spriteDef = ParseSlicedSpriteDef(cellNode["slicedSprite"], tileId);
 
-                std::vector<SpriteCondition> combos;
-                combos.push_back(SpriteCondition::NONE);
-
-                size_t start = 0;
-                while (start < conditionsStr.size())
-                {
-                    size_t sep = conditionsStr.find('|', start);
-                    std::string token = (sep == std::string::npos) ? conditionsStr.substr(start) : conditionsStr.substr(start, sep - start);
-                    start = (sep == std::string::npos) ? conditionsStr.size() : sep + 1;
-
-                    if (token.empty())
-                        continue;
-
-                    // Try parse token as enum flag
-                    std::vector<SpriteCondition> tokenPossibilities;
-                    auto parsed = magic_enum::enum_flags_cast<SpriteCondition>(token, '|', magic_enum::case_insensitive);
-                    if (parsed.has_value())
-                    {
-                        tokenPossibilities.push_back(parsed.value());
-                    }
-                    else
-                    {
-                        // Try utility expansion
-                        auto expandedToken = ExpandUtilityConditions(token);
-                        if (!expandedToken.empty())
-                            tokenPossibilities.insert(tokenPossibilities.end(), expandedToken.begin(), expandedToken.end());
-                    }
-
-                    if (tokenPossibilities.empty())
-                        throw std::runtime_error(std::format("Parsing of conditions string for tile ({}) failed: {}", tileId, token));
-
-                    // Build new combos by OR-ing existing combos with each possibility
-                    std::vector<SpriteCondition> newCombos;
-                    for (auto &existing : combos)
-                    {
-                        for (auto &poss : tokenPossibilities)
-                        {
-                            SpriteCondition combined = existing | poss;
-                            newCombos.push_back(combined);
-                        }
-                    }
-                    combos.swap(newCombos);
-                }
-
-                // Add a slice for each resulting combination
-                for (auto &cond : combos)
-                    slices.emplace_back(cond, SpriteSlice(sourceRect, destOffset));
+                extraParts.push_back(cell);
             }
-
-            refSprite = std::make_shared<MultiSliceSpriteDef>(slices);
         }
 
         // Parse Icon Offset
@@ -299,7 +319,7 @@ void DefinitionManager::ParseTilesFromFile(const std::string &filename)
             }
         }
 
-        DefinitionManager::GetInstance().tileDefinitions[tileId] = std::make_shared<TileDef>(tileId, height.value(), category.value(), refComponents, refSprite, iconOffset, buildResources);
+        DefinitionManager::GetInstance().tileDefinitions[tileId] = std::make_shared<TileDef>(tileId, height.value(), category.value(), refComponents, refSprite, iconOffset, buildResources, extraParts);
     }
 }
 

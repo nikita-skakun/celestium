@@ -1,4 +1,5 @@
 #include "component.hpp"
+#include "def_manager.hpp"
 #include "env_effect.hpp"
 #include "lua_bindings.hpp"
 #include "pawn.hpp"

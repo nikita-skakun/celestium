@@ -2,6 +2,7 @@
 #include "asset_manager.hpp"
 #include "camera.hpp"
 #include "component.hpp"
+#include "def_manager.hpp"
 #include "env_effect.hpp"
 #include "game_server.hpp"
 #include "game_state.hpp"
@@ -50,24 +51,52 @@ Color GetTileTint(const std::shared_ptr<Tile> &)
     return tint;
 }
 
-void DrawSpriteDefGhost(const std::shared_ptr<SpriteDef> &spriteDef, const Vector2Int &pos, const Color &tint = Fade(WHITE, 0.5f))
+void DrawDoorPanels(const Vector2Int &pos, float progress, float rotation, const Color &tint)
 {
-    if (!spriteDef)
-        return;
+    float zoom = GameManager::GetCamera().GetZoom();
+    const Vector2 tileSize = Vector2(1, 1) * TILE_SIZE * zoom;
+    Texture2D stationTileset = AssetManager::GetTexture("STATION");
 
+    Vector2 startPos = GameManager::WorldToScreen(pos);
+    Rectangle destRect = Vector2ToRect(startPos, tileSize);
+    destRect.height = std::max(25. * progress, 1.) * zoom;
+    Rectangle doorSourceRect = Rectangle(0, 7, 1, 1) * TILE_SIZE;
+    doorSourceRect.height = std::max(25. * progress, 1.);
+    Vector2 pivot = Vector2(tileSize.x / 2., destRect.height - 25. * zoom);
+    DrawTexturePro(stationTileset, doorSourceRect, destRect, pivot, rotation, tint);
+    Rectangle doorSourceRect2 = doorSourceRect;
+    doorSourceRect2.width = -doorSourceRect2.width;
+    DrawTexturePro(stationTileset, doorSourceRect2, destRect, pivot, rotation + 180., tint);
+}
+
+void DrawSpriteDefGhost(const std::shared_ptr<SpriteDef> &spriteDef, const Vector2Int &pos, const Color &tint, float rotation, const std::shared_ptr<const Station> &station, const std::string &tileId, TileHeight height)
+{
     if (auto basicDef = std::dynamic_pointer_cast<BasicSpriteDef>(spriteDef))
-    {
-        BasicSprite ghostSprite(basicDef->spriteOffset);
-        ghostSprite.Draw(pos, tint, 0);
-    }
+        BasicSprite(basicDef->spriteOffset).Draw(pos, tint, rotation);
     else if (auto multiDef = std::dynamic_pointer_cast<MultiSliceSpriteDef>(spriteDef))
     {
+        auto status = station ? station->GetSpriteConditionForPosition(pos, tileId, height) : SpriteCondition::NONE;
         std::vector<SpriteSlice> slices;
         for (const auto &swc : multiDef->slices)
-            slices.push_back(swc.slice);
-        MultiSliceSprite ghostSprite(slices);
-        ghostSprite.Draw(pos, tint, 0);
+            if ((status & swc.conditions) == swc.conditions)
+                slices.push_back(swc.slice);
+        MultiSliceSprite(slices).Draw(pos, tint, rotation);
     }
+}
+
+void DrawTileDefGhost(const std::shared_ptr<TileDef> &tileDef, const Vector2Int &pos, const Color &tint, float rotation, const std::shared_ptr<const Station> &station)
+{
+    if (!tileDef)
+        return;
+    Rotation rotEnum = AngleToRotation(rotation);
+    const std::string &tileId = tileDef->GetId();
+    TileHeight height = tileDef->GetHeight();
+
+    DrawSpriteDefGhost(tileDef->GetReferenceSprite(), pos, tint, rotation, station, tileId, height);
+    for (const auto &cell : tileDef->GetExtraParts())
+        DrawSpriteDefGhost(cell.spriteDef, pos + OffsetWithRotation(rotEnum, cell.offset), tint, rotation, station, tileId, height);
+    if (tileDef->HasComponent(ComponentType::DOOR))
+        DrawDoorPanels(pos, 1.f, rotation, tint);
 }
 
 /**
@@ -128,16 +157,26 @@ void DrawStationTiles()
     const float zoom = camera.GetZoom();
     const Vector2 tileSize = Vector2(1, 1) * TILE_SIZE * zoom;
 
+    std::unordered_set<std::shared_ptr<Tile>> drawnTiles;
+
     for (const auto &kv : snapshot->station->tileMap)
     {
         for (const auto &tile : kv.second)
         {
+            if (drawnTiles.contains(tile))
+                continue;
+            drawnTiles.insert(tile);
+
             float rotation = 0;
             if (auto rotatable = tile->GetComponent<RotatableComponent>())
                 rotation = RotationToAngle(rotatable->GetRotation());
 
-            if (auto sprite = tile->GetSprite())
-                sprite->Draw(tile->GetPosition(), GetTileTint(tile), rotation);
+            Color tint = GetTileTint(tile);
+            for (const auto &sprite : tile->GetSprites())
+            {
+                if (sprite)
+                    sprite->Draw(tile->GetPosition(), tint, rotation);
+            }
 
             Vector2 startPos = GameManager::WorldToScreen(ToVector2(tile->GetPosition()) - Vector2(.5, .5));
 
@@ -156,9 +195,6 @@ void DrawStationTiles()
     }
 }
 
-/**
- * Draws the indirect visual overlays.
- */
 void DrawStationOverlays()
 {
     auto snapshot = GameManager::GetRenderSnapshot();
@@ -168,35 +204,26 @@ void DrawStationOverlays()
     float zoom = GameManager::GetCamera().GetZoom();
     const Vector2 tileSize = Vector2(1, 1) * TILE_SIZE * zoom;
     bool isPowerOverlay = GameManager::GetCamera().IsOverlay(PlayerCam::Overlay::POWER);
-    Texture2D stationTileset = AssetManager::GetTexture("STATION");
     Texture2D iconTileset = AssetManager::GetTexture("ICON");
+
+    std::unordered_set<std::shared_ptr<Tile>> drawnOverlays;
+
     for (const auto &kv : snapshot->station->tileMap)
     {
         for (const auto &tile : kv.second)
         {
+            if (drawnOverlays.contains(tile))
+                continue;
+            drawnOverlays.insert(tile);
+
             Color tint = GetTileTint(tile);
             float rotation = 0;
             if (auto rotatable = tile->GetComponent<RotatableComponent>())
                 rotation = RotationToAngle(rotatable->GetRotation());
-            if (auto decorative = tile->GetComponent<DecorativeComponent>())
-            {
-                for (const auto &dTile : decorative->GetDecorativeTiles())
-                {
-                    dTile->Draw(tile->GetPosition(), tint, rotation);
-                }
-            }
+
             if (auto door = tile->GetComponent<DoorComponent>())
             {
-                Vector2 startPos = GameManager::WorldToScreen(tile->GetPosition());
-                Rectangle destRect = Vector2ToRect(startPos, tileSize);
-                destRect.height = std::max(25. * door->GetProgress(), 1.) * zoom;
-                Rectangle doorSourceRect = Rectangle(0, 7, 1, 1) * TILE_SIZE;
-                doorSourceRect.height = std::max(25. * door->GetProgress(), 1.);
-                Vector2 pivot = Vector2(tileSize.x / 2., destRect.height - 25. * zoom);
-                DrawTexturePro(stationTileset, doorSourceRect, destRect, pivot, rotation, tint);
-                Rectangle doorSourceRect2 = doorSourceRect;
-                doorSourceRect2.width = -doorSourceRect2.width;
-                DrawTexturePro(stationTileset, doorSourceRect2, destRect, pivot, rotation + 180., tint);
+                DrawDoorPanels(tile->GetPosition(), door->GetProgress(), rotation, tint);
             }
             if (isPowerOverlay && magic_enum::enum_flags_test_any(tile->GetHeight(), TileHeight::POWER))
             {
@@ -753,11 +780,11 @@ void DrawBuildUi()
         return;
 
     auto tileDef = DefinitionManager::GetTileDefinition(buildTileId);
-    if (!tileDef || !tileDef->GetReferenceSprite())
+    if (!tileDef)
         return;
 
     for (const auto &pos : GameManager::GetSymmetryPositions(cursorPos))
-        DrawSpriteDefGhost(tileDef->GetReferenceSprite(), pos);
+        DrawTileDefGhost(tileDef, pos, Fade(WHITE, 0.5f), 0, snapshot->station);
 }
 
 void DrawPlannedTasks()
@@ -775,7 +802,7 @@ void DrawPlannedTasks()
         {
             auto tileDef = DefinitionManager::GetTileDefinition(task->tileId);
             if (tileDef)
-                DrawSpriteDefGhost(tileDef->GetReferenceSprite(), task->position);
+                DrawTileDefGhost(tileDef, task->position, Fade(WHITE, 0.4f), 0, snapshot->station);
         }
 
         Rectangle sourceRect = (task->isBuild ? Rectangle(1, 1, 1, 1) : Rectangle(3, 1, 1, 1)) * TILE_SIZE;

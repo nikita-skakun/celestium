@@ -32,7 +32,6 @@ enum class ComponentType : uint8_t
     SOLAR_PANEL,
     OXYGEN,
     OXYGEN_PRODUCER,
-    DECORATIVE,
     DOOR,
     DURABILITY,
     ROTATABLE,

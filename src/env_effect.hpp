@@ -1,5 +1,5 @@
 #pragma once
-#include "def_manager.hpp"
+#include "env_effect_def.hpp"
 #include <atomic>
 
 struct Pawn;

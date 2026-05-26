@@ -97,3 +97,18 @@ constexpr Vector2Int OffsetWithRotation(Rotation rotation, const Vector2Int &off
         return offset;
     }
 }
+
+inline Rotation AngleToRotation(float angle)
+{
+    float normalized = std::fmod(angle, 360.f);
+    if (normalized < 0.f)
+        normalized += 360.f;
+
+    if (normalized >= 45.f && normalized < 135.f)
+        return Rotation::RIGHT;
+    if (normalized >= 135.f && normalized < 225.f)
+        return Rotation::DOWN;
+    if (normalized >= 225.f && normalized < 315.f)
+        return Rotation::LEFT;
+    return Rotation::UP;
+}

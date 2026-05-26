@@ -1,6 +1,7 @@
 #include "action.hpp"
 #include "camera.hpp"
 #include "component.hpp"
+#include "def_manager.hpp"
 #include "env_effect.hpp"
 #include "game_server.hpp"
 #include "game_state.hpp"
@@ -286,10 +287,16 @@ void UpdateTiles()
     if (!station)
         return;
 
+    std::unordered_set<std::shared_ptr<Tile>> updatedTiles;
+
     for (const auto &tilesAtPos : station->tileMap)
     {
         for (const auto &tile : tilesAtPos.second)
         {
+            if (updatedTiles.contains(tile))
+                continue;
+            updatedTiles.insert(tile);
+
             if (auto door = tile->GetComponent<DoorComponent>())
             {
                 door->Animate(FIXED_DELTA_TIME);

@@ -36,16 +36,20 @@ void MultiSliceSprite::Draw(const Vector2Int &position, const Color &tint, float
 }
 
 Tile::Tile(const std::string &tileId, const Vector2Int &position, const std::shared_ptr<Station> &station)
-    : tileDef(DefinitionManager::GetTileDefinition(tileId)), position(position), station(station) { }
+    : tileDef(DefinitionManager::GetTileDefinition(tileId)), position(position), station(station) {}
 
 std::shared_ptr<Tile> Tile::CreateTile(const std::string &tileId, const Vector2Int &position, const std::shared_ptr<Station> &station, bool overwriteExisting, bool useResources)
 {
     if (!station)
         throw std::runtime_error("Cannot create tile without a valid station.");
-
     auto tileDef = DefinitionManager::GetTileDefinition(tileId);
     if (!tileDef)
         throw std::runtime_error(std::format("Tile definition not found: {}", tileId));
+
+    std::vector<Vector2Int> occupiedPositions = {position};
+    for (const auto &cell : tileDef->GetExtraParts())
+        if (cell.blocksPlacement)
+            occupiedPositions.push_back(position + cell.offset);
 
     if (useResources)
     {
@@ -55,28 +59,29 @@ std::shared_ptr<Tile> Tile::CreateTile(const std::string &tileId, const Vector2I
         station->ConsumeResources(requiredResources);
     }
 
-    auto &tilesAtPos = station->tileMap[position];
-    for (const auto &existingTile : tilesAtPos)
+    for (const auto &pos : occupiedPositions)
     {
-        // Check if the existing tile and the new tile have overlapping heights
-        if (existingTile && (magic_enum::enum_integer(existingTile->GetHeight() & tileDef->GetHeight()) > 0))
+        for (const auto &existingTile : station->tileMap[pos])
         {
-            if (overwriteExisting)
-                existingTile->DeleteTile(useResources);
-            else
-                return nullptr;
+            if (existingTile && (magic_enum::enum_integer(existingTile->GetHeight() & tileDef->GetHeight()) > 0))
+            {
+                if (overwriteExisting)
+                    existingTile->DeleteTile(useResources);
+                else
+                    return nullptr;
+            }
         }
     }
 
-    std::shared_ptr<Tile> tile = std::make_shared<Tile>(Tile(tileId, position, station));
-
-    const auto &refComponents = tileDef->GetReferenceComponents();
-
-    for (const auto &refComponent : refComponents)
+    std::shared_ptr<Tile> tile = std::shared_ptr<Tile>(new Tile(tileId, position, station));
+    for (const auto &refComponent : tileDef->GetReferenceComponents())
         tile->components[refComponent->GetType()] = refComponent->Clone(tile);
 
-    tilesAtPos.push_back(tile);
-    std::sort(tilesAtPos.begin(), tilesAtPos.end(), Tile::CompareByHeight);
+    for (const auto &pos : occupiedPositions)
+    {
+        station->tileMap[pos].push_back(tile);
+        std::sort(station->tileMap[pos].begin(), station->tileMap[pos].end(), Tile::CompareByHeight);
+    }
 
     if (magic_enum::enum_flags_test_any(tile->GetHeight(), TileHeight::POWER))
         station->RebuildPowerGridsFromInfrastructure();
@@ -88,7 +93,6 @@ std::shared_ptr<Tile> Tile::CreateTile(const std::string &tileId, const Vector2I
             {
                 if (auto wireGrid = powerWireConnector->GetPowerGrid())
                 {
-                    // Register this tile's components with the found grid
                     if (auto consumer = tile->GetComponent<PowerConsumerComponent>())
                         wireGrid->AddConsumer(position, consumer);
                     if (auto producer = tile->GetComponent<PowerProducerComponent>())
@@ -108,26 +112,49 @@ std::shared_ptr<Tile> Tile::CreateTile(const std::string &tileId, const Vector2I
         else if (!tile->HasComponent(ComponentType::SOLID))
             tile->AddComponent<SolidComponent>();
     }
+    return tile;
+}
+
+std::shared_ptr<Tile> Tile::CreatePreviewTile(const std::string &tileId, const Vector2Int &position, const std::shared_ptr<Station> &station)
+{
+    auto tileDef = DefinitionManager::GetTileDefinition(tileId);
+    if (!tileDef)
+        return nullptr;
+
+    std::shared_ptr<Tile> tile = std::shared_ptr<Tile>(new Tile(tileId, position, station));
+    for (const auto &refComponent : tileDef->GetReferenceComponents())
+        tile->components[refComponent->GetType()] = refComponent->Clone(tile);
 
     return tile;
+}
+
+std::vector<Vector2Int> Tile::GetOccupiedPositions() const
+{
+    std::vector<Vector2Int> pos = {position};
+    Rotation r = GetComponent<RotatableComponent>() ? GetComponent<RotatableComponent>()->GetRotation() : Rotation::UP;
+    for (const auto &cell : tileDef->GetExtraParts())
+        if (cell.blocksPlacement)
+            pos.push_back(position + OffsetWithRotation(r, cell.offset));
+    return pos;
 }
 
 void Tile::MoveTile(const Vector2Int &newPosition)
 {
     if (!station || position == newPosition)
         return;
-
     auto self = shared_from_this();
 
-    auto &tilesAtOldPos = station->tileMap[position];
-    std::erase_if(tilesAtOldPos, [&self](const std::shared_ptr<Tile> &tile)
-                  { return tile == self; });
+    for (const auto &pos : GetOccupiedPositions())
+        std::erase_if(station->tileMap[pos], [&self](const std::shared_ptr<Tile> &t)
+                      { return t == self; });
 
     position = newPosition;
-    auto &tilesAtPos = station->tileMap[newPosition];
-    tilesAtPos.push_back(self);
-    std::sort(tilesAtPos.begin(), tilesAtPos.end(), Tile::CompareByHeight);
 
+    for (const auto &pos : GetOccupiedPositions())
+    {
+        station->tileMap[pos].push_back(self);
+        std::sort(station->tileMap[pos].begin(), station->tileMap[pos].end(), Tile::CompareByHeight);
+    }
     station->UpdateSpriteOffsets();
 }
 
@@ -136,36 +163,41 @@ void Tile::RotateTile()
     auto rotatable = GetComponent<RotatableComponent>();
     if (!rotatable || !station)
         return;
+    auto self = shared_from_this();
+
+    for (const auto &pos : GetOccupiedPositions())
+        std::erase_if(station->tileMap[pos], [&self](const std::shared_ptr<Tile> &t) { return t == self; });
 
     rotatable->RotateClockwise();
+
+    for (const auto &pos : GetOccupiedPositions())
+    {
+        station->tileMap[pos].push_back(self);
+        std::sort(station->tileMap[pos].begin(), station->tileMap[pos].end(), Tile::CompareByHeight);
+    }
+
     station->UpdateSpriteOffsets();
 }
 
 void Tile::DeleteTile(bool returnResources)
 {
     auto self = shared_from_this();
-
     if (auto powerConnector = GetComponent<PowerConnectorComponent>())
-    {
         if (auto powerGrid = powerConnector->GetPowerGrid())
             powerGrid->Disconnect(self);
-    }
 
     if (station)
     {
-        auto &tilesAtPos = station->tileMap[position];
-        std::erase_if(tilesAtPos, [&self](const std::shared_ptr<Tile> &tile)
-                      { return tile == self; });
+        for (const auto &pos : GetOccupiedPositions())
+            std::erase_if(station->tileMap[pos], [&self](const std::shared_ptr<Tile> &t)
+                          { return t == self; });
 
         if (magic_enum::enum_flags_test_any(GetHeight(), TileHeight::POWER))
             station->RebuildPowerGridsFromInfrastructure();
-
         if (returnResources)
             station->ReturnResourcesFromTile(self);
-
         station->UpdateSpriteOffsets();
     }
-
     components.clear();
 }
 
@@ -194,7 +226,6 @@ bool Tile::HasComponent(ComponentType type) const
 {
     return components.count(type) > 0;
 }
-
 
 bool Tile::CompareByHeight(const std::shared_ptr<Tile> &a, const std::shared_ptr<Tile> &b)
 {

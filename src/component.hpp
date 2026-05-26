@@ -212,32 +212,6 @@ public:
     std::optional<std::string> GetInfo() const override { return "   + Oxygen Production: " + ToString(oxygenProduction, 0); }
 };
 
-struct DecorativeComponent : ComponentBase<DecorativeComponent, ComponentType::DECORATIVE>
-{
-protected:
-    std::vector<std::shared_ptr<Sprite>> decorativeTiles;
-
-public:
-    using ComponentBase::ComponentBase;
-
-    void AddDecorativeTile(const std::shared_ptr<Sprite> &sprite)
-    {
-        decorativeTiles.push_back(sprite);
-    }
-
-    const std::vector<std::shared_ptr<Sprite>> &GetDecorativeTiles() const
-    {
-        return decorativeTiles;
-    }
-
-    void ClearDecorativeTiles()
-    {
-        decorativeTiles.clear();
-    }
-
-    std::optional<std::string> GetInfo() const override { return std::nullopt; }
-};
-
 struct DoorComponent : ComponentBase<DoorComponent, ComponentType::DOOR>
 {
 protected:

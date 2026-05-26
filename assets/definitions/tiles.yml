@@ -261,6 +261,13 @@ tiles:
       - type: DURABILITY
         hitpoints: 15.0
       - type: ROTATABLE
+    extraParts:
+      - offset: (0, -1)
+        blocksPlacement: false
+        sprite: (0, 5)
+      - offset: (0, 1)
+        blocksPlacement: false
+        sprite: (0, 6)
     icon: (0, 5)
   - id: WIRE
     height: POWER
