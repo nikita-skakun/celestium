@@ -100,7 +100,8 @@ static std::shared_ptr<Sprite> CreateSpriteFromDef(const std::shared_ptr<SpriteD
         auto status = tile && tile->GetStation() ? tile->GetStation()->GetSpriteConditionForPosition(tile->GetPosition() + offset, tile->GetId(), tile->GetHeight()) : SpriteCondition::NONE;
         std::vector<SpriteSlice> slices;
         for (const auto &s : m->slices)
-            if ((status & s.conditions) == s.conditions) slices.push_back(s.slice);
+            if ((status & s.conditions) == s.conditions)
+                slices.push_back(s.slice);
         return std::make_shared<MultiSliceSprite>(slices, offset);
     }
     return nullptr;
@@ -108,7 +109,8 @@ static std::shared_ptr<Sprite> CreateSpriteFromDef(const std::shared_ptr<SpriteD
 
 void Station::UpdateTileSpriteOffsets(const std::shared_ptr<Tile> &tile) const
 {
-    if (!tile) return;
+    if (!tile)
+        return;
     tile->ClearSprites();
     Rotation rotation = tile->GetComponent<RotatableComponent>() ? tile->GetComponent<RotatableComponent>()->GetRotation() : Rotation::UP;
 
@@ -611,8 +613,8 @@ void Station::RebuildNavigationGraph()
 
         ConvexPolygon poly;
         poly.roomId = -1;
-        float x = (float)pos.x - 0.5f;
-        float y = (float)pos.y - 0.5f;
+        float x = (float)pos.x - .5f;
+        float y = (float)pos.y - .5f;
 
         poly.vertices[0] = {x, y};
         poly.vertices[1] = {x + 1.f, y};
@@ -630,72 +632,67 @@ void Station::RebuildNavigationGraph()
 
         Vector2 p0 = poly.vertices[0];
         Vector2 p2 = poly.vertices[2];
-        Vector2Int minTile = {(int)std::floor(p0.x + 0.5f), (int)std::floor(p0.y + 0.5f)};
-        Vector2Int maxTile = {(int)std::floor(p2.x - 0.5f), (int)std::floor(p2.y - 0.5f)};
+        Vector2Int minTile = {(int)std::floor(p0.x + .5f), (int)std::floor(p0.y + .5f)};
+        Vector2Int maxTile = {(int)std::floor(p2.x - .5f), (int)std::floor(p2.y - .5f)};
 
         auto addNeighbor = [&](int edgeIdx, Vector2Int nbTile)
         {
-            if (tileToPoly.contains(nbTile))
-            {
-                int nbPolyIdx = tileToPoly[nbTile];
-                if (nbPolyIdx != i)
+            int nbPolyIdx = tileToPoly[nbTile];
+            if (!tileToPoly.contains(nbTile) || nbPolyIdx == i)
+                return;
+
+            // Check if we already have a link to this polygon on this edge
+            bool exists = false;
+            for (const auto &link : poly.links)
+                if (link.targetPolyIdx == nbPolyIdx && link.edgeIdx == edgeIdx)
                 {
-                    // Check if we already have a link to this polygon on this edge
-                    bool exists = false;
-                    for (const auto &link : poly.links)
-                    {
-                        if (link.targetPolyIdx == nbPolyIdx && link.edgeIdx == edgeIdx)
-                        {
-                            exists = true;
-                            break;
-                        }
-                    }
-                    if (!exists)
-                    {
-                        auto doorTile = GetTileWithComponentAtPosition(nbTile, ComponentType::DOOR);
+                    exists = true;
+                    break;
+                }
+            if (!exists)
+            {
+                auto doorTile = GetTileWithComponentAtPosition(nbTile, ComponentType::DOOR);
 
-                        // Calculate portal segment based on edge index and nbTile
-                        Vector2 pA = {(float)nbTile.x - 0.5f, (float)nbTile.y + 0.5f};
-                        Vector2 pB = {(float)nbTile.x + 0.5f, (float)nbTile.y + 0.5f};
+                // Calculate portal segment based on edge index and nbTile
+                Vector2 pA = {(float)nbTile.x - .5f, (float)nbTile.y + .5f};
+                Vector2 pB = {(float)nbTile.x + .5f, (float)nbTile.y + .5f};
 
-                        if (edgeIdx == 1)
-                        { // East
-                            pA = {(float)nbTile.x - 0.5f, (float)nbTile.y - 0.5f};
-                            pB = {(float)nbTile.x - 0.5f, (float)nbTile.y + 0.5f};
-                        }
-                        else if (edgeIdx == 2)
-                        { // South
-                            pA = {(float)nbTile.x - 0.5f, (float)nbTile.y - 0.5f};
-                            pB = {(float)nbTile.x + 0.5f, (float)nbTile.y - 0.5f};
-                        }
-                        else if (edgeIdx == 3)
-                        { // West
-                            pA = {(float)nbTile.x + 0.5f, (float)nbTile.y - 0.5f};
-                            pB = {(float)nbTile.x + 0.5f, (float)nbTile.y + 0.5f};
-                        }
+                if (edgeIdx == 1)
+                { // East
+                    pA = {(float)nbTile.x - .5f, (float)nbTile.y - .5f};
+                    pB = {(float)nbTile.x - .5f, (float)nbTile.y + .5f};
+                }
+                else if (edgeIdx == 2)
+                { // South
+                    pA = {(float)nbTile.x - .5f, (float)nbTile.y - .5f};
+                    pB = {(float)nbTile.x + .5f, (float)nbTile.y - .5f};
+                }
+                else if (edgeIdx == 3)
+                { // West
+                    pA = {(float)nbTile.x + .5f, (float)nbTile.y - .5f};
+                    pB = {(float)nbTile.x + .5f, (float)nbTile.y + .5f};
+                }
 
-                        poly.links.push_back({nbPolyIdx, edgeIdx, pA, pB, doorTile});
-                    }
-                    else
+                poly.links.push_back({nbPolyIdx, edgeIdx, pA, pB, doorTile});
+            }
+            else
+            {
+                // Expand existing portal
+                for (auto &link : poly.links)
+                {
+                    if (link.targetPolyIdx == nbPolyIdx && link.edgeIdx == edgeIdx)
                     {
-                        // Expand existing portal
-                        for (auto &link : poly.links)
-                        {
-                            if (link.targetPolyIdx == nbPolyIdx && link.edgeIdx == edgeIdx)
-                            {
-                                if (edgeIdx == 0 || edgeIdx == 2)
-                                { // Horizontal edge
-                                    link.portalA.x = std::min(link.portalA.x, (float)nbTile.x - 0.5f);
-                                    link.portalB.x = std::max(link.portalB.x, (float)nbTile.x + 0.5f);
-                                }
-                                else
-                                { // Vertical edge
-                                    link.portalA.y = std::min(link.portalA.y, (float)nbTile.y - 0.5f);
-                                    link.portalB.y = std::max(link.portalB.y, (float)nbTile.y + 0.5f);
-                                }
-                                break;
-                            }
+                        if (edgeIdx == 0 || edgeIdx == 2)
+                        { // Horizontal edge
+                            link.portalA.x = std::min(link.portalA.x, (float)nbTile.x - .5f);
+                            link.portalB.x = std::max(link.portalB.x, (float)nbTile.x + .5f);
                         }
+                        else
+                        { // Vertical edge
+                            link.portalA.y = std::min(link.portalA.y, (float)nbTile.y - .5f);
+                            link.portalB.y = std::max(link.portalB.y, (float)nbTile.y + .5f);
+                        }
+                        break;
                     }
                 }
             }
@@ -759,8 +756,8 @@ void Station::DecomposeRoom(const std::shared_ptr<Room> &room, const std::unorde
         int polyIdx = (int)navPolygons.size();
         ConvexPolygon poly;
         poly.roomId = room->id;
-        float x = (float)start.x - 0.5f;
-        float y = (float)start.y - 0.5f;
+        float x = (float)start.x - .5f;
+        float y = (float)start.y - .5f;
         float w = (float)width;
         float h = (float)height;
 

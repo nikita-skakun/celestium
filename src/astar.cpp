@@ -147,7 +147,7 @@ std::deque<Vector2> FindPath(
             {
                 minGCost[nbIdx] = newG;
                 cameFrom[nbIdx] = cur.polyIdx;
-                float h = (nbIdx == endPoly) ? 0.0f : Vector2Distance(nbPoly.GetCenter(), end);
+                float h = (nbIdx == endPoly) ? 0.f : Vector2Distance(nbPoly.GetCenter(), end);
                 open.push({nbIdx, newG, newG + h});
             }
         }
@@ -181,7 +181,7 @@ std::deque<Vector2> FindPath(
                 if (cp < 0)
                     std::swap(left, right);
 
-                float padding = 0.5f;
+                float padding = .5f;
                 Vector2 dir = {right.x - left.x, right.y - left.y};
                 float distSq = Vector2LengthSq(dir);
 

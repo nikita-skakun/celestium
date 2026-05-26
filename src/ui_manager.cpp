@@ -47,8 +47,8 @@ namespace
         if (!iconSheet.empty())
         {
             Vector2 size = RectToSize(rect);
-            Vector2 iconSize = size * 0.75f;
-            Vector2 iconPos = RectToPos(rect) + (size - iconSize) / 2.0f;
+            Vector2 iconSize = size * .75f;
+            Vector2 iconPos = RectToPos(rect) + (size - iconSize) / 2.f;
             toggle->AddChild(std::make_shared<UiIcon>(Vector2ToRect(iconPos, iconSize), iconSheet, iconSource, iconTint));
         }
 

@@ -17,7 +17,8 @@ namespace
 
 float LuaParticle::lifetime() const
 {
-    return GetProperty(*this, 0.0f, [](auto p) { return p->lifetime; });
+    return GetProperty(*this, 0.f, [](auto p)
+                       { return p->lifetime; });
 }
 
 void LuaParticle::set_lifetime(float v)
@@ -30,7 +31,8 @@ void LuaParticle::set_lifetime(float v)
 
 float LuaParticle::size() const
 {
-    return GetProperty(*this, 0.0f, [](auto p) { return p->size; });
+    return GetProperty(*this, 0.f, [](auto p)
+                       { return p->size; });
 }
 
 void LuaParticle::set_size(float v)
@@ -43,7 +45,8 @@ void LuaParticle::set_size(float v)
 
 float LuaParticle::age() const
 {
-    return GetProperty(*this, 0.0f, [](auto p) { return p->age; });
+    return GetProperty(*this, 0.f, [](auto p)
+                       { return p->age; });
 }
 
 void LuaParticle::set_age(float v)
@@ -67,14 +70,14 @@ sol::table LuaParticle::velocity(sol::this_state s)
         }
         else
         {
-            t["x"] = 0.0f;
-            t["y"] = 0.0f;
+            t["x"] = 0.f;
+            t["y"] = 0.f;
         }
     }
     else
     {
-        t["x"] = 0.0f;
-        t["y"] = 0.0f;
+        t["x"] = 0.f;
+        t["y"] = 0.f;
     }
     return t;
 }
@@ -107,14 +110,14 @@ sol::table LuaParticle::position(sol::this_state s)
         }
         else
         {
-            t["x"] = 0.0f;
-            t["y"] = 0.0f;
+            t["x"] = 0.f;
+            t["y"] = 0.f;
         }
     }
     else
     {
-        t["x"] = 0.0f;
-        t["y"] = 0.0f;
+        t["x"] = 0.f;
+        t["y"] = 0.f;
     }
     return t;
 }
@@ -190,9 +193,7 @@ sol::table LuaParticleSystem::get_particles(sol::this_state s)
 
     size_t count = particleSystem->GetParticleCount();
     for (size_t i = 0; i < count; ++i)
-    {
         t[i + 1] = LuaParticle(particleSystem, i);
-    }
 
     return t;
 }
@@ -223,7 +224,7 @@ float LuaEffect::size() const
 {
     if (auto e = effectRef.lock())
         return e->GetSize();
-    return 0.0f;
+    return 0.f;
 }
 
 sol::table LuaEffect::position(sol::this_state s) const
@@ -237,8 +238,8 @@ sol::table LuaEffect::position(sol::this_state s) const
     }
     else
     {
-        t["x"] = 0.0f;
-        t["y"] = 0.0f;
+        t["x"] = 0.f;
+        t["y"] = 0.f;
     }
     return t;
 }

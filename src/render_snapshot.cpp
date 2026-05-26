@@ -7,7 +7,7 @@
 std::vector<std::shared_ptr<const Pawn>> RenderSnapshot::GetPawnAtPosition(const Vector2 &pos) const
 {
     std::vector<std::shared_ptr<const Pawn>> result;
-    float radius = (PAWN_DRAW_SIZE * 0.5f) / TILE_SIZE;
+    float radius = (PAWN_DRAW_SIZE * .5f) / TILE_SIZE;
     float r2 = radius * radius;
     for (const auto &kv : pawnList)
     {

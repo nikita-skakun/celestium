@@ -98,14 +98,14 @@ void PowerGrid::RebuildCaches()
     for (auto &b : _batteries)
         cachedBatteries.push_back(b.second);
 
-    std::ranges::sort(cachedConsumers, [](const auto &_a, const auto &_b)
-                      {
-                        auto a = _a.lock();
-                        auto b = _b.lock();
-                        if (!a || !b) return false;
-                        if (a->GetPowerPriority() != b->GetPowerPriority())
-                            return a->GetPowerPriority() < b->GetPowerPriority();
-                        return a->GetPowerConsumption() > b->GetPowerConsumption(); });
+    std::sort(cachedConsumers.begin(), cachedConsumers.end(), [](const auto &_a, const auto &_b)
+              {
+                auto a = _a.lock();
+                auto b = _b.lock();
+                if (!a || !b) return false;
+                if (a->GetPowerPriority() != b->GetPowerPriority())
+                    return a->GetPowerPriority() < b->GetPowerPriority();
+                return a->GetPowerConsumption() > b->GetPowerConsumption(); });
 
     dirty = false;
 }

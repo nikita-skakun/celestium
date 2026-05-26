@@ -71,7 +71,7 @@ bool MoveAction::Update(const std::shared_ptr<Pawn> &pawn)
     {
         if (auto door = doorTile->GetComponent<DoorComponent>())
         {
-            door->Open(1.0f / PAWN_MOVE_SPEED);
+            door->Open(1.f / PAWN_MOVE_SPEED);
 
             if (!door->IsOpen())
                 return false; // Wait for the door to be fully open

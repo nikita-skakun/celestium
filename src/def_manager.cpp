@@ -512,7 +512,7 @@ void DefinitionManager::ParsePawnsFromFile(const std::string &filename)
                     throw std::runtime_error(std::format("Parsing of animation type string for pawn ({}) failed: {}", pawnId, animTypeStr));
 
                 PawnAnimationType type = animType.value();
-                float speed = GetValue<float>(animNode, "speed", 0.25f);
+                float speed = GetValue<float>(animNode, "speed", .25f);
                 if (speed <= 0.f)
                     throw std::runtime_error(std::format("Pawn animation speed for '{}' (type {}) must be > 0 (found {})", pawnId, animTypeStr, speed));
 

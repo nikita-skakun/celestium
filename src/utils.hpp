@@ -79,11 +79,11 @@ inline bool CheckIfEventHappens(double chancePerSecond, double deltaTime) noexce
 {
     thread_local static std::random_device rd; // TODO: Switch to shared seed for multiplayer
     thread_local static std::mt19937 gen(rd());
-    std::uniform_real_distribution<> dis(0.0, 1.0);
+    std::uniform_real_distribution<> dis(0.f, 1.f);
 
     double expectedEvents = chancePerSecond * deltaTime;
 
-    if (expectedEvents >= 1.0)
+    if (expectedEvents >= 1.f)
         return true;
 
     return dis(gen) < expectedEvents;

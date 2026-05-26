@@ -61,12 +61,12 @@ void DrawDoorPanels(const Vector2Int &pos, float progress, float rotation, const
     Rectangle destRect = Vector2ToRect(startPos, tileSize);
     destRect.height = std::max(25. * progress, 1.) * zoom;
     Rectangle doorSourceRect = Rectangle(0, 7, 1, 1) * TILE_SIZE;
-    doorSourceRect.height = std::max(25. * progress, 1.);
-    Vector2 pivot = Vector2(tileSize.x / 2., destRect.height - 25. * zoom);
+    doorSourceRect.height = std::max(25.f * progress, 1.f);
+    Vector2 pivot = Vector2(tileSize.x / 2.f, destRect.height - 25.f * zoom);
     DrawTexturePro(stationTileset, doorSourceRect, destRect, pivot, rotation, tint);
     Rectangle doorSourceRect2 = doorSourceRect;
     doorSourceRect2.width = -doorSourceRect2.width;
-    DrawTexturePro(stationTileset, doorSourceRect2, destRect, pivot, rotation + 180., tint);
+    DrawTexturePro(stationTileset, doorSourceRect2, destRect, pivot, rotation + 180.f, tint);
 }
 
 void DrawSpriteDefGhost(const std::shared_ptr<SpriteDef> &spriteDef, const Vector2Int &pos, const Color &tint, float rotation, const std::shared_ptr<const Station> &station, const std::string &tileId, TileHeight height)
@@ -283,26 +283,26 @@ void DrawStationOverlays()
 
         // Draw outline
         for (size_t i = 0; i < screenPoints.size(); ++i)
-            DrawLineEx(screenPoints[i], screenPoints[(i + 1) % screenPoints.size()], 2.0f, Fade(ORANGE, 0.5f));
+            DrawLineEx(screenPoints[i], screenPoints[(i + 1) % screenPoints.size()], 2.f, Fade(ORANGE, .5f));
 
         // Optional: Draw links between polygon centers
         Vector2 center = GameManager::WorldToScreen(poly.GetCenter());
         for (const auto &link : poly.links)
-            DrawLineEx(center, GameManager::WorldToScreen(snapshot->station->navPolygons[link.targetPolyIdx].GetCenter()), 1.0f, Fade(YELLOW, 0.3f));
+            DrawLineEx(center, GameManager::WorldToScreen(snapshot->station->navPolygons[link.targetPolyIdx].GetCenter()), 1.f, Fade(YELLOW, .3f));
     }
 
     if (GameManager::IsInBuildMode() && GameManager::IsHorizontalSymmetry())
     {
         Vector2 screenPos = GameManager::WorldToScreen(Vector2(0, 0));
-        screenPos.y -= .5 * TILE_SIZE * zoom;
-        DrawLineEx(Vector2(0, screenPos.y), Vector2(GetScreenSize().x, screenPos.y), 2, BLUE);
+        screenPos.y -= .5f * TILE_SIZE * zoom;
+        DrawLineEx(Vector2(0, screenPos.y), Vector2(GetScreenSize().x, screenPos.y), 2.f, BLUE);
     }
 
     if (GameManager::IsInBuildMode() && GameManager::IsVerticalSymmetry())
     {
         Vector2 screenPos = GameManager::WorldToScreen(Vector2(0, 0));
-        screenPos.x -= .5 * TILE_SIZE * zoom;
-        DrawLineEx(Vector2(screenPos.x, 0), Vector2(screenPos.x, GetScreenSize().y), 2, BLUE);
+        screenPos.x -= .5f * TILE_SIZE * zoom;
+        DrawLineEx(Vector2(screenPos.x, 0), Vector2(screenPos.x, GetScreenSize().y), 2.f, BLUE);
     }
 }
 
@@ -535,6 +535,9 @@ void DrawPawn()
     auto snapshot = GameManager::GetRenderSnapshot();
     if (!snapshot)
         return;
+
+    auto &camera = GameManager::GetCamera();
+
     for (const auto &kv : snapshot->pawnList)
     {
         const auto &pawn = kv.second;
@@ -547,9 +550,11 @@ void DrawPawn()
             const auto moveAction = std::dynamic_pointer_cast<MoveAction>(actionQueue.front());
             isMoving = moveAction && moveAction->IsMoving();
 
+            if (moveAction && !GameManager::IsInBuildMode() && !moveAction->path.empty())
+                DrawPath(moveAction->path, pawn->GetPosition());
+
             if (isMoving && !GameManager::IsInBuildMode() && !moveAction->path.empty())
             {
-                DrawPath(moveAction->path, pawn->GetPosition());
                 Vector2 nextPosition = moveAction->path.front();
 
                 const float moveDelta = static_cast<float>(snapshot->timeSinceFixedUpdate * PAWN_MOVE_SPEED);
@@ -573,6 +578,26 @@ void DrawPawn()
 
                     if (canPath)
                         drawPosition += Vector2Normalize(nextPosition - pawn->GetPosition()) * moveDelta;
+                }
+            }
+        }
+
+        // Draw faint circles at planned move destinations
+        if (!GameManager::IsInBuildMode())
+        {
+            float circleRadius = (PAWN_DRAW_SIZE * .25f) * camera.GetZoom();
+            for (const auto &action : actionQueue)
+            {
+                if (action && action->GetType() == Action::Type::MOVE)
+                {
+                    if (auto moveAct = std::dynamic_pointer_cast<MoveAction>(action))
+                    {
+                        Vector2 screenPos = GameManager::WorldToScreen(moveAct->targetPosition);
+                        // Faint filled circle
+                        DrawCircleV(screenPos, circleRadius, Fade(pawn->GetColor(), .15f));
+                        // Faint outline ring
+                        DrawRing(screenPos, circleRadius * .85f, circleRadius, 0.f, 360.f, 24, Fade(pawn->GetColor(), .4f));
+                    }
                 }
             }
         }
@@ -660,7 +685,7 @@ void DrawFpsCounter()
 {
     float deltaTime = GetFrameTime();
     Font font = AssetManager::GetFont("DEFAULT");
-    std::string fpsText = std::format("FPS: {:} ({:.2f}ms)", GetFPS(), deltaTime * 1000.);
+    std::string fpsText = std::format("FPS: {:} ({:.2f}ms)", GetFPS(), deltaTime * 1000.f);
     const char *text = fpsText.c_str();
     DrawTextEx(font, text, Vector2(GetScreenSize().x - MeasureTextEx(font, text, DEFAULT_FONT_SIZE, 1).x - DEFAULT_PADDING, DEFAULT_PADDING), DEFAULT_FONT_SIZE, 1, UI_TEXT_COLOR);
 }
@@ -797,7 +822,7 @@ void DrawBuildUi()
 
     float rotAngle = RotationToAngle(GameManager::GetBuildRotation());
     for (const auto &pos : GameManager::GetSymmetryPositions(cursorPos))
-        DrawTileDefGhost(tileDef, pos, Fade(WHITE, 0.5f), rotAngle, snapshot->station);
+        DrawTileDefGhost(tileDef, pos, Fade(WHITE, .5f), rotAngle, snapshot->station);
 }
 
 void DrawPlannedTasks()
@@ -815,12 +840,12 @@ void DrawPlannedTasks()
         {
             auto tileDef = DefinitionManager::GetTileDefinition(task->tileId);
             if (tileDef)
-                DrawTileDefGhost(tileDef, task->position, Fade(WHITE, 0.4f), RotationToAngle(task->rotation), snapshot->station);
+                DrawTileDefGhost(tileDef, task->position, Fade(WHITE, .4f), RotationToAngle(task->rotation), snapshot->station);
         }
 
         Rectangle sourceRect = (task->isBuild ? Rectangle(1, 1, 1, 1) : Rectangle(3, 1, 1, 1)) * TILE_SIZE;
-        Rectangle destRect = Vector2ToRect(GameManager::WorldToScreen(task->position) + tileSize / 4., tileSize / 2.);
-        DrawTexturePro(iconTileset, sourceRect, destRect, tileSize / 2., 0, Fade(WHITE, .4));
+        Rectangle destRect = Vector2ToRect(GameManager::WorldToScreen(task->position) + tileSize / 4.f, tileSize / 2.f);
+        DrawTexturePro(iconTileset, sourceRect, destRect, tileSize / 2.f, 0, Fade(WHITE, .4f));
     }
 }
 
