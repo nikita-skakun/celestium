@@ -87,7 +87,7 @@ bool MoveAction::Update(const std::shared_ptr<Pawn> &pawn)
         pawn->SetPosition(nextWaypoint);
 
         // Reset door state if we just passed through one
-        Vector2Int currentTilePos = ToVector2Int(pawn->GetPosition() / TILE_SIZE);
+        Vector2Int currentTilePos = ToVector2Int(pawn->GetPosition());
         if (auto doorTile = station->GetTileWithComponentAtPosition(currentTilePos, ComponentType::DOOR))
         {
             if (auto door = doorTile->GetComponent<DoorComponent>())

@@ -637,9 +637,9 @@ void Station::RebuildNavigationGraph()
 
         auto addNeighbor = [&](int edgeIdx, Vector2Int nbTile)
         {
-            int nbPolyIdx = tileToPoly[nbTile];
-            if (!tileToPoly.contains(nbTile) || nbPolyIdx == i)
+            if (!tileToPoly.contains(nbTile) || tileToPoly.at(nbTile) == i)
                 return;
+            int nbPolyIdx = tileToPoly.at(nbTile);
 
             // Check if we already have a link to this polygon on this edge
             bool exists = false;
